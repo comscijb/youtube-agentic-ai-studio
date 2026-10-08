@@ -228,22 +228,33 @@ class GeminiClientTests(unittest.TestCase):
     def test_researcher_and_scriptwriter_keep_text_contract(self):
         from agents import researcher, scriptwriter
         research_json = json.dumps({
-            "topic": "T", "video_title": "Title", "key_points": ["A"], "tags": ["tag"]
+            "premise_candidates": [{
+                "premise": "T", "narrative_type": "dark_human_parable",
+                "originality_score": 8, "emotional_power_score": 8,
+                "dramatic_potential_score": 8, "visual_feasibility_score": 8,
+                "audience_access_score": 8, "weighted_total": 8,
+            }],
+            "selected_candidate_index": 0, "video_title": "Title",
+            "narrative_type": "dark_human_parable", "psychological_theme": "Envy",
+            "logline": "T", "main_character_concept": "A clerk",
+            "central_dramatic_question": "Will he confess?", "protagonist_desire": "Status",
+            "underlying_emotional_need": "Self-respect", "principal_conflict": "A lie",
+            "central_contradiction": "He wants truth through deceit", "stakes": "His identity",
+            "potential_turning_point": "The lie is rewarded", "intended_emotional_experience": "Dread",
+            "philosophical_question": "What makes a self?", "ending_direction": "Ambiguous cost",
+            "intended_audience": "Adults", "thumbnail_concept": "A divided face",
+            "originality_assessment": "Distinct", "production_feasibility": "Stock-friendly",
+            "tags": ["tag"],
         })
         with patch.object(researcher, "generate", return_value=research_json):
             with redirect_stdout(io.StringIO()):
                 research = researcher.research_topic("channel", topic_override="T")
-        script_json = json.dumps({
-            "title": "Title", "sections": [
-                {"id": i, "title": f"S{i}", "narration": "Text", "image_query": "image"}
-                for i in range(1, 5)
-            ]
-        })
+        script_json = json.dumps({"value": "text contract"})
         with patch.object(scriptwriter, "generate", return_value=script_json):
             with redirect_stdout(io.StringIO()):
-                script = scriptwriter.write_script(research)
+                script = scriptwriter._generate_json("plain text prompt", "contract")
         self.assertEqual(research["topic"], "T")
-        self.assertEqual(len(script["sections"]), 4)
+        self.assertEqual(script["value"], "text contract")
 
 
 class GeminiGuiTests(unittest.TestCase):

@@ -47,7 +47,7 @@ def upload_to_youtube(script: dict, video_path: str) -> str:
     description = (
         script.get("description", "") + "\n\n"
         + "─────────────────────────────\n"
-        + "Subscribe for new explainers every week!\n"
+        + f"{config.CHANNEL_NAME} — original cinematic psychological fiction.\n"
         + "─────────────────────────────\n"
         + " ".join(f"#{t}" for t in script.get("tags", []))
     )

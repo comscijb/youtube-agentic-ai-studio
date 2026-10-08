@@ -69,6 +69,17 @@ The channel functions as an anthology, with mostly standalone stories centered o
 """
 CHANNEL_NAME = "Private Gravity"   # shown on-screen and in upload metadata
 
+# Narrative development defaults. Regular episodes can be set from 12 to 20
+# minutes in the GUI; Shorts use their own fixed pacing contract.
+NARRATIVE_TYPE = os.getenv("NARRATIVE_TYPE", "auto")
+PSYCHOLOGICAL_THEME = os.getenv("PSYCHOLOGICAL_THEME", "")
+TARGET_DURATION_MINUTES = float(os.getenv("TARGET_DURATION_MINUTES", "15"))
+NARRATION_WPM = int(os.getenv("NARRATION_WPM", "125"))
+NARRATIVE_REVIEW_ENABLED = os.getenv(
+    "NARRATIVE_REVIEW_ENABLED", "true"
+).lower() in ("1", "true", "yes", "on")
+NARRATIVE_MAX_REVISIONS = 1
+
 # ─────────────────────────────────────────
 #  Voice (Edge TTS — free, no API key)
 #  Voices confirmed to emit word-level timing (needed for caption sync):
@@ -122,6 +133,8 @@ RENDER_PRESET = "ultrafast"
 
 # Overlay opacity: lower = more image visible but text harder to read (0–1)
 OVERLAY_OPACITY = 0.62
+CINEMATIC_OVERLAY_OPACITY = 0.38
+NORMAL_SUBTITLES_ENABLED = True
 
 # Colour palette — customise to match your brand
 COLORS = {
@@ -139,10 +152,12 @@ COLORS = {
 # Fonts — add your own .ttf paths for best results; system falls back gracefully
 FONT_PATHS = {
     "bold": [
+        "./assets/fonts/LibreBaskerville-Bold.ttf",
         "./assets/fonts/Manrope-ExtraBold.ttf",
         "C:/Windows/Fonts/arialbd.ttf",
     ],
     "regular": [
+        "./assets/fonts/LibreBaskerville-Regular.ttf",
         "./assets/fonts/Manrope-Regular.ttf",
         "C:/Windows/Fonts/arial.ttf",
     ],

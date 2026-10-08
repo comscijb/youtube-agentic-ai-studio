@@ -14,6 +14,10 @@ sys.path.insert(0, ROOT)
 
 # Module-level imports from agents (sys.path is set above)
 from agents.researcher import load_banned_topics, save_banned_topics
+from agents.narrative import (
+    atomic_write_json, invalidate_downstream, invalidate_scene_outputs, load_json,
+)
+from video.timeline import load_timeline
 
 from flask import Flask, Response, jsonify, request, send_file, abort
 
@@ -50,6 +54,9 @@ _state = {
     "image_map":    {},
     "script":       None,
     "research":     None,
+    "character_bible": None,
+    "story_outline": None,
+    "narrative_review": None,
     "yt_url":       None,
     "error":        None,
     "upload_pct":   0,
@@ -161,14 +168,6 @@ def _make_thumbnail(script, image_map, output_dir):
     # Channel name
     _shadow(draw, (60, TH-60), config.CHANNEL_NAME.upper(), _font("bold", 36), fill=C["light"], r=3)
 
-    # NEW VIDEO badge
-    fb = _font("bold", 28)
-    bt = "NEW VIDEO"
-    bw2 = draw.textbbox((0,0), bt, font=fb)[2]
-    bx = TW - bw2 - 80
-    draw.rounded_rectangle([bx-16, 50, bx+bw2+16, 102], radius=8, fill=C["primary"])
-    draw.text((bx, 58), bt, font=fb, fill=C["white"])
-
     out = os.path.join(output_dir, "thumbnail.jpg")
     bg.save(out, "JPEG", quality=95)
     return out
@@ -182,41 +181,42 @@ def _ts(secs):
     h, m, s = secs//3600, (secs%3600)//60, secs%60
     return f"{h}:{m:02d}:{s:02d}" if h else f"{m}:{s:02d}"
 
-def _build_description(script, research, video_type: str = "normal"):
+def _build_description(script, research, video_type: str = "normal", output_dir=None):
     sections = script.get("sections", [])
     is_shorts = video_type == "shorts" or script.get("video_type") == "shorts"
 
     lines = []
     if research.get("hook_question"): lines += [research["hook_question"], ""]
     if script.get("description"):     lines += [script["description"], ""]
-    if research.get("why_now"):       lines += [research["why_now"], ""]
+    lines += ["This episode is an original work of fiction. Characters and events are fictional.", ""]
 
     # Chapters only make sense for videos > ~2 min — never for Shorts
     if not is_shorts:
-        chapters, cursor = [], 0
-        for s in sections:
-            words = len(s.get("narration","").split())
-            dur = max(8, int(words/110*60))
-            chapters.append({"ts": _ts(cursor), "title": s.get("title","")})
-            cursor += dur
+        timeline = load_timeline(os.path.join(output_dir or config.OUTPUT_DIR, "scene_timeline.json"))
+        chapters = []
+        if timeline and len(timeline.get("scenes", [])) == len(sections):
+            chapters = [{"ts": _ts(int(scene["start"])), "title": scene.get("title", "")}
+                        for scene in timeline["scenes"]]
 
         if len(chapters) >= 3:
             lines += ["─"*40, "⏱ CHAPTERS", "─"*40]
             for c in chapters: lines.append(f"{c['ts']} {c['title']}")
             lines.append("")
 
-    if research.get("key_points"):
-        lines += ["─"*40, "🧠 WHAT YOU'LL LEARN", "─"*40]
-        for p in research["key_points"]: lines.append(f"• {p}")
-        lines.append("")
-
     if is_shorts:
-        lines += ["👆 Follow for more mind-bending facts!",
-                  "💬 Comment: did this surprise you?", ""]
+        lines += ["What would you have done in their place?", ""]
     else:
-        lines += ["─"*40, "🔔 Subscribe for a new mind-bending video every week!",
-                  "👍 Like if this made you think differently.",
-                  "💬 Drop a comment — we read every one.", ""]
+        lines += ["Private Gravity presents original cinematic stories about the hidden forces that shape us.",
+                  "What stayed with you after the ending?", ""]
+
+    manifest = load_json(os.path.join(output_dir or config.OUTPUT_DIR, "asset_manifest.json")) or {}
+    attributed = []
+    for asset in manifest.get("assets", []):
+        if asset.get("source_url") and asset.get("creator"):
+            license_note = f" ({asset['license_url']})" if asset.get("license_url") else ""
+            attributed.append(f"{asset['creator']} — {asset['source_url']}{license_note}")
+    if attributed:
+        lines += ["Visual credits:", *dict.fromkeys(attributed), ""]
 
     tags = script.get("tags", [])
     if tags: lines.append(" ".join(f"#{t.replace(' ','')}" for t in tags[:8]))
@@ -228,7 +228,9 @@ def _build_description(script, research, video_type: str = "normal"):
 #  PIPELINE RUNNER  (runs in background thread)
 # ══════════════════════════════════════════════════════════════════════════════
 
-def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "normal", focus_angle: str = ""):
+def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "normal",
+                  focus_angle: str = "", narrative_type: str = "auto",
+                  target_duration: float = 15, narrative_review: bool = True):
     orig_stdout = sys.stdout
     sys.stdout = _Capture(orig_stdout)
     _state["running"] = True
@@ -240,6 +242,10 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
         """Raise if user clicked Stop."""
         if _stop_event.is_set():
             raise InterruptedError(f"Stopped by user after {after_stage}")
+
+    def _complete_partial(label: str):
+        _log(f"Partial pipeline complete after {label}. Review the saved artifacts before continuing.")
+        _log_queue.put(("done", ""))
 
     try:
         Path(config.OUTPUT_DIR).mkdir(exist_ok=True)
@@ -259,10 +265,17 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
                 channel_description = config.CHANNEL_DESCRIPTION,
                 topic_override      = topic_override,
                 focus_angle         = focus_angle,
+                narrative_type      = narrative_type,
+                target_duration_minutes = target_duration,
             )
+            invalidate_downstream("story_brief", config.OUTPUT_DIR)
             _state["research"] = research
-            with open(f"{config.OUTPUT_DIR}/research.json", "w") as f:
-                json.dump(research, f, indent=2)
+            _state.update({
+                "script": None, "character_bible": None, "story_outline": None,
+                "narrative_review": None, "image_map": {}, "audio_path": None,
+                "video_path": None, "thumb_path": None,
+            })
+            atomic_write_json(f"{config.OUTPUT_DIR}/research.json", research)
             _stage("research", "done")
             _log(f"Topic: {research['video_title']}")
         else:
@@ -274,15 +287,26 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
         _check_stop("research")
         research = _state["research"]
         if not research: raise ValueError("No research data — run Research step first.")
+        if not any(step in steps for step in ("script", "images", "narration", "music", "video")):
+            _complete_partial("Story Brief")
+            return
 
         # ── Script ────────────────────────────────────────────
         if "script" in steps:
             _stage("script", "running")
             _log(f"Generating {'Shorts' if video_type == 'shorts' else 'normal'} script…")
-            script = write_script(research, video_type=video_type)
+            script = write_script(
+                research, video_type=video_type, output_dir=config.OUTPUT_DIR,
+                target_duration_minutes=target_duration,
+                narrative_review=narrative_review,
+            )
+            invalidate_downstream("script_changed", config.OUTPUT_DIR)
             _state["script"] = script
-            with open(f"{config.OUTPUT_DIR}/script.json", "w") as f:
-                json.dump(script, f, indent=2)
+            _state.update({"image_map": {}, "audio_path": None,
+                           "video_path": None, "thumb_path": None})
+            _state["character_bible"] = load_json(os.path.join(config.OUTPUT_DIR, "character_bible.json"))
+            _state["story_outline"] = load_json(os.path.join(config.OUTPUT_DIR, "story_outline.json"))
+            _state["narrative_review"] = load_json(os.path.join(config.OUTPUT_DIR, "narrative_review.json"))
             _stage("script", "done")
             _log(f"Script: {len(script['sections'])} sections")
         else:
@@ -290,10 +314,17 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
                 with open(f"{config.OUTPUT_DIR}/script.json") as f:
                     _state["script"] = json.load(f)
             except: pass
+            _state["character_bible"] = load_json(os.path.join(config.OUTPUT_DIR, "character_bible.json"))
+            _state["story_outline"] = load_json(os.path.join(config.OUTPUT_DIR, "story_outline.json"))
+            _state["narrative_review"] = load_json(os.path.join(config.OUTPUT_DIR, "narrative_review.json"))
 
         _check_stop("script")
         script = _state["script"]
         if not script: raise ValueError("No script data — run Script step first.")
+        if not any(step in steps for step in ("images", "narration", "music", "video")):
+            _state["description"] = _build_description(script, research, video_type=video_type)
+            _complete_partial("Narrative Development")
+            return
 
         # ── Images ────────────────────────────────────────────
         if "images" in steps:
@@ -305,6 +336,9 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
             _state["image_map"] = load_existing_images(script, config.OUTPUT_DIR)
 
         _check_stop("images")
+        if not any(step in steps for step in ("narration", "music", "video")):
+            _complete_partial("Stock Assets")
+            return
 
         # ── Narration ─────────────────────────────────────────
         if "narration" in steps:
@@ -431,14 +465,32 @@ def run_pipeline():
         return jsonify({"ok": False, "error": "Pipeline already running"})
     body       = request.get_json(force=True) or {}
     steps       = body.get("steps", ["research","script","images","narration","music","video"])
+    if not isinstance(steps, list) or not steps:
+        return jsonify({"ok": False, "error": "Select at least one pipeline step"}), 400
     topic       = body.get("topic", "").strip()
     focus_angle = body.get("focus_angle", "").strip()
     video_type  = body.get("video_type", "normal")
+    narrative_type = body.get("narrative_type", "auto")
+    narrative_review = bool(body.get("narrative_review", True))
+    try:
+        target_duration = float(body.get("target_duration", 15))
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "error": "Target duration must be a number"}), 400
+    from agents.narrative import NARRATIVE_TYPES
+    if narrative_type != "auto" and narrative_type not in NARRATIVE_TYPES:
+        return jsonify({"ok": False, "error": "Invalid narrative type"}), 400
+    if video_type not in ("normal", "shorts"):
+        return jsonify({"ok": False, "error": "Invalid video format"}), 400
+    if video_type == "normal" and not 12 <= target_duration <= 20:
+        return jsonify({"ok": False, "error": "Regular episodes must target 12-20 minutes"}), 400
     for s in steps:
         if s in _state["stages"]: _state["stages"][s] = "pending"
     _state["video_type"] = video_type
     _stop_event.clear()
-    t = threading.Thread(target=_run_pipeline, args=(steps, topic, video_type, focus_angle), daemon=True)
+    t = threading.Thread(
+        target=_run_pipeline,
+        args=(steps, topic, video_type, focus_angle, narrative_type,
+              target_duration, narrative_review), daemon=True)
     t.start()
     return jsonify({"ok": True})
 
@@ -502,6 +554,10 @@ def get_output():
         "topic":       r.get("topic", ""),
         "why_now":     r.get("why_now", ""),
         "hook":        r.get("hook_question", ""),
+        "story_brief": r,
+        "character_bible": _state.get("character_bible") or {},
+        "story_outline": _state.get("story_outline") or {},
+        "narrative_review": _state.get("narrative_review") or {},
     })
 
 @app.route("/api/save-output", methods=["POST"])
@@ -515,9 +571,43 @@ def save_output():
         _state["description"] = body["description"]
     # Persist script to disk
     if _state["script"]:
-        with open(f"{config.OUTPUT_DIR}/script.json", "w") as f:
-            json.dump(_state["script"], f, indent=2)
+        atomic_write_json(f"{config.OUTPUT_DIR}/script.json", _state["script"])
+        # Packaging edits do not invalidate narration. The thumbnail is the
+        # only derived visual that contains the editable title.
+        if "title" in body:
+            Path(config.OUTPUT_DIR, "thumbnail.jpg").unlink(missing_ok=True)
     return jsonify({"ok": True})
+
+
+@app.route("/api/regenerate-scene", methods=["POST"])
+def regenerate_one_scene():
+    if _state.get("running"):
+        return jsonify({"ok": False, "error": "Pipeline already running"}), 409
+    body = request.get_json(force=True) or {}
+    try:
+        scene_id = int(body.get("scene_id"))
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "error": "scene_id must be an integer"}), 400
+    script = _state.get("script") or load_json(Path(config.OUTPUT_DIR, "script.json"))
+    brief = _state.get("research") or load_json(Path(config.OUTPUT_DIR, "story_brief.json"))
+    bible = _state.get("character_bible") or load_json(Path(config.OUTPUT_DIR, "character_bible.json"))
+    outline = _state.get("story_outline") or load_json(Path(config.OUTPUT_DIR, "story_outline.json"))
+    if not all((script, brief, bible, outline)):
+        return jsonify({"ok": False, "error": "Story artifacts are incomplete"}), 409
+    try:
+        from agents.scriptwriter import regenerate_scene
+        revised = regenerate_scene(script, brief, bible, outline, scene_id, config.OUTPUT_DIR)
+        invalidate_scene_outputs(scene_id, config.OUTPUT_DIR)
+        _state["script"] = revised
+        _state["narrative_review"] = load_json(Path(config.OUTPUT_DIR, "narrative_review.json"))
+        _state["audio_path"] = None
+        _state["video_path"] = None
+        _state["thumb_path"] = None
+        return jsonify({"ok": True, "scene": next(
+            scene for scene in revised["sections"] if int(scene["id"]) == scene_id
+        )})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
 
 
 # ── AI description regeneration ───────────────────────────────────────────────
@@ -530,19 +620,21 @@ def regen_description():
         from agents.gemini_client import generate
         script   = _state["script"]
         research = _state["research"]
-        prompt = f"""Write a compelling YouTube video description for this video.
+        prompt = f"""Write a restrained YouTube description for this original cinematic fiction episode.
 
 Title: {script.get('title','')}
 Topic: {research.get('topic','')}
 Hook: {research.get('hook_question','')}
-Key points: {json.dumps(research.get('key_points',[]))}
+Logline: {research.get('logline','')}
+Emotional experience: {research.get('intended_emotional_experience','')}
 Tags: {json.dumps(script.get('tags',[]))}
 
 The description should:
-- Open with the hook question or a gripping statement
-- List what viewers will learn (3-5 bullet points)
-- Include a strong CTA to subscribe and comment
-- End with hashtags
+- Open with a compelling one-sentence dramatic premise without spoiling the reversal
+- Clearly state that the episode is an original work of fiction
+- Invite reflection with one story-specific question
+- Use no learning bullets, factual claims, generic hype, or manipulative promises
+- End with a small set of relevant hashtags
 
 Return ONLY the description text, no explanation."""
         desc = generate(prompt)

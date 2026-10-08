@@ -6,7 +6,6 @@ Uses: Gemini · Edge TTS · Pixabay/Openverse · MoviePy · Flask · YouTube Dat
 Run:  python pipeline.py
 """
 import os
-import json
 import sys
 from pathlib import Path
 
@@ -20,6 +19,7 @@ from video.stock         import download_images
 from video.creator       import create_video
 from review.app          import start_review_server
 from uploader.youtube    import upload_to_youtube
+from agents.narrative import atomic_write_json
 
 
 def banner(text: str):
@@ -32,28 +32,34 @@ def run():
     Path(config.OUTPUT_DIR).mkdir(exist_ok=True)
     Path(config.IMAGES_DIR).mkdir(exist_ok=True)
 
-    print("\n🎬  YouTube AI Agent Studio  ·  Video Pipeline\n")
+    print("\n🎬  Private Gravity  ·  Cinematic Fiction Pipeline\n")
 
     # ── 1. Research ───────────────────────────────────────────
-    banner("1 / 6  ·  Researching trending topic  [Gemini]")
-    research = research_topic(config.CHANNEL_DESCRIPTION)
-    print(f"\n  ✅  Topic : {research['topic']}")
+    banner("1 / 6  ·  Developing and selecting a story premise  [Gemini]")
+    research = research_topic(
+        config.CHANNEL_DESCRIPTION,
+        narrative_type=getattr(config, "NARRATIVE_TYPE", "auto"),
+        focus_angle=getattr(config, "PSYCHOLOGICAL_THEME", ""),
+        target_duration_minutes=getattr(config, "TARGET_DURATION_MINUTES", 15),
+    )
+    print(f"\n  ✅  Premise: {research['topic']}")
     print(f"      Title : {research['video_title']}")
     print(f"      Hook  : {research.get('hook_question', '')[:90]}")
-    with open(f"{config.OUTPUT_DIR}/research.json", "w") as f:
-        json.dump(research, f, indent=2)
+    atomic_write_json(f"{config.OUTPUT_DIR}/research.json", research)
 
     # ── 2. Script ─────────────────────────────────────────────
-    banner("2 / 6  ·  Writing script  [Gemini]")
-    script = write_script(research)
-    print(f"\n  ✅  {len(script['sections'])} sections written")
+    banner("2 / 6  ·  Character bible → outline → screenplay  [Gemini]")
+    script = write_script(
+        research,
+        target_duration_minutes=getattr(config, "TARGET_DURATION_MINUTES", 15),
+        narrative_review=getattr(config, "NARRATIVE_REVIEW_ENABLED", True),
+    )
+    print(f"\n  ✅  {len(script['sections'])} scenes written")
     for s in script["sections"]:
         words = len(s.get("narration", "").split())
         # Safely grab the title, or default to "Untitled" if the AI forgot it
         title = s.get("title", "Untitled") 
         print(f"      [{s.get('id', 9):02d}] {title:<42} {words:3d} words")
-    with open(f"{config.OUTPUT_DIR}/script.json", "w") as f:
-        json.dump(script, f, indent=2)
 
     # ── 3. Stock Images ───────────────────────────────────────
     banner("3 / 6  ·  Acquiring stock images  [Pixabay · Openverse]")
@@ -78,9 +84,10 @@ def run():
         "script":     script,
         "video_path": video_path,
     }
-    with open(f"{config.OUTPUT_DIR}/review_data.json", "w") as f:
-        json.dump({k: v for k, v in review_data.items() if k != "video_path"},
-                  f, indent=2)
+    atomic_write_json(
+        f"{config.OUTPUT_DIR}/review_data.json",
+        {k: v for k, v in review_data.items() if k != "video_path"},
+    )
 
     approved = start_review_server(review_data)
 

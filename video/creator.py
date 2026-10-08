@@ -1,7 +1,6 @@
 """
-Video Creator — Cinematic Edition (Normal) + Shorts Edition
-Normal  : Kurzgesagt-style 1920×1080, one image per section, Ken Burns,
-          animated title cards, bullet points, lower-third captions.
+Video Creator — Private Gravity Cinematic Edition + Shorts Edition
+Normal  : 1920×1080 story imagery, Ken Burns, restrained story text and subtitles.
 Shorts  : Fast-paced 1080×1920, image slideshow (cuts every 2-3 s),
           NO section-type labels, synced SRT captions burnt in,
           high-energy zoom pulses, gradient text overlay.
@@ -11,9 +10,10 @@ Runs fully offline: MoviePy 1.0.3 + Pillow + NumPy.
 import os, re, math
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
-from moviepy.editor import VideoClip, AudioFileClip, concatenate_videoclips
+from moviepy.editor import VideoClip, AudioFileClip, ColorClip, concatenate_videoclips
 
 import config
+from video.timeline import load_timeline, proportional_scene_durations, write_timeline
 
 # ── globals (overwritten per call) ────────────────────────────
 W   = config.VIDEO_WIDTH
@@ -293,7 +293,7 @@ def _render_hook(draw, section, t, duration):
     title = section.get("title", "")
     if t > 0.3:
         a = min(1.0, (t - 0.3) / 0.4)
-        _shadow_text(draw, (60, 50), "▶ FRACTURED TIMELINES",
+        _shadow_text(draw, (60, 50), f"▶ {config.CHANNEL_NAME.upper()}",
                      _load_font("regular", 24), fill=_alpha(C["accent"], a), shadow_offset=2)
     sentences = [s.strip() for s in narr.replace("...", "…").split(".") if s.strip()]
     first_two = ". ".join(sentences[:2]) + ("." if sentences else "")
@@ -418,7 +418,8 @@ BROLL_XFADE_DUR = float(getattr(config, "BROLL_XFADE_DUR",  1.2))
 
 
 def _make_clip(section, duration, bg_images, section_num, total_sections,
-               pan_dir=(1, 0), captions: list = None, section_start_t: float = 0.0):
+               pan_dir=(1, 0), captions: list = None, section_start_t: float = 0.0,
+               cinematic: bool = False):
     """
     Build a single section clip with:
       • B-roll image cycling every BROLL_INTERVAL seconds with smooth crossfade
@@ -449,7 +450,9 @@ def _make_clip(section, duration, bg_images, section_num, total_sections,
             pan_cur   = BROLL_PAN_DIRS[cur_idx % len(BROLL_PAN_DIRS)]
             cur_frame = _ken_burns(bg_images[cur_idx], img_t, BROLL_INTERVAL,
                                    pan_dir=pan_cur)
-            cur_frame = _apply_overlay(cur_frame)
+            opacity = (getattr(config, "CINEMATIC_OVERLAY_OPACITY", 0.38)
+                       if cinematic else None)
+            cur_frame = _apply_overlay(cur_frame, opacity)
 
             # Crossfade into next image during last BROLL_XFADE_DUR seconds
             xfade_start = BROLL_INTERVAL - BROLL_XFADE_DUR
@@ -463,7 +466,7 @@ def _make_clip(section, duration, bg_images, section_num, total_sections,
                 nxt_img_t = max(0.0, img_t - BROLL_INTERVAL)
                 nxt_frame = _ken_burns(bg_images[next_idx], nxt_img_t, BROLL_INTERVAL,
                                        pan_dir=pan_next)
-                nxt_frame = _apply_overlay(nxt_frame)
+                nxt_frame = _apply_overlay(nxt_frame, opacity)
                 frame_np  = (cur_frame.astype(np.float32) * (1.0 - alpha) +
                              nxt_frame.astype(np.float32) * alpha).astype(np.uint8)
             else:
@@ -472,11 +475,29 @@ def _make_clip(section, duration, bg_images, section_num, total_sections,
             frame_np = _gradient_bg(t)
             frame_np = _apply_overlay(frame_np, 0.3)
 
+        if cinematic:
+            # A fade through black consumes no extra timeline time, unlike an
+            # overlapping crossfade that shortens the combined scene duration.
+            fade = min(1.0, t / 0.35, max(0.0, duration - t) / 0.35)
+            frame_np = (frame_np.astype(np.float32) * fade).astype(np.uint8)
+
         frame = Image.fromarray(frame_np)
         draw  = ImageDraw.Draw(frame)
 
         # ── On-screen title / bullets / narration ─────────────────────────
-        if s_type == "hook":
+        if cinematic:
+            # Fiction mode avoids documentary cards, narration walls, bullets,
+            # lower thirds and progress UI. Only deliberate story text survives.
+            on_screen = section.get("on_screen_text", "").strip()
+            if on_screen and t < min(duration, 4.5):
+                font = _load_font("regular", 46)
+                lines = _wrap_text(draw, on_screen, font, W - 320)
+                for line_index, line in enumerate(lines[:3]):
+                    bbox = draw.textbbox((0, 0), line, font=font)
+                    x = (W - (bbox[2] - bbox[0])) // 2
+                    y = int(H * .18) + line_index * 60
+                    _shadow_text(draw, (x, y), line, font, C["white"], shadow_offset=3)
+        elif s_type == "hook":
             _render_hook(draw, section, t, duration)
         elif s_type == "cta":
             _render_cta(draw, section, t)
@@ -486,10 +507,11 @@ def _make_clip(section, duration, bg_images, section_num, total_sections,
             _render_content(draw, section, t, duration, section_num)
 
         # ── Lower-third caption bar (section caption_text field) ───────────
-        cap_alpha = 0.0
-        if t > 1.5:
-            cap_alpha = min(1.0, (t - 1.5) / 0.6)
-        frame = _draw_lower_third(frame, caption, cap_alpha, title)
+        if not cinematic:
+            cap_alpha = 0.0
+            if t > 1.5:
+                cap_alpha = min(1.0, (t - 1.5) / 0.6)
+            frame = _draw_lower_third(frame, caption, cap_alpha, title)
 
         # ── SRT subtitle cue (bottom-centre, 36px) ────────────────────────
         if captions:
@@ -499,8 +521,9 @@ def _make_clip(section, duration, bg_images, section_num, total_sections,
                 frame = _draw_normal_caption(frame, srt_text)
 
         # ── Progress bar ──────────────────────────────────────────────────
-        draw2 = ImageDraw.Draw(frame)
-        _draw_progress_bar(draw2, t / duration, section_num, total_sections)
+        if not cinematic:
+            draw2 = ImageDraw.Draw(frame)
+            _draw_progress_bar(draw2, t / duration, section_num, total_sections)
         return np.array(frame)
 
     return VideoClip(make_frame, duration=duration)
@@ -735,7 +758,7 @@ def _build_shorts_clip(all_images: list, total_duration: float,
         # ── Top brand strip ───────────────────────────────────
         draw       = ImageDraw.Draw(frame)
         font_brand = _load_font("bold", 30)
-        brand      = "▶ FRACTURED TIMELINES"
+        brand      = f"▶ {config.CHANNEL_NAME.upper()}"
         bbox       = draw.textbbox((0, 0), brand, font=font_brand)
         bw         = bbox[2] - bbox[0]
         draw.text(((W - bw) // 2, 50), brand, font=font_brand,
@@ -828,10 +851,27 @@ def create_video(script: dict, audio_path: str, output_dir: str,
     else:
         sections       = script["sections"]
         total_sections = len(sections)
+        cinematic = script.get("content_mode") == "cinematic_fiction"
+
+        # Attach audio first: its decoded duration is the renderer's clock.
+        audio = AudioFileClip(audio_path)
+        timeline_path = os.path.join(output_dir, "scene_timeline.json")
+        timeline = load_timeline(timeline_path)
+        timeline_scenes = timeline.get("scenes", []) if timeline else []
+        if (len(timeline_scenes) == len(sections)
+                and abs(float(timeline["total_duration"]) - audio.duration) <= 0.5):
+            durations = [float(scene["duration"]) for scene in timeline_scenes]
+            # Pin codec rounding to the exact decoded narration duration.
+            durations[-1] += audio.duration - sum(durations)
+        else:
+            print("   WARNING: Exact scene timeline missing or stale; using proportional fallback.")
+            durations = proportional_scene_durations(sections, audio.duration)
+            timeline = write_timeline(timeline_path, sections, durations)
 
         # Load SRT captions for burnt-in subtitles
         srt_path = os.path.join(output_dir, "narration.srt")
-        captions = _parse_srt(srt_path)
+        captions = (_parse_srt(srt_path)
+                    if getattr(config, "NORMAL_SUBTITLES_ENABLED", True) else [])
         if captions:
             print(f"   → {len(captions)} SRT cues loaded for normal video subtitles ✓")
         else:
@@ -841,9 +881,7 @@ def create_video(script: dict, audio_path: str, output_dir: str,
         clips           = []
         section_start_t = 0.0   # running global timestamp for SRT lookup
 
-        for i, section in enumerate(sections):
-            words    = len(section.get("narration", "").split())
-            duration = max(8.0, (words / 110) * 60)
+        for i, (section, duration) in enumerate(zip(sections, durations)):
             s_type   = section.get("section_type", "content")
             print(f"     [{section['id']:02d}] {section['title']:<42} {duration:5.1f}s  [{s_type}]")
 
@@ -863,21 +901,26 @@ def create_video(script: dict, audio_path: str, output_dir: str,
                 print(f"          ⚠ no images for section {section['id']} — gradient fallback")
 
             clip = _make_clip(section, duration, bg_images, i + 1, total_sections,
-                              captions=captions, section_start_t=section_start_t)
+                              captions=captions, section_start_t=section_start_t,
+                              cinematic=cinematic)
             clips.append(clip)
             section_start_t += duration   # advance global timestamp
 
-        print("\n   → Crossfading sections…")
-        final = clips[0]
-        for clip in clips[1:]:
-            final = _crossfade(final, clip, fade_dur=0.7)
+        print("\n   → Joining scenes with duration-preserving transitions…")
+        final = concatenate_videoclips(clips, method="compose")
 
         print("   → Attaching narration…")
-        audio = AudioFileClip(audio_path)
-        if audio.duration > final.duration:
-            audio = audio.subclip(0, final.duration)
-        else:
+        if abs(final.duration - audio.duration) > 0.5:
+            raise ValueError(
+                f"Video/audio timeline drift is {abs(final.duration - audio.duration):.3f}s"
+            )
+        if final.duration > audio.duration:
             final = final.subclip(0, audio.duration)
+        elif final.duration < audio.duration:
+            # Never trim narration for a sub-frame/codec discrepancy.
+            tail = ColorClip((W, H), color=(0, 0, 0),
+                             duration=audio.duration - final.duration)
+            final = concatenate_videoclips([final, tail], method="compose")
         final = final.set_audio(audio)
 
         output_path = os.path.join(output_dir, "final_video.mp4")

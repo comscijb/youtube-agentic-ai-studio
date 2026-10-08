@@ -2,9 +2,9 @@
 
 <img src="docs/screenshots/banner.png" alt="YouTube AI Agent Studio" width="100%">
 
-# 🎬 AI-Powered Automated Faceless YouTube Studio
+# 🎬 Private Gravity — Cinematic Fiction Studio
 
-**An automated AI pipeline that researches, scripts, narrates, animates, and uploads faceless YouTube videos — from a single command.**
+**A local production pipeline for original cinematic psychological fiction: premise development, character continuity, scene writing, narration, licensed stock acquisition, rendering, review, and optional YouTube upload.**
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![Gemini](https://img.shields.io/badge/AI-Google%20Gemini-4285F4?style=flat-square&logo=google&logoColor=white)](https://aistudio.google.com)
@@ -21,13 +21,14 @@
 
 | Feature | Details |
 |---|---|
-| 🧠 **AI Research** | Gemini scans for trending topics tailored to your channel niche |
-| ✍️ **Script Writing** | Full narrated script with hook, sections, and CTA — in JSON |
+| 💡 **Story Development** | Gemini compares weighted premises or develops an exact user premise into a validated story brief |
+| 🎭 **Narrative Architecture** | Versioned character bible and causal outline preserve identity, rules, chronology, and escalation |
+| ✍️ **Scene Writing** | Scene-batched 12–20 minute screenplay (15 default) or 40–60 second Short |
 | 🎙️ **Free Voice** | Microsoft Edge TTS (no API key, no cost, word-level timing) |
 | 🖼️ **Stock Images** | Pixabay primary + CC0/PDM Openverse fallback, with provenance |
-| 🎞️ **Animated Video** | Ken Burns zoom, smooth crossfades, captions, progress bars |
+| 🎞️ **Cinematic Video** | Ken Burns motion, restrained overlays, subtitles, and duration-preserving transitions |
 | 📱 **Shorts Support** | Generates vertical 9:16 Shorts alongside the main video |
-| 🕵️ **Human Review** | Local web dashboard to watch and approve before publishing |
+| 🕵️ **Human Review** | Inspect the brief, character bible, outline, screenplay, deterministic checks, and optional editorial review |
 | 🚀 **Auto Upload** | Publishes to YouTube with SEO tags, description, and thumbnail |
 | 🔄 **Smart Fallback** | Discovers accessible Gemini text models before selecting fallbacks |
 | 🎵 **Background Music** | Drop MP3s in `music library/` — auto-looped to fit video length |
@@ -45,16 +46,13 @@
 
 ---
 
-## 🎬 Live Example — Built With This Tool
+## Narrative modes
 
-This repo powers **[Eldritch Lore](https://www.youtube.com/@EldritchLore)** — a real YouTube channel running entirely on this pipeline.
+- Realistic psychological fiction
+- Philosophical thought experiment
+- Dark human parable
 
-[![YouTube Subscribers](https://img.shields.io/youtube/channel/subscribers/UCqDCtCHo22_6KtJ0rkDFG5g?style=for-the-badge&logo=youtube&label=Eldritch%20Lore&color=FF0000)](https://www.youtube.com/@EldritchLore)
-
-> "What if Napoleon had nukes? What if Earth was flat... and spinning?"
-> Every video on this channel was researched, scripted, narrated, and uploaded using exactly this code.
-
-**[→ See what this tool can actually produce](https://www.youtube.com/@TheFracturedTimelines)**
+Psychological and philosophical ideas are expressed through character choices and consequences. The production contract explicitly rejects explainer sections, lesson bullets, formulaic retention language, and fabricated factual authority.
 
 ---
 
@@ -74,7 +72,7 @@ cp .env.example .env
 
 # 4. Run the GUI
 python gui.py
-# → Opens at http://localhost:7842
+# → Opens at http://localhost:7070
 
 # — OR — run the pipeline directly from the terminal
 python pipeline.py
@@ -89,18 +87,18 @@ python pipeline.py
 The pipeline runs 6 sequential phases:
 
 ```
-python pipeline.py  ──►  Research  ──►  Script  ──►  Narration
-                                                          │
-              YouTube ◄── Upload ◄── Review ◄── Video ◄──┘
+Story brief ─► Character bible ─► Causal outline ─► Scene batches
+                                                        │
+YouTube ◄── Approval ◄── Packaging ◄── Video ◄── Exact scene audio timeline
 ```
 
 | Phase | Agent | What it does |
 |---|---|---|
-| 1 · Research | `agents/researcher.py` | Gemini brainstorms trending topics for your niche and outputs a structured brief |
-| 2 · Script | `agents/scriptwriter.py` | Expands the brief into a full narrated script with image queries per section |
-| 3 · Narration | `video/narrator.py` | Edge-TTS converts the script to a cinematic MP3 voiceover |
+| 1 · Story brief | `agents/researcher.py` | Scores multiple premises or preserves an exact override, then writes schema v2 |
+| 2 · Narrative build | `agents/scriptwriter.py` | Creates/reuses the character bible and outline, then writes bounded scene batches |
+| 3 · Narration | `video/narrator.py` | Renders each scene separately and writes a cumulative exact timeline and global SRT |
 | 4 · Images | `video/stock.py` | Acquires validated JPEGs from local assets, Pixabay, then Openverse |
-| 5 · Video | `video/creator.py` | Renders animated slides with Ken Burns, crossfades, captions, and music |
+| 5 · Video | `video/creator.py` | Uses the exact audio timeline; fiction mode removes documentary cards, bullets, lower thirds, and progress UI |
 | 6 · Review | `review/app.py` | Spins up a local dashboard — you watch and approve before anything is published |
 | 7 · Upload | `uploader/youtube.py` | Publishes to YouTube with full SEO metadata on your approval |
 
@@ -131,11 +129,13 @@ youtube-ai-agent/
 │
 ├── agents/
 │   ├── gemini_client.py        ← Gemini discovery, diagnostics and structured fallback
-│   ├── researcher.py           ← Topic research agent
-│   └── scriptwriter.py        ← Script writing agent
+│   ├── narrative.py            ← Schema v2, deterministic validation, hashes and invalidation
+│   ├── researcher.py           ← Story Development Agent
+│   └── scriptwriter.py         ← Bible, outline, scene batches and quality review
 │
 ├── video/
 │   ├── narrator.py             ← Edge-TTS voiceover generator
+│   ├── timeline.py             ← Exact per-scene audio/video timing contract
 │   ├── stock.py                ← Pixabay/Openverse provider manager
 │   ├── creator.py              ← Full video renderer (Ken Burns, captions, etc.)
 │   └── music.py                ← Background music mixer
@@ -153,8 +153,12 @@ youtube-ai-agent/
 ├── music library/              ← Drop your MP3/WAV tracks here
 │
 └── output/                     ← Auto-generated (gitignored)
-    ├── research.json
+    ├── story_brief.json
+    ├── character_bible.json
+    ├── story_outline.json
     ├── script.json
+    ├── narrative_review.json
+    ├── scene_timeline.json
     ├── asset_manifest.json
     ├── narration.mp3
     ├── images/
@@ -190,6 +194,28 @@ AI Model → Check Available Models**, or run the explicit diagnostic:
 python diagnose_gemini.py
 ```
 
+## Tests and opt-in narrative smoke test
+
+The default suite is offline and uses mocks/local fixtures:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+The Private Gravity smoke test is deliberately skipped unless explicitly
+enabled. It uses real Gemini calls to create an exact short premise, character
+bible, outline, complete Shorts screenplay, and saved schema-v2 artifacts. It
+does not render, upload, or publish anything.
+
+```powershell
+$env:RUN_PRIVATE_GRAVITY_SMOKE_TEST="1"
+python -m unittest tests.test_narrative.PrivateGravityIntegrationSmokeTest -v
+```
+
+Unset the variable afterward if you do not want later test runs to consume API
+quota. Provider-specific Gemini and Pixabay smoke tests retain their own opt-in
+flags documented in the test output.
+
 ---
 
 ## 🔑 API Keys and Services
@@ -212,12 +238,14 @@ Check each provider's current pricing and project limits before production use.
 Edit `config.py` to make the output yours:
 
 ```python
-# 1. Describe your channel — the more specific, the better the topics
+# 1. Private Gravity narrative defaults
 CHANNEL_DESCRIPTION = """
-An educational channel covering the psychology of decision-making.
-Target audience: adults 25-40 who enjoy Lex Fridman and Hidden Brain.
+A cinematic anthology exploring modern psychology through original fiction.
 """
-CHANNEL_NAME = "Mind Mechanics"
+CHANNEL_NAME = "Private Gravity"
+NARRATIVE_TYPE = "auto"
+TARGET_DURATION_MINUTES = 15
+NARRATIVE_REVIEW_ENABLED = True
 
 # 2. Pick your voice
 VOICE_ID = "en-GB-RyanNeural"   # British, deep, cinematic
@@ -231,7 +259,7 @@ COLORS = {
 
 # 4. Video style
 CROSSFADE_DURATION = 0.7   # image transition smoothness
-OVERLAY_OPACITY    = 0.62  # how dark the image overlay is
+CINEMATIC_OVERLAY_OPACITY = 0.38
 ```
 
 ---
@@ -254,12 +282,10 @@ Local rendering is free, while hosted-service cost depends on current provider t
 <details>
 <summary><b>How long does one video take to generate?</b></summary>
 
-On a mid-range machine (i7 + 16GB RAM):
-- Research + Script: ~30 seconds
-- Narration: ~10 seconds
-- Image downloads: ~20 seconds
-- Video render (10 min video): ~3–8 minutes depending on `RENDER_PRESET`
-- Upload: ~2–5 minutes depending on internet speed
+Runtime depends on Gemini latency, story length, TTS, stock providers and CPU.
+A 12–20 minute episode requires several bounded model calls (brief, bible,
+outline, scene batches, plus optional review) and per-scene TTS. Rendering is
+normally the longest local phase. No upload occurs before human approval.
 
 </details>
 
@@ -316,13 +342,6 @@ Pull requests are welcome! Please open an issue first to discuss major changes.
 3. Commit: `git commit -m 'Add my feature'`
 4. Push: `git push origin feature/my-feature`
 5. Open a Pull Request
-
----
-
-## 🌍 Made With This Tool
-
-**[Eldritch Lore](https://www.youtube.com/@EldritchLore)** — science, history, and "what if" scenarios.
-Running 100% on this pipeline. Subscribe to see it in action.
 
 ---
 

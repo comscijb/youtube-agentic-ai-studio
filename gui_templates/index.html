@@ -227,7 +227,7 @@ input[type=range]{width:100%;accent-color:var(--primary)}
     <div class="stage pending" id="stage-research">
       <div class="stage-icon">1</div>
       <div>
-        <div class="stage-name">Research</div>
+        <div class="stage-name">Story Brief</div>
       </div>
     </div>
     <div class="stage pending" id="stage-script">
@@ -296,45 +296,67 @@ input[type=range]{width:100%;accent-color:var(--primary)}
 
             <!-- AI mode panel -->
             <div id="panel-ai">
-              <div class="field-label" style="margin-bottom:4px">Focus Theme</div>
+              <div class="field-label" style="margin-bottom:4px">Psychological Theme</div>
               <select id="focus-angle-select" style="margin-bottom:6px"
                       onchange="document.getElementById('focus-angle-custom').style.display=this.value==='__custom__'?'block':'none'">
                 <option value="">🎲 Random (AI surprises you)</option>
-                <option value="Theoretical Physics &amp; Time Travel">⏱ Theoretical Physics &amp; Time Travel</option>
-                <option value="The Dark Forest Theory &amp; Aliens">👽 Dark Forest Theory &amp; Aliens</option>
-                <option value="Existential Human Psychology &amp; Illusions">🧠 Existential Psychology &amp; Illusions</option>
-                <option value="Frightening AI Futures &amp; Simulation Theory">🤖 Frightening AI Futures</option>
-                <option value="Mind-bending Mathematical Paradoxes">♾ Mathematical Paradoxes</option>
-                <option value="The limits of Human Biology &amp; Immortality">🧬 Human Biology &amp; Immortality</option>
-                <option value="Quantum Mechanics &amp; Alternate Realities">⚛ Quantum Mechanics &amp; Alternate Realities</option>
-                <option value="Cosmic scale, Black Holes, and the end of the Universe">🌌 Black Holes &amp; End of Universe</option>
-                <option value="Neuroscience &amp; the Mystery of Consciousness">🔬 Neuroscience &amp; Consciousness</option>
-                <option value="Ancient Civilisations &amp; Lost History">🏛 Ancient Civilisations &amp; Lost History</option>
-                <option value="Cutting-edge Biotechnology &amp; Genetic Engineering">🧪 Biotech &amp; Genetic Engineering</option>
-                <option value="The Future of Space Colonisation">🚀 Future of Space Colonisation</option>
+                <option value="Loneliness and belonging">Loneliness &amp; belonging</option>
+                <option value="Status and social comparison">Status &amp; social comparison</option>
+                <option value="Identity and authenticity">Identity &amp; authenticity</option>
+                <option value="Ambition and sacrifice">Ambition &amp; sacrifice</option>
+                <option value="Regret and alternative lives">Regret &amp; alternative lives</option>
+                <option value="Approval and rejection">Approval &amp; rejection</option>
+                <option value="Envy and resentment">Envy &amp; resentment</option>
+                <option value="Love, intimacy, and vulnerability">Love &amp; vulnerability</option>
+                <option value="Mortality and memory">Mortality &amp; memory</option>
+                <option value="Meaning and existential uncertainty">Meaning &amp; uncertainty</option>
+                <option value="Perfectionism and control">Perfectionism &amp; control</option>
+                <option value="Human irrationality and self-deception">Irrationality &amp; self-deception</option>
                 <option value="__custom__">✏️ Custom theme…</option>
               </select>
               <input type="text" id="focus-angle-custom"
                      placeholder="Describe your custom theme…"
                      style="display:none;margin-bottom:6px">
-              <div class="help-text">AI will pick the best specific topic within this theme, avoiding banned topics.</div>
+              <div class="help-text">The Story Development Agent will compare weighted original premises in this theme.</div>
             </div>
 
             <!-- Manual mode panel -->
             <div id="panel-manual" style="display:none">
-              <div class="field-label" style="margin-bottom:4px">Exact Topic</div>
+              <div class="field-label" style="margin-bottom:4px">Exact Story Premise</div>
               <input type="text" id="topic-input"
-                     placeholder="e.g. Why black holes might be the key to time travel">
-              <div class="help-text">Gemini will write a script about <strong>this exact topic</strong> — no creative substitution.</div>
+                     placeholder="e.g. A man secretly attends the retirement party held for his invented twin">
+              <div class="help-text">The story will preserve <strong>this exact premise</strong> without creative substitution.</div>
             </div>
 
           </div>
 
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <div class="field-label">Narrative Type</div>
+              <select id="narrative-type">
+                <option value="auto">Auto-select</option>
+                <option value="realistic_psychological_fiction">Realistic psychological fiction</option>
+                <option value="philosophical_thought_experiment">Philosophical thought experiment</option>
+                <option value="dark_human_parable">Dark human parable</option>
+              </select>
+            </div>
+            <div>
+              <div class="field-label">Target Duration</div>
+              <select id="target-duration">
+                <option value="12">12 minutes</option>
+                <option value="15" selected>15 minutes</option>
+                <option value="18">18 minutes</option>
+                <option value="20">20 minutes</option>
+              </select>
+            </div>
+          </div>
+          <label class="step-check"><input type="checkbox" id="narrative-review" checked> Editorial quality review (one Gemini call)</label>
+
           <div>
             <div class="field-label">Steps to run</div>
             <div class="steps-grid">
-              <label class="step-check"><input type="checkbox" id="step-research" checked> 🔍 Research</label>
-              <label class="step-check"><input type="checkbox" id="step-script" checked> ✍️ Script</label>
+              <label class="step-check"><input type="checkbox" id="step-research" checked> 💡 Story Brief</label>
+              <label class="step-check"><input type="checkbox" id="step-script" checked> ✍️ Bible + Outline + Scenes</label>
               <label class="step-check"><input type="checkbox" id="step-images" checked> 🖼 Images</label>
               <label class="step-check"><input type="checkbox" id="step-narration" checked> 🎙 Narration</label>
               <label class="step-check"><input type="checkbox" id="step-music" checked> 🎵 Music <span style="font-size:10px;opacity:0.6">(library)</span></label>
@@ -373,7 +395,7 @@ input[type=range]{width:100%;accent-color:var(--primary)}
                 <span style="font-size:16px">📺</span>
                 <span>
                   <div style="font-weight:700;font-size:12px">Normal Video</div>
-                  <div style="font-size:10px;color:var(--muted)">16:9 · 6-8 min · 1920×1080</div>
+                  <div style="font-size:10px;color:var(--muted)">16:9 · 12-20 min · 1920×1080</div>
                 </span>
               </button>
               <button id="fmt-shorts" class="fmt-btn" onclick="setFormat('shorts')">
@@ -543,6 +565,10 @@ input[type=range]{width:100%;accent-color:var(--primary)}
               <input type="password" id="s-gemini" autocomplete="new-password" placeholder="Leave blank to keep current key">
               <div class="help-text" id="s-gemini-status"></div>
             </div>
+            <details style="margin-top:8px">
+              <summary class="field-label" style="cursor:pointer">Story Development Artifacts</summary>
+              <pre id="story-artifacts" style="white-space:pre-wrap;max-height:420px;overflow:auto;font-size:10px;color:var(--muted);margin-top:8px"></pre>
+            </details>
             <div class="settings-field">
               <div class="field-label">Pixabay API Key</div>
               <input type="password" id="s-pixabay" autocomplete="new-password" placeholder="Leave blank to keep current key">
@@ -741,11 +767,11 @@ input[type=range]{width:100%;accent-color:var(--primary)}
           <div class="settings-header" onclick="toggleSection(this)">🚫 Banned Topics <span class="caret">▾</span></div>
           <div class="settings-body">
             <div class="help-text" style="margin-bottom:4px">
-              Topics listed here are excluded from AI research. Add a topic after you make a video so you never repeat yourself.<br>
+              Premises listed here are excluded from automatic story development. Add one after producing it to avoid repetition.<br>
               Built-in banned: <em>Boltzmann Brain, Simulation Theory, Quantum Immortality</em> — always applied, don't list them again.
             </div>
             <textarea id="s-banned-topics" rows="6" style="font-size:12px;font-family:monospace"
-                      placeholder="One topic per line, e.g:&#10;The Fermi Paradox&#10;Dark Matter&#10;String Theory"></textarea>
+                      placeholder="One used premise per line"></textarea>
             <div style="display:flex;align-items:center;gap:10px">
               <button class="btn btn-ghost" style="font-size:12px;padding:6px 14px" onclick="saveBannedTopics()">💾 Save Banned Topics</button>
               <span id="banned-msg" style="font-size:12px;color:var(--green);display:none">✓ Saved</span>
@@ -844,9 +870,10 @@ function setFormat(type) {
   const manualInput = document.getElementById('topic-input');
   if (manualInput) {
     manualInput.placeholder = type === 'shorts'
-      ? 'e.g. Why the universe has no centre'
-      : 'e.g. Why black holes might be the key to time travel';
+      ? 'e.g. A woman receives a voicemail from the life she refused'
+      : 'e.g. A man secretly attends the retirement party held for his invented twin';
   }
+  document.getElementById('target-duration').disabled = type === 'shorts';
 }
 
 function startGeneration() {
@@ -876,10 +903,14 @@ function startGeneration() {
   clearConsole();
   setRunning(true);
 
+  const narrative_type = document.getElementById('narrative-type').value;
+  const target_duration = Number(document.getElementById('target-duration').value);
+  const narrative_review = document.getElementById('narrative-review').checked;
   fetch('/api/run', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({steps, topic, focus_angle, video_type: _videoType})
+    body: JSON.stringify({steps, topic, focus_angle, video_type: _videoType,
+                          narrative_type, target_duration, narrative_review})
   }).then(r => r.json()).then(d => {
     if (!d.ok) { _log('Error: '+d.error, 'log-error'); setRunning(false); return; }
     _log('Pipeline started…');
@@ -1042,9 +1073,16 @@ function loadReviewData() {
     (d.sections||[]).forEach(s => {
       const el = document.createElement('div');
       el.style.cssText='padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);font-size:12px';
-      el.innerHTML = `<span style="color:var(--accent);font-weight:600">[${s.id}]</span> <span style="color:var(--text)">${s.title||''}</span><div style="color:var(--muted);margin-top:2px;font-size:11px">${(s.narration||'').substring(0,80)}…</div>`;
+      el.innerHTML = `<span style="color:var(--accent);font-weight:600">[${s.id}]</span> <span style="color:var(--text)">${s.title||''}</span><button class="btn btn-ghost" style="float:right;padding:2px 7px;font-size:10px" onclick="regenerateScene(${s.id})">↻ Scene</button><div style="color:var(--muted);margin-top:2px;font-size:11px">${(s.narration||'').substring(0,80)}…</div>`;
       si.appendChild(el);
     });
+    const artifacts = {
+      story_brief: d.story_brief || {},
+      character_bible: d.character_bible || {},
+      story_outline: d.story_outline || {},
+      narrative_review: d.narrative_review || {}
+    };
+    document.getElementById('story-artifacts').textContent = JSON.stringify(artifacts, null, 2);
     _dirty = false;
     document.getElementById('save-btn').disabled = true;
   });
@@ -1240,6 +1278,18 @@ function loadSettings() {
     const builtin = ['The Boltzmann Brain', 'Simulation Theory', 'Quantum Immortality'];
     const userTopics = (d.topics || []).filter(t => !builtin.includes(t));
     document.getElementById('s-banned-topics').value = userTopics.join('\n');
+  });
+}
+
+function regenerateScene(sceneId) {
+  if (!confirm(`Regenerate scene ${sceneId}? Narration, its stock assets and video will need to be rebuilt.`)) return;
+  fetch('/api/regenerate-scene', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({scene_id:sceneId})
+  }).then(async r => ({ok:r.ok, data:await r.json()})).then(({ok,data}) => {
+    if (!ok || !data.ok) { alert(data.error || 'Scene regeneration failed'); return; }
+    loadReviewData();
+    alert('Scene regenerated. Run Images, Narration and Video to rebuild derived media.');
   });
 }
 

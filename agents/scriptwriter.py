@@ -1,282 +1,288 @@
-"""
-Script Writer Agent — uses shared Gemini client with model fallback chain.
-"""
+"""Private Gravity character, outline and scene-writing pipeline."""
+from __future__ import annotations
+
 import json
-import re
+import os
+from pathlib import Path
+
+import config
 from agents.gemini_client import generate
+from agents.narrative import (
+    CONTENT_MODE,
+    SCHEMA_VERSION,
+    NarrativeValidationError,
+    atomic_write_json,
+    deterministic_review,
+    extract_json,
+    load_json,
+    stable_hash,
+    validate_character_bible,
+    validate_outline,
+    validate_script,
+    validate_story_brief,
+)
 
 
-def write_script(research: dict, video_type: str = "normal") -> dict:
-    """
-    Generates a narrated script for a YouTube video or YouTube Short.
-    video_type: "normal" (6-8 min, 9 sections) | "shorts" (50-60 sec, 3 sections)
-    Returns structured JSON with sections, each containing narration + image_query.
-    """
-    if video_type == "shorts":
-        return _write_shorts_script(research)
-
-    key_points_str = "\n".join(f"  {i+1}. {p}" for i, p in enumerate(research["key_points"]))
-
-    prompt = f"""You are the lead scriptwriter for a viral science YouTube channel (think Kurzgesagt, Veritasium, Vsauce).
-
-Video topic: {research["topic"]}
-Title: {research["video_title"]}
-Core hook question: {research.get("hook_question", "")}
-Key points to cover:
-{key_points_str}
-
-Write a GRIPPING, cinematic 6-8 minute script. Non-negotiable rules:
-
-PACING RULES (survival against the YouTube 2-minute drop):
-- Section 4 MUST open with a pattern-break re-hook: "But here's where it gets REALLY weird…"
-  or "Wait — everything I just told you is only HALF the story." This re-hooks viewers at ~90s.
-- Section 6 MUST open with a second re-hook: a sudden gear-shift ("So why does any of this matter?
-  Let me show you something that will change how you see the world.") This catches the 3-min drop.
-- Use OPEN LOOPS: pose a specific question in section 2 or 3 ("You might wonder: X.") and answer
-  it in section 5 or 6 — this forces viewers to stay for the payoff.
-- Vary sentence length: punchy 4-word sentences followed by longer ones. Never three long sentences in a row.
-- Use "But wait.", "Here's the thing.", "Stay with me." to reset attention.
-
-VISUAL RULES:
-- Each section needs 3 distinct image queries (image_query, image_query_2, image_query_3).
-  These are used for B-roll cuts every 8-12 seconds within the section. Make them visually different:
-  wide shot → close-up → abstract or concept art. NOT three variations of the same thing.
-
-Respond with ONLY a valid JSON object. No markdown fences, no extra text:
-
-{{
-  "title": "{research['video_title']}",
-  "description": "{research.get('description', '')}",
-  "tags": {json.dumps(research.get('tags', []))},
-  "sections": [
-    {{
-      "id": 1,
-      "section_type": "hook",
-      "title": "Short, punchy on-screen title — NOT 'The Hook'",
-      "narration": "Open with an impossible statement or visceral question that stops the scroll. 3-4 sentences. End on an open question that section 2 will tease but section 5 will answer.",
-      "image_query": "dramatic wide establishing shot matching the topic",
-      "image_query_2": "close-up detail or human reaction shot",
-      "image_query_3": "abstract or cosmic concept matching the mood",
-      "bullet_points": [],
-      "caption_text": "Short punchy caption shown on screen",
-      "duration_seconds": 25
-    }},
-    {{
-      "id": 2,
-      "section_type": "intro",
-      "title": "On-screen title — NOT 'Setting the Stage'",
-      "narration": "Establish context and scale. Pose the open-loop question explicitly: 'Here is the question we need to answer: [question].' Promise the viewer the answer is coming and it will change everything. 4-5 sentences.",
-      "image_query": "scale or size comparison dramatic wide shot",
-      "image_query_2": "scientists or researchers at work close-up",
-      "image_query_3": "data visualization or diagram concept",
-      "bullet_points": ["The open question we will answer", "Why the scale matters", "What most people get wrong"],
-      "caption_text": "What we'll explore today",
-      "duration_seconds": 40
-    }},
-    {{
-      "id": 3,
-      "section_type": "content",
-      "title": "On-screen title — NOT 'First Revelation'",
-      "narration": "First deep explanation. Use a concrete analogy ('Imagine if…'). Build simple → complex. 5-7 sentences. End with a setup that makes section 4 feel inevitable.",
-      "image_query": "specific concept matching this section — dramatic wide",
-      "image_query_2": "close-up detail of the concept",
-      "image_query_3": "abstract or metaphorical visual for the analogy used",
-      "bullet_points": ["Core fact A", "Core fact B — the surprising part"],
-      "caption_text": "The first mind-blowing fact",
-      "duration_seconds": 70
-    }},
-    {{
-      "id": 4,
-      "section_type": "re_hook",
-      "title": "On-screen title — a gear-shift title like 'But Wait.' or 'The Twist Nobody Sees'",
-      "narration": "MANDATORY: Open with a re-hook line like 'But here's where it gets REALLY weird…' or 'Wait — everything I just said is only half the story.' Then deliver the counterintuitive twist. The viewer who almost dropped off at 90 seconds just got pulled back. 5-7 sentences.",
-      "image_query": "dramatic reveal or twist — light breaking through darkness",
-      "image_query_2": "shocked or awed human expression or reaction",
-      "image_query_3": "abstract visual representing a paradigm shift",
-      "bullet_points": ["What you thought was true", "What is actually true — the twist"],
-      "caption_text": "Nothing is what it seems",
-      "duration_seconds": 70
-    }},
-    {{
-      "id": 5,
-      "section_type": "content",
-      "title": "On-screen title — NOT 'Going Deeper'",
-      "narration": "The deeper layer. MANDATORY: answer the open-loop question posed in section 2 here. 'Remember the question I asked earlier? Here is the answer — and it's stranger than you imagined.' Then the implications. 5-7 sentences.",
-      "image_query": "the answer or resolution concept — dramatic and clear",
-      "image_query_2": "scientific or mathematical concept close-up",
-      "image_query_3": "wide cosmic or civilizational scale shot",
-      "bullet_points": ["The answer to the open question", "Implication A", "Implication B"],
-      "caption_text": "The rabbit hole goes deeper",
-      "duration_seconds": 70
-    }},
-    {{
-      "id": 6,
-      "section_type": "re_hook",
-      "title": "On-screen title — a second gear-shift like 'And It Gets Worse.' or 'The Part Nobody Talks About'",
-      "narration": "MANDATORY: Second re-hook at the 3-minute mark. Open with a sudden gear-shift: 'So why does any of this actually matter? Let me show you something that changes everything.' Then hit the real-world human stakes hard. 5-6 sentences.",
-      "image_query": "human civilization or society wide shot dramatic",
-      "image_query_2": "technology or infrastructure close-up",
-      "image_query_3": "individual human face or hands — personal scale",
-      "bullet_points": ["Why this affects YOU personally", "The consequence most people ignore", "What happens if we do nothing"],
-      "caption_text": "What this means for all of us",
-      "duration_seconds": 65
-    }},
-    {{
-      "id": 7,
-      "section_type": "content",
-      "title": "On-screen title — a philosophical or existential angle",
-      "narration": "The existential dimension. Make the viewer feel the scale of what this means. What question does this leave unanswered? What do the smartest experts disagree on? 4-6 sentences. End with a rhetorical question that leads into the conclusion.",
-      "image_query": "cosmos or infinite space — awe-inspiring wide",
-      "image_query_2": "lone human figure against vast landscape or sky",
-      "image_query_3": "philosophical or abstract concept — light or shadow",
-      "bullet_points": ["The big unanswered question", "What experts disagree on"],
-      "caption_text": "The question that keeps scientists up at night",
-      "duration_seconds": 60
-    }},
-    {{
-      "id": 8,
-      "section_type": "conclusion",
-      "title": "On-screen title — a satisfying payoff title",
-      "narration": "Bring it home. Three punchy takeaways. Callback to the opening hook ('Remember how I asked…? Now you know.'). End with a direct question for the comments — one that every viewer has a personal answer to.",
-      "image_query": "hope or breakthrough — light emerging from darkness",
-      "image_query_2": "discovery or revelation — close-up of something revealed",
-      "image_query_3": "forward-looking future technology or cosmos",
-      "bullet_points": ["Core truth #1 — punchy and memorable", "Core truth #2 — the twist payoff", "Core truth #3 — the call to think"],
-      "caption_text": "What have we learned?",
-      "duration_seconds": 50
-    }},
-    {{
-      "id": 9,
-      "section_type": "cta",
-      "title": "On-screen title — e.g. 'Join the Journey'",
-      "narration": "We drop a new mind-bending video every week. If this changed how you see the world, subscribe — and hit the bell so you never miss one. Drop your answer in the comments: [specific question from the video]. I read every single one.",
-      "image_query": "space stars infinite universe night sky",
-      "image_query_2": "community or crowd united by curiosity",
-      "image_query_3": "cosmic overview shot — earth from space",
-      "bullet_points": [],
-      "caption_text": "New video every week",
-      "duration_seconds": 18
-    }}
-  ]
-}}
-
-IMPORTANT:
-- image_query / image_query_2 / image_query_3 must be VISUALLY DISTINCT from each other (wide → close → abstract).
-- Use SPECIFIC stock-image search strings (e.g. "black hole accretion disk simulation" not just "space").
-- Narration for sections 4 and 6 MUST start with the mandatory re-hook lines as described.
-- The open-loop question from section 2 MUST be answered in section 5.
-- Every narration field must contain COMPLETE, broadcast-ready sentences — no placeholders.
-- The entire script must feel like Kurzgesagt wrote it: cinematic, urgent, human."""
-
-    print("   → Writing script with Gemini...")
+def _generate_json(prompt: str, label: str, validator=None) -> dict:
+    """Generate structured data with one bounded semantic repair attempt."""
     raw = generate(prompt)
-    raw = re.sub(r"^```(?:json)?", "", raw).strip()
-    raw = re.sub(r"```$", "", raw).strip()
+    try:
+        value = extract_json(raw, label)
+        return validator(value) if validator else value
+    except (NarrativeValidationError, ValueError, KeyError, TypeError) as exc:
+        repair = f"""Repair the following incomplete or malformed response into ONE valid,
+complete JSON object. Preserve its story decisions. Do not add commentary or markdown.
+Required artifact: {label}. Validation problem: {exc}
 
-    match = re.search(r"\{[\s\S]*\}", raw)
-    if not match:
-        raise ValueError(f"Scriptwriter returned no JSON.\n\nRaw:\n{raw[:600]}")
+ORIGINAL REQUEST:
+{prompt[:14000]}
 
-    script = json.loads(match.group())
+RESPONSE TO REPAIR:
+{raw[:10000]}"""
+        value = extract_json(generate(repair), f"repaired {label}")
+        return validator(value) if validator else value
 
-    if "sections" not in script or len(script["sections"]) < 4:
-        raise ValueError("Script returned too few sections.")
 
+def _cached(path: Path, source_hash: str, validator, *args):
+    value = load_json(path)
+    if not value or value.get("source_hash") != source_hash:
+        return None
+    try:
+        return validator(value, *args)
+    except (NarrativeValidationError, KeyError, TypeError):
+        return None
+
+
+def _character_bible(brief: dict, output: Path, force: bool) -> dict:
+    source_hash = stable_hash(brief)
+    path = output / "character_bible.json"
+    if not force:
+        cached = _cached(path, source_hash, validate_character_bible)
+        if cached:
+            return cached
+    prompt = f"""You are the character architect for Private Gravity. Build a compact,
+production-ready character bible for this story brief:
+{json.dumps(brief, ensure_ascii=False)}
+
+Return ONLY JSON: {{"characters": [...], "speculative_rules": [...]}}.
+Every character needs character_id (lowercase snake_case), name, role, age, background,
+personality, core_desire, underlying_need, central_fear, psychological_wound,
+internal_contradiction, behavioral_patterns, relationships, initial_state, development_arc,
+final_state, visual_identity, distinctive_details. Define exactly one protagonist. Keep the cast
+small and each visual identity stable. If the premise is speculative, speculative_rules must be
+clear and consistent; otherwise use an empty list."""
+    bible = _generate_json(
+        prompt, "character bible",
+        lambda value: validate_character_bible(value, source_hash),
+    )
+    bible["source_hash"] = source_hash
+    atomic_write_json(path, bible)
+    return bible
+
+
+def _outline(brief: dict, bible: dict, video_type: str, target_minutes: float,
+             output: Path, force: bool) -> dict:
+    source_hash = stable_hash({"brief": brief, "bible": bible, "video_type": video_type,
+                               "target_minutes": target_minutes})
+    path = output / "story_outline.json"
+    if not force:
+        cached = _cached(path, source_hash, validate_outline, bible)
+        if cached:
+            return cached
+    wpm = int(getattr(config, "NARRATION_WPM", 125))
+    target_words = 110 if video_type == "shorts" else round(target_minutes * wpm)
+    scene_count = 4 if video_type == "shorts" else max(8, min(14, round(target_minutes * .75)))
+    prompt = f"""You are the narrative architect for Private Gravity. Create a causal scene outline.
+STORY BRIEF: {json.dumps(brief, ensure_ascii=False)}
+CHARACTER BIBLE: {json.dumps(bible, ensure_ascii=False)}
+FORMAT: {video_type}; TARGET: {target_words} narrated words across exactly {scene_count} scenes.
+
+Return ONLY JSON {{"scenes": [...]}}. Each scene requires scene_id (s01 etc.), order,
+title, narrative_function, summary, setting, characters_present (IDs from the bible),
+dramatic_function, emotional_turn, causal_link to the next scene, target_words,
+visual_direction, and image_queries (3 concrete stock-search phrases centered on settings,
+objects, gestures, environments or silhouettes). The first scene must function as an opening;
+the final scene as resolution/aftermath. Escalate through decisions and consequences. No lecture,
+chapter summary, bullet lesson, generic CTA, or unsupported twist."""
+    outline = _generate_json(
+        prompt, "story outline", lambda value: validate_outline(value, bible)
+    )
+    outline["source_hash"] = source_hash
+    outline["target_word_count"] = target_words
+    outline["target_duration_minutes"] = target_minutes
+    atomic_write_json(path, outline)
+    return outline
+
+
+def _write_scene_batch(brief: dict, bible: dict, outline: dict, scenes: list[dict],
+                       previous_ending: str) -> list[dict]:
+    prompt = f"""You are the scene writer for Private Gravity. Write broadcast-ready English
+narration for ONLY the requested scenes. The narrator tells an original cinematic story; never
+explains psychology to the audience. Preserve character identity, chronology, speculative rules,
+causality and the allocated word counts (within 20%). Make sentences natural for spoken audio.
+
+STORY BRIEF: {json.dumps(brief, ensure_ascii=False)}
+CHARACTER BIBLE: {json.dumps(bible, ensure_ascii=False)}
+FULL OUTLINE: {json.dumps(outline, ensure_ascii=False)}
+SCENES TO WRITE: {json.dumps(scenes, ensure_ascii=False)}
+PREVIOUS BATCH ENDING: {previous_ending or 'This is the opening batch.'}
+
+Return ONLY JSON {{"scenes": [...]}} in requested order. Each object needs scene_id, title,
+section_type, narration, setting, characters_present, dramatic_function, emotional_tone,
+visual_direction, image_query, image_query_2, image_query_3, caption_text, on_screen_text.
+Search queries must depict story-world environments/objects/actions and not educational diagrams.
+Use on_screen_text only for diegetic or dramatically necessary text; otherwise empty string.
+No placeholders, headings inside narration, moral summary, subscribe request or bullet points."""
+    required = (
+        "scene_id", "title", "section_type", "narration", "setting",
+        "dramatic_function", "emotional_tone", "visual_direction", "image_query",
+    )
+
+    def validate_batch(data):
+        result = data.get("scenes")
+        if not isinstance(result, list) or len(result) != len(scenes):
+            raise NarrativeValidationError("screenplay batch did not return every requested scene")
+        requested = [scene["scene_id"] for scene in scenes]
+        returned = [scene.get("scene_id") for scene in result]
+        if returned != requested:
+            raise NarrativeValidationError("screenplay batch scene IDs/order do not match outline")
+        for scene in result:
+            missing = [key for key in required if not str(scene.get(key, "")).strip()]
+            if missing or len(scene["narration"].split()) < 12:
+                raise NarrativeValidationError(
+                    f"incomplete screenplay scene {scene.get('scene_id')}: {', '.join(missing)}"
+                )
+        return result
+
+    return _generate_json(prompt, "screenplay scene batch", validate_batch)
+
+
+def _editorial_review(script: dict) -> dict:
+    prompt = f"""Act as a strict fiction editor. Review this Private Gravity screenplay without
+rewriting it. Return ONLY JSON with numeric 1-10 scores for coherence, character_consistency,
+emotional_escalation, originality, opening_strength, ending_resonance, visual_feasibility;
+plus arrays strengths, risks, continuity_issues and recommended_scene_ids. Do not predict views.
+SCREENPLAY: {json.dumps(script, ensure_ascii=False)}"""
+    score_fields = (
+        "coherence", "character_consistency", "emotional_escalation", "originality",
+        "opening_strength", "ending_resonance", "visual_feasibility",
+    )
+
+    def validate_review(value):
+        scores = value.get("scores", value)
+        if any(not isinstance(scores.get(field), (int, float))
+               or not 1 <= float(scores[field]) <= 10 for field in score_fields):
+            raise NarrativeValidationError("editorial review requires 1-10 rubric scores")
+        value["scores"] = {field: float(scores[field]) for field in score_fields}
+        for field in ("strengths", "risks", "continuity_issues", "recommended_scene_ids"):
+            if not isinstance(value.get(field), list):
+                raise NarrativeValidationError(f"editorial review requires array: {field}")
+        return value
+
+    return _generate_json(prompt, "editorial review", validate_review)
+
+
+def write_script(
+    research: dict,
+    video_type: str = "normal",
+    output_dir: str | None = None,
+    target_duration_minutes: float | None = None,
+    narrative_review: bool | None = None,
+    force: bool = False,
+) -> dict:
+    """Build/reuse bible and outline, then write the screenplay in bounded batches."""
+    if video_type not in {"normal", "shorts"}:
+        raise ValueError("video_type must be 'normal' or 'shorts'")
+    brief = validate_story_brief(dict(research))
+    output = Path(output_dir or config.OUTPUT_DIR)
+    output.mkdir(parents=True, exist_ok=True)
+    target = 0.85 if video_type == "shorts" else float(
+        target_duration_minutes or brief.get("target_duration_minutes")
+        or getattr(config, "TARGET_DURATION_MINUTES", 15)
+    )
+    if video_type == "normal" and not 12 <= target <= 20:
+        raise ValueError("Regular Private Gravity videos must target 12-20 minutes")
+
+    print("   -> Building character bible...")
+    bible = _character_bible(brief, output, force)
+    print("   -> Building causal story outline...")
+    outline = _outline(brief, bible, video_type, target, output, force)
+
+    sections = []
+    previous_ending = ""
+    for offset in range(0, len(outline["scenes"]), 3):
+        batch = outline["scenes"][offset:offset + 3]
+        print(f"   -> Writing scenes {offset + 1}-{offset + len(batch)}...")
+        written = _write_scene_batch(brief, bible, outline, batch, previous_ending)
+        for scene, plan in zip(written, batch):
+            scene["id"] = int(plan["order"])
+            scene["outline_scene_id"] = plan["scene_id"]
+            scene["section_type"] = plan["narrative_function"]
+            scene.setdefault("title", plan["title"])
+            scene.setdefault("setting", plan["setting"])
+            scene.setdefault("characters_present", plan["characters_present"])
+            scene.setdefault("dramatic_function", plan["dramatic_function"])
+            scene.setdefault("emotional_tone", plan["emotional_turn"])
+            scene.setdefault("visual_direction", plan["visual_direction"])
+            scene["bullet_points"] = []
+        sections.extend(written)
+        previous_ending = written[-1].get("narration", "")[-700:]
+
+    script = {
+        "schema_version": SCHEMA_VERSION,
+        "content_mode": CONTENT_MODE,
+        "video_type": video_type,
+        "title": brief["video_title"] + (" #Shorts" if video_type == "shorts" else ""),
+        "description": brief["description"],
+        "tags": brief.get("tags", []),
+        "narrative_type": brief["narrative_type"],
+        "psychological_theme": brief["psychological_theme"],
+        "planned_words_per_minute": int(getattr(config, "NARRATION_WPM", 125)),
+        "target_duration_minutes": target,
+        "source_hash": stable_hash({"brief": brief, "bible": bible, "outline": outline}),
+        "characters": bible["characters"],
+        "sections": sections,
+    }
+    script = validate_script(script, bible)
+    atomic_write_json(output / "script.json", script)
+
+    review = deterministic_review(script, target)
+    use_editor = (getattr(config, "NARRATIVE_REVIEW_ENABLED", True)
+                  if narrative_review is None else narrative_review)
+    if use_editor:
+        print("   -> Running optional editorial quality review...")
+        review["editorial_assessment"] = _editorial_review(script)
+    review["source_hash"] = stable_hash(script)
+    atomic_write_json(output / "narrative_review.json", review)
     return script
 
 
-def _write_shorts_script(research: dict) -> dict:
-    """
-    Generates a tight 50-60 second YouTube Shorts script (3 sections, vertical format).
-    """
-    key_points_str = "\n".join(f"  {i+1}. {p}" for i, p in enumerate(research["key_points"][:3]))
-
-    prompt = f"""You are a viral YouTube Shorts scriptwriter. You write punchy, addictive 50-60 second vertical videos.
-
-Video topic: {research["topic"]}
-Title: {research["video_title"]}
-Hook question: {research.get("hook_question", "")}
-Key points:
-{key_points_str}
-
-Write a GRIPPING 50-60 second Shorts script. Rules:
-- Hooks in the FIRST 3 words — no slow intros
-- Short, punchy sentences. Every second counts.
-- Vertical video style: one idea per second
-- End with a cliffhanger or question that forces them to follow/subscribe
-- 3 sections ONLY: hook (10-12s), revelation (30-35s), cta (8-10s)
-- Total narration must be 120-160 words maximum
-- NEVER name the section in the title field — title is INTERNAL only, not shown on screen
-
-Respond with ONLY a valid JSON object. No markdown fences, no extra text:
-
-{{
-  "title": "{research['video_title']} #Shorts",
-  "description": "Short, punchy 2-sentence description for the Short.",
-  "tags": {json.dumps(research.get('tags', []) + ["Shorts", "YouTubeShorts"])},
-  "sections": [
-    {{
-      "id": 1,
-      "section_type": "hook",
-      "title": "hook_internal",
-      "narration": "Open with a jaw-dropping 1-sentence statement. Then the question. 2-3 punchy sentences MAX. About 30-35 words.",
-      "image_query": "dramatic space cosmos universe dark",
-      "image_query_2": "explosion supernova nebula vivid",
-      "image_query_3": "earth from space satellite view",
-      "image_query_4": "black hole gravitational waves",
-      "bullet_points": [],
-      "caption_text": "",
-      "duration_seconds": 12
-    }},
-    {{
-      "id": 2,
-      "section_type": "content",
-      "title": "content_internal",
-      "narration": "The core mind-blowing fact, explained in 3-4 punchy sentences. No fluff. Drive home the ONE key insight. About 80-90 words.",
-      "image_query": "relevant scientific dramatic image cinematic",
-      "image_query_2": "laboratory science experiment glowing",
-      "image_query_3": "futuristic technology neon abstract",
-      "image_query_4": "human brain neuron synapse close up",
-      "bullet_points": [],
-      "caption_text": "",
-      "duration_seconds": 35
-    }},
-    {{
-      "id": 3,
-      "section_type": "cta",
-      "title": "cta_internal",
-      "narration": "Drop one final mind-bending teaser, then tell them to follow for more facts that break their brain. 15-20 words.",
-      "image_query": "stars infinite cosmos night sky milky way",
-      "image_query_2": "galaxy spiral arms nebula purple",
-      "image_query_3": "universe deep field stars",
-      "image_query_4": "space telescope distant galaxies",
-      "bullet_points": [],
-      "caption_text": "",
-      "duration_seconds": 10
-    }}
-  ]
-}}
-
-IMPORTANT:
-- Total narration across ALL sections: 120-160 words maximum
-- Each section narration must be complete, broadcast-ready sentences
-- image_query and image_query_2/3/4 must all be DIFFERENT specific stock-image search strings
-- title fields are INTERNAL labels only — they are never shown on screen"""
-
-    print("   → Writing Shorts script with Gemini...")
-    raw = generate(prompt)
-    raw = re.sub(r"^```(?:json)?", "", raw).strip()
-    raw = re.sub(r"```$", "", raw).strip()
-
-    match = re.search(r"\{[\s\S]*\}", raw)
-    if not match:
-        raise ValueError(f"Shorts scriptwriter returned no JSON.\n\nRaw:\n{raw[:600]}")
-
-    script = json.loads(match.group())
-
-    if "sections" not in script or len(script["sections"]) < 2:
-        raise ValueError("Shorts script returned too few sections.")
-
-    # Tag it so the video creator knows
-    script["video_type"] = "shorts"
-    return script
+def regenerate_scene(script: dict, brief: dict, bible: dict, outline: dict,
+                     scene_id: int, output_dir: str | None = None) -> dict:
+    """Regenerate one scene while preserving the approved narrative architecture."""
+    output = Path(output_dir or config.OUTPUT_DIR)
+    existing = next((scene for scene in script.get("sections", [])
+                     if int(scene.get("id", -1)) == int(scene_id)), None)
+    if not existing:
+        raise ValueError(f"Unknown screenplay scene: {scene_id}")
+    outline_id = existing.get("outline_scene_id")
+    plan = next((scene for scene in outline.get("scenes", [])
+                 if scene.get("scene_id") == outline_id or scene.get("order") == int(scene_id)), None)
+    if not plan:
+        raise ValueError(f"No outline plan for screenplay scene: {scene_id}")
+    prior = [scene for scene in script["sections"] if int(scene["id"]) < int(scene_id)]
+    previous_ending = prior[-1]["narration"][-700:] if prior else ""
+    replacement = _write_scene_batch(brief, bible, outline, [plan], previous_ending)[0]
+    replacement.update({
+        "id": int(scene_id), "outline_scene_id": plan["scene_id"],
+        "section_type": plan["narrative_function"], "bullet_points": [],
+    })
+    revised = dict(script)
+    revised["sections"] = [replacement if int(scene["id"]) == int(scene_id) else scene
+                           for scene in script["sections"]]
+    revised = validate_script(revised, bible)
+    atomic_write_json(output / "script.json", revised)
+    review = deterministic_review(revised, float(revised.get("target_duration_minutes", 15)))
+    review["source_hash"] = stable_hash(revised)
+    atomic_write_json(output / "narrative_review.json", review)
+    return revised

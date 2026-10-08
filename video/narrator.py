@@ -9,8 +9,11 @@ Uses MoviePy's AudioFileClip for duration — guaranteed to match the video rend
 import os
 import re
 import asyncio
+import tempfile
 import edge_tts
 import config
+from moviepy.editor import AudioFileClip, concatenate_audioclips
+from video.timeline import write_shifted_srt, write_timeline
 
 
 # ══════════════════════════════════════════════════════════════
@@ -312,28 +315,52 @@ async def _synthesise(text: str, audio_path: str, srt_path: str) -> int:
 
 def generate_narration(script: dict, output_dir: str) -> str:
     """
-    Concatenates all section narrations → synthesises MP3 → writes SRT.
+    Synthesises each scene independently, then concatenates without inserting
+    silence. Exact scene durations drive both the SRT offsets and video timeline.
     Returns path to the saved audio file.
     """
-    parts = []
-    for section in script["sections"]:
-        narration = section.get("narration", "").strip()
-        if not narration:
-            continue
-        if narration.startswith(("Start with", "Deep explanation", "Open with")):
-            continue
-        parts.append(narration)
-
-    full_text  = "  ...  ".join(parts)
+    os.makedirs(output_dir, exist_ok=True)
+    sections = [section for section in script["sections"]
+                if section.get("narration", "").strip()]
+    if not sections:
+        raise ValueError("Script contains no narratable scenes")
     audio_path = os.path.join(output_dir, "narration.mp3")
     srt_path   = os.path.join(output_dir, "narration.srt")
+    clips = []
+    durations = []
+    scene_srts = []
+    cursor = 0.0
+    with tempfile.TemporaryDirectory(prefix="private_gravity_tts_") as temp_dir:
+        try:
+            for index, section in enumerate(sections, 1):
+                text = section["narration"].strip()
+                scene_audio = os.path.join(temp_dir, f"scene_{index:03d}.mp3")
+                scene_srt = os.path.join(temp_dir, f"scene_{index:03d}.srt")
+                print(f"   → Synthesising scene {index}/{len(sections)} ({len(text.split())} words)…")
+                asyncio.run(_synthesise(text, scene_audio, scene_srt))
+                clip = AudioFileClip(scene_audio)
+                duration = float(clip.duration)
+                clips.append(clip)
+                durations.append(duration)
+                scene_srts.append((scene_srt, cursor))
+                cursor += duration
+            combined = concatenate_audioclips(clips)
+            combined.write_audiofile(audio_path, codec="libmp3lame", verbose=False, logger=None)
+            combined.close()
+            write_shifted_srt(srt_path, scene_srts)
+        finally:
+            for clip in clips:
+                clip.close()
 
-    print(f"   → Synthesising {len(full_text.split())} words via Edge TTS…")
-    asyncio.run(_synthesise(full_text, audio_path, srt_path))
+    # The concatenated file can differ by a few codec milliseconds. Pin the
+    # last scene to the exact duration MoviePy will later attach to the video.
+    rendered_duration = _get_audio_duration_ms(audio_path) / 1000
+    durations[-1] += rendered_duration - sum(durations)
+    write_timeline(os.path.join(output_dir, "scene_timeline.json"), sections, durations)
 
     # ── Post-run report ──────────────────────────────────────────────────────
     size_kb     = os.path.getsize(audio_path) // 1024
-    audio_dur_s = _get_audio_duration_ms(audio_path) / 1000
+    audio_dur_s = rendered_duration
 
     if not os.path.exists(srt_path):
         print(f"   ⚠ ERROR: SRT file missing at {srt_path}")

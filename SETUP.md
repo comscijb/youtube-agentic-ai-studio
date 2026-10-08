@@ -1,4 +1,4 @@
-# 🛠️ Setup Guide
+# 🛠️ Private Gravity Setup Guide
 
 Complete step-by-step instructions to get YouTube AI Agent Studio running from scratch.
 
@@ -171,18 +171,24 @@ On your first run, a browser window will open asking you to sign in with Google 
 
 ---
 
-## Step 5 — Customise your channel
+## Step 5 — Configure the narrative workflow
 
 Open `config.py` and edit:
 
 ```python
 CHANNEL_DESCRIPTION = """
-Describe your channel clearly here.
-The more specific, the better the AI's topic and script quality.
-Example: "Educational science channel for curious adults, style of Veritasium."
+A cinematic storytelling channel exploring psychology and philosophy through original fiction.
 """
-CHANNEL_NAME = "Your Channel Name"
+CHANNEL_NAME = "Private Gravity"
+NARRATIVE_TYPE = "auto"            # or one of the three explicit narrative types
+PSYCHOLOGICAL_THEME = ""            # blank lets the Story Development Agent choose
+TARGET_DURATION_MINUTES = 15         # regular episodes accept 12–20
+NARRATIVE_REVIEW_ENABLED = True      # adds one Gemini editorial-review call
 ```
+
+The GUI exposes the same controls per run. Exact-premise mode preserves the
+entered premise; automatic mode compares weighted candidates. Disable the
+editorial review to save one model call—the deterministic schema checks still run.
 
 ---
 
@@ -194,7 +200,7 @@ CHANNEL_NAME = "Your Channel Name"
 python gui.py
 ```
 
-Opens at **http://localhost:7842** — configure everything visually and click Generate.
+Opens at **http://localhost:7070** — configure everything visually and click Generate.
 
 ### CLI mode
 
