@@ -162,7 +162,7 @@ Respond with ONLY a valid JSON object. No markdown fences, no extra text:
 
 IMPORTANT:
 - image_query / image_query_2 / image_query_3 must be VISUALLY DISTINCT from each other (wide → close → abstract).
-- Use SPECIFIC Pexels search strings (e.g. "black hole accretion disk simulation" not just "space").
+- Use SPECIFIC stock-image search strings (e.g. "black hole accretion disk simulation" not just "space").
 - Narration for sections 4 and 6 MUST start with the mandatory re-hook lines as described.
 - The open-loop question from section 2 MUST be answered in section 5.
 - Every narration field must contain COMPLETE, broadcast-ready sentences — no placeholders.
@@ -260,7 +260,7 @@ Respond with ONLY a valid JSON object. No markdown fences, no extra text:
 IMPORTANT:
 - Total narration across ALL sections: 120-160 words maximum
 - Each section narration must be complete, broadcast-ready sentences
-- image_query and image_query_2/3/4 must all be DIFFERENT specific Pexels visual search strings
+- image_query and image_query_2/3/4 must all be DIFFERENT specific stock-image search strings
 - title fields are INTERNAL labels only — they are never shown on screen"""
 
     print("   → Writing Shorts script with Gemini...")

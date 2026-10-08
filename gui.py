@@ -248,7 +248,7 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
         from agents.researcher   import research_topic
         from agents.scriptwriter import write_script
         from video.narrator      import generate_narration
-        from video.stock         import download_images
+        from video.stock         import download_images, load_existing_images
         from video.creator       import create_video
         from video.music         import mix_music_with_narration
 
@@ -302,13 +302,7 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
             _state["image_map"] = image_map
             _stage("images", "done")
         else:
-            img_dir = config.IMAGES_DIR
-            image_map = {}
-            for s in script.get("sections", []):
-                sid = s["id"]
-                p = os.path.join(img_dir, f"section_{sid:02d}.jpg")
-                image_map[sid] = p if os.path.exists(p) else None
-            _state["image_map"] = image_map
+            _state["image_map"] = load_existing_images(script, config.OUTPUT_DIR)
 
         _check_stop("images")
 
@@ -678,11 +672,45 @@ def upload():
 
 # ── Settings read / write ─────────────────────────────────────────────────────
 
+def _key_configured(value):
+    value = str(value or "").strip()
+    return bool(value and not value.startswith("YOUR_") and "your_" not in value.lower())
+
+
+def _write_env_settings(updates):
+    """Update only named .env values, preserving unrelated credentials."""
+    env_path = Path(ROOT) / ".env"
+    lines = env_path.read_text(encoding="utf-8").splitlines() if env_path.exists() else []
+    remaining = dict(updates)
+    output = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#") and "=" in stripped:
+            key = stripped.split("=", 1)[0].strip()
+            if key in remaining:
+                output.append(f"{key}={remaining.pop(key)}")
+                continue
+        output.append(line)
+    if remaining and output and output[-1].strip():
+        output.append("")
+    output.extend(f"{key}={value}" for key, value in remaining.items())
+    temp_path = env_path.with_suffix(".env.tmp")
+    temp_path.write_text("\n".join(output).rstrip() + "\n", encoding="utf-8")
+    temp_path.replace(env_path)
+
 @app.route("/api/settings")
 def get_settings():
     return jsonify({
-        "gemini_key":      config.GEMINI_API_KEY,
-        "pexels_key":      config.PEXELS_API_KEY,
+        "gemini_configured":  _key_configured(config.GEMINI_API_KEY),
+        "pixabay_configured": _key_configured(config.PIXABAY_API_KEY),
+        "stock_provider":     getattr(config, "STOCK_PROVIDER", "auto"),
+        "stock_fallback":     getattr(config, "STOCK_FALLBACK_PROVIDER", "openverse"),
+        "stock_cache":        getattr(config, "STOCK_CACHE_ENABLED", True),
+        "stock_license_log":  getattr(config, "STOCK_LICENSE_LOG_ENABLED", True),
+        "provider_status": {
+            "pixabay": "configured" if _key_configured(config.PIXABAY_API_KEY) else "API key required",
+            "openverse": "available without credentials",
+        },
         "music_enabled":   getattr(config, "MUSIC_ENABLED", True),
         "music_volume":    getattr(config, "MUSIC_VOLUME", 0.12),
         "music_library":   getattr(config, "MUSIC_LIBRARY_DIR", ""),
@@ -705,10 +733,29 @@ def get_settings():
 @app.route("/api/save-settings", methods=["POST"])
 def save_settings():
     body = request.get_json(force=True) or {}
+    env_updates = {}
+    secret_fields = {
+        "gemini_key": ("GEMINI_API_KEY", "GEMINI_API_KEY"),
+        "pixabay_key": ("PIXABAY_API_KEY", "PIXABAY_API_KEY"),
+    }
+    for field, (env_name, attr) in secret_fields.items():
+        value = str(body.get(field) or "").strip()
+        if value:
+            env_updates[env_name] = value
+            os.environ[env_name] = value
+            setattr(config, attr, value)
+    if env_updates:
+        try:
+            _write_env_settings(env_updates)
+        except OSError as exc:
+            return jsonify({"ok": False, "error": f"Could not save local credentials: {exc}"}), 500
+
     # Update live config object
     m = {
-        "gemini_key":    "GEMINI_API_KEY",
-        "pexels_key":    "PEXELS_API_KEY",
+        "stock_provider": "STOCK_PROVIDER",
+        "stock_fallback": "STOCK_FALLBACK_PROVIDER",
+        "stock_cache": "STOCK_CACHE_ENABLED",
+        "stock_license_log": "STOCK_LICENSE_LOG_ENABLED",
         "music_enabled": "MUSIC_ENABLED",
         "music_volume":  "MUSIC_VOLUME",
         "channel_name":  "CHANNEL_NAME",
@@ -733,7 +780,28 @@ def save_settings():
                 val = float(val)
             if attr == "MUSIC_ENABLED":
                 val = bool(val)
+            if attr in ("STOCK_CACHE_ENABLED", "STOCK_LICENSE_LOG_ENABLED"):
+                val = bool(val)
+            if attr == "STOCK_PROVIDER" and val not in ("auto", "pixabay", "openverse"):
+                return jsonify({"ok": False, "error": "Invalid stock provider"}), 400
+            if attr == "STOCK_FALLBACK_PROVIDER" and val not in ("openverse", "none"):
+                return jsonify({"ok": False, "error": "Invalid fallback provider"}), 400
             setattr(config, attr, val)
+
+    stock_env = {}
+    if "stock_provider" in body:
+        stock_env["STOCK_PROVIDER"] = str(config.STOCK_PROVIDER)
+    if "stock_fallback" in body:
+        stock_env["STOCK_FALLBACK_PROVIDER"] = str(config.STOCK_FALLBACK_PROVIDER)
+    if "stock_cache" in body:
+        stock_env["STOCK_CACHE_ENABLED"] = str(bool(config.STOCK_CACHE_ENABLED)).lower()
+    if "stock_license_log" in body:
+        stock_env["STOCK_LICENSE_LOG_ENABLED"] = str(bool(config.STOCK_LICENSE_LOG_ENABLED)).lower()
+    if stock_env:
+        try:
+            _write_env_settings(stock_env)
+        except OSError as exc:
+            return jsonify({"ok": False, "error": f"Could not save stock settings: {exc}"}), 500
 
     # Patch config.py file on disk
     cfg_path = os.path.join(ROOT, "config.py")
@@ -741,8 +809,6 @@ def save_settings():
         with open(cfg_path) as f: src = f.read()
 
         patches = {
-            "GEMINI_API_KEY":    body.get("gemini_key"),
-            "PEXELS_API_KEY":    body.get("pexels_key"),
             "MUSIC_ENABLED":     body.get("music_enabled"),
             "MUSIC_VOLUME":      body.get("music_volume"),
             "CHANNEL_NAME":      body.get("channel_name"),

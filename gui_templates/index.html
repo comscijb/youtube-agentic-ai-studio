@@ -540,13 +540,34 @@ input[type=range]{width:100%;accent-color:var(--primary)}
           <div class="settings-body">
             <div class="settings-field">
               <div class="field-label">Gemini API Key</div>
-              <input type="text" id="s-gemini" placeholder="Your Gemini API key">
+              <input type="password" id="s-gemini" autocomplete="new-password" placeholder="Leave blank to keep current key">
+              <div class="help-text" id="s-gemini-status"></div>
             </div>
             <div class="settings-field">
-              <div class="field-label">Pexels API Key</div>
-              <input type="text" id="s-pexels" placeholder="Your Pexels API key">
+              <div class="field-label">Pixabay API Key</div>
+              <input type="password" id="s-pixabay" autocomplete="new-password" placeholder="Leave blank to keep current key">
+              <div class="help-text" id="s-pixabay-status"></div>
             </div>
-            <div class="help-text">Keys are saved to config.py. Get Gemini free at <strong>aistudio.google.com</strong>, Pexels at <strong>pexels.com/api</strong>.</div>
+            <div class="settings-cols">
+              <div class="settings-field">
+                <div class="field-label">Stock Provider</div>
+                <select id="s-stock-provider">
+                  <option value="auto">Auto (recommended)</option>
+                  <option value="pixabay">Pixabay first</option>
+                  <option value="openverse">Openverse only</option>
+                </select>
+              </div>
+              <div class="settings-field">
+                <div class="field-label">Fallback Provider</div>
+                <select id="s-stock-fallback">
+                  <option value="openverse">Openverse</option>
+                  <option value="none">None</option>
+                </select>
+              </div>
+            </div>
+            <label class="check-row"><input type="checkbox" id="s-stock-cache" checked> Cache stock searches and validated assets</label>
+            <label class="check-row"><input type="checkbox" id="s-stock-license" checked> Write asset provenance manifest</label>
+            <div class="help-text">Secrets are stored in the local, gitignored <strong>.env</strong> file and are never returned by the settings API. Openverse accepts only CC0/PDM assets.</div>
           </div>
         </div>
 
@@ -1160,8 +1181,14 @@ function toggleSection(header) {
 
 function loadSettings() {
   fetch('/api/settings').then(r=>r.json()).then(d => {
-    document.getElementById('s-gemini').value       = d.gemini_key  || '';
-    document.getElementById('s-pexels').value       = d.pexels_key  || '';
+    document.getElementById('s-gemini').value       = '';
+    document.getElementById('s-pixabay').value      = '';
+    document.getElementById('s-gemini-status').textContent = d.gemini_configured ? '✓ Configured' : 'Not configured';
+    document.getElementById('s-pixabay-status').textContent = d.pixabay_configured ? '✓ Configured' : 'Not configured — auto mode will use Openverse';
+    document.getElementById('s-stock-provider').value = d.stock_provider || 'auto';
+    document.getElementById('s-stock-fallback').value = d.stock_fallback || 'openverse';
+    document.getElementById('s-stock-cache').checked = d.stock_cache !== false;
+    document.getElementById('s-stock-license').checked = d.stock_license_log !== false;
     document.getElementById('s-channel-name').value = d.channel_name|| '';
     document.getElementById('s-channel-desc').value = d.channel_desc|| '';
     document.getElementById('s-voice').value        = d.voice_id    || 'en-US-AndrewNeural';
@@ -1224,7 +1251,11 @@ function saveSettings() {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({
       gemini_key:   document.getElementById('s-gemini').value,
-      pexels_key:   document.getElementById('s-pexels').value,
+      pixabay_key:  document.getElementById('s-pixabay').value,
+      stock_provider: document.getElementById('s-stock-provider').value,
+      stock_fallback: document.getElementById('s-stock-fallback').value,
+      stock_cache: document.getElementById('s-stock-cache').checked,
+      stock_license_log: document.getElementById('s-stock-license').checked,
       channel_name: document.getElementById('s-channel-name').value,
       channel_desc: document.getElementById('s-channel-desc').value,
       voice_id:     document.getElementById('s-voice').value,
@@ -1245,7 +1276,7 @@ function saveSettings() {
     const msg = document.getElementById('settings-msg');
     if (d.ok) {
       msg.style.display = 'block'; msg.style.color='var(--green)';
-      msg.textContent = '✓ Settings saved to config.py';
+      msg.textContent = '✓ Settings saved (credentials kept in local .env)';
     } else {
       msg.style.display = 'block'; msg.style.color='var(--red)';
       msg.textContent = '✗ '+d.error;

@@ -758,7 +758,7 @@ def create_video(script: dict, audio_path: str, output_dir: str,
     """
     Assembles the final video.
     image_map for Shorts: {section_id: [path, path, …]}
-    image_map for Normal: {section_id: path | None}
+    image_map for Normal: {section_id: [path, path, ...] | None}
     video_type: "normal" | "shorts"
     """
     global W, H, FPS

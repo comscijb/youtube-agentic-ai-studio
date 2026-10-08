@@ -11,7 +11,7 @@ Complete step-by-step instructions to get YouTube AI Agent Studio running from s
 - Python **3.10 or newer** — [python.org/downloads](https://www.python.org/downloads/)
 - `ffmpeg` installed and on your PATH (see [Step 1b](#1b-install-ffmpeg))
 - A Google account (for Gemini + YouTube)
-- A Pexels account (free image API)
+- A Pixabay account (recommended primary image API; Openverse works without credentials)
 
 ---
 
@@ -55,11 +55,13 @@ pip install -r requirements.txt
 3. Click **Create API Key**
 4. Copy the key
 
-### 2b. Pexels API Key (required — free)
+### 2b. Pixabay API Key (recommended — free)
 
-1. Go to [pexels.com/api](https://www.pexels.com/api/)
-2. Create a free account and click **Your API Key**
+1. Go to [pixabay.com/api/docs](https://pixabay.com/api/docs/)
+2. Create a free account and copy the API key shown in the documentation page
 3. Copy the key
+
+If the key is omitted, `STOCK_PROVIDER=auto` skips Pixabay and uses Openverse.
 
 ---
 
@@ -70,15 +72,15 @@ pip install -r requirements.txt
 ```bash
 # Mac / Linux
 export GEMINI_API_KEY="your_key_here"
-export PEXELS_API_KEY="your_key_here"
+export PIXABAY_API_KEY="your_key_here"
 
 # Windows (Command Prompt)
 set GEMINI_API_KEY=your_key_here
-set PEXELS_API_KEY=your_key_here
+set PIXABAY_API_KEY=your_key_here
 
 # Windows (PowerShell)
 $env:GEMINI_API_KEY="your_key_here"
-$env:PEXELS_API_KEY="your_key_here"
+$env:PIXABAY_API_KEY="your_key_here"
 ```
 
 To make these permanent, add them to your shell profile (`~/.bashrc`, `~/.zshrc`) or use a `.env` file:
@@ -88,14 +90,27 @@ cp .env.example .env
 # Now edit .env and fill in your keys
 ```
 
-### Option B — Edit config.py directly
+### Option B — Local `.env` file (recommended for persistent settings)
 
-Open `config.py` and replace the placeholder values:
+Copy `.env.example` to `.env`, then set:
 
-```python
-GEMINI_API_KEY = "AIza..."     # your Gemini key
-PEXELS_API_KEY = "abc123..."   # your Pexels key
+```dotenv
+GEMINI_API_KEY=your_gemini_key
+PIXABAY_API_KEY=your_pixabay_key
+STOCK_PROVIDER=auto
+STOCK_FALLBACK_PROVIDER=openverse
 ```
+
+The GUI also saves new credentials to this gitignored file. It never writes
+API secrets into `config.py` or returns their values from `/api/settings`.
+
+### Stock provider behavior
+
+For each requested visual, the app checks `assets/stock_approved/`, then uses
+Pixabay when configured, then Openverse. Openverse results are accepted only
+when the API explicitly reports CC0 or Public Domain Mark. Validated downloads
+and searches are cached under `output/.stock_cache/`; provenance and manual
+review flags are recorded in `output/asset_manifest.json`.
 
 ---
 

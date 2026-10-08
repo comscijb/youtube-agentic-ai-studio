@@ -25,7 +25,7 @@
 | 🧠 **AI Research** | Gemini scans for trending topics tailored to your channel niche |
 | ✍️ **Script Writing** | Full narrated script with hook, sections, and CTA — in JSON |
 | 🎙️ **Free Voice** | Microsoft Edge TTS (no API key, no cost, word-level timing) |
-| 🖼️ **Stock Images** | Auto-downloads from Pexels with topic-aware search |
+| 🖼️ **Stock Images** | Pixabay primary + CC0/PDM Openverse fallback, with provenance |
 | 🎞️ **Animated Video** | Ken Burns zoom, smooth crossfades, captions, progress bars |
 | 📱 **Shorts Support** | Generates vertical 9:16 Shorts alongside the main video |
 | 🕵️ **Human Review** | Local web dashboard to watch and approve before publishing |
@@ -71,7 +71,7 @@ pip install -r requirements.txt
 
 # 3. Set your API keys (copy and edit .env.example)
 cp .env.example .env
-# Edit .env and add your GEMINI_API_KEY and PEXELS_API_KEY
+# Edit .env and add your GEMINI_API_KEY and PIXABAY_API_KEY
 
 # 4. Run the GUI
 python gui.py
@@ -100,10 +100,21 @@ python pipeline.py  ──►  Research  ──►  Script  ──►  Narration
 | 1 · Research | `agents/researcher.py` | Gemini brainstorms trending topics for your niche and outputs a structured brief |
 | 2 · Script | `agents/scriptwriter.py` | Expands the brief into a full narrated script with image queries per section |
 | 3 · Narration | `video/narrator.py` | Edge-TTS converts the script to a cinematic MP3 voiceover |
-| 4 · Images | `video/stock.py` | Downloads high-res stock photos from Pexels, topic-aware per section |
+| 4 · Images | `video/stock.py` | Acquires validated JPEGs from local assets, Pixabay, then Openverse |
 | 5 · Video | `video/creator.py` | Renders animated slides with Ken Burns, crossfades, captions, and music |
 | 6 · Review | `review/app.py` | Spins up a local dashboard — you watch and approve before anything is published |
 | 7 · Upload | `uploader/youtube.py` | Publishes to YouTube with full SEO metadata on your approval |
+
+`download_images(script, output_dir)` remains the stock subsystem's public
+contract. It returns `{section_id: [local_jpeg_paths]}` for Shorts and
+`{section_id: [local_jpeg_paths] | None}` for regular videos. The renderer uses
+its existing animated gradient whenever a section has no usable image.
+
+Every job writes `output/asset_manifest.json` with provider, creator, source,
+license, original download URL, local filename and section usage. Treat this as
+provenance—not legal clearance. Manually review recognizable people,
+trademarks, sensitive fictional depictions and any use that could resemble
+standalone redistribution of a stock asset.
 
 ---
 
@@ -113,7 +124,7 @@ python pipeline.py  ──►  Research  ──►  Script  ──►  Narration
 youtube-ai-agent/
 ├── 📄 pipeline.py              ← Run this to start the full pipeline
 ├── 🖥️  gui.py                  ← Run this for the visual GUI
-├── ⚙️  config.py               ← All settings: keys, colors, voice, video
+├── ⚙️  config.py               ← Non-secret settings: colors, voice, video
 ├── 📦  requirements.txt
 ├── 🔑  client_secret.json      ← YouTube OAuth (you add yours — see SETUP.md)
 ├── 📝  .env.example            ← Copy to .env and fill in your API keys
@@ -125,7 +136,7 @@ youtube-ai-agent/
 │
 ├── video/
 │   ├── narrator.py             ← Edge-TTS voiceover generator
-│   ├── stock.py                ← Pexels image downloader
+│   ├── stock.py                ← Pixabay/Openverse provider manager
 │   ├── creator.py              ← Full video renderer (Ken Burns, captions, etc.)
 │   └── music.py                ← Background music mixer
 │
@@ -144,6 +155,7 @@ youtube-ai-agent/
 └── output/                     ← Auto-generated (gitignored)
     ├── research.json
     ├── script.json
+    ├── asset_manifest.json
     ├── narration.mp3
     ├── images/
     └── final_video.mp4
@@ -178,7 +190,8 @@ GEMINI_MODEL = "gemini-2.0-flash"   # 1500 free req/day — recommended default
 | Service | Key | Free Tier | Where to get it |
 |---|---|---|---|
 | **Google Gemini** | `GEMINI_API_KEY` | 1500 req/day | [aistudio.google.com](https://aistudio.google.com/apikey) |
-| **Pexels** | `PEXELS_API_KEY` | 200 req/hour | [pexels.com/api](https://www.pexels.com/api/) |
+| **Pixabay** | `PIXABAY_API_KEY` | Provider limits apply | [pixabay.com/api/docs](https://pixabay.com/api/docs/) |
+| **Openverse** | *(none)* | Public API limits apply | [api.openverse.org](https://api.openverse.org/v1/) |
 | **Edge TTS** | *(none)* | Unlimited | Built-in |
 | **YouTube API** | `client_secret.json` | Free | [Google Cloud Console](https://console.cloud.google.com) |
 | **ElevenLabs** | `ELEVENLABS_API_KEY` | Optional | [elevenlabs.io](https://elevenlabs.io) |
@@ -223,7 +236,8 @@ OVERLAY_OPACITY    = 0.62  # how dark the image overlay is
 
 No. The entire stack uses free tiers:
 - **Gemini** — 1500 req/day free on the 2.0-flash model
-- **Pexels** — 200 req/hour free
+- **Pixabay** — free API key; provider limits apply
+- **Openverse** — credential-free fallback restricted here to CC0/PDM results
 - **Edge TTS** — completely free, no account needed
 - **YouTube Data API** — free for uploads
 - **Video rendering** — runs locally on your machine (CPU/GPU)

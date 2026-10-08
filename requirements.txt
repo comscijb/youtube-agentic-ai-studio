@@ -4,7 +4,7 @@
 # AI Brain — NEW SDK (replaces deprecated google-generativeai)
 google-genai>=1.0.0
 
-# HTTP requests (Pexels image downloads)
+# HTTP requests (Pixabay and Openverse image downloads)
 requests>=2.31.0
 
 # Voiceover — 100% free, no API key needed

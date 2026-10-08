@@ -1,4 +1,27 @@
 import os
+from pathlib import Path
+
+
+def _load_local_env():
+    """Load a simple local .env without overriding process-level settings."""
+    env_path = Path(__file__).with_name(".env")
+    if not env_path.exists():
+        return
+    try:
+        for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+    except OSError:
+        pass
+
+
+_load_local_env()
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  YouTube AI Agent Studio — Configuration
@@ -10,8 +33,16 @@ import os
 #  API Keys  (all free-tier)
 # ─────────────────────────────────────────
 GEMINI_API_KEY     = os.getenv("GEMINI_API_KEY",     "YOUR_GEMINI_API_KEY")
-PEXELS_API_KEY     = os.getenv("PEXELS_API_KEY",     "YOUR_PEXELS_API_KEY")
+PIXABAY_API_KEY    = os.getenv("PIXABAY_API_KEY",    "")
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "YOUR_ELEVENLABS_KEY")  # optional
+
+# Stock providers. "auto" tries the approved local library, Pixabay when a
+# key is configured, then the credential-free Openverse fallback.
+STOCK_PROVIDER            = os.getenv("STOCK_PROVIDER", "auto").lower()
+STOCK_FALLBACK_PROVIDER   = os.getenv("STOCK_FALLBACK_PROVIDER", "openverse").lower()
+STOCK_CACHE_ENABLED       = os.getenv("STOCK_CACHE_ENABLED", "true").lower() in ("1", "true", "yes", "on")
+STOCK_LICENSE_LOG_ENABLED = os.getenv("STOCK_LICENSE_LOG_ENABLED", "true").lower() in ("1", "true", "yes", "on")
+STOCK_LOCAL_ASSET_DIR     = os.getenv("STOCK_LOCAL_ASSET_DIR", "assets/stock_approved")
 
 # ─────────────────────────────────────────
 #  Your Channel Identity

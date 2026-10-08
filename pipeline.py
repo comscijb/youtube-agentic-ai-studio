@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 YouTube AI Agent — Main Pipeline (Free Edition)
-Uses: Gemini 2.5 Flash · Edge TTS · Pexels · MoviePy · Flask · YouTube Data API
+Uses: Gemini · Edge TTS · Pixabay/Openverse · MoviePy · Flask · YouTube Data API
 
 Run:  python pipeline.py
 """
@@ -56,7 +56,7 @@ def run():
         json.dump(script, f, indent=2)
 
     # ── 3. Stock Images ───────────────────────────────────────
-    banner("3 / 6  ·  Downloading stock images  [Pexels]")
+    banner("3 / 6  ·  Acquiring stock images  [Pixabay · Openverse]")
     image_map = download_images(script, config.OUTPUT_DIR)
     found = sum(1 for v in image_map.values() if v)
     print(f"\n  ✅  {found}/{len(image_map)} images downloaded")
