@@ -12,6 +12,8 @@ from agents.narrative import (
     deterministic_review,
     invalidate_downstream,
     invalidate_scene_outputs,
+    normalize_character_bible,
+    stable_hash,
     validate_character_bible,
     validate_outline,
     validate_script,
@@ -133,6 +135,136 @@ class NarrativeContractTests(unittest.TestCase):
         ):
             self.assertEqual(validate_story_brief(story_brief(narrative_type))["schema_version"], 2)
 
+    def test_character_bible_accepts_canonical_behavioral_pattern_string(self):
+        result = validate_character_bible(bible())
+        self.assertEqual(result["characters"][0]["behavioral_patterns"], "Checks every lock twice")
+
+    def test_character_bible_normalizes_behavioral_pattern_array(self):
+        value = bible()
+        value["characters"][0]["behavioral_patterns"] = [
+            " Avoids difficult conversations ",
+            "Checks his phone for social approval",
+        ]
+        result = validate_character_bible(value)
+        self.assertEqual(
+            result["characters"][0]["behavioral_patterns"],
+            "Avoids difficult conversations; Checks his phone for social approval",
+        )
+        # Normalization returns a copy and does not rewrite the caller's data.
+        self.assertIsInstance(value["characters"][0]["behavioral_patterns"], list)
+
+    def test_behavior_array_normalization_avoids_repair_api_call(self):
+        value = bible()
+        value["characters"][0]["behavioral_patterns"] = ["Avoids conflict", "Counts exits"]
+        with patch.object(scriptwriter, "generate", return_value=json.dumps(value)) as generated:
+            result = scriptwriter._generate_json(
+                "character contract", "character bible", validate_character_bible
+            )
+        self.assertEqual(generated.call_count, 1)
+        self.assertEqual(result["characters"][0]["behavioral_patterns"],
+                         "Avoids conflict; Counts exits")
+
+    def test_character_bible_normalization_trims_without_inventing_content(self):
+        value = bible()
+        value["characters"][0]["name"] = "  Eli  "
+        value["characters"][0]["age"] = 47
+        normalized = normalize_character_bible(value)
+        self.assertEqual(normalized["characters"][0]["name"], "Eli")
+        self.assertEqual(normalized["characters"][0]["age"], "47")
+        self.assertEqual(value["characters"][0]["name"], "  Eli  ")
+
+    def test_character_bible_rejects_missing_empty_and_null_behavioral_patterns(self):
+        cases = []
+        missing = bible()
+        del missing["characters"][0]["behavioral_patterns"]
+        cases.append((missing, "missing field", "missing"))
+        empty_string = bible()
+        empty_string["characters"][0]["behavioral_patterns"] = "   "
+        cases.append((empty_string, "empty required field", "str"))
+        empty_list = bible()
+        empty_list["characters"][0]["behavioral_patterns"] = []
+        cases.append((empty_list, "empty required field", "empty list"))
+        null_value = bible()
+        null_value["characters"][0]["behavioral_patterns"] = None
+        cases.append((null_value, "incorrect field type", "null"))
+
+        for value, problem, received in cases:
+            with self.subTest(problem=problem, received=received):
+                with self.assertRaises(NarrativeValidationError) as caught:
+                    validate_character_bible(value)
+                message = str(caught.exception)
+                self.assertIn("character[0].behavioral_patterns", message)
+                self.assertIn(f"Received: {received}", message)
+                self.assertIn(f"Problem: {problem}", message)
+
+    def test_character_bible_rejects_invalid_behavior_array_elements(self):
+        value = bible()
+        value["characters"][0]["behavioral_patterns"] = ["Avoids conflict", 42]
+        with self.assertRaises(NarrativeValidationError) as caught:
+            validate_character_bible(value)
+        self.assertIn("Received: list[int, str]", str(caught.exception))
+        self.assertIn("invalid array element type", str(caught.exception))
+
+    def test_targeted_semantic_repair_preserves_valid_character_data(self):
+        invalid = bible()
+        del invalid["characters"][0]["behavioral_patterns"]
+        repaired = bible()
+        repaired["characters"][0]["behavioral_patterns"] = [
+            "Avoids eye contact", "Checks every lock twice"
+        ]
+        with patch.object(
+            scriptwriter, "generate",
+            side_effect=[json.dumps(invalid), json.dumps(repaired)],
+        ) as generated:
+            result = scriptwriter._generate_json(
+                "character contract", "character bible", validate_character_bible
+            )
+        self.assertEqual(generated.call_count, 2)
+        repair_prompt = generated.call_args_list[1].args[0]
+        self.assertIn("CURRENT VALID JSON", repair_prompt)
+        self.assertIn("character[0].behavioral_patterns", repair_prompt)
+        self.assertNotIn("ORIGINAL CONTRACT", repair_prompt)
+        self.assertEqual(result["characters"][0]["name"], invalid["characters"][0]["name"])
+        self.assertEqual(result["characters"][0]["core_desire"], invalid["characters"][0]["core_desire"])
+        self.assertEqual(
+            result["characters"][0]["behavioral_patterns"],
+            "Avoids eye contact; Checks every lock twice",
+        )
+
+    def test_failed_targeted_repair_raises_clear_bounded_error(self):
+        invalid = bible()
+        invalid["characters"][0]["behavioral_patterns"] = None
+        with patch.object(
+            scriptwriter, "generate",
+            side_effect=[json.dumps(invalid), json.dumps(invalid)],
+        ) as generated:
+            with self.assertRaises(NarrativeValidationError) as caught:
+                scriptwriter._generate_json(
+                    "character contract", "character bible", validate_character_bible
+                )
+        self.assertEqual(generated.call_count, 2)
+        self.assertIn("repair failed after one bounded attempt", str(caught.exception))
+        self.assertIn("character[0].behavioral_patterns", str(caught.exception))
+
+    def test_cached_character_bible_array_is_normalized_without_gemini_call(self):
+        brief = validate_story_brief(story_brief())
+        source_hash = stable_hash(brief)
+        cached = bible()
+        cached["characters"][0]["behavioral_patterns"] = [
+            "Avoids confrontation", "Counts exits"
+        ]
+        cached["source_hash"] = source_hash
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp, "character_bible.json")
+            path.write_text(json.dumps(cached), encoding="utf-8")
+            with patch.object(scriptwriter, "generate") as generated:
+                result = scriptwriter._character_bible(brief, Path(temp), force=False)
+            generated.assert_not_called()
+            persisted = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(result["characters"][0]["behavioral_patterns"],
+                         "Avoids confrontation; Counts exits")
+        self.assertIsInstance(persisted["characters"][0]["behavioral_patterns"], str)
+
     def test_bible_outline_and_script_contracts(self):
         b = validate_character_bible(bible())
         plan = validate_outline(outline(), b)
@@ -161,6 +293,34 @@ class NarrativeContractTests(unittest.TestCase):
         bad_rules["speculative_rules"] = ["One rule", "one rule"]
         with self.assertRaises(NarrativeValidationError):
             validate_character_bible(bad_rules)
+
+    def test_character_bible_diagnostics_distinguish_identity_role_and_rules(self):
+        invalid_id = bible()
+        invalid_id["characters"][0]["character_id"] = "Eli Smith"
+        with self.assertRaises(NarrativeValidationError) as caught:
+            validate_character_bible(invalid_id)
+        self.assertIn("invalid character ID", str(caught.exception))
+
+        no_protagonist = bible()
+        no_protagonist["characters"][0]["role"] = "supporting"
+        with self.assertRaises(NarrativeValidationError) as caught:
+            validate_character_bible(no_protagonist)
+        self.assertIn("missing or ambiguous protagonist", str(caught.exception))
+
+        invalid_rules = bible()
+        invalid_rules["speculative_rules"] = None
+        with self.assertRaises(NarrativeValidationError) as caught:
+            validate_character_bible(invalid_rules)
+        self.assertIn("speculative_rules", str(caught.exception))
+        self.assertIn("Received: null", str(caught.exception))
+
+    def test_character_bible_rejects_ambiguous_collection_types(self):
+        invalid = bible()
+        invalid["characters"][0]["relationships"] = {"eli": "self"}
+        with self.assertRaises(NarrativeValidationError) as caught:
+            validate_character_bible(invalid)
+        self.assertIn("character[0].relationships", str(caught.exception))
+        self.assertIn("Expected: array[string]", str(caught.exception))
 
     def test_write_script_creates_intermediate_artifacts(self):
         responses = [json.dumps(bible()), json.dumps(outline()), json.dumps(scene_batch())]

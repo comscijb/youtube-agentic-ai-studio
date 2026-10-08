@@ -24,23 +24,57 @@ from agents.narrative import (
 
 
 def _generate_json(prompt: str, label: str, validator=None) -> dict:
-    """Generate structured data with one bounded semantic repair attempt."""
+    """Generate JSON with one parse repair or one targeted semantic repair."""
     raw = generate(prompt)
     try:
         value = extract_json(raw, label)
-        return validator(value) if validator else value
-    except (NarrativeValidationError, ValueError, KeyError, TypeError) as exc:
-        repair = f"""Repair the following incomplete or malformed response into ONE valid,
-complete JSON object. Preserve its story decisions. Do not add commentary or markdown.
-Required artifact: {label}. Validation problem: {exc}
+    except NarrativeValidationError as initial_error:
+        # Parsing failed, so there is no reliable document to patch. One broad
+        # syntax/completeness repair is appropriate, and remains bounded.
+        repair = f"""The response below could not be parsed as the required {label} JSON.
+Return exactly one complete JSON object with no markdown or commentary. Preserve every readable
+story decision from the response and satisfy the original contract.
 
-ORIGINAL REQUEST:
+PARSING ERROR:
+{initial_error}
+
+ORIGINAL CONTRACT:
 {prompt[:14000]}
 
-RESPONSE TO REPAIR:
+UNPARSEABLE RESPONSE:
 {raw[:10000]}"""
-        value = extract_json(generate(repair), f"repaired {label}")
-        return validator(value) if validator else value
+        return _repair_and_validate(repair, label, validator, initial_error)
+
+    if validator is None:
+        return value
+    try:
+        return validator(value)
+    except (NarrativeValidationError, ValueError, KeyError, TypeError) as initial_error:
+        # JSON is already valid. Send the intact document and exact validation
+        # diagnostics, asking the model to touch only the invalid portions.
+        repair = f"""The {label} JSON parsed successfully but failed semantic validation.
+Return the COMPLETE corrected JSON object only. Correct only the fields identified below.
+Preserve all valid character identities, motivations, relationships, story decisions, array order,
+and every valid field exactly. Do not summarize, replace, or broadly rewrite the artifact.
+
+VALIDATION ERROR:
+{initial_error}
+
+CURRENT VALID JSON:
+{json.dumps(value, ensure_ascii=False, indent=2)[:18000]}"""
+        return _repair_and_validate(repair, label, validator, initial_error)
+
+
+def _repair_and_validate(repair_prompt: str, label: str, validator, initial_error) -> dict:
+    repaired_raw = generate(repair_prompt)
+    try:
+        repaired = extract_json(repaired_raw, f"repaired {label}")
+        return validator(repaired) if validator else repaired
+    except (NarrativeValidationError, ValueError, KeyError, TypeError) as repaired_error:
+        raise NarrativeValidationError(
+            f"{label} repair failed after one bounded attempt. "
+            f"Initial error: {initial_error}. Repaired artifact error: {repaired_error}"
+        ) from repaired_error
 
 
 def _cached(path: Path, source_hash: str, validator, *args):
@@ -59,18 +93,46 @@ def _character_bible(brief: dict, output: Path, force: bool) -> dict:
     if not force:
         cached = _cached(path, source_hash, validate_character_bible)
         if cached:
+            # Persist deterministic canonicalization of older cache entries
+            # (notably list[str] behavioral_patterns) without an API call.
+            atomic_write_json(path, cached)
             return cached
     prompt = f"""You are the character architect for Private Gravity. Build a compact,
 production-ready character bible for this story brief:
 {json.dumps(brief, ensure_ascii=False)}
 
-Return ONLY JSON: {{"characters": [...], "speculative_rules": [...]}}.
-Every character needs character_id (lowercase snake_case), name, role, age, background,
-personality, core_desire, underlying_need, central_fear, psychological_wound,
-internal_contradiction, behavioral_patterns, relationships, initial_state, development_arc,
-final_state, visual_identity, distinctive_details. Define exactly one protagonist. Keep the cast
-small and each visual identity stable. If the premise is speculative, speculative_rules must be
-clear and consistent; otherwise use an empty list."""
+Return ONLY one JSON object using this exact type contract. The object below is a TYPE/SHAPE
+example only; do not copy its character or story content into the requested story:
+{{
+  "characters": [
+    {{
+      "character_id": "mara_voss",
+      "name": "Mara Voss",
+      "role": "protagonist",
+      "age": "42",
+      "background": "A municipal archivist who has spent twenty years avoiding conflict",
+      "personality": "Meticulous, guarded, perceptive, and privately sentimental",
+      "core_desire": "To keep her carefully controlled life intact",
+      "underlying_need": "To admit that safety has become isolation",
+      "central_fear": "Being seen clearly and then rejected",
+      "psychological_wound": "A public betrayal taught her to conceal every vulnerable impulse",
+      "internal_contradiction": "She longs for intimacy while punishing every attempt to approach her",
+      "behavioral_patterns": "Rehearses difficult conversations; checks every locked door twice",
+      "relationships": ["Jon: estranged brother whose calls she avoids"],
+      "initial_state": "Efficient, isolated, and convinced that control is peace",
+      "development_arc": "Moves from defensive control toward one costly act of honesty",
+      "final_state": "Still afraid, but willing to remain present",
+      "visual_identity": "Dark wool coat, precise posture, and a worn brass key ring",
+      "distinctive_details": ["Aligns objects before speaking", "Touches the key ring when anxious"]
+    }}
+  ],
+  "speculative_rules": []
+}}
+
+For behavioral_patterns use a canonical STRING, for example: "Avoids difficult conversations;
+checks his phone for social approval." Never use null, an empty string, an empty array, generic
+placeholders, or omit a required field. Keep the cast compact and preserve the brief's exact story
+decisions. If the premise is not speculative, speculative_rules must be an empty array."""
     bible = _generate_json(
         prompt, "character bible",
         lambda value: validate_character_bible(value, source_hash),
@@ -100,7 +162,7 @@ FORMAT: {video_type}; TARGET: {target_words} narrated words across exactly {scen
 Return ONLY JSON {{"scenes": [...]}}. Each scene requires scene_id (s01 etc.), order,
 title, narrative_function, summary, setting, characters_present (IDs from the bible),
 dramatic_function, emotional_turn, causal_link to the next scene, target_words,
-visual_direction, and image_queries (3 concrete stock-search phrases centered on settings,
+visual_direction, and image_queries (an array of exactly 3 nonempty string stock-search phrases centered on settings,
 objects, gestures, environments or silhouettes). The first scene must function as an opening;
 the final scene as resolution/aftermath. Escalate through decisions and consequences. No lecture,
 chapter summary, bullet lesson, generic CTA, or unsupported twist."""
@@ -136,6 +198,7 @@ No placeholders, headings inside narration, moral summary, subscribe request or 
     required = (
         "scene_id", "title", "section_type", "narration", "setting",
         "dramatic_function", "emotional_tone", "visual_direction", "image_query",
+        "image_query_2", "image_query_3",
     )
 
     def validate_batch(data):
@@ -148,7 +211,11 @@ No placeholders, headings inside narration, moral summary, subscribe request or 
             raise NarrativeValidationError("screenplay batch scene IDs/order do not match outline")
         for scene in result:
             missing = [key for key in required if not str(scene.get(key, "")).strip()]
-            if missing or len(scene["narration"].split()) < 12:
+            narration = scene.get("narration")
+            present = scene.get("characters_present")
+            if (missing or not isinstance(narration, str) or len(narration.split()) < 12
+                    or not isinstance(present, list)
+                    or any(not isinstance(cid, str) for cid in present)):
                 raise NarrativeValidationError(
                     f"incomplete screenplay scene {scene.get('scene_id')}: {', '.join(missing)}"
                 )

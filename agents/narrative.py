@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import re
+from copy import deepcopy
 from pathlib import Path
 
 
@@ -142,43 +143,114 @@ def validate_story_brief(brief: dict) -> dict:
     return brief
 
 
+def normalize_character_bible(bible: dict) -> dict:
+    """Return a canonical copy without inventing missing narrative content.
+
+    Gemini sometimes represents ``behavioral_patterns`` as ``list[str]``.
+    That representation is semantically equivalent to the canonical string
+    consumed by the rest of the application, so it can be joined safely.
+    Unsupported, empty or mixed arrays are deliberately left untouched for
+    the validator to reject with a precise diagnostic.
+    """
+    if not isinstance(bible, dict):
+        return bible
+    normalized = _trim_strings(deepcopy(bible))
+    characters = normalized.get("characters")
+    if not isinstance(characters, list):
+        return normalized
+    for character in characters:
+        if not isinstance(character, dict):
+            continue
+        age = character.get("age")
+        if isinstance(age, (int, float)) and not isinstance(age, bool):
+            character["age"] = str(age)
+        patterns = character.get("behavioral_patterns")
+        if (isinstance(patterns, list) and patterns
+                and all(isinstance(item, str) and item.strip() for item in patterns)):
+            character["behavioral_patterns"] = "; ".join(item.strip() for item in patterns)
+    return normalized
+
+
 def validate_character_bible(bible: dict, story_hash: str | None = None) -> dict:
-    _require_mapping(bible, "character bible")
+    bible = normalize_character_bible(bible)
+    if not isinstance(bible, dict):
+        raise _validation_error(
+            "Character Bible", "$", "object", bible, "incorrect root type"
+        )
     characters = bible.get("characters")
-    if not isinstance(characters, list) or not characters:
-        raise NarrativeValidationError("character bible requires at least one character")
+    if "characters" not in bible:
+        raise _validation_error(
+            "Character Bible", "characters", "nonempty array[object]", _MISSING, "missing field"
+        )
+    if not isinstance(characters, list):
+        raise _validation_error(
+            "Character Bible", "characters", "nonempty array[object]", characters, "incorrect field type"
+        )
+    if not characters:
+        raise _validation_error(
+            "Character Bible", "characters", "nonempty array[object]", characters, "empty required field"
+        )
     ids = []
     protagonists = 0
     required = (
-        "character_id", "name", "role", "background", "personality", "core_desire",
-        "underlying_need", "central_fear", "internal_contradiction", "behavioral_patterns",
-        "initial_state", "development_arc", "final_state", "visual_identity",
+        "character_id", "name", "role", "age", "background", "personality",
+        "core_desire", "underlying_need", "central_fear", "psychological_wound",
+        "internal_contradiction", "behavioral_patterns", "initial_state",
+        "development_arc", "final_state", "visual_identity",
     )
-    for index, character in enumerate(characters, 1):
-        _require_mapping(character, f"character {index}")
-        _require_text_fields(character, required, f"character {index}")
+    for index, character in enumerate(characters):
+        path = f"character[{index}]"
+        if not isinstance(character, dict):
+            raise _validation_error(
+                "Character Bible", path, "object", character, "incorrect character record type"
+            )
+        for field in required:
+            _require_character_text(character, index, field)
         cid = character["character_id"]
         if not re.fullmatch(r"[a-z][a-z0-9_]{1,39}", cid):
-            raise NarrativeValidationError(f"Invalid character_id: {cid!r}")
+            raise _validation_error(
+                "Character Bible", f"{path}.character_id",
+                "lowercase snake_case string matching [a-z][a-z0-9_]{1,39}",
+                cid, "invalid character ID",
+            )
         if cid in ids:
-            raise NarrativeValidationError(f"Duplicate character_id: {cid}")
+            raise _validation_error(
+                "Character Bible", f"{path}.character_id", "unique character ID",
+                cid, "duplicate character ID",
+            )
         ids.append(cid)
         if character["role"].strip().lower() == "protagonist":
             protagonists += 1
-        character.setdefault("age", "unspecified adult")
-        character.setdefault("psychological_wound", "")
-        character.setdefault("relationships", [])
-        character.setdefault("distinctive_details", [])
+        _require_string_array(character, index, "relationships", allow_empty=True)
+        _require_string_array(character, index, "distinctive_details", allow_empty=False)
     if protagonists != 1:
-        raise NarrativeValidationError("character bible must define exactly one protagonist")
+        raise _validation_error(
+            "Character Bible", "characters[*].role", "exactly one 'protagonist'",
+            f"count={protagonists}", "missing or ambiguous protagonist",
+        )
     bible["schema_version"] = SCHEMA_VERSION
     bible["content_mode"] = CONTENT_MODE
     if story_hash:
         bible["source_story_hash"] = story_hash
-    rules = bible.setdefault("speculative_rules", [])
-    if (not isinstance(rules, list) or any(not isinstance(rule, str) or not rule.strip() for rule in rules)
-            or len({rule.strip().lower() for rule in rules}) != len(rules)):
-        raise NarrativeValidationError("speculative_rules must be unique nonempty strings")
+    rules = bible.get("speculative_rules")
+    if rules is None and "speculative_rules" not in bible:
+        rules = []
+        bible["speculative_rules"] = rules
+    if not isinstance(rules, list):
+        raise _validation_error(
+            "Character Bible", "speculative_rules", "array[string]", rules,
+            "incorrect field type",
+        )
+    if any(not isinstance(rule, str) or not rule.strip() for rule in rules):
+        raise _validation_error(
+            "Character Bible", "speculative_rules", "array of nonempty strings", rules,
+            "invalid array element type or empty element",
+        )
+    if len({rule.strip().lower() for rule in rules}) != len(rules):
+        raise _validation_error(
+            "Character Bible", "speculative_rules", "unique nonempty strings", rules,
+            "duplicate speculative rule",
+        )
     return bible
 
 
@@ -205,11 +277,15 @@ def validate_outline(outline: dict, bible: dict) -> dict:
             raise NarrativeValidationError("outline scene order must be strictly increasing integers")
         previous_order = order
         present = scene.get("characters_present", [])
-        if not isinstance(present, list) or any(cid not in character_ids for cid in present):
+        if (not isinstance(present, list)
+                or any(not isinstance(cid, str) or cid not in character_ids for cid in present)):
             raise NarrativeValidationError(f"Unknown character reference in outline scene {sid}")
         queries = scene.get("image_queries", [])
-        if not isinstance(queries, list) or not any(str(q).strip() for q in queries):
-            raise NarrativeValidationError(f"outline scene {sid} requires image_queries")
+        if (not isinstance(queries, list) or len(queries) < 3
+                or any(not isinstance(query, str) or not query.strip() for query in queries)):
+            raise NarrativeValidationError(
+                f"outline scene {sid} requires at least three nonempty string image_queries"
+            )
         target_words = scene.get("target_words", 0)
         if not isinstance(target_words, int) or target_words < 20:
             raise NarrativeValidationError(f"outline scene {sid} requires target_words >= 20")
@@ -253,16 +329,29 @@ def validate_script(script: dict, character_bible: dict | None = None) -> dict:
                 f"screenplay scene {sid} narration is incomplete ({len(scene['narration'].split())} words)"
             )
         present = scene.get("characters_present", [])
-        if not isinstance(present, list):
-            raise NarrativeValidationError(f"screenplay scene {sid} characters_present must be a list")
+        if not isinstance(present, list) or any(not isinstance(cid, str) for cid in present):
+            raise NarrativeValidationError(
+                f"screenplay scene {sid} characters_present must be an array of strings"
+            )
         if known_characters and any(cid not in known_characters for cid in present):
             raise NarrativeValidationError(f"Unknown character reference in screenplay scene {sid}")
-        scene.setdefault("image_query_2", "")
-        scene.setdefault("image_query_3", "")
+        for query_field in ("image_query_2", "image_query_3"):
+            if not isinstance(scene.get(query_field), str) or not scene[query_field].strip():
+                raise NarrativeValidationError(
+                    f"screenplay scene {sid} requires nonempty {query_field}"
+                )
         scene.setdefault("image_query_4", "")
+        if not isinstance(scene["image_query_4"], str):
+            raise NarrativeValidationError(
+                f"screenplay scene {sid} image_query_4 must be a string when supplied"
+            )
         scene["bullet_points"] = []
         scene.setdefault("caption_text", "")
         scene.setdefault("on_screen_text", "")
+        if not isinstance(scene["caption_text"], str) or not isinstance(scene["on_screen_text"], str):
+            raise NarrativeValidationError(
+                f"screenplay scene {sid} caption_text and on_screen_text must be strings"
+            )
     script["schema_version"] = SCHEMA_VERSION
     script["content_mode"] = CONTENT_MODE
     script.setdefault("characters", list((character_bible or {}).get("characters", [])))
@@ -422,3 +511,88 @@ def _require_text_fields(value: dict, fields, label: str):
     missing = [field for field in fields if not isinstance(value.get(field), str) or not value[field].strip()]
     if missing:
         raise NarrativeValidationError(f"{label} missing nonempty fields: {', '.join(missing)}")
+
+
+_MISSING = object()
+
+
+def _trim_strings(value):
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, list):
+        return [_trim_strings(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _trim_strings(item) for key, item in value.items()}
+    return value
+
+
+def _received_type(value) -> str:
+    if value is _MISSING:
+        return "missing"
+    if value is None:
+        return "null"
+    if isinstance(value, list):
+        if not value:
+            return "empty list"
+        element_types = sorted({"null" if item is None else type(item).__name__ for item in value})
+        return f"list[{', '.join(element_types)}]"
+    return type(value).__name__
+
+
+def _validation_error(artifact: str, path: str, expected: str, received, problem: str):
+    return NarrativeValidationError(
+        f"{artifact} validation failed:\n"
+        f"{path}\n"
+        f"Expected: {expected}\n"
+        f"Received: {_received_type(received)}\n"
+        f"Problem: {problem}"
+    )
+
+
+def _require_character_text(character: dict, index: int, field: str) -> None:
+    path = f"character[{index}].{field}"
+    if field not in character:
+        raise _validation_error(
+            "Character Bible", path, "nonempty string", _MISSING, "missing field"
+        )
+    value = character[field]
+    expected = (
+        "nonempty string or nonempty array[string]"
+        if field == "behavioral_patterns" else "nonempty string"
+    )
+    if not isinstance(value, str):
+        if field == "behavioral_patterns" and isinstance(value, list):
+            problem = ("empty required field" if not value
+                       else "invalid array element type or empty element")
+        else:
+            problem = "incorrect field type"
+        raise _validation_error(
+            "Character Bible", path, expected, value, problem
+        )
+    if not value.strip():
+        raise _validation_error(
+            "Character Bible", path, expected, value, "empty required field"
+        )
+
+
+def _require_string_array(character: dict, index: int, field: str,
+                          allow_empty: bool) -> None:
+    path = f"character[{index}].{field}"
+    if field not in character:
+        raise _validation_error(
+            "Character Bible", path, "array[string]", _MISSING, "missing field"
+        )
+    value = character[field]
+    if not isinstance(value, list):
+        raise _validation_error(
+            "Character Bible", path, "array[string]", value, "incorrect field type"
+        )
+    if not allow_empty and not value:
+        raise _validation_error(
+            "Character Bible", path, "nonempty array[string]", value, "empty required field"
+        )
+    if any(not isinstance(item, str) or not item.strip() for item in value):
+        raise _validation_error(
+            "Character Bible", path, "array of nonempty strings", value,
+            "invalid array element type or empty element",
+        )
