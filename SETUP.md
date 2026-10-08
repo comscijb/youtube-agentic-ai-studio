@@ -48,7 +48,7 @@ pip install -r requirements.txt
 
 ## Step 2 — Get your API keys
 
-### 2a. Google Gemini API Key (required — free)
+### 2a. Google Gemini API Key (required)
 
 1. Go to [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
 2. Sign in with your Google account
@@ -96,6 +96,7 @@ Copy `.env.example` to `.env`, then set:
 
 ```dotenv
 GEMINI_API_KEY=your_gemini_key
+GEMINI_MODEL=gemini-3.8-flash
 PIXABAY_API_KEY=your_pixabay_key
 STOCK_PROVIDER=auto
 STOCK_FALLBACK_PROVIDER=openverse
@@ -103,6 +104,22 @@ STOCK_FALLBACK_PROVIDER=openverse
 
 The GUI also saves new credentials to this gitignored file. It never writes
 API secrets into `config.py` or returns their values from `/api/settings`.
+
+Process-level environment variables take precedence over `.env` during a fresh
+start. A key entered in the GUI takes effect immediately for the running process
+and invalidates the cached Gemini client. If a system-level `GEMINI_API_KEY`
+exists, update or remove it as well when you want the `.env` value to win after
+a restart.
+
+Model availability and quotas vary by project. Verify the current key with one
+small, explicit diagnostic run:
+
+```bash
+python diagnose_gemini.py
+```
+
+This lists accessible `generateContent` models and performs one minimal text
+request. It never prints the API key.
 
 ### Stock provider behavior
 
@@ -204,7 +221,9 @@ The repo includes a few dark cinematic tracks to get you started. Replace or add
 |---|---|
 | `No module named 'moviepy'` | Run `pip install -r requirements.txt` again |
 | `ffmpeg not found` | Install ffmpeg and ensure it's on your PATH |
-| `RESOURCE_EXHAUSTED` / 429 | Gemini quota hit — wait until midnight Pacific or switch starting model |
+| `RESOURCE_EXHAUSTED` / 429 | Run `python diagnose_gemini.py`, then review the project's current rate limits/billing or retry after the reported reset |
+| Gemini 401/403 | Replace the key or verify that its project has Gemini API/model access |
+| No available Gemini models | Use **Check Available Models** in Settings and verify `generateContent` access in Google AI Studio |
 | `youtube_token.pickle` auth error | Delete the file and re-run to re-authenticate |
 | Tiny/ugly video text | Install DejaVu fonts: `sudo apt install fonts-dejavu` (Linux) |
 | Flask port already in use | Change `REVIEW_PORT` in `config.py` |

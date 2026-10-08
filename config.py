@@ -1,6 +1,9 @@
 import os
 from pathlib import Path
 
+_PROCESS_ENV_KEYS = set(os.environ)
+_LOCAL_ENV_KEYS = set()
+
 
 def _load_local_env():
     """Load a simple local .env without overriding process-level settings."""
@@ -17,6 +20,7 @@ def _load_local_env():
             value = value.strip().strip('"').strip("'")
             if key and key not in os.environ:
                 os.environ[key] = value
+                _LOCAL_ENV_KEYS.add(key)
     except OSError:
         pass
 
@@ -35,6 +39,11 @@ _load_local_env()
 GEMINI_API_KEY     = os.getenv("GEMINI_API_KEY",     "YOUR_GEMINI_API_KEY")
 PIXABAY_API_KEY    = os.getenv("PIXABAY_API_KEY",    "")
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "YOUR_ELEVENLABS_KEY")  # optional
+GEMINI_API_KEY_SOURCE = (
+    "process environment" if "GEMINI_API_KEY" in _PROCESS_ENV_KEYS
+    else "local .env" if "GEMINI_API_KEY" in _LOCAL_ENV_KEYS
+    else "not configured"
+)
 
 # Stock providers. "auto" tries the approved local library, Pixabay when a
 # key is configured, then the credential-free Openverse fallback.
@@ -74,17 +83,13 @@ VOICE_PITCH = "-3Hz"    # slightly deeper = more cinematic
 
 # ─────────────────────────────────────────
 #  AI Model
-#  Starting model for the fallback chain — the system auto-switches
-#  through all models below if quota or errors are hit.
+#  Preferred starting model. Runtime discovery keeps only models that this
+#  API key can access and that explicitly support generateContent.
 #  Change this in the GUI under Settings → AI Model, or here directly.
-#  Options (free tier):
-#    gemini-2.5-flash        — highest quality   (500 req/day)
-#    gemma-4-31b-it          — Gemma 4 31B       (500 req/day)
-#    gemini-2.0-flash        — recommended       (1500 req/day)  ← default
-#    gemini-2.0-flash-lite   — fastest           (1500 req/day)
-#    gemini-1.5-flash-001    — reliable fallback (1500 req/day)
+#  Current candidates: gemini-3.8-flash, gemini-3.6-flash,
+#  gemini-3.5-flash-lite. Availability varies by project.
 # ─────────────────────────────────────────
-GEMINI_MODEL = "gemini-2.0-flash"
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
 
 # ─────────────────────────────────────────
 #  Video Dimensions

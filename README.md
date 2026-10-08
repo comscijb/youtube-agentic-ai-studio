@@ -2,14 +2,13 @@
 
 <img src="docs/screenshots/banner.png" alt="YouTube AI Agent Studio" width="100%">
 
-# 🎬 Ai Powered Free Automated Faceless Youtube Studio
+# 🎬 AI-Powered Automated Faceless YouTube Studio
 
-**A fully automated, 100% free AI pipeline that researches, scripts, narrates, animates, and uploads faceless YouTube videos — from a single command.**
+**An automated AI pipeline that researches, scripts, narrates, animates, and uploads faceless YouTube videos — from a single command.**
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![Gemini](https://img.shields.io/badge/AI-Google%20Gemini-4285F4?style=flat-square&logo=google&logoColor=white)](https://aistudio.google.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
-[![Free Tier](https://img.shields.io/badge/Cost-$0%20per%20video-brightgreen?style=flat-square)](SETUP.md)
 [![Stars](https://img.shields.io/github/stars/raunakpatil/youtube-agentic-ai-studio?style=flat-square)](https://github.com/raunakpatil/youtube-agentic-ai-studio/stargazers)
 
 [**Quick Start**](#-quick-start) · [**Features**](#-features) · [**Pipeline**](#️-how-it-works) · [**Setup Guide**](SETUP.md) · [**FAQ**](#-faq)
@@ -30,7 +29,7 @@
 | 📱 **Shorts Support** | Generates vertical 9:16 Shorts alongside the main video |
 | 🕵️ **Human Review** | Local web dashboard to watch and approve before publishing |
 | 🚀 **Auto Upload** | Publishes to YouTube with SEO tags, description, and thumbnail |
-| 🔄 **Smart Fallback** | 8-model chain auto-switches if any model hits quota |
+| 🔄 **Smart Fallback** | Discovers accessible Gemini text models before selecting fallbacks |
 | 🎵 **Background Music** | Drop MP3s in `music library/` — auto-looped to fit video length |
 
 ---
@@ -123,6 +122,7 @@ standalone redistribution of a stock asset.
 ```
 youtube-ai-agent/
 ├── 📄 pipeline.py              ← Run this to start the full pipeline
+├── 🩺 diagnose_gemini.py       ← Explicit Gemini connectivity/model diagnostic
 ├── 🖥️  gui.py                  ← Run this for the visual GUI
 ├── ⚙️  config.py               ← Non-secret settings: colors, voice, video
 ├── 📦  requirements.txt
@@ -130,7 +130,7 @@ youtube-ai-agent/
 ├── 📝  .env.example            ← Copy to .env and fill in your API keys
 │
 ├── agents/
-│   ├── gemini_client.py        ← Shared AI client with 8-model fallback chain
+│   ├── gemini_client.py        ← Gemini discovery, diagnostics and structured fallback
 │   ├── researcher.py           ← Topic research agent
 │   └── scriptwriter.py        ← Script writing agent
 │
@@ -163,40 +163,47 @@ youtube-ai-agent/
 
 ---
 
-## 🤖 AI Model Fallback Chain
+## 🤖 Gemini Model Discovery and Fallback
 
-The system automatically tries models in order, rotating from your **Starting Model** preference:
+The preferred candidates are:
 
 ```
-gemini-2.5-flash  →  gemini-2.5-flash-lite  →  gemma-4-31b-it
-       ↓
-gemini-2.0-flash  →  gemini-2.0-flash-lite  →  gemma-3-27b-it
-       ↓
-gemini-1.5-flash-001  →  gemini-1.5-pro-001
+gemini-3.8-flash → gemini-3.6-flash → gemini-3.5-flash-lite
 ```
 
-If a model hits quota (429) or is overloaded (503), it automatically retries up to 3 times then advances to the next model — **so your pipeline never stops mid-run.**
+Before generation, the client calls `models.list()` and keeps only models the
+current project can access that explicitly support `generateContent`. Permanent
+credential, permission and request errors fail immediately. Model-specific
+availability and quota errors may use a verified fallback; transient retries are
+bounded by the SDK.
 
-Set your preferred starting model in the GUI under **Settings → AI Model**, or in `config.py`:
+Set the preference in the GUI or `.env`:
 
-```python
-GEMINI_MODEL = "gemini-2.0-flash"   # 1500 free req/day — recommended default
+```dotenv
+GEMINI_MODEL=gemini-3.8-flash
+```
+
+Availability, pricing and limits vary by account and project. Use **Settings →
+AI Model → Check Available Models**, or run the explicit diagnostic:
+
+```bash
+python diagnose_gemini.py
 ```
 
 ---
 
-## 🔑 API Keys Required (All Free)
+## 🔑 API Keys and Services
 
 | Service | Key | Free Tier | Where to get it |
 |---|---|---|---|
-| **Google Gemini** | `GEMINI_API_KEY` | 1500 req/day | [aistudio.google.com](https://aistudio.google.com/apikey) |
+| **Google Gemini** | `GEMINI_API_KEY` | Project-specific limits/pricing | [aistudio.google.com](https://aistudio.google.com/apikey) |
 | **Pixabay** | `PIXABAY_API_KEY` | Provider limits apply | [pixabay.com/api/docs](https://pixabay.com/api/docs/) |
 | **Openverse** | *(none)* | Public API limits apply | [api.openverse.org](https://api.openverse.org/v1/) |
 | **Edge TTS** | *(none)* | Unlimited | Built-in |
 | **YouTube API** | `client_secret.json` | Free | [Google Cloud Console](https://console.cloud.google.com) |
 | **ElevenLabs** | `ELEVENLABS_API_KEY` | Optional | [elevenlabs.io](https://elevenlabs.io) |
 
-> **Total cost: $0 per video.** All required services have free tiers that comfortably cover daily video production.
+Check each provider's current pricing and project limits before production use.
 
 ---
 
@@ -234,8 +241,8 @@ OVERLAY_OPACITY    = 0.62  # how dark the image overlay is
 <details>
 <summary><b>Does this cost anything to run?</b></summary>
 
-No. The entire stack uses free tiers:
-- **Gemini** — 1500 req/day free on the 2.0-flash model
+Local rendering is free, while hosted-service cost depends on current provider terms:
+- **Gemini** — availability, quotas and pricing vary by model and project
 - **Pixabay** — free API key; provider limits apply
 - **Openverse** — credential-free fallback restricted here to CC0/PDM results
 - **Edge TTS** — completely free, no account needed

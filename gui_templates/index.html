@@ -639,18 +639,13 @@ input[type=range]{width:100%;accent-color:var(--primary)}
             <div class="settings-field">
               <div class="field-label">Starting Model</div>
               <select id="s-model">
-                <option value="gemini-2.5-flash">gemini-2.5-flash — highest quality (500 req/day free)</option>
-                <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite — fast + smart</option>
-                <option value="gemma-4-31b-it">gemma-4-31b-it — Gemma 4 31B (strong reasoning, free)</option>
-                <option value="gemini-2.0-flash" selected>gemini-2.0-flash — recommended (1500 req/day free)</option>
-                <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite — fastest (1500 req/day free)</option>
-                <option value="gemma-3-27b-it">gemma-3-27b-it — Gemma 3 27B</option>
-                <option value="gemini-1.5-flash-001">gemini-1.5-flash-001 — reliable fallback</option>
-                <option value="gemini-1.5-pro-001">gemini-1.5-pro-001 — pro quality fallback</option>
+                <option value="gemini-3.8-flash" selected>gemini-3.8-flash — preferred</option>
+                <option value="gemini-3.6-flash">gemini-3.6-flash</option>
+                <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite — lightweight</option>
               </select>
-              <div style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.5">
-                The chain starts here and automatically falls back through all remaining models
-                if quota or errors are hit — so generation always completes.
+              <button class="btn btn-ghost" style="margin-top:8px" onclick="checkGeminiModels()">Check Available Models</button>
+              <div class="help-text" id="s-gemini-model-status">
+                Availability and quota depend on the API key's project. Fallback uses only models returned by the API with generateContent support.
               </div>
             </div>
           </div>
@@ -1183,7 +1178,7 @@ function loadSettings() {
   fetch('/api/settings').then(r=>r.json()).then(d => {
     document.getElementById('s-gemini').value       = '';
     document.getElementById('s-pixabay').value      = '';
-    document.getElementById('s-gemini-status').textContent = d.gemini_configured ? '✓ Configured' : 'Not configured';
+    document.getElementById('s-gemini-status').textContent = d.gemini_configured ? '✓ Configured via '+(d.gemini_key_source || 'unknown source') : 'Not configured';
     document.getElementById('s-pixabay-status').textContent = d.pixabay_configured ? '✓ Configured' : 'Not configured — auto mode will use Openverse';
     document.getElementById('s-stock-provider').value = d.stock_provider || 'auto';
     document.getElementById('s-stock-fallback').value = d.stock_fallback || 'openverse';
@@ -1204,7 +1199,12 @@ function loadSettings() {
     document.getElementById('s-voice-pitch').value           = pitch;
     document.getElementById('s-voice-pitch-range').value     = pitchNum;
     document.getElementById('s-voice-pitch-val').textContent = pitch;
-    document.getElementById('s-model').value        = d.gemini_model|| 'gemini-2.0-flash';
+    const configuredModel = d.gemini_model || 'gemini-3.8-flash';
+    const modelSelect = document.getElementById('s-model');
+    if (![...modelSelect.options].some(o => o.value === configuredModel)) {
+      modelSelect.add(new Option(configuredModel, configuredModel));
+    }
+    modelSelect.value = configuredModel;
     const ov = Math.round((parseFloat(d.overlay)||0.62)*100);
     document.getElementById('s-overlay').value      = ov;
     document.getElementById('s-overlay-val').textContent = ov+'%';
@@ -1243,6 +1243,22 @@ function loadSettings() {
   });
 }
 
+function checkGeminiModels() {
+  const status = document.getElementById('s-gemini-model-status');
+  status.textContent = 'Checking project access…';
+  fetch('/api/gemini/models?refresh=1').then(async r => ({ok:r.ok, data:await r.json()})).then(({ok,data}) => {
+    if (!ok || !data.ok) {
+      status.textContent = 'Unavailable: ' + (data.error || 'model discovery failed');
+      return;
+    }
+    const select = document.getElementById('s-model');
+    select.innerHTML = '';
+    (data.available_models || []).forEach(name => select.add(new Option(name, name)));
+    if (data.selected_model) select.value = data.selected_model;
+    status.textContent = '✓ Accessible text models: ' + (data.available_models || []).join(', ');
+  }).catch(() => { status.textContent = 'Unable to contact the local diagnostics route.'; });
+}
+
 function saveSettings() {
   const rate  = document.getElementById('s-voice-rate').value;
   const pitch = document.getElementById('s-voice-pitch').value;
@@ -1277,6 +1293,8 @@ function saveSettings() {
     if (d.ok) {
       msg.style.display = 'block'; msg.style.color='var(--green)';
       msg.textContent = '✓ Settings saved (credentials kept in local .env)';
+      document.getElementById('s-gemini').value = '';
+      document.getElementById('s-pixabay').value = '';
     } else {
       msg.style.display = 'block'; msg.style.color='var(--red)';
       msg.textContent = '✗ '+d.error;

@@ -2,7 +2,7 @@
 # IMPORTANT: Do NOT upgrade moviepy or numpy — see README for why
 
 # AI Brain — NEW SDK (replaces deprecated google-generativeai)
-google-genai>=1.0.0
+google-genai>=2.29.0
 
 # HTTP requests (Pixabay and Openverse image downloads)
 requests>=2.31.0

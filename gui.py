@@ -702,6 +702,7 @@ def _write_env_settings(updates):
 def get_settings():
     return jsonify({
         "gemini_configured":  _key_configured(config.GEMINI_API_KEY),
+        "gemini_key_source":  getattr(config, "GEMINI_API_KEY_SOURCE", "unknown"),
         "pixabay_configured": _key_configured(config.PIXABAY_API_KEY),
         "stock_provider":     getattr(config, "STOCK_PROVIDER", "auto"),
         "stock_fallback":     getattr(config, "STOCK_FALLBACK_PROVIDER", "openverse"),
@@ -730,9 +731,31 @@ def get_settings():
         "banned_topics":   load_banned_topics(),
     })
 
+
+@app.route("/api/gemini/models")
+def get_gemini_models():
+    """Explicit capability check; never returns credentials or raw SDK errors."""
+    try:
+        from agents.gemini_client import build_chain, discover_models
+        available = discover_models(force=request.args.get("refresh") == "1")
+        chain = build_chain(getattr(config, "GEMINI_MODEL", None), available)
+        return jsonify({
+            "ok": True,
+            "available_models": available,
+            "selected_model": chain[0] if chain else None,
+        })
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 503
+
 @app.route("/api/save-settings", methods=["POST"])
 def save_settings():
     body = request.get_json(force=True) or {}
+    requested_model = str(body.get("gemini_model") or "").strip()
+    if requested_model:
+        from agents.gemini_client import RETIRED_MODELS
+        if (not re.fullmatch(r"gemini-[a-z0-9.-]+", requested_model)
+                or requested_model in RETIRED_MODELS):
+            return jsonify({"ok": False, "error": "Unsupported or retired Gemini model"}), 400
     env_updates = {}
     secret_fields = {
         "gemini_key": ("GEMINI_API_KEY", "GEMINI_API_KEY"),
@@ -749,6 +772,10 @@ def save_settings():
             _write_env_settings(env_updates)
         except OSError as exc:
             return jsonify({"ok": False, "error": f"Could not save local credentials: {exc}"}), 500
+    if str(body.get("gemini_key") or "").strip():
+        config.GEMINI_API_KEY_SOURCE = "local .env (GUI override for this process)"
+        from agents.gemini_client import reset_client
+        reset_client()
 
     # Update live config object
     m = {
@@ -797,6 +824,8 @@ def save_settings():
         stock_env["STOCK_CACHE_ENABLED"] = str(bool(config.STOCK_CACHE_ENABLED)).lower()
     if "stock_license_log" in body:
         stock_env["STOCK_LICENSE_LOG_ENABLED"] = str(bool(config.STOCK_LICENSE_LOG_ENABLED)).lower()
+    if "gemini_model" in body:
+        stock_env["GEMINI_MODEL"] = str(config.GEMINI_MODEL)
     if stock_env:
         try:
             _write_env_settings(stock_env)
@@ -815,7 +844,6 @@ def save_settings():
             "VOICE_ID":          body.get("voice_id"),
             "VOICE_RATE":        body.get("voice_rate"),
             "VOICE_PITCH":       body.get("voice_pitch"),
-            "GEMINI_MODEL":      body.get("gemini_model"),
             "OVERLAY_OPACITY":   body.get("overlay"),
             "KB_ZOOM_START":     body.get("kb_start"),
             "KB_ZOOM_END":       body.get("kb_end"),
