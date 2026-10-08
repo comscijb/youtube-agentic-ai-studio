@@ -18,13 +18,16 @@ ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "YOUR_ELEVENLABS_KEY")  # o
 #  The more specific you are, the better the AI's topic suggestions.
 # ─────────────────────────────────────────
 CHANNEL_DESCRIPTION = """
-A mind-bending science and technology channel in the style of Vsauce, Veritasium, and Kurzgesagt.
-We focus heavily on deep, existential "What If" scenarios, the extreme future of Artificial Intelligence,
-theoretical physics, and mind-expanding thought experiments.
-Every video should explore the absolute limits of science, space, or tech, making the viewer question reality.
-Target audience: highly curious thinkers who want their minds blown by deep scientific and philosophical dives.
+A cinematic storytelling channel exploring the psychology and philosophy of modern human life through original fictional stories.
+Each episode follows a carefully developed character facing universal struggles such as loneliness, ambition, identity, envy, regret, status, meaning, and fear of failure.
+The stories combine realistic psychological drama with occasional philosophical thought experiments and subtle surreal elements.
+Psychological and philosophical ideas are embedded naturally within the narrative rather than presented as lectures.
+The focus is on emotionally compelling plots, strong character motivations, escalating internal conflicts, and memorable reversals.
+Episodes are designed to create curiosity, identification, and reflection while remaining accessible to a broad audience.
+The visual and narrative style is cinematic, atmospheric, mature, and distinctive.
+The channel functions as an anthology, with mostly standalone stories centered on the hidden forces that shape human behavior and modern life.
 """
-CHANNEL_NAME = "My AI Channel"   # shown on-screen and in upload metadata
+CHANNEL_NAME = "Private Gravity"   # shown on-screen and in upload metadata
 
 # ─────────────────────────────────────────
 #  Voice (Edge TTS — free, no API key)
@@ -86,34 +89,30 @@ OVERLAY_OPACITY = 0.62
 
 # Colour palette — customise to match your brand
 COLORS = {
-    "background": (10,  10,  20),
-    "overlay":    (0,   0,   0),
-    "primary":    (99,  102, 241),   # indigo
-    "accent":     (167, 139, 250),   # purple
-    "highlight":  (251, 191,  36),   # amber
-    "white":      (255, 255, 255),
-    "light":      (199, 210, 254),   # indigo-200
-    "success":    (52,  211, 153),
-    "red":        (239,  68,  68),
+    "background": (12, 18, 24),       # Midnight Ink
+    "overlay":    (0, 0, 0),          # Black
+    "primary":    (145, 168, 184),    # Fog Blue
+    "accent":     (193, 138, 112),    # Muted Copper
+    "highlight":  (224, 186, 121),    # Antique Gold
+    "white":      (244, 240, 232),    # Warm Ivory
+    "light":      (202, 212, 219),    # Pale Silver
+    "success":    (121, 171, 152),    # Muted Sage
+    "red":        (197, 102, 112),    # Dusty Crimson
 }
 
 # Fonts — add your own .ttf paths for best results; system falls back gracefully
 FONT_PATHS = {
-    "bold":    [
-        "C:/Windows/Fonts/Impact.ttf",
+    "bold": [
+        "./assets/fonts/Manrope-ExtraBold.ttf",
         "C:/Windows/Fonts/arialbd.ttf",
-        "/System/Library/Fonts/Supplemental/Impact.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
     ],
     "regular": [
+        "./assets/fonts/Manrope-Regular.ttf",
         "C:/Windows/Fonts/arial.ttf",
-        "C:/Windows/Fonts/segoeui.ttf",
-        "/System/Library/Fonts/Helvetica.ttc",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
     ],
-    "light":   [
+    "light": [
+        "./assets/fonts/Manrope-Light.ttf",
         "C:/Windows/Fonts/segoeuil.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
     ],
 }
 
@@ -127,7 +126,7 @@ REVIEW_PORT = 5050
 # ─────────────────────────────────────────
 YOUTUBE_CLIENT_SECRET = "client_secret.json"   # OAuth credentials file (see SETUP.md)
 YOUTUBE_SCOPES        = ["https://www.googleapis.com/auth/youtube.upload"]
-VIDEO_CATEGORY_ID     = "27"       # 27 = Education
+VIDEO_CATEGORY_ID     = "24"  # Entertainment
 VIDEO_PRIVACY         = "public"   # "public" | "unlisted" | "private"
 
 # ─────────────────────────────────────────

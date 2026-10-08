@@ -49,3 +49,8 @@ desktop.ini
 
 # ── Logs ─────────────────────────────────
 *.log
+
+# ── Miscellaneous ────────────────────────
+assets/*
+config.py
+client_secret.json
