@@ -79,6 +79,11 @@ NARRATIVE_REVIEW_ENABLED = os.getenv(
     "NARRATIVE_REVIEW_ENABLED", "true"
 ).lower() in ("1", "true", "yes", "on")
 NARRATIVE_MAX_REVISIONS = 1
+NARRATIVE_AUTO_REVISION_ENABLED = os.getenv(
+    "NARRATIVE_AUTO_REVISION_ENABLED", "true"
+).lower() in ("1", "true", "yes", "on")
+NARRATIVE_EXPANSION_MAX_CALLS = int(os.getenv("NARRATIVE_EXPANSION_MAX_CALLS", "3"))
+NARRATIVE_EXPANSION_BATCH_SIZE = int(os.getenv("NARRATIVE_EXPANSION_BATCH_SIZE", "3"))
 
 # ─────────────────────────────────────────
 #  Voice (Edge TTS — free, no API key)

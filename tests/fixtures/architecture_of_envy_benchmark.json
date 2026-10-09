@@ -1,0 +1,61 @@
+{
+  "fixture_version": 1,
+  "captured_from_local_output": true,
+  "captured_at": "2026-10-08",
+  "purpose": "Sanitized immutable regression snapshot of the first Phase 2 long-form benchmark.",
+  "source_sha256": {
+    "story_brief.json": "a171d291c16294c9664a39a17017605ff5461b453e0f262ea1ff34df44c6a660",
+    "character_bible.json": "446fb38bdf3ded4d0ba468b5468f3d94e6e1367ff84dd7799d36595f1f8d70c4",
+    "story_outline.json": "a05b08f8017df9843288fe7157978c545fbe49f29268343081f696538d78688c",
+    "script.json": "0040ee1686584ef15673eb17287715652c227e5256f1c38097d5d22939320a8a",
+    "narrative_review.json": "5f8cfb8727267d47f0b32dbfb6b281f1a67e6c2825ee83f4ee5d4edefa83bd4e"
+  },
+  "title": "The Architecture of Envy",
+  "requested_premise": "The Man Who Needed Everyone to Envy Him",
+  "video_type": "normal",
+  "target_duration_minutes": 12,
+  "planned_words_per_minute": 125,
+  "target_word_count": 1500,
+  "actual_word_count": 996,
+  "original_review_status": "human_review_required",
+  "original_editorial_scores": {
+    "coherence": 9,
+    "character_consistency": 9,
+    "emotional_escalation": 9,
+    "originality": 8,
+    "opening_strength": 9,
+    "ending_resonance": 9,
+    "visual_feasibility": 9
+  },
+  "characters": [
+    {"character_id": "arthur_vance", "name": "Arthur Vance", "age": "38", "role": "protagonist"},
+    {"character_id": "julian_reed", "name": "Julian Reed", "age": "39", "role": "rival"},
+    {"character_id": "claire_holloway", "name": "Claire Holloway", "age": "37", "role": "supporting"}
+  ],
+  "scenes": [
+    {"scene_id": "s01", "order": 1, "title": "The Glass Cage", "target_words": 165, "actual_words": 147, "canonical_type": "opening"},
+    {"scene_id": "s02", "order": 2, "title": "Arrivals and Positioning", "target_words": 170, "actual_words": 135, "canonical_type": "setup"},
+    {"scene_id": "s03", "order": 3, "title": "The Weaponized Dinner", "target_words": 175, "actual_words": 124, "canonical_type": "development"},
+    {"scene_id": "s04", "order": 4, "title": "A Crack in the Facade", "target_words": 165, "actual_words": 109, "canonical_type": "development"},
+    {"scene_id": "s05", "order": 5, "title": "Claire's Observation", "target_words": 165, "actual_words": 100, "canonical_type": "development"},
+    {"scene_id": "s06", "order": 6, "title": "The Catalyst Discovery", "target_words": 170, "actual_words": 96, "canonical_type": "reversal"},
+    {"scene_id": "s07", "order": 7, "title": "The Anatomy of Pity", "target_words": 165, "actual_words": 108, "canonical_type": "climax"},
+    {"scene_id": "s08", "order": 8, "title": "The Early Departure", "target_words": 160, "actual_words": 90, "canonical_type": "resolution"},
+    {"scene_id": "s09", "order": 9, "title": "The Void Remains", "target_words": 160, "actual_words": 87, "canonical_type": "aftermath"}
+  ],
+  "regression_evidence": {
+    "age_contradiction": {
+      "scene_id": "s03",
+      "character_bible": "Arthur 38; Julian 39",
+      "screenplay_excerpt": "he questions the younger man's quiet transition into sustainable design"
+    },
+    "weak_discovery": {
+      "scene_id": "s06",
+      "screenplay_excerpt": "Seeking a corkscrew in the chef's kitchen, Julian opens a drawer and finds financial notices."
+    },
+    "underdeveloped_ending": {
+      "scene_id": "s09",
+      "screenplay_excerpt": "Arthur stands alone in the cavernous glass house as midnight settles over the hillside."
+    }
+  }
+}

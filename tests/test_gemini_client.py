@@ -98,7 +98,9 @@ class GeminiClientTests(unittest.TestCase):
             generation=[api_error(404), response("fallback text")],
         )
         with patch.object(gc, "_get_client", return_value=FakeClient(models)):
-            self.assertEqual(gc.generate("prompt"), "fallback text")
+            self.assertEqual(
+                gc.generate("prompt", starting_model="gemini-3.8-flash"), "fallback text"
+            )
         self.assertEqual([call["model"] for call in models.generate_calls],
                          ["gemini-3.8-flash", "gemini-3.6-flash"])
 
@@ -246,7 +248,9 @@ class GeminiClientTests(unittest.TestCase):
             "originality_assessment": "Distinct", "production_feasibility": "Stock-friendly",
             "tags": ["tag"],
         })
-        with patch.object(researcher, "generate", return_value=research_json):
+        with tempfile.TemporaryDirectory() as output_dir, \
+             patch.object(researcher, "generate", return_value=research_json), \
+             patch.object(config, "OUTPUT_DIR", output_dir):
             with redirect_stdout(io.StringIO()):
                 research = researcher.research_topic("channel", topic_override="T")
         script_json = json.dumps({"value": "text contract"})

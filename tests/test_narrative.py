@@ -8,11 +8,16 @@ from unittest.mock import patch
 import config
 from agents import researcher, scriptwriter
 from agents.narrative import (
+    EDITORIAL_DIMENSIONS,
     NarrativeValidationError,
     deterministic_review,
     invalidate_downstream,
     invalidate_scene_outputs,
+    merge_editorial_review,
     normalize_character_bible,
+    normalize_outline,
+    normalize_script,
+    rebalance_scene_word_targets,
     stable_hash,
     validate_character_bible,
     validate_outline,
@@ -74,11 +79,22 @@ def bible():
 
 
 def outline():
-    functions = ["opening setup", "confrontation", "resolution aftermath"]
+    functions = ["opening setup", "decisive confrontation", "resolution aftermath"]
+    types = ["opening", "climax", "resolution"]
     return {"scenes": [{
         "scene_id": f"s{i}", "order": i, "title": f"Scene {i}",
+        "section_type": types[i - 1],
         "narrative_function": functions[i - 1], "summary": "A consequence changes Eli's choice.",
         "setting": "Empty office at night", "characters_present": ["eli"],
+        "initial_dramatic_situation": "Eli faces a choice he has avoided.",
+        "character_objective": "Force an answer before dawn.",
+        "obstacle": "The other Eli refuses his premise.",
+        "dramatic_action": "Eli tests the monitor and confronts his counterpart.",
+        "decision": f"Eli chooses disclosure over control in phase {i}.",
+        "consequence": f"The choice removes escape route {i}.",
+        "new_information": "The monitor reflects consequences, not alternatives.",
+        "chronology_marker": f"Hour {i} before dawn",
+        "continuity_updates": [f"Eli learns fact {i}"],
         "dramatic_function": "Escalate the confrontation", "emotional_turn": "Certainty becomes doubt",
         "causal_link": "His action causes the next scene", "target_words": 80,
         "visual_direction": "Cold monitor light and negative space",
@@ -89,13 +105,47 @@ def outline():
 def scene_batch():
     narration = " ".join(["Eli watched the silent monitor as the old clock divided his life again."] * 5)
     return {"scenes": [{
-        "scene_id": f"s{i}", "title": f"Scene {i}", "section_type": "scene",
+        "scene_id": f"s{i}", "title": f"Scene {i}",
+        "section_type": ["opening", "climax", "resolution"][i - 1],
+        "narrative_function": ["opening setup", "decisive confrontation", "resolution aftermath"][i - 1],
         "narration": narration, "setting": "Empty office", "characters_present": ["eli"],
         "dramatic_function": "Escalation", "emotional_tone": "Unease",
         "visual_direction": "A slow push through shadow", "image_query": "empty office at night",
         "image_query_2": "worn watch close up", "image_query_3": "man silhouette monitor",
         "caption_text": "", "on_screen_text": "",
     } for i in range(1, 4)]}
+
+
+def screenplay_with_counts(counts, targets=None, video_type="normal"):
+    targets = targets or counts
+    types = ["opening"] + ["development"] * max(0, len(counts) - 3) + ["climax", "resolution"]
+    sections = []
+    for index, (actual, target) in enumerate(zip(counts, targets), 1):
+        sections.append({
+            "id": index, "outline_scene_id": f"s{index:02}", "title": f"Scene {index}",
+            "section_type": types[index - 1], "narrative_function": f"Function {index}",
+            "narration": " ".join(f"word{n}" for n in range(actual)),
+            "target_words": target, "setting": "A specific room",
+            "characters_present": ["eli"], "dramatic_function": "A choice changes the situation",
+            "emotional_tone": "Controlled unease", "visual_direction": "A precise visual action",
+            "image_query": "room dramatic action", "image_query_2": "watch close up",
+            "image_query_3": "character silhouette", "bullet_points": [],
+        })
+    return validate_script({
+        "title": "Measured Story", "description": "Original fiction", "video_type": video_type,
+        "narrative_type": "realistic_psychological_fiction", "psychological_theme": "Regret",
+        "planned_words_per_minute": 125, "sections": sections,
+    }, validate_character_bible(bible()))
+
+
+def editorial_assessment(findings=None, score=8):
+    return {
+        "dimensions": {
+            name: {"score": score, "evidence": ["Scene 1 contains observable evidence."]}
+            for name in EDITORIAL_DIMENSIONS
+        },
+        "findings": findings or [], "strengths": [], "revision_priorities": [],
+    }
 
 
 class NarrativeContractTests(unittest.TestCase):
@@ -325,7 +375,8 @@ class NarrativeContractTests(unittest.TestCase):
     def test_write_script_creates_intermediate_artifacts(self):
         responses = [json.dumps(bible()), json.dumps(outline()), json.dumps(scene_batch())]
         with tempfile.TemporaryDirectory() as temp, \
-             patch.object(scriptwriter, "generate", side_effect=responses):
+             patch.object(scriptwriter, "generate", side_effect=responses), \
+             patch.object(config, "NARRATIVE_AUTO_REVISION_ENABLED", False):
             script = scriptwriter.write_script(
                 validate_story_brief(story_brief()), output_dir=temp,
                 target_duration_minutes=12, narrative_review=False,
@@ -333,6 +384,158 @@ class NarrativeContractTests(unittest.TestCase):
             for name in ("character_bible.json", "story_outline.json", "script.json", "narrative_review.json"):
                 self.assertTrue(Path(temp, name).exists(), name)
         self.assertEqual(script["content_mode"], "cinematic_fiction")
+
+    def test_phase_21_benchmark_996_of_1500_is_blocking_with_scene_deficits(self):
+        fixture = json.loads(Path(
+            "tests/fixtures/architecture_of_envy_benchmark.json"
+        ).read_text(encoding="utf-8"))
+        counts = [scene["actual_words"] for scene in fixture["scenes"]]
+        targets = [scene["target_words"] for scene in fixture["scenes"]]
+        script = screenplay_with_counts(counts, targets)
+        review = deterministic_review(script, 12)
+        self.assertEqual(review["word_count"], 996)
+        self.assertEqual(review["status"], "revision_required")
+        self.assertTrue(any(issue["issue_type"] == "total_word_budget"
+                            for issue in review["blocking_issues"]))
+        self.assertEqual(len([item for item in review["scene_budgets"]
+                              if item["status"] == "under_target"]), 8)
+
+    def test_duration_acceptance_overlength_and_shorts_use_separate_contracts(self):
+        accepted = deterministic_review(screenplay_with_counts([450, 600, 450]), 12)
+        self.assertTrue(accepted["deterministic_checks"]["total_word_budget"])
+        over = deterministic_review(screenplay_with_counts([650, 650, 650]), 12)
+        self.assertTrue(any(issue["issue_type"] == "total_word_budget"
+                            for issue in over["blocking_issues"]))
+        short = deterministic_review(
+            screenplay_with_counts([25, 35, 30], [30, 40, 40], "shorts"), .85
+        )
+        self.assertEqual(short["accepted_total_ratio"], {"minimum": .75, "maximum": 1.3})
+
+    def test_rebalance_preserves_weights_and_hits_exact_total(self):
+        plan = outline()
+        plan["scenes"][0]["target_words"] = 50
+        plan["scenes"][1]["target_words"] = 100
+        plan["scenes"][2]["target_words"] = 150
+        result = rebalance_scene_word_targets(plan, 1200)
+        values = [scene["target_words"] for scene in result["scenes"]]
+        self.assertEqual(sum(values), 1200)
+        self.assertLess(values[0], values[1])
+        self.assertLess(values[1], values[2])
+
+    def test_schema_v2_migration_separates_type_from_free_text(self):
+        legacy_outline = outline()
+        for scene in legacy_outline["scenes"]:
+            scene.pop("section_type")
+        migrated = normalize_outline(legacy_outline)
+        self.assertEqual(migrated["scenes"][0]["section_type"], "opening")
+        self.assertEqual(migrated["scenes"][0]["narrative_function"], "opening setup")
+        legacy_script = screenplay_with_counts([100, 100, 100])
+        legacy_script.pop("narrative_contract_version", None)
+        legacy_script["sections"][0].pop("narrative_function")
+        legacy_script["sections"][0]["section_type"] = "Opening with a moral dilemma"
+        migrated_script = normalize_script(legacy_script)
+        self.assertEqual(migrated_script["sections"][0]["section_type"], "opening")
+        self.assertEqual(migrated_script["sections"][0]["narrative_function"],
+                         "Opening with a moral dilemma")
+
+    def test_contract_v3_rejects_unknown_canonical_type(self):
+        value = outline()
+        value["narrative_contract_version"] = 3
+        value["scenes"][1]["section_type"] = "montage"
+        with self.assertRaises(NarrativeValidationError):
+            validate_outline(value, validate_character_bible(bible()), True)
+
+    def test_editorial_scores_cannot_override_blocker_and_evidence_is_required(self):
+        deterministic = deterministic_review(screenplay_with_counts([100, 100, 100]), 12)
+        merged = merge_editorial_review(deterministic, editorial_assessment(score=10))
+        self.assertEqual(merged["status"], "revision_required")
+        finding = {
+            "severity": "blocking", "issue_type": "continuity_identity", "scene_ids": [],
+            "claim": "Age changed", "evidence": [], "why_it_matters": "Breaks identity",
+            "recommendation": "Correct the reference", "certainty": "confirmed",
+        }
+        with self.assertRaises(NarrativeValidationError):
+            merge_editorial_review(deterministic, editorial_assessment([finding]))
+
+    def test_targeted_expansion_changes_only_selected_scenes(self):
+        script = screenplay_with_counts([50, 100, 100], [100, 100, 100])
+        plan = outline()
+        for scene, planned in zip(script["sections"], plan["scenes"]):
+            scene["outline_scene_id"] = planned["scene_id"]
+            scene["section_type"] = planned["section_type"]
+            scene["narrative_function"] = planned["narrative_function"]
+            scene["target_words"] = planned["target_words"]
+        original_second = script["sections"][1]
+        replacement = dict(script["sections"][0])
+        replacement["narration"] = " ".join(f"expanded{n}" for n in range(90))
+        with patch.object(scriptwriter, "generate", return_value=json.dumps({"scenes": [replacement]})), \
+             patch.object(config, "NARRATIVE_EXPANSION_BATCH_SIZE", 1), \
+             patch.object(config, "NARRATIVE_EXPANSION_MAX_CALLS", 1):
+            revised, attempts = scriptwriter._expand_underlength_scenes(
+                script, story_brief(), bible(), plan
+            )
+        self.assertEqual(revised["sections"][0]["narration"], replacement["narration"])
+        self.assertEqual(revised["sections"][1], original_second)
+        self.assertTrue(attempts[0]["success"])
+
+    def test_failed_expansion_is_bounded_and_reported_honestly(self):
+        script = screenplay_with_counts([50, 100, 100], [100, 100, 100])
+        inadequate = dict(script["sections"][0])
+        with patch.object(
+            scriptwriter, "generate",
+            side_effect=[json.dumps({"scenes": [inadequate]}),
+                         json.dumps({"scenes": [inadequate]})],
+        ) as generated, patch.object(config, "NARRATIVE_EXPANSION_BATCH_SIZE", 1), \
+             patch.object(config, "NARRATIVE_EXPANSION_MAX_CALLS", 1):
+            revised, attempts = scriptwriter._expand_underlength_scenes(
+                script, story_brief(), bible(), outline()
+            )
+        self.assertEqual(generated.call_count, 2)
+        self.assertFalse(attempts[0]["success"])
+        self.assertEqual(revised["sections"], script["sections"])
+
+    def test_confirmed_continuity_finding_is_evidence_backed_and_routed(self):
+        finding = {
+            "severity": "blocking", "issue_type": "continuity_age", "scene_ids": [3],
+            "claim": "Julian is called younger although he is older than Arthur.",
+            "evidence": ["Bible: Arthur 38, Julian 39", "Scene 3: younger man"],
+            "why_it_matters": "It contradicts fixed character identity.",
+            "recommendation": "Replace younger with a non-age descriptor.",
+            "certainty": "confirmed",
+        }
+        result = merge_editorial_review(
+            deterministic_review(screenplay_with_counts([500, 500, 500]), 12),
+            editorial_assessment([finding]),
+        )
+        self.assertEqual(result["status"], "revision_required")
+        self.assertEqual(result["continuity_findings"][0]["scene_ids"], [3])
+
+    def test_scene_regeneration_preserves_other_scenes_and_marks_review_stale(self):
+        plan = validate_outline(outline(), validate_character_bible(bible()), True)
+        script = screenplay_with_counts([100, 100, 100], [80, 80, 80])
+        script["target_duration_minutes"] = 12
+        for scene, planned in zip(script["sections"], plan["scenes"]):
+            scene.update({
+                "outline_scene_id": planned["scene_id"],
+                "section_type": planned["section_type"],
+                "narrative_function": planned["narrative_function"],
+                "target_words": planned["target_words"],
+            })
+        original_third = dict(script["sections"][2])
+        replacement = dict(script["sections"][1])
+        replacement["scene_id"] = plan["scenes"][1]["scene_id"]
+        replacement["narration"] = " ".join(f"revised{n}" for n in range(90))
+        with tempfile.TemporaryDirectory() as temp, patch.object(
+            scriptwriter, "_write_scene_batch", return_value=[replacement]
+        ):
+            revised = scriptwriter.regenerate_scene(
+                script, validate_story_brief(story_brief()), bible(), plan, 2, temp
+            )
+            review = json.loads(Path(temp, "narrative_review.json").read_text(encoding="utf-8"))
+        self.assertEqual(revised["sections"][2], original_third)
+        self.assertTrue(review["editorial_review_stale"])
+        self.assertFalse(review["editorial_validation_complete"])
+        self.assertEqual(review["repair_attempts"][0]["scene_ids"], [2])
 
     def test_malformed_generation_has_one_repair(self):
         with patch.object(scriptwriter, "generate", side_effect=["not json", '{"ok": true}']) as mocked:
@@ -453,6 +656,31 @@ class PrivateGravityIntegrationSmokeTest(unittest.TestCase):
         self.assertEqual(script["schema_version"], 2)
         self.assertEqual(script["content_mode"], "cinematic_fiction")
         self.assertGreaterEqual(len(script["sections"]), 3)
+
+
+@unittest.skipUnless(
+    os.getenv("RUN_PRIVATE_GRAVITY_LONGFORM_SMOKE_TEST") == "1",
+    "Opt-in live long-form smoke: typically 7-10 Gemini calls; narrative artifacts only",
+)
+class PrivateGravityLongFormSmokeTest(unittest.TestCase):
+    def test_live_12_minute_narrative_only_pipeline(self):
+        with tempfile.TemporaryDirectory() as temp, patch.object(config, "OUTPUT_DIR", temp):
+            brief = researcher.research_topic(
+                config.CHANNEL_DESCRIPTION,
+                topic_override="A respected architect discovers his rival has been protecting him.",
+                narrative_type="realistic_psychological_fiction",
+                target_duration_minutes=12,
+            )
+            script = scriptwriter.write_script(
+                brief, video_type="normal", output_dir=temp,
+                target_duration_minutes=12, narrative_review=True, force=True,
+            )
+            review = json.loads(Path(temp, "narrative_review.json").read_text(encoding="utf-8"))
+        self.assertEqual(script["narrative_contract_version"], 3)
+        self.assertIn(review["status"], {
+            "revision_required", "human_review_required", "ready_for_human_review",
+        })
+        self.assertTrue(review["scene_budgets"])
 
 
 if __name__ == "__main__":

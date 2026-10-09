@@ -321,6 +321,31 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
         _check_stop("script")
         script = _state["script"]
         if not script: raise ValueError("No script data — run Script step first.")
+        review = _state.get("narrative_review") or {}
+        if review:
+            _log(
+                "Narrative QA: "
+                f"{review.get('word_count', 0)}/{review.get('target_word_count', 0)} words; "
+                f"status={review.get('status', 'unknown')}; "
+                f"blocking={len(review.get('blocking_issues', []))}; "
+                f"major={len(review.get('major_issues', []))}."
+            )
+        unresolved = review.get("status") in ("structurally_invalid", "revision_required")
+        downstream_requested = any(
+            step in steps for step in ("images", "narration", "music", "video")
+        )
+        # Generating a newly invalid script and rendering it in the same automatic run is unsafe.
+        # A later media-only run is an explicit operator override and remains available.
+        if "script" in steps and unresolved and downstream_requested:
+            _log(
+                "Automatic media generation stopped: narrative QA has unresolved blocking/major "
+                "issues. Review the per-scene deficits, regenerate selected scenes, or explicitly "
+                "run the desired downstream steps after accepting the risk.",
+                "warn",
+            )
+            _state["description"] = _build_description(script, research, video_type=video_type)
+            _complete_partial("Narrative QA gate")
+            return
         if not any(step in steps for step in ("images", "narration", "music", "video")):
             _state["description"] = _build_description(script, research, video_type=video_type)
             _complete_partial("Narrative Development")

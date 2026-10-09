@@ -491,6 +491,12 @@ input[type=range]{width:100%;accent-color:var(--primary)}
 
             <button class="btn btn-primary btn-full" id="save-btn" onclick="saveEdits()" disabled>Save Changes</button>
 
+            <div id="narrative-qa" style="padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm)">
+              <div class="field-label" style="margin-bottom:6px">Narrative QA</div>
+              <div id="narrative-qa-summary" style="font-size:11px;color:var(--muted)">No review loaded.</div>
+              <div id="narrative-qa-issues" style="display:flex;flex-direction:column;gap:5px;margin-top:8px"></div>
+            </div>
+
             <div id="sections-list">
               <div class="field-label" style="margin-bottom:6px">Script Sections</div>
               <div id="sections-inner" style="display:flex;flex-direction:column;gap:4px"></div>
@@ -1083,6 +1089,7 @@ function loadReviewData() {
       narrative_review: d.narrative_review || {}
     };
     document.getElementById('story-artifacts').textContent = JSON.stringify(artifacts, null, 2);
+    renderNarrativeQA(d.narrative_review || {});
     _dirty = false;
     document.getElementById('save-btn').disabled = true;
   });
@@ -1278,6 +1285,36 @@ function loadSettings() {
     const builtin = ['The Boltzmann Brain', 'Simulation Theory', 'Quantum Immortality'];
     const userTopics = (d.topics || []).filter(t => !builtin.includes(t));
     document.getElementById('s-banned-topics').value = userTopics.join('\n');
+  });
+}
+
+function renderNarrativeQA(review) {
+  const summary = document.getElementById('narrative-qa-summary');
+  const issues = document.getElementById('narrative-qa-issues');
+  if (!summary || !issues) return;
+  issues.innerHTML = '';
+  if (!review || !review.status) {
+    summary.textContent = 'No review loaded.';
+    return;
+  }
+  const attempts = review.repair_attempts || [];
+  const manual = review.manual_review_scene_ids || [];
+  summary.textContent = `${review.status} · ${review.word_count || 0}/${review.target_word_count || 0} words · ${review.estimated_narration_minutes || 0} min · ${attempts.length} revision attempt(s) · manual scenes: ${manual.join(', ') || 'none'}`;
+  const all = [...(review.blocking_issues || []), ...(review.major_issues || []),
+               ...(review.continuity_findings || []), ...(review.dramaturgical_findings || [])];
+  if (!all.length) {
+    const line = document.createElement('div');
+    line.style.cssText = 'font-size:11px;color:var(--success)';
+    line.textContent = review.editorial_validation_complete ? 'No blocking or major issues detected; human review remains required.' : 'Deterministic checks complete; optional editorial review was not completed.';
+    issues.appendChild(line);
+    return;
+  }
+  all.slice(0, 12).forEach(item => {
+    const line = document.createElement('div');
+    line.style.cssText = 'font-size:11px;color:var(--dim);border-left:2px solid var(--amber);padding-left:6px';
+    const scenes = (item.scene_ids || []).join(', ');
+    line.textContent = `[${item.severity || 'issue'}] ${item.claim || item.issue_type || 'Narrative issue'}${scenes ? ' — scenes '+scenes : ''}`;
+    issues.appendChild(line);
   });
 }
 

@@ -233,6 +233,49 @@ Check each provider's current pricing and project limits before production use.
 
 ---
 
+## Narrative QA and safe benchmarks
+
+Private Gravity uses narrative contract v3 while keeping schema-v2 artifacts readable. A scene's
+canonical `section_type` (`opening`, `setup`, `development`, `reversal`, `climax`, `resolution`,
+or `aftermath`) is separate from its free-text `narrative_function`.
+
+For regular episodes, each scene must land within 85%–115% of its allocation and the complete
+screenplay within 90%–110% of its planned word count. Falling below 85% of the total (more than
+15% short) is blocking. Shorts use a separate, wider pacing contract. A failed check produces
+exact per-scene word deficits and a bounded targeted expansion; it never silently pads the story.
+Deterministic blockers cannot be cancelled by high editorial scores. The final statuses are
+`structurally_invalid`, `revision_required`, `human_review_required`, and
+`ready_for_human_review`. Every status still requires a person before upload.
+
+Offline validation (no API, stock, TTS, render, or upload):
+
+```powershell
+python -m unittest discover -s tests -p "test_*.py"
+python -m py_compile agents/narrative.py agents/scriptwriter.py gui.py
+git diff --check
+```
+
+Optional live 12-minute narrative smoke test (not run automatically):
+
+```powershell
+$env:RUN_PRIVATE_GRAVITY_LONGFORM_SMOKE_TEST = "1"
+python -m unittest tests.test_narrative.PrivateGravityLongFormSmokeTest
+```
+
+An ordinary valid response uses about 7–10 Gemini calls: brief, bible, outline, three scene
+batches, zero to three targeted expansion batches, and editorial review. Any malformed artifact
+may consume one additional bounded repair call. No stock, TTS, rendering, or upload is involved.
+
+To regenerate the benchmark without overwriting `output/`, use the explicit opt-in command below.
+It creates a new timestamped directory under `output/benchmarks/`; compare its JSON artifacts and
+QA report with `tests/fixtures/architecture_of_envy_benchmark.json` before accepting changes.
+
+```powershell
+python -m scripts.regenerate_narrative_benchmark --confirm-live --minutes 12
+```
+
+---
+
 ## 🎨 Customising Your Channel
 
 Edit `config.py` to make the output yours:
