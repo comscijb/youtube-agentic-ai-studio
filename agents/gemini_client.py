@@ -1,11 +1,14 @@
 """Shared Gemini text-generation client with capability-aware fallback.
 
 The public ``generate(prompt, starting_model=None)`` interface is intentionally
-kept stable for the researcher and scriptwriter agents.
+kept stable for the researcher and scriptwriter agents; stage settings
+(deadline, temperature, JSON mode, thinking) are optional keyword arguments.
 """
 from __future__ import annotations
 
+import collections
 import hashlib
+import random
 import re
 import threading
 import time
@@ -21,8 +24,10 @@ import config
 try:
     import httpx
     _NETWORK_ERRORS = (requests.RequestException, httpx.HTTPError)
+    _TIMEOUT_ERRORS = (httpx.TimeoutException, requests.Timeout)
 except ImportError:  # pragma: no cover - google-genai currently installs httpx
     _NETWORK_ERRORS = (requests.RequestException, OSError)
+    _TIMEOUT_ERRORS = (requests.Timeout,)
 
 
 MODEL_CANDIDATES = (
@@ -43,6 +48,11 @@ RETIRED_MODELS = {
 }
 
 MODEL_CACHE_TTL_SECONDS = 5 * 60
+DEFAULT_TIMEOUT_SECONDS = 300.0
+DEFAULT_DISCOVERY_TIMEOUT_SECONDS = 30.0
+MAX_TIMEOUT_SECONDS = 600.0
+DEADLINE_RETRY_BASE_DELAY = 2.0
+_TRANSIENT_CATEGORIES = {"temporary_server", "network_failure", "deadline_exceeded"}
 _NON_TEXT_MARKERS = (
     "-tts", "live", "image", "embedding", "veo", "imagen", "robotics", "transcribe"
 )
@@ -83,6 +93,8 @@ _model_cache: list[str] = []
 _model_cache_key_hash = ""
 _model_cache_expires = 0.0
 _lock = threading.RLock()
+_call_log: collections.deque = collections.deque(maxlen=500)
+_sleep = time.sleep
 
 
 def _configured_key() -> str:
@@ -130,17 +142,22 @@ def _get_client() -> genai.Client:
         if _client is None or _client_key_hash != fingerprint:
             old_client = _client
             try:
+                # The client-level timeout only governs short calls (model
+                # discovery); generation passes its own per-request deadline.
+                # 504 is excluded from SDK retries: repeating an expired
+                # deadline unchanged cannot succeed, so generate() retries it
+                # with a longer one instead.
                 _client = genai.Client(
                     api_key=key,
                     http_options=types.HttpOptions(
-                        timeout=30_000,
+                        timeout=int(_discovery_timeout() * 1000),
                         retry_options=types.HttpRetryOptions(
                             attempts=2,
                             initial_delay=0.5,
                             max_delay=2.0,
                             exp_base=2.0,
                             jitter=0.25,
-                            http_status_codes=[408, 429, 500, 502, 503, 504],
+                            http_status_codes=[408, 429, 500, 502, 503],
                         ),
                     ),
                 )
@@ -223,8 +240,18 @@ def build_chain(starting_model: str | None = None,
     return chain
 
 
-def generate(prompt: str, starting_model: str | None = None) -> str:
-    """Generate text using discovered models and category-aware fallback."""
+def generate(prompt: str, starting_model: str | None = None, *,
+             stage: str = "generation", temperature: float | None = None,
+             response_mime_type: str | None = None,
+             max_output_tokens: int | None = None,
+             thinking: str | int | None = None,
+             timeout_seconds: float | None = None) -> str:
+    """Generate text using discovered models and category-aware fallback.
+
+    ``timeout_seconds`` is the per-request deadline (default
+    ``config.GEMINI_TIMEOUT_SECONDS``). A ``deadline_exceeded`` failure is
+    retried once on the same model with twice the deadline before falling back.
+    """
     if not str(prompt or "").strip():
         raise ValueError("Gemini prompt must not be empty")
     client = _get_client()
@@ -237,6 +264,16 @@ def generate(prompt: str, starting_model: str | None = None) -> str:
             f"No verified generation model matches the configured preference '{_sanitize(preferred)}'.",
             "Choose one of the models reported by the Gemini diagnostic.",
         )
+    base_timeout = _clamp_timeout(
+        timeout_seconds if timeout_seconds is not None
+        else getattr(config, "GEMINI_TIMEOUT_SECONDS", DEFAULT_TIMEOUT_SECONDS)
+    )
+    settings = {
+        "temperature": 0.9 if temperature is None else float(temperature),
+        "response_mime_type": response_mime_type,
+        "max_output_tokens": _max_output_tokens(max_output_tokens),
+        "thinking_config": _thinking_config(thinking),
+    }
 
     attempted = []
     fallback_attempted = False
@@ -248,32 +285,22 @@ def generate(prompt: str, starting_model: str | None = None) -> str:
         attempted.append(model)
         last_model = model
         print(f"   -> Gemini model: {model}")
-        try:
-            response = client.models.generate_content(
-                model=model,
-                contents=prompt,
-                config=types.GenerateContentConfig(temperature=0.9),
-            )
-            text = _response_text(response)
+        deadline = base_timeout
+        deadline_retries = 0
+        while True:
+            info, text = _attempt(client, model, prompt, stage, deadline, settings)
             if text:
                 return text
-            blocked_reason = _blocked_reason(response)
-            if blocked_reason:
-                info = GeminiErrorInfo(
-                    "blocked_response", None, False, False,
-                    "Revise the prompt or review the project's safety policy.",
-                    f"Generation was blocked ({blocked_reason}).",
-                )
-            else:
-                info = GeminiErrorInfo(
-                    "empty_response", None, False, True,
-                    "Retry later or inspect the response in the diagnostic command.",
-                    "The model returned no text content.",
-                )
-        except GeminiGenerationError:
-            raise
-        except Exception as exc:
-            info = classify_error(exc, context="generation")
+            if info.category == "deadline_exceeded" and deadline_retries < 1:
+                deadline_retries += 1
+                deadline = min(deadline * 2, MAX_TIMEOUT_SECONDS)
+                delay = DEADLINE_RETRY_BASE_DELAY * (2 ** (deadline_retries - 1))
+                delay += random.uniform(0, delay / 2)
+                print(f"   WARNING: {model} exceeded its deadline; retrying once with "
+                      f"{deadline:g}s after {delay:.1f}s")
+                _sleep(delay)
+                continue
+            break
 
         last_info = info
         if not info.fallback_allowed:
@@ -285,7 +312,7 @@ def generate(prompt: str, starting_model: str | None = None) -> str:
         remaining = len(chain) - len(attempted)
         if remaining <= 0:
             break
-        if info.category in {"temporary_server", "network_failure"}:
+        if info.category in _TRANSIENT_CATEGORIES:
             if transient_fallbacks >= 1:
                 break
             transient_fallbacks += 1
@@ -302,6 +329,122 @@ def generate(prompt: str, starting_model: str | None = None) -> str:
         fallback_attempted=fallback_attempted,
         attempted_models=attempted,
     )
+
+
+def _attempt(client, model: str, prompt: str, stage: str, deadline: float,
+             settings: dict) -> tuple[GeminiErrorInfo | None, str]:
+    """Run one request; return ``(None, text)`` or ``(failure info, "")``."""
+    started = time.monotonic()
+    info = None
+    text = ""
+    seconds = int(round(deadline))
+    try:
+        response = client.models.generate_content(
+            model=model,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                # The explicit header overrides any deadline left in the
+                # client's shared headers by an earlier default-timeout call.
+                http_options=types.HttpOptions(
+                    timeout=seconds * 1000,
+                    headers={"X-Server-Timeout": str(seconds)},
+                ),
+                **{key: value for key, value in settings.items() if value is not None},
+            ),
+        )
+        text = _response_text(response)
+        if not text:
+            blocked_reason = _blocked_reason(response)
+            if blocked_reason:
+                info = GeminiErrorInfo(
+                    "blocked_response", None, False, False,
+                    "Revise the prompt or review the project's safety policy.",
+                    f"Generation was blocked ({blocked_reason}).",
+                )
+            else:
+                info = GeminiErrorInfo(
+                    "empty_response", None, False, True,
+                    "Retry later or inspect the response in the diagnostic command.",
+                    "The model returned no text content.",
+                )
+    except GeminiGenerationError:
+        raise
+    except Exception as exc:
+        info = classify_error(exc, context="generation")
+    _record_call(stage, model, len(prompt), time.monotonic() - started, seconds,
+                 info.category if info else "success")
+    return info, text
+
+
+def _record_call(stage: str, model: str, prompt_chars: int, elapsed: float,
+                 deadline: int, outcome: str) -> None:
+    record = {
+        "stage": stage, "model": model, "prompt_chars": prompt_chars,
+        "elapsed_seconds": round(elapsed, 2), "deadline_seconds": deadline,
+        "outcome": outcome,
+    }
+    with _lock:
+        _call_log.append(record)
+    # Sizes and timings only: prompt content is never logged.
+    print(f"   [gemini] stage={stage} model={model} prompt_chars={prompt_chars} "
+          f"deadline={deadline}s elapsed={elapsed:.1f}s outcome={outcome}")
+
+
+def call_records() -> list[dict]:
+    """Return copies of recent per-call timing records (no prompt content)."""
+    with _lock:
+        return [dict(record) for record in _call_log]
+
+
+def clear_call_records() -> None:
+    with _lock:
+        _call_log.clear()
+
+
+def _clamp_timeout(value) -> float:
+    try:
+        seconds = float(value)
+    except (TypeError, ValueError):
+        seconds = DEFAULT_TIMEOUT_SECONDS
+    return max(1.0, min(seconds, MAX_TIMEOUT_SECONDS))
+
+
+def _discovery_timeout() -> float:
+    return _clamp_timeout(getattr(
+        config, "GEMINI_DISCOVERY_TIMEOUT_SECONDS", DEFAULT_DISCOVERY_TIMEOUT_SECONDS
+    ))
+
+
+def _max_output_tokens(value) -> int | None:
+    if value is None:
+        value = getattr(config, "GEMINI_MAX_OUTPUT_TOKENS", 0)
+    try:
+        tokens = int(value)
+    except (TypeError, ValueError):
+        return None
+    return tokens if tokens > 0 else None
+
+
+def _thinking_config(value) -> types.ThinkingConfig | None:
+    """Map a level name or an integer token budget onto the SDK ThinkingConfig."""
+    if value is None:
+        value = getattr(config, "GEMINI_THINKING_LEVEL", "")
+    if isinstance(value, bool):
+        raise ValueError("Gemini thinking setting must be a level name or a token budget")
+    if isinstance(value, int):
+        return types.ThinkingConfig(thinking_budget=value)
+    text = str(value or "").strip()
+    if not text:
+        return None
+    if re.fullmatch(r"-?\d+", text):
+        return types.ThinkingConfig(thinking_budget=int(text))
+    level = text.upper()
+    if level not in {"MINIMAL", "LOW", "MEDIUM", "HIGH"}:
+        raise ValueError(
+            f"Unsupported GEMINI_THINKING_LEVEL '{text}'; "
+            "use minimal, low, medium, high or an integer token budget"
+        )
+    return types.ThinkingConfig(thinking_level=types.ThinkingLevel[level])
 
 
 def classify_error(exc: Exception, *, context: str = "generation") -> GeminiErrorInfo:
@@ -326,11 +469,21 @@ def classify_error(exc: Exception, *, context: str = "generation") -> GeminiErro
         if code == 429:
             return GeminiErrorInfo("quota_exhausted", code, False, True,
                                    "Review current project rate limits/billing or retry after the reported reset.", detail)
-        if code in {408, 500, 502, 503, 504}:
+        if code == 504 or str(getattr(exc, "status", "") or "").upper() == "DEADLINE_EXCEEDED":
+            return GeminiErrorInfo("deadline_exceeded", code, True, True,
+                                   "Raise GEMINI_TIMEOUT_SECONDS or retry later if the fallback also fails.",
+                                   detail)
+        if code in {408, 500, 502, 503}:
             return GeminiErrorInfo("temporary_server", code, True, True,
                                    "Retry later if the verified fallback also fails.", detail)
         return GeminiErrorInfo("api_error", code, False, False,
                                "Review the Gemini diagnostic output and API configuration.", detail)
+    if isinstance(exc, _TIMEOUT_ERRORS):
+        return GeminiErrorInfo(
+            "deadline_exceeded", None, True, True,
+            "Raise GEMINI_TIMEOUT_SECONDS or retry later if the fallback also fails.",
+            f"Gemini {context} did not finish before the request deadline.",
+        )
     if isinstance(exc, _NETWORK_ERRORS) or isinstance(exc, (TimeoutError, ConnectionError)):
         return GeminiErrorInfo(
             "network_failure", None, True, False,
@@ -370,7 +523,8 @@ def diagnostic_snapshot(*, run_generation: bool = True) -> dict:
             "selected_model": chain[0] if chain else None,
         })
         if run_generation and chain:
-            text = generate("Reply with exactly OK.", starting_model=chain[0])
+            text = generate("Reply with exactly OK.", starting_model=chain[0],
+                            stage="diagnostic", timeout_seconds=_discovery_timeout())
             result["generation"] = "success" if text else "empty"
     except Exception as exc:
         result["error"] = _sanitize(str(exc))

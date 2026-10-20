@@ -107,6 +107,32 @@ VOICE_PITCH = "-3Hz"    # slightly deeper = more cinematic
 # ─────────────────────────────────────────
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 
+# Request deadline for long-form generation stages (outline, scene batches,
+# editorial review). The SDK forwards it to the server as X-Server-Timeout, so
+# a short value makes thinking models answer 504 DEADLINE_EXCEEDED. On a 504
+# the same model is retried once with twice the deadline (capped at 600 s).
+GEMINI_TIMEOUT_SECONDS = float(os.getenv("GEMINI_TIMEOUT_SECONDS", "300"))
+# Short deadline for model discovery and the connectivity diagnostic.
+GEMINI_DISCOVERY_TIMEOUT_SECONDS = float(os.getenv("GEMINI_DISCOVERY_TIMEOUT_SECONDS", "30"))
+# Thinking depth for Gemini 3.x: minimal | low | medium | high, or an integer
+# token budget. Empty keeps the model's own default (safest across models).
+GEMINI_THINKING_LEVEL = os.getenv("GEMINI_THINKING_LEVEL", "").strip()
+# Optional output cap per call; 0 keeps the model's own limit.
+GEMINI_MAX_OUTPUT_TOKENS = int(os.getenv("GEMINI_MAX_OUTPUT_TOKENS", "0"))
+# Largest repair prompt sent in one call. Larger outline repairs are split into
+# scene-scoped repairs that only resend the invalid scenes and their neighbours.
+GEMINI_REPAIR_MAX_CHARS = int(os.getenv("GEMINI_REPAIR_MAX_CHARS", "120000"))
+# Sampling temperature per generation stage.
+GEMINI_STAGE_TEMPERATURES = {
+    "premise": 0.9,
+    "character_bible": 0.7,
+    "outline": 0.6,
+    "scenes": 0.85,
+    "expansion": 0.7,
+    "editorial_review": 0.2,
+    "repair": 0.2,
+}
+
 # ─────────────────────────────────────────
 #  Video Dimensions
 # ─────────────────────────────────────────

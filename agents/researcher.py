@@ -11,10 +11,13 @@ from agents.gemini_client import generate
 from agents.narrative import (
     NARRATIVE_TYPES,
     PSYCHOLOGICAL_THEMES,
+    NarrativeValidationError,
     atomic_write_json,
-    extract_json,
+    load_json,
+    stable_hash,
     validate_story_brief,
 )
+from agents.structured import generate_json
 
 _BANNED_TOPICS_FILE = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "banned_topics.txt"
@@ -54,17 +57,31 @@ def research_topic(
     focus_angle: str = "",
     narrative_type: str = "auto",
     target_duration_minutes: float | None = None,
+    reuse_cached: bool = False,
 ) -> dict:
     """Develop several premises and select one production-ready story brief.
 
     ``topic_override`` is authoritative: the returned brief always preserves it
     verbatim in ``topic`` and ``requested_premise`` even if the model paraphrases.
+    With ``reuse_cached`` a valid ``story_brief.json`` produced by the same
+    request in ``config.OUTPUT_DIR`` is returned without an API call.
     """
     if narrative_type != "auto" and narrative_type not in NARRATIVE_TYPES:
         raise ValueError(f"Unsupported narrative type: {narrative_type}")
     exact = topic_override.strip()
-    theme = focus_angle.strip() or random.choice(PSYCHOLOGICAL_THEMES)
     duration = float(target_duration_minutes or getattr(config, "TARGET_DURATION_MINUTES", 15))
+    request_hash = stable_hash({
+        "premise": exact, "theme": focus_angle.strip(),
+        "narrative_type": narrative_type, "duration": duration,
+    })
+    brief_path = os.path.join(config.OUTPUT_DIR, "story_brief.json")
+    if reuse_cached:
+        cached = _cached_brief(brief_path, request_hash)
+        if cached:
+            print("   -> Reusing cached story brief")
+            return cached
+
+    theme = focus_angle.strip() or random.choice(PSYCHOLOGICAL_THEMES)
     banned = [] if exact else load_banned_topics()
     mode_instruction = (
         f'The user premise is authoritative: "{exact}". Develop this exact premise; '
@@ -77,19 +94,13 @@ def research_topic(
         if narrative_type == "auto" else f'Use exactly this narrative type: "{narrative_type}".'
     )
     print(f"   -> Developing {'exact premise' if exact else 'original premises'}: {exact or theme}")
-    prompt = f"""You are the Story Development Agent for Private Gravity, an anthology of
+    contract = f"""You are the Story Development Agent for Private Gravity, an anthology of
 cinematic psychological fiction. Ideas from psychology and philosophy must emerge through
 character choice, consequence, image and subtext—never through a lecture or explainer.
-
-Channel identity:
-{channel_description}
+The channel identity, theme, duration and previously used premises are supplied after this contract.
 
 {mode_instruction}
 {type_instruction}
-Primary theme: {theme}
-Planned duration: {duration:g} minutes.
-Previously used premises to avoid during automatic generation: {json.dumps(banned)}
-Uniqueness nonce: {time.time_ns()}
 
 Create four premise_candidates unless an exact premise was supplied (then create at least one
 candidate faithful to it). Each candidate needs premise, narrative_type, originality_score,
@@ -109,40 +120,50 @@ production_feasibility, tags.
 Use one of these narrative_type values: {json.dumps(sorted(NARRATIVE_TYPES))}.
 The story must be original, causally coherent, emotionally plausible, filmable with cinematic
 stock imagery, and must not use educational segments, factual listicles, or generic science hooks."""
-    raw = generate(prompt)
-    try:
-        brief = extract_json(raw, "Story Development Agent")
+    context = f"""Channel identity:
+{channel_description}
+
+Primary theme: {theme}
+Planned duration: {duration:g} minutes.
+Previously used premises to avoid during automatic generation: {json.dumps(banned)}
+Uniqueness nonce: {time.time_ns()}"""
+
+    def finalize(value: dict) -> dict:
+        brief = dict(value)
         if exact:
             brief["topic"] = exact
             brief["requested_premise"] = exact
             brief["exact_premise_override"] = True
+        else:
+            brief.setdefault("topic", brief.get("logline", ""))
+            brief["exact_premise_override"] = False
         if narrative_type != "auto":
             brief["narrative_type"] = narrative_type
+            for candidate in brief.get("premise_candidates", []):
+                if isinstance(candidate, dict):
+                    candidate["narrative_type"] = narrative_type
+        brief["target_duration_minutes"] = duration
+        brief["request_hash"] = request_hash
         if not exact and len(brief.get("premise_candidates", [])) < 3:
-            raise ValueError("automatic story development requires at least three candidates")
-        brief = validate_story_brief(brief)
-    except Exception as exc:
-        repair_prompt = f"""Repair this Story Development Agent response into the complete JSON
-contract below. Correct missing fields and score data while preserving the premise.
-Return JSON only. Validation problem: {exc}
-ORIGINAL CONTRACT:\n{prompt[:12000]}
-RESPONSE: {raw[:14000]}"""
-        brief = extract_json(generate(repair_prompt), "repaired Story Development Agent")
-    if exact:
-        brief["topic"] = exact
-        brief["requested_premise"] = exact
-        brief["exact_premise_override"] = True
-    else:
-        brief.setdefault("topic", brief.get("logline", ""))
-        brief["exact_premise_override"] = False
-    if narrative_type != "auto":
-        brief["narrative_type"] = narrative_type
-        for candidate in brief.get("premise_candidates", []):
-            if isinstance(candidate, dict):
-                candidate["narrative_type"] = narrative_type
-    brief["target_duration_minutes"] = duration
-    if not exact and len(brief.get("premise_candidates", [])) < 3:
-        raise ValueError("automatic story development requires at least three candidates")
-    brief = validate_story_brief(brief)
-    atomic_write_json(os.path.join(config.OUTPUT_DIR, "story_brief.json"), brief)
+            raise NarrativeValidationError(
+                "automatic story development requires at least three premise_candidates"
+            )
+        return validate_story_brief(brief)
+
+    brief = generate_json(
+        contract, "Story Development Agent", finalize, generator=generate,
+        context=context, stage="premise", temperature_key="premise",
+        run_dir=config.OUTPUT_DIR,
+    )
+    atomic_write_json(brief_path, brief)
     return brief
+
+
+def _cached_brief(path: str, request_hash: str) -> dict | None:
+    value = load_json(path)
+    if not value or value.get("request_hash") != request_hash:
+        return None
+    try:
+        return validate_story_brief(value)
+    except (NarrativeValidationError, KeyError, TypeError):
+        return None

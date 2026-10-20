@@ -54,3 +54,5 @@ desktop.ini
 assets/*
 config.py
 client_secret.json
+# ── Stage diagnostics (raw model responses) ──
+debug/

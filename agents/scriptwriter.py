@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 
 import config
+from agents import structured
 from agents.gemini_client import generate
+from agents.structured import SceneScope, compact_json
 from agents.narrative import (
     CONTENT_MODE,
     EDITORIAL_DIMENSIONS,
@@ -15,9 +16,10 @@ from agents.narrative import (
     NarrativeValidationError,
     atomic_write_json,
     deterministic_review,
-    extract_json,
+    format_scene_issues,
     load_json,
     merge_editorial_review,
+    outline_scene_issues,
     rebalance_scene_word_targets,
     stable_hash,
     validate_character_bible,
@@ -28,58 +30,13 @@ from agents.narrative import (
 )
 
 
-def _generate_json(prompt: str, label: str, validator=None) -> dict:
-    """Generate JSON with one parse repair or one targeted semantic repair."""
-    raw = generate(prompt)
-    try:
-        value = extract_json(raw, label)
-    except NarrativeValidationError as initial_error:
-        # Parsing failed, so there is no reliable document to patch. One broad
-        # syntax/completeness repair is appropriate, and remains bounded.
-        repair = f"""The response below could not be parsed as the required {label} JSON.
-Return exactly one complete JSON object with no markdown or commentary. Preserve every readable
-story decision from the response and satisfy the original contract.
+def _generate_json(contract: str, label: str, validator=None, **options) -> dict:
+    """Generate JSON (contract first, then context) with one bounded repair.
 
-PARSING ERROR:
-{initial_error}
-
-ORIGINAL CONTRACT:
-{prompt[:14000]}
-
-UNPARSEABLE RESPONSE:
-{raw[:10000]}"""
-        return _repair_and_validate(repair, label, validator, initial_error)
-
-    if validator is None:
-        return value
-    try:
-        return validator(value)
-    except (NarrativeValidationError, ValueError, KeyError, TypeError) as initial_error:
-        # JSON is already valid. Send the intact document and exact validation
-        # diagnostics, asking the model to touch only the invalid portions.
-        repair = f"""The {label} JSON parsed successfully but failed semantic validation.
-Return the COMPLETE corrected JSON object only. Correct only the fields identified below.
-Preserve all valid character identities, motivations, relationships, story decisions, array order,
-and every valid field exactly. Do not summarize, replace, or broadly rewrite the artifact.
-
-VALIDATION ERROR:
-{initial_error}
-
-CURRENT VALID JSON:
-{json.dumps(value, ensure_ascii=False, indent=2)[:18000]}"""
-        return _repair_and_validate(repair, label, validator, initial_error)
-
-
-def _repair_and_validate(repair_prompt: str, label: str, validator, initial_error) -> dict:
-    repaired_raw = generate(repair_prompt)
-    try:
-        repaired = extract_json(repaired_raw, f"repaired {label}")
-        return validator(repaired) if validator else repaired
-    except (NarrativeValidationError, ValueError, KeyError, TypeError) as repaired_error:
-        raise NarrativeValidationError(
-            f"{label} repair failed after one bounded attempt. "
-            f"Initial error: {initial_error}. Repaired artifact error: {repaired_error}"
-        ) from repaired_error
+    See ``agents.structured.generate_json`` for the repair strategy. ``generate``
+    is resolved at call time so tests can patch this module's name.
+    """
+    return structured.generate_json(contract, label, validator, generator=generate, **options)
 
 
 def _cached(path: Path, source_hash: str, validator, *args):
@@ -102,9 +59,8 @@ def _character_bible(brief: dict, output: Path, force: bool) -> dict:
             # (notably list[str] behavioral_patterns) without an API call.
             atomic_write_json(path, cached)
             return cached
-    prompt = f"""You are the character architect for Private Gravity. Build a compact,
-production-ready character bible for this story brief:
-{json.dumps(brief, ensure_ascii=False)}
+    contract = f"""You are the character architect for Private Gravity. Build a compact,
+production-ready character bible for the STORY BRIEF supplied after this contract.
 
 Return ONLY one JSON object using this exact type contract. The object below is a TYPE/SHAPE
 example only; do not copy its character or story content into the requested story:
@@ -139,8 +95,10 @@ checks his phone for social approval." Never use null, an empty string, an empty
 placeholders, or omit a required field. Keep the cast compact and preserve the brief's exact story
 decisions. If the premise is not speculative, speculative_rules must be an empty array."""
     bible = _generate_json(
-        prompt, "character bible",
+        contract, "character bible",
         lambda value: validate_character_bible(value, source_hash),
+        context=f"STORY BRIEF: {compact_json(brief)}",
+        stage="character_bible", temperature_key="character_bible",
     )
     bible["source_hash"] = source_hash
     atomic_write_json(path, bible)
@@ -160,12 +118,11 @@ def _outline(brief: dict, bible: dict, video_type: str, target_minutes: float,
     wpm = int(getattr(config, "NARRATION_WPM", 125))
     target_words = 110 if video_type == "shorts" else round(target_minutes * wpm)
     scene_count = 4 if video_type == "shorts" else max(8, min(14, round(target_minutes * .75)))
-    prompt = f"""You are the narrative architect for Private Gravity. Create a causal scene outline.
-STORY BRIEF: {json.dumps(brief, ensure_ascii=False)}
-CHARACTER BIBLE: {json.dumps(bible, ensure_ascii=False)}
+    contract = f"""You are the narrative architect for Private Gravity. Create a causal scene outline
+for the STORY BRIEF and CHARACTER BIBLE supplied after this contract.
 FORMAT: {video_type}; TARGET: {target_words} narrated words across exactly {scene_count} scenes.
 
-    Return ONLY JSON {{"scenes": [...]}}. Each scene requires scene_id (s01 etc.), order,
+Return ONLY JSON {{"scenes": [...]}}. Each scene requires scene_id (s01 etc.), order,
 title, section_type (exactly one of opening, setup, development, reversal, climax, resolution,
 aftermath), narrative_function (specific free-text purpose), summary, setting,
 characters_present (IDs from the bible), initial_dramatic_situation, character_objective,
@@ -180,9 +137,12 @@ situation through a decision, discovery, confrontation or consequence. Assign va
 that sum approximately to the target; do not divide them mechanically. Escalate through decisions and consequences. No lecture,
 chapter summary, bullet lesson, generic CTA, or unsupported twist."""
     outline = _generate_json(
-        prompt, "story outline", lambda value: validate_outline(
+        contract, "story outline", lambda value: validate_outline(
             {**value, "narrative_contract_version": NARRATIVE_CONTRACT_VERSION}, bible, True
-        )
+        ),
+        context=f"STORY BRIEF: {compact_json(brief)}\nCHARACTER BIBLE: {compact_json(bible)}",
+        stage="outline", temperature_key="outline",
+        scene_scope=SceneScope(issues=lambda value: outline_scene_issues(value, bible, True)),
     )
     outline = rebalance_scene_word_targets(outline, target_words)
     outline["source_hash"] = source_hash
@@ -194,19 +154,14 @@ chapter summary, bullet lesson, generic CTA, or unsupported twist."""
 
 def _write_scene_batch(brief: dict, bible: dict, outline: dict, scenes: list[dict],
                        previous_ending: str) -> list[dict]:
-    prompt = f"""You are the scene writer for Private Gravity. Write broadcast-ready English
-narration for ONLY the requested scenes. The narrator tells an original cinematic story; never
+    contract = f"""You are the scene writer for Private Gravity. Write broadcast-ready English
+narration for ONLY the SCENES TO WRITE supplied after this contract. The narrator tells an
+original cinematic story; never
 explains psychology to the audience. Preserve character identity, chronology, speculative rules,
 causality and EACH allocated word count (85%-115%). Dramatize objectives, obstacles, decisions,
 consequences and discoveries through action, specific dialogue and subtext. The protagonist must
 make consequential choices; supporting characters need independent agency. Never pad with repeated
 atmosphere, restated feelings, generic transitions or summary. Make sentences natural for spoken audio.
-
-STORY BRIEF: {json.dumps(brief, ensure_ascii=False)}
-CHARACTER BIBLE: {json.dumps(bible, ensure_ascii=False)}
-FULL OUTLINE: {json.dumps(outline, ensure_ascii=False)}
-SCENES TO WRITE: {json.dumps(scenes, ensure_ascii=False)}
-PREVIOUS BATCH ENDING: {previous_ending or 'This is the opening batch.'}
 
 Return ONLY JSON {{"scenes": [...]}} in requested order. Each object needs scene_id, title,
 section_type (the exact canonical value from the outline), narrative_function (the exact free-text
@@ -215,37 +170,64 @@ visual_direction, image_query, image_query_2, image_query_3, caption_text, on_sc
 Search queries must depict story-world environments/objects/actions and not educational diagrams.
 Use on_screen_text only for diegetic or dramatically necessary text; otherwise empty string.
 No placeholders, headings inside narration, moral summary, subscribe request or bullet points."""
+    context = f"""STORY BRIEF: {compact_json(brief)}
+CHARACTER BIBLE: {compact_json(bible)}
+FULL OUTLINE: {compact_json(outline)}
+SCENES TO WRITE: {compact_json(scenes)}
+PREVIOUS BATCH ENDING: {previous_ending or 'This is the opening batch.'}"""
     required = (
         "scene_id", "title", "section_type", "narrative_function", "narration", "setting",
         "dramatic_function", "emotional_tone", "visual_direction", "image_query",
         "image_query_2", "image_query_3",
     )
+    requested = [scene["scene_id"] for scene in scenes]
+
+    def scene_issues(data):
+        issues = {}
+        result = data.get("scenes") if isinstance(data, dict) else None
+        for scene in result if isinstance(result, list) else []:
+            if not isinstance(scene, dict) or scene.get("scene_id") not in requested:
+                continue
+            problems = []
+            missing = [key for key in required if not str(scene.get(key, "")).strip()]
+            if missing:
+                problems.append(f"missing nonempty fields: {', '.join(missing)}")
+            narration = scene.get("narration")
+            if not isinstance(narration, str) or len(narration.split()) < 12:
+                problems.append("narration must be a string of at least 12 words")
+            present = scene.get("characters_present")
+            if not isinstance(present, list) or any(not isinstance(cid, str) for cid in present):
+                problems.append("characters_present must be an array of character_id strings")
+            if problems:
+                issues[scene["scene_id"]] = problems
+        return issues
 
     def validate_batch(data):
         result = data.get("scenes")
         if not isinstance(result, list) or len(result) != len(scenes):
-            raise NarrativeValidationError("screenplay batch did not return every requested scene")
-        requested = [scene["scene_id"] for scene in scenes]
-        returned = [scene.get("scene_id") for scene in result]
+            raise NarrativeValidationError(
+                f"screenplay batch must return exactly the requested scenes {requested}; "
+                f"received {len(result) if isinstance(result, list) else 0}"
+            )
+        returned = [scene.get("scene_id") if isinstance(scene, dict) else None for scene in result]
         if returned != requested:
-            raise NarrativeValidationError("screenplay batch scene IDs/order do not match outline")
-        for scene in result:
-            missing = [key for key in required if not str(scene.get(key, "")).strip()]
-            narration = scene.get("narration")
-            present = scene.get("characters_present")
-            if (missing or not isinstance(narration, str) or len(narration.split()) < 12
-                    or not isinstance(present, list)
-                    or any(not isinstance(cid, str) for cid in present)):
-                raise NarrativeValidationError(
-                    f"incomplete screenplay scene {scene.get('scene_id')}: {', '.join(missing)}"
-                )
+            raise NarrativeValidationError(
+                f"screenplay batch scene IDs/order must be {requested}; received {returned}"
+            )
+        issues = scene_issues(data)
+        if issues:
+            raise NarrativeValidationError(format_scene_issues("screenplay batch", issues))
         return result
 
-    return _generate_json(prompt, "screenplay scene batch", validate_batch)
+    label = f"scenes {requested[0]}-{requested[-1]}" if len(requested) > 1 else f"scene {requested[0]}"
+    return _generate_json(
+        contract, "screenplay scene batch", validate_batch, context=context,
+        stage=label, temperature_key="scenes", scene_scope=SceneScope(issues=scene_issues),
+    )
 
 
 def _editorial_review(script: dict, brief: dict, bible: dict, outline: dict) -> dict:
-    prompt = f"""Act as a skeptical senior fiction editor. Review without rewriting. Test every
+    contract = f"""Act as a skeptical senior fiction editor. Review without rewriting. Test every
 continuity claim against the supplied Character Bible, outline and exact scene evidence. A high
 score never cancels a contradiction or deterministic duration failure. Distinguish confirmed facts
 from suspicions; do not invent off-page motives or events.
@@ -256,13 +238,15 @@ Return ONLY JSON with:
 - findings: an array of objects with severity (blocking|major|minor|suggestion), issue_type,
 scene_ids (integer array), claim, evidence (string array), why_it_matters, recommendation,
 certainty (confirmed|probable|possible).
-- strengths and revision_priorities as arrays.
-
-STORY BRIEF: {json.dumps(brief, ensure_ascii=False)}
-CHARACTER BIBLE: {json.dumps(bible, ensure_ascii=False)}
-OUTLINE: {json.dumps(outline, ensure_ascii=False)}
-SCREENPLAY: {json.dumps(script, ensure_ascii=False)}"""
-    return _generate_json(prompt, "editorial review", validate_editorial_assessment)
+- strengths and revision_priorities as arrays."""
+    context = f"""STORY BRIEF: {compact_json(brief)}
+CHARACTER BIBLE: {compact_json(bible)}
+OUTLINE: {compact_json(outline)}
+SCREENPLAY: {compact_json(script)}"""
+    return _generate_json(
+        contract, "editorial review", validate_editorial_assessment, context=context,
+        stage="editorial_review", temperature_key="editorial_review",
+    )
 
 
 def _expand_underlength_scenes(script: dict, brief: dict, bible: dict,
@@ -294,19 +278,20 @@ def _expand_underlength_scenes(script: dict, brief: dict, bible: dict,
             for scene in revised["sections"]
             if any(abs(scene["id"] - scene_id) == 1 for scene_id in ids)
         ]
-        prompt = f"""You are performing one bounded screenplay expansion pass. Return ONLY the
-selected scenes, in order, as {{"scenes": [...]}}. Preserve every scene ID, canonical section_type,
-narrative_function, established fact, chronology, character identity, causal outcome and useful
-line already present. Add substantive dramatic action, consequential choice, credible discovery,
-specific dialogue and subtext until each scene reaches 85%-115% of its target. Do not add filler,
-repeated atmosphere, exposition summaries, new characters, new rules or unsupported twists.
+        contract = f"""You are performing one bounded screenplay expansion pass. Return ONLY the
+SELECTED SCENES supplied after this contract, in order, as {{"scenes": [...]}}. Preserve every scene
+ID, canonical section_type, narrative_function, established fact, chronology, character identity,
+causal outcome and useful line already present. Add substantive dramatic action, consequential
+choice, credible discovery, specific dialogue and subtext until each scene reaches 85%-115% of its
+target. Do not add filler, repeated atmosphere, exposition summaries, new characters, new rules or
+unsupported twists.
 
-EXACT DEFICITS: {json.dumps(batch, ensure_ascii=False)}
-SELECTED SCENES: {json.dumps(selected, ensure_ascii=False)}
-NEIGHBOR CONTEXT: {json.dumps(neighbors, ensure_ascii=False)}
-STORY BRIEF: {json.dumps(brief, ensure_ascii=False)}
-CHARACTER BIBLE: {json.dumps(bible, ensure_ascii=False)}
-OUTLINE: {json.dumps(outline, ensure_ascii=False)}"""
+EXACT DEFICITS: {compact_json(batch)}"""
+        context = f"""SELECTED SCENES: {compact_json(selected)}
+NEIGHBOR CONTEXT: {compact_json(neighbors)}
+STORY BRIEF: {compact_json(brief)}
+CHARACTER BIBLE: {compact_json(bible)}
+OUTLINE: {compact_json(outline)}"""
 
         def validate_expansion(value):
             scenes = value.get("scenes")
@@ -325,7 +310,11 @@ OUTLINE: {json.dumps(outline, ensure_ascii=False)}"""
 
         attempt = {"scene_ids": ids, "kind": "targeted_substantive_expansion", "success": False}
         try:
-            replacements = _generate_json(prompt, "targeted scene expansion", validate_expansion)
+            replacements = _generate_json(
+                contract, "targeted scene expansion", validate_expansion, context=context,
+                stage=f"expansion {'-'.join(str(scene_id) for scene_id in ids)}",
+                temperature_key="expansion",
+            )
             by_id = {scene["id"]: scene for scene in replacements}
             updated = []
             for original in revised["sections"]:
@@ -370,7 +359,15 @@ def write_script(
     )
     if video_type == "normal" and not 12 <= target <= 20:
         raise ValueError("Regular Private Gravity videos must target 12-20 minutes")
+    token = structured.debug_dir.set(str(output))
+    try:
+        return _write_script(brief, video_type, output, target, narrative_review, force)
+    finally:
+        structured.debug_dir.reset(token)
 
+
+def _write_script(brief: dict, video_type: str, output: Path, target: float,
+                  narrative_review: bool | None, force: bool) -> dict:
     print("   -> Building character bible...")
     bible = _character_bible(brief, output, force)
     print("   -> Building causal story outline...")
@@ -448,7 +445,11 @@ def regenerate_scene(script: dict, brief: dict, bible: dict, outline: dict,
         raise ValueError(f"No outline plan for screenplay scene: {scene_id}")
     prior = [scene for scene in script["sections"] if int(scene["id"]) < int(scene_id)]
     previous_ending = prior[-1]["narration"][-700:] if prior else ""
-    replacement = _write_scene_batch(brief, bible, outline, [plan], previous_ending)[0]
+    token = structured.debug_dir.set(str(output))
+    try:
+        replacement = _write_scene_batch(brief, bible, outline, [plan], previous_ending)[0]
+    finally:
+        structured.debug_dir.reset(token)
     replacement.update({
         "id": int(scene_id), "outline_scene_id": plan["scene_id"],
         "section_type": plan["section_type"],
@@ -469,6 +470,3 @@ def regenerate_scene(script: dict, brief: dict, bible: dict, outline: dict,
     review["source_hash"] = stable_hash(revised)
     atomic_write_json(output / "narrative_review.json", review)
     return revised
-    merge_editorial_review,
-    rebalance_scene_word_targets,
-    validate_editorial_assessment,

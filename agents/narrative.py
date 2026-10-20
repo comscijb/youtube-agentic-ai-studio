@@ -88,6 +88,54 @@ def load_json(path) -> dict | None:
         return None
 
 
+_SECRET_PATTERNS = (
+    re.compile(r"AIza[0-9A-Za-z_\-]{20,}"),
+    re.compile(r"ya29\.[0-9A-Za-z_\-.]+"),
+    re.compile(r"(?i)\b((?:api[_-]?key|(?:access[_-]?|refresh[_-]?|id[_-]?)?token"
+               r"|client[_-]?secret|secret|password|authorization)"
+               r"[\"']?\s*[=:]\s*[\"']?)[^\s\"'&,}]+"),
+    re.compile(r"(?i)([?&](?:key|api_key|token)=)[^&\s]+"),
+)
+
+
+def redact_secrets(text: str, secrets=()) -> str:
+    """Remove configured secrets and common key/token shapes from free text."""
+    result = str(text or "")
+    for secret in secrets:
+        if secret and len(str(secret)) >= 6:
+            result = result.replace(str(secret), "[REDACTED]")
+    for pattern in _SECRET_PATTERNS:
+        result = pattern.sub(
+            lambda match: (match.group(1) if match.groups() else "") + "[REDACTED]", result
+        )
+    return result
+
+
+def write_debug_artifact(run_dir, stage: str, sections: dict, secrets=()) -> Path | None:
+    """Persist raw stage diagnostics to ``<run_dir>/debug/<stage>-<attempt>.txt``.
+
+    Never raises: diagnostics must not mask the original failure.
+    """
+    if not run_dir:
+        return None
+    try:
+        folder = Path(run_dir) / "debug"
+        folder.mkdir(parents=True, exist_ok=True)
+        slug = re.sub(r"[^a-z0-9]+", "-", str(stage).lower()).strip("-") or "stage"
+        attempt = 1
+        while (folder / f"{slug}-{attempt}.txt").exists():
+            attempt += 1
+        body = "\n\n".join(
+            f"===== {title} =====\n{redact_secrets(value, secrets)}"
+            for title, value in sections.items()
+        )
+        path = folder / f"{slug}-{attempt}.txt"
+        path.write_text(body + "\n", encoding="utf-8")
+        return path
+    except OSError:
+        return None
+
+
 def stable_hash(value) -> str:
     encoded = json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
@@ -371,56 +419,96 @@ def rebalance_scene_word_targets(outline: dict, total_target: int) -> dict:
     return normalized
 
 
+OUTLINE_SCENE_TEXT_FIELDS = (
+    "scene_id", "title", "section_type", "narrative_function", "summary", "setting",
+    "dramatic_function", "emotional_turn", "causal_link", "visual_direction",
+)
+OUTLINE_DRAMATURGY_FIELDS = (
+    "initial_dramatic_situation", "character_objective", "obstacle",
+    "dramatic_action", "decision", "consequence", "new_information",
+    "chronology_marker",
+)
+
+
+def outline_scene_issues(outline: dict, bible: dict,
+                         require_dramaturgy: bool = False) -> dict[str, list[str]]:
+    """Collect per-scene problems keyed by scene_id (``#<position>`` when absent).
+
+    Only problems local to one scene are reported here; whole-outline checks
+    (scene order, opening/ending/climax) stay in ``validate_outline``.
+    """
+    scenes = normalize_outline(outline).get("scenes") if isinstance(outline, dict) else None
+    if not isinstance(scenes, list):
+        return {}
+    character_ids = {character.get("character_id") for character in bible.get("characters", [])
+                     if isinstance(character, dict)}
+    issues: dict[str, list[str]] = {}
+    for index, scene in enumerate(scenes, 1):
+        if not isinstance(scene, dict):
+            issues[f"#{index}"] = ["scene must be an object"]
+            continue
+        sid = scene.get("scene_id")
+        key = sid.strip() if isinstance(sid, str) and sid.strip() else f"#{index}"
+        problems = []
+        fields = OUTLINE_SCENE_TEXT_FIELDS + (OUTLINE_DRAMATURGY_FIELDS if require_dramaturgy else ())
+        missing = [field for field in fields
+                   if not isinstance(scene.get(field), str) or not scene[field].strip()]
+        if missing:
+            problems.append(f"missing nonempty fields: {', '.join(missing)}")
+        if "section_type" not in missing and scene["section_type"] not in SCENE_TYPES:
+            problems.append(f"section_type '{scene['section_type']}' must be one of {', '.join(SCENE_TYPES)}")
+        if require_dramaturgy:
+            updates = scene.get("continuity_updates")
+            if (not isinstance(updates, list) or
+                    any(not isinstance(item, str) or not item.strip() for item in updates)):
+                problems.append("continuity_updates must be an array of nonempty strings")
+        present = scene.get("characters_present", [])
+        if not isinstance(present, list) or any(not isinstance(cid, str) for cid in present):
+            problems.append("characters_present must be an array of character_id strings")
+        else:
+            unknown = [cid for cid in present if cid not in character_ids]
+            if unknown:
+                problems.append(f"characters_present has unknown character IDs: {', '.join(unknown)}")
+        queries = scene.get("image_queries", [])
+        if (not isinstance(queries, list) or len(queries) < 3
+                or any(not isinstance(query, str) or not query.strip() for query in queries)):
+            problems.append("image_queries requires at least three nonempty strings")
+        target_words = scene.get("target_words", 0)
+        if not isinstance(target_words, int) or target_words < 20:
+            problems.append("target_words must be an integer >= 20")
+        if problems:
+            issues.setdefault(key, []).extend(problems)
+    return issues
+
+
+def format_scene_issues(label: str, issues: dict[str, list[str]]) -> str:
+    details = "; ".join(f"scene {sid}: {', '.join(problems)}" for sid, problems in issues.items())
+    return f"{label} has invalid scenes. {details}"
+
+
 def validate_outline(outline: dict, bible: dict, require_dramaturgy: bool = False) -> dict:
     outline = normalize_outline(outline)
     _require_mapping(outline, "story outline")
     scenes = outline.get("scenes")
     if not isinstance(scenes, list) or len(scenes) < 3:
         raise NarrativeValidationError("story outline requires at least three scenes")
-    character_ids = {character["character_id"] for character in bible["characters"]}
+    issues = outline_scene_issues(outline, bible, require_dramaturgy)
+    if issues:
+        raise NarrativeValidationError(format_scene_issues("story outline", issues))
     seen = set()
     previous_order = 0
-    for index, scene in enumerate(scenes, 1):
-        _require_mapping(scene, f"outline scene {index}")
-        _require_text_fields(scene, (
-            "scene_id", "title", "section_type", "narrative_function", "summary", "setting",
-            "dramatic_function", "emotional_turn", "causal_link", "visual_direction",
-        ), f"outline scene {index}")
+    for scene in scenes:
         sid = scene["scene_id"]
-        if scene["section_type"] not in SCENE_TYPES:
-            raise NarrativeValidationError(f"Invalid section_type in outline scene {sid}")
-        if require_dramaturgy:
-            _require_text_fields(scene, (
-                "initial_dramatic_situation", "character_objective", "obstacle",
-                "dramatic_action", "decision", "consequence", "new_information",
-                "chronology_marker",
-            ), f"outline scene {index}")
-            updates = scene.get("continuity_updates")
-            if (not isinstance(updates, list) or
-                    any(not isinstance(item, str) or not item.strip() for item in updates)):
-                raise NarrativeValidationError(
-                    f"outline scene {sid} continuity_updates must be an array of nonempty strings"
-                )
         if sid in seen:
             raise NarrativeValidationError(f"Duplicate outline scene_id: {sid}")
         seen.add(sid)
         order = scene.get("order")
         if not isinstance(order, int) or order <= previous_order:
-            raise NarrativeValidationError("outline scene order must be strictly increasing integers")
-        previous_order = order
-        present = scene.get("characters_present", [])
-        if (not isinstance(present, list)
-                or any(not isinstance(cid, str) or cid not in character_ids for cid in present)):
-            raise NarrativeValidationError(f"Unknown character reference in outline scene {sid}")
-        queries = scene.get("image_queries", [])
-        if (not isinstance(queries, list) or len(queries) < 3
-                or any(not isinstance(query, str) or not query.strip() for query in queries)):
             raise NarrativeValidationError(
-                f"outline scene {sid} requires at least three nonempty string image_queries"
+                f"outline scene {sid}: order must be an integer greater than the previous "
+                f"scene's ({previous_order}); received {order!r}"
             )
-        target_words = scene.get("target_words", 0)
-        if not isinstance(target_words, int) or target_words < 20:
-            raise NarrativeValidationError(f"outline scene {sid} requires target_words >= 20")
+        previous_order = order
     types = [scene["section_type"] for scene in scenes]
     if types[0] not in ("opening", "setup"):
         raise NarrativeValidationError("outline is missing an opening narrative function")
