@@ -105,7 +105,7 @@ VOICE_PITCH = "-3Hz"    # slightly deeper = more cinematic
 #  Current candidates: gemini-3.8-flash, gemini-3.6-flash,
 #  gemini-3.5-flash-lite. Availability varies by project.
 # ─────────────────────────────────────────
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 
 # ─────────────────────────────────────────
 #  Video Dimensions
