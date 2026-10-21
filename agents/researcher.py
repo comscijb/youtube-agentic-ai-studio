@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import os
 import random
+import re
 import time
 
 import config
@@ -31,27 +32,104 @@ _BUILTIN_BANNED: list[str] = []
 FOCUS_ANGLES = list(PSYCHOLOGICAL_THEMES)
 
 
-def load_banned_topics() -> list[str]:
-    topics = list(_BUILTIN_BANNED)
+BANNED_FIELDS = ("theme", "angle", "premise", "title", "video", "published")
+BANNED_RULE = (
+    "Do not reuse a listed premise or the same theme + angle combination; the same broad theme "
+    "from a clearly different psychological angle is allowed."
+)
+_BANNED_HEADER = (
+    "# Published topics. Plain lines are premises; automatic lines are written when a video\n"
+    "# becomes public: theme: ... | angle: ... | premise: ... | title: ... | video: ... | published: ...\n"
+    "# Automatic premise generation must not reuse a premise or the same theme + angle.\n\n"
+)
+
+
+def parse_banned_line(line: str) -> dict:
+    """Parse one banned_topics.txt line; plain lines are a premise only."""
+    raw = line.strip()
+    entry = {"raw": raw}
+    fields = {}
+    for part in (part.strip() for part in raw.split(" | ")):
+        key, sep, value = part.partition(":")
+        if not sep or key.strip().lower() not in BANNED_FIELDS:
+            fields = {}
+            break
+        fields[key.strip().lower()] = value.strip()
+    if "premise" in fields or "theme" in fields:
+        entry.update(fields)
+    else:
+        entry["premise"] = raw
+    return entry
+
+
+def format_banned_entry(entry: dict) -> str:
+    def clean(value):
+        return " ".join(str(value or "").replace("|", "/").split())
+    return " | ".join(f"{key}: {clean(entry.get(key))}" for key in BANNED_FIELDS
+                      if clean(entry.get(key)))
+
+
+def load_banned_topics() -> list[dict]:
+    """Return structured entries; each keeps its original text in ``raw``."""
+    entries = [parse_banned_line(topic) for topic in _BUILTIN_BANNED]
+    seen = {entry["raw"] for entry in entries}
     try:
         if os.path.exists(_BANNED_TOPICS_FILE):
             with open(_BANNED_TOPICS_FILE, encoding="utf-8") as handle:
                 for line in handle:
                     topic = line.strip()
-                    if topic and not topic.startswith("#") and topic not in topics:
-                        topics.append(topic)
+                    if topic and not topic.startswith("#") and topic not in seen:
+                        seen.add(topic)
+                        entries.append(parse_banned_line(topic))
     except OSError as exc:
         print(f"   WARNING: Could not read banned_topics.txt: {exc}")
-    return topics
+    return entries
 
 
-def save_banned_topics(topics: list[str]) -> None:
+def save_banned_topics(topics: list) -> None:
+    """Rewrite the file from raw lines (strings) or structured entries."""
     with open(_BANNED_TOPICS_FILE, "w", encoding="utf-8") as handle:
-        handle.write("# One previously used story premise per line.\n")
-        handle.write("# These are avoided only during automatic premise generation.\n\n")
+        handle.write(_BANNED_HEADER)
         for topic in topics:
-            if str(topic).strip():
-                handle.write(str(topic).strip() + "\n")
+            line = (topic.get("raw") or format_banned_entry(topic)) if isinstance(topic, dict) else topic
+            if str(line).strip():
+                handle.write(str(line).strip() + "\n")
+
+
+def append_banned_entry(entry: dict) -> bool:
+    """Append one published topic unless its video (or the identical line) is listed."""
+    line = format_banned_entry(entry)
+    video = str(entry.get("video") or "")
+    if any(item["raw"] == line or (video and item.get("video") == video)
+           for item in load_banned_topics()):
+        return False
+    exists = os.path.exists(_BANNED_TOPICS_FILE) and os.path.getsize(_BANNED_TOPICS_FILE) > 0
+    needs_newline = False
+    if exists:
+        with open(_BANNED_TOPICS_FILE, "rb") as check:
+            check.seek(-1, os.SEEK_END)
+            needs_newline = check.read(1) != b"\n"
+    with open(_BANNED_TOPICS_FILE, "a", encoding="utf-8") as handle:
+        if not exists:
+            handle.write(_BANNED_HEADER)
+        handle.write(("\n" if needs_newline else "") + line + "\n")
+    return True
+
+
+def _normalize_premise(text) -> str:
+    return " ".join(re.findall(r"[a-z0-9]+", str(text or "").lower()))
+
+
+def published_premise_matches(premise: str, entries: list[dict]) -> list[dict]:
+    target = _normalize_premise(premise)
+    return [entry for entry in entries if target and target in {
+        _normalize_premise(entry.get("premise")), _normalize_premise(entry.get("title"))
+    }]
+
+
+def _banned_for_prompt(entries: list[dict]) -> list[dict]:
+    return [{key: entry[key] for key in ("theme", "angle", "premise") if entry.get(key)}
+            for entry in entries]
 
 
 def research_topic(
@@ -85,7 +163,16 @@ def research_topic(
             return cached
 
     theme = focus_angle.strip() or random.choice(PSYCHOLOGICAL_THEMES)
-    banned = [] if exact else load_banned_topics()
+    if not exact:
+        # Ban topics of videos that became public since the last run.
+        from uploader.publications import sync_publications_safely
+        sync_publications_safely(interactive=False)
+    published = load_banned_topics()
+    banned = [] if exact else _banned_for_prompt(published)
+    matches = published_premise_matches(exact, published) if exact else []
+    if matches:
+        print("   WARNING: this exact premise matches an already published topic: "
+              + "; ".join(item["raw"] for item in matches))
     mode_instruction = (
         f'The user premise is authoritative: "{exact}". Develop this exact premise; '
         "do not replace it with a related idea."
@@ -118,11 +205,14 @@ scores predict audience performance.
 
 Return ONLY one complete JSON object with these keys:
 premise_candidates, selected_candidate_index, video_title, narrative_type,
-psychological_theme, logline, main_character_concept, central_dramatic_question,
+psychological_theme, psychological_angle, logline, main_character_concept, central_dramatic_question,
 protagonist_desire, underlying_emotional_need, principal_conflict, central_contradiction,
 stakes, potential_turning_point, intended_emotional_experience, philosophical_question,
 ending_direction, intended_audience, thumbnail_concept, originality_assessment,
 production_feasibility, tags, title_candidates, thumbnail_text_candidates.
+psychological_theme is the broad theme (e.g. "envy"); psychological_angle is ONE specific sentence
+naming the mechanism explored (e.g. "needing to be envied as a substitute for self-worth").
+PUBLISHED TOPICS RULE: {BANNED_RULE}
 title_candidates: exactly 5 objects {{"title": "...", "rationale": "one sentence on the curiosity it
 creates"}} that follow the title policy; video_title must be the strongest of them.
 thumbnail_text_candidates: exactly 3 strings that follow the thumbnail text policy.
@@ -135,7 +225,7 @@ stock imagery, and must not use educational segments, factual listicles, or gene
 
 Primary theme: {theme}
 Planned duration: {duration:g} minutes.
-Previously used premises to avoid during automatic generation: {json.dumps(banned)}
+Published topics to avoid during automatic generation: {compact_json(banned)}
 Uniqueness nonce: {time.time_ns()}"""
 
     def finalize(value: dict) -> dict:
@@ -154,6 +244,13 @@ Uniqueness nonce: {time.time_ns()}"""
                     candidate["narrative_type"] = narrative_type
         brief["target_duration_minutes"] = duration
         brief["request_hash"] = request_hash
+        if not str(brief.get("psychological_angle") or "").strip():
+            raise NarrativeValidationError(
+                "story brief requires a nonempty psychological_angle: one sentence naming the "
+                "specific mechanism explored"
+            )
+        if matches:
+            brief["published_topic_warning"] = [item["raw"] for item in matches]
         if not exact and len(brief.get("premise_candidates", [])) < 3:
             raise NarrativeValidationError(
                 "automatic story development requires at least three premise_candidates"
@@ -200,7 +297,8 @@ The previous candidates failed for these reasons; do not repeat them:
     def require_candidates(value: dict) -> dict:
         titles = value.get("title_candidates")
         thumbnails = value.get("thumbnail_text_candidates")
-        if not isinstance(titles, list) or not titles or not isinstance(thumbnails, list)                 or not thumbnails:
+        if (not isinstance(titles, list) or not titles
+                or not isinstance(thumbnails, list) or not thumbnails):
             raise NarrativeValidationError(
                 "title repair requires nonempty title_candidates and thumbnail_text_candidates arrays"
             )

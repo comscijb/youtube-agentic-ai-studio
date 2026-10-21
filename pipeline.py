@@ -20,6 +20,7 @@ from video.creator       import create_video
 from review.app          import start_review_server
 from uploader.youtube    import upload_to_youtube
 from agents.narrative import atomic_write_json
+from uploader.publications import sync_publications_safely
 
 
 def banner(text: str):
@@ -33,6 +34,9 @@ def run():
     Path(config.IMAGES_DIR).mkdir(exist_ok=True)
 
     print("\n🎬  Private Gravity  ·  Cinematic Fiction Pipeline\n")
+
+    # Ban topics of videos that became public since the last run (never blocks).
+    sync_publications_safely(interactive=False)
 
     # ── 1. Research ───────────────────────────────────────────
     banner("1 / 6  ·  Developing and selecting a story premise  [Gemini]")

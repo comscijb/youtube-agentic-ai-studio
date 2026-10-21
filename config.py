@@ -207,9 +207,20 @@ REVIEW_PORT = 5050
 #  YouTube Upload
 # ─────────────────────────────────────────
 YOUTUBE_CLIENT_SECRET = "client_secret.json"   # OAuth credentials file (see SETUP.md)
-YOUTUBE_SCOPES        = ["https://www.googleapis.com/auth/youtube.upload"]
+# youtube.upload covers videos.insert and thumbnails.set; videos.list (used to
+# detect when an upload becomes public) requires youtube.readonly. A stored
+# token missing a scope triggers a one-time re-consent.
+YOUTUBE_SCOPES        = [
+    "https://www.googleapis.com/auth/youtube.upload",
+    "https://www.googleapis.com/auth/youtube.readonly",
+]
 VIDEO_CATEGORY_ID     = "24"  # Entertainment
 VIDEO_PRIVACY         = "public"   # "public" | "unlisted" | "private"
+
+# Publication ledger (tracked in git, no secrets). A topic enters
+# banned_topics.txt only after its video is actually public on YouTube.
+PUBLICATIONS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "publications.json")
+PUBLICATION_SYNC_INTERVAL_MINUTES = float(os.getenv("PUBLICATION_SYNC_INTERVAL_MINUTES", "30"))
 
 # ─────────────────────────────────────────
 #  Background Music

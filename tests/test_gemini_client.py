@@ -238,6 +238,7 @@ class GeminiClientTests(unittest.TestCase):
             }],
             "selected_candidate_index": 0, "video_title": "Title",
             "narrative_type": "dark_human_parable", "psychological_theme": "Envy",
+            "psychological_angle": "Lying to be admired",
             "logline": "T", "main_character_concept": "A clerk",
             "central_dramatic_question": "Will he confess?", "protagonist_desire": "Status",
             "underlying_emotional_need": "Self-respect", "principal_conflict": "A lie",

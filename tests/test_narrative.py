@@ -45,6 +45,7 @@ def story_brief(narrative_type="realistic_psychological_fiction"):
         "video_title": "The Man Who Replaced Himself",
         "narrative_type": narrative_type,
         "psychological_theme": "Regret and alternative lives",
+        "psychological_angle": "Trying to undo regret by controlling a younger self",
         "logline": "A night guard discovers his replacement is his younger self.",
         "main_character_concept": "A guarded middle-aged night watchman",
         "central_dramatic_question": "Can he stop the choice that made him lonely?",

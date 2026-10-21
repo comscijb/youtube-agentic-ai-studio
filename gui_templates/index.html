@@ -783,7 +783,8 @@ input[type=range]{width:100%;accent-color:var(--primary)}
               <button class="btn btn-ghost" style="font-size:12px;padding:6px 14px" onclick="saveBannedTopics()">💾 Save Banned Topics</button>
               <span id="banned-msg" style="font-size:12px;color:var(--green);display:none">✓ Saved</span>
             </div>
-            <div class="help-text">You can also directly edit <code style="background:var(--surface2);padding:1px 5px;border-radius:3px">banned_topics.txt</code>. Changes take effect on the next Research run.</div>
+            <div class="help-text">You can also directly edit <code style="background:var(--surface2);padding:1px 5px;border-radius:3px">banned_topics.txt</code>. Changes take effect on the next Research run. Published videos are added automatically once they are public on YouTube; the same theme may return from a different angle.</div>
+            <div id="banned-entries" style="font-size:11px;margin-top:6px"></div>
           </div>
         </div>
 
@@ -1321,6 +1322,14 @@ function loadSettings() {
     const builtin = ['The Boltzmann Brain', 'Simulation Theory', 'Quantum Immortality'];
     const userTopics = (d.topics || []).filter(t => !builtin.includes(t));
     document.getElementById('s-banned-topics').value = userTopics.join('\n');
+    const list = document.getElementById('banned-entries');
+    list.innerHTML = '';
+    (d.entries || []).filter(e => e.video).forEach(e => {
+      const row = document.createElement('div');
+      row.style.cssText = 'padding:4px 0;border-top:1px solid var(--border,#333)';
+      row.textContent = `${e.published || ''} · ${e.theme || '—'} — ${e.angle || '—'} · “${e.premise || e.title || ''}” (${e.video})`;
+      list.appendChild(row);
+    });
   });
 }
 
