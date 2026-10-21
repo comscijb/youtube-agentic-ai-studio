@@ -62,6 +62,7 @@ def story_brief(narrative_type="realistic_psychological_fiction"):
         "originality_assessment": "A personal time loop centered on accountability",
         "production_feasibility": "Night interiors, silhouettes, clocks and monitors",
         "tags": ["Private Gravity", "Psychological Fiction"],
+        "thumbnail_text_candidates": ["Not again."],
     }
 
 

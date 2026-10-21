@@ -471,8 +471,9 @@ input[type=range]{width:100%;accent-color:var(--primary)}
         <div class="review-right">
           <div class="edit-panel">
             <div class="field-label" style="margin-bottom:4px">Video Title</div>
-            <input type="text" id="edit-title" placeholder="Video title…" oninput="markDirty()">
-            <div class="help-text">Keep under 70 characters for best YouTube display.</div>
+            <input type="text" id="edit-title" placeholder="Video title…" oninput="markDirty(); scheduleTitleCheck()">
+            <div class="help-text">Present a person and a situation; never explain the theme. Max 70 characters / 12 words.</div>
+            <div id="title-findings" style="font-size:11px;margin-top:4px"></div>
 
             <div>
               <div class="flex-row" style="margin-bottom:6px">
@@ -1064,6 +1065,7 @@ function loadReviewData() {
   // Script data
   fetch('/api/output').then(r=>r.json()).then(d => {
     document.getElementById('edit-title').value  = d.title  || '';
+    checkTitle();
     document.getElementById('edit-desc').value   = d.description || '';
     _currentTags = d.tags || [];
     renderTags();
@@ -1119,9 +1121,43 @@ function markDirty() {
   document.getElementById('save-btn').disabled = false;
 }
 
-function saveEdits() {
+let _titleTimer = null;
+function scheduleTitleCheck() {
+  clearTimeout(_titleTimer);
+  _titleTimer = setTimeout(checkTitle, 300);
+}
+
+function renderTitleFindings(findings) {
+  const box = document.getElementById('title-findings');
+  box.innerHTML = '';
+  if (!findings.length) {
+    box.innerHTML = '<span style="color:var(--green,#4caf50)">✓ Title passes the title policy</span>';
+    return;
+  }
+  findings.forEach(f => {
+    const row = document.createElement('div');
+    row.style.color = f.severity === 'blocking' ? 'var(--red,#e05252)' : 'var(--yellow,#e0b252)';
+    row.textContent = `${f.severity.toUpperCase()}: ${f.claim}`;
+    box.appendChild(row);
+  });
+}
+
+function checkTitle() {
+  const title = document.getElementById('edit-title').value.trim();
+  return fetch('/api/validate-title', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({title})
+  }).then(r=>r.json()).then(d => { renderTitleFindings(d.findings || []); return d; });
+}
+
+async function saveEdits() {
   const title = document.getElementById('edit-title').value.trim();
   const desc  = document.getElementById('edit-desc').value;
+  const check = await checkTitle();
+  if (check && !check.passes &&
+      !confirm('This title breaks the title policy (see the findings under the title). Uploads will be blocked until it is fixed or overridden. Save anyway?')) {
+    return;
+  }
   fetch('/api/save-output', {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({title, description: desc, tags: _currentTags})

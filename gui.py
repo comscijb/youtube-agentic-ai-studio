@@ -16,6 +16,7 @@ sys.path.insert(0, ROOT)
 from agents.researcher import load_banned_topics, save_banned_topics
 from agents.narrative import (
     atomic_write_json, invalidate_downstream, invalidate_scene_outputs, load_json,
+    title_passes, validate_title,
 )
 from video.timeline import load_timeline
 
@@ -585,6 +586,20 @@ def get_output():
         "narrative_review": _state.get("narrative_review") or {},
     })
 
+def _title_findings(title: str) -> list:
+    brief = _state.get("research") or load_json(Path(config.OUTPUT_DIR, "story_brief.json")) or {}
+    if not brief.get("psychological_theme") and _state.get("script"):
+        brief = {"psychological_theme": _state["script"].get("psychological_theme", "")}
+    return validate_title(title, brief)
+
+
+@app.route("/api/validate-title", methods=["POST"])
+def validate_title_route():
+    body = request.get_json(force=True) or {}
+    findings = _title_findings(str(body.get("title", "")))
+    return jsonify({"ok": True, "passes": title_passes(findings), "findings": findings})
+
+
 @app.route("/api/save-output", methods=["POST"])
 def save_output():
     body = request.get_json(force=True) or {}
@@ -601,7 +616,8 @@ def save_output():
         # only derived visual that contains the editable title.
         if "title" in body:
             Path(config.OUTPUT_DIR, "thumbnail.jpg").unlink(missing_ok=True)
-    return jsonify({"ok": True})
+    findings = _title_findings(body["title"]) if "title" in body else []
+    return jsonify({"ok": True, "title_passes": title_passes(findings), "title_findings": findings})
 
 
 @app.route("/api/regenerate-scene", methods=["POST"])

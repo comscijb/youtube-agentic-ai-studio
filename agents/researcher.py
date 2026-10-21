@@ -14,10 +14,13 @@ from agents.narrative import (
     NarrativeValidationError,
     atomic_write_json,
     load_json,
+    select_title,
+    title_passes,
     stable_hash,
     validate_story_brief,
 )
-from agents.structured import generate_json
+from agents.identity import TITLE_POLICY, identity_block
+from agents.structured import compact_json, generate_json
 
 _BANNED_TOPICS_FILE = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "banned_topics.txt"
@@ -97,7 +100,11 @@ def research_topic(
     contract = f"""You are the Story Development Agent for Private Gravity, an anthology of
 cinematic psychological fiction. Ideas from psychology and philosophy must emerge through
 character choice, consequence, image and subtext—never through a lecture or explainer.
-The channel identity, theme, duration and previously used premises are supplied after this contract.
+The channel description, theme, duration and previously used premises are supplied after this contract.
+
+{identity_block(None if narrative_type == "auto" else narrative_type)}
+
+{TITLE_POLICY}
 
 {mode_instruction}
 {type_instruction}
@@ -115,7 +122,10 @@ psychological_theme, logline, main_character_concept, central_dramatic_question,
 protagonist_desire, underlying_emotional_need, principal_conflict, central_contradiction,
 stakes, potential_turning_point, intended_emotional_experience, philosophical_question,
 ending_direction, intended_audience, thumbnail_concept, originality_assessment,
-production_feasibility, tags.
+production_feasibility, tags, title_candidates, thumbnail_text_candidates.
+title_candidates: exactly 5 objects {{"title": "...", "rationale": "one sentence on the curiosity it
+creates"}} that follow the title policy; video_title must be the strongest of them.
+thumbnail_text_candidates: exactly 3 strings that follow the thumbnail text policy.
 
 Use one of these narrative_type values: {json.dumps(sorted(NARRATIVE_TYPES))}.
 The story must be original, causally coherent, emotionally plausible, filmable with cinematic
@@ -155,8 +165,90 @@ Uniqueness nonce: {time.time_ns()}"""
         context=context, stage="premise", temperature_key="premise",
         run_dir=config.OUTPUT_DIR,
     )
+    _apply_title_review(brief, _review_titles(brief))
     atomic_write_json(brief_path, brief)
     return brief
+
+
+def _review_titles(brief: dict) -> dict:
+    """Pick the first policy-compliant title; otherwise make one bounded repair call."""
+    review = select_title(brief)
+    if review["status"] == "passed":
+        return review
+    failures = [
+        {"title": item["title"], "problems": [finding["claim"] for finding in item["findings"]]}
+        for item in review["title_candidates"] if not item["passes"]
+    ] + [
+        {"thumbnail_text": item["text"],
+         "problems": [finding["claim"] for finding in item["findings"]]}
+        for item in review["thumbnail_text_candidates"] if not item["passes"]
+    ]
+    print("   -> No title/thumbnail candidate passed the title policy; requesting new candidates")
+    contract = f"""You write packaging for one Private Gravity episode. Return ONLY JSON
+{{"title_candidates": [5 objects {{"title": "...", "rationale": "..."}}],
+"thumbnail_text_candidates": [3 strings]}}.
+
+{TITLE_POLICY}
+
+The previous candidates failed for these reasons; do not repeat them:
+{compact_json(failures)}"""
+    story = {key: brief.get(key, "") for key in (
+        "topic", "logline", "main_character_concept", "protagonist_desire",
+        "central_contradiction", "psychological_theme", "potential_turning_point",
+    )}
+
+    def require_candidates(value: dict) -> dict:
+        titles = value.get("title_candidates")
+        thumbnails = value.get("thumbnail_text_candidates")
+        if not isinstance(titles, list) or not titles or not isinstance(thumbnails, list)                 or not thumbnails:
+            raise NarrativeValidationError(
+                "title repair requires nonempty title_candidates and thumbnail_text_candidates arrays"
+            )
+        return value
+
+    try:
+        repaired = generate_json(
+            contract, "title candidates", require_candidates, generator=generate,
+            context=f"STORY: {compact_json(story)}", stage="title_repair",
+            temperature_key="premise", run_dir=config.OUTPUT_DIR,
+        )
+    except NarrativeValidationError as exc:
+        review["repair_error"] = str(exc)
+        review["repair_attempted"] = True
+        return review
+    retried = select_title({
+        "psychological_theme": brief.get("psychological_theme", ""),
+        "title_candidates": repaired["title_candidates"],
+        "thumbnail_text_candidates": repaired["thumbnail_text_candidates"],
+    })
+    if retried["status"] != "passed":
+        # Keep the best of both rounds: a passing title or thumbnail from either.
+        for key, selected, candidates in (
+                ("title", "selected_title", "title_candidates"),
+                ("text", "selected_thumbnail_text", "thumbnail_text_candidates")):
+            if not any(item["passes"] for item in retried[candidates]):
+                passing = next((item for item in review[candidates] if item["passes"]), None)
+                if passing:
+                    retried[selected] = passing[key]
+                    if key == "title":
+                        retried["selected_title_findings"] = passing["findings"]
+        if (title_passes(retried["selected_title_findings"]) and any(
+                item["passes"] and item["text"] == retried["selected_thumbnail_text"]
+                for item in retried["thumbnail_text_candidates"] + review["thumbnail_text_candidates"])):
+            retried["status"] = "passed"
+    retried["repair_attempted"] = True
+    retried["initial_candidates"] = {
+        "title_candidates": review["title_candidates"],
+        "thumbnail_text_candidates": review["thumbnail_text_candidates"],
+    }
+    return retried
+
+
+def _apply_title_review(brief: dict, review: dict) -> None:
+    if review.get("selected_title"):
+        brief["video_title"] = review["selected_title"]
+    brief["thumbnail_text"] = review.get("selected_thumbnail_text", "")
+    brief["title_review"] = review
 
 
 def _cached_brief(path: str, request_hash: str) -> dict | None:

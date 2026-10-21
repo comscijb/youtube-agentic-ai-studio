@@ -7,10 +7,13 @@ from pathlib import Path
 import config
 from agents import structured
 from agents.gemini_client import generate
+from agents.identity import TITLE_POLICY, identity_block
 from agents.structured import SceneScope, compact_json
 from agents.narrative import (
     CONTENT_MODE,
+    ARC_MOVEMENTS,
     EDITORIAL_DIMENSIONS,
+    TYPE_A,
     NARRATIVE_CONTRACT_VERSION,
     SCHEMA_VERSION,
     NarrativeValidationError,
@@ -118,9 +121,19 @@ def _outline(brief: dict, bible: dict, video_type: str, target_minutes: float,
     wpm = int(getattr(config, "NARRATION_WPM", 125))
     target_words = 110 if video_type == "shorts" else round(target_minutes * wpm)
     scene_count = 4 if video_type == "shorts" else max(8, min(14, round(target_minutes * .75)))
+    narrative_type = brief.get("narrative_type")
+    movement_rule = (
+        "arc_movements is REQUIRED for this Type A story: tag every scene with the movement(s) it "
+        "expresses so that, across the outline, all of the movements appear unless the story "
+        "deliberately compresses one."
+        if narrative_type == TYPE_A else
+        "arc_movements is optional for this narrative type; use [] when it does not apply."
+    )
     contract = f"""You are the narrative architect for Private Gravity. Create a causal scene outline
 for the STORY BRIEF and CHARACTER BIBLE supplied after this contract.
 FORMAT: {video_type}; TARGET: {target_words} narrated words across exactly {scene_count} scenes.
+
+{identity_block(narrative_type)}
 
 Return ONLY JSON {{"scenes": [...]}}. Each scene requires scene_id (s01 etc.), order,
 title, section_type (exactly one of opening, setup, development, reversal, climax, resolution,
@@ -130,6 +143,7 @@ obstacle, dramatic_action, decision, consequence, new_information, dramatic_func
 emotional_turn, causal_link to the next scene, chronology_marker (specific relative time),
 continuity_updates (array of explicit changes to knowledge, ownership, objects, relationships or
 story rules; empty only when nothing changes), target_words,
+arc_movements (array of values from {json.dumps(list(ARC_MOVEMENTS))}; {movement_rule}),
 visual_direction, and image_queries (an array of exactly 3 nonempty string stock-search phrases centered on settings,
 objects, gestures, environments or silhouettes). The first scene must function as an opening;
 the final scene as resolution/aftermath, with a climax before it. Every scene must change the
@@ -156,12 +170,15 @@ def _write_scene_batch(brief: dict, bible: dict, outline: dict, scenes: list[dic
                        previous_ending: str) -> list[dict]:
     contract = f"""You are the scene writer for Private Gravity. Write broadcast-ready English
 narration for ONLY the SCENES TO WRITE supplied after this contract. The narrator tells an
-original cinematic story; never
-explains psychology to the audience. Preserve character identity, chronology, speculative rules,
-causality and EACH allocated word count (85%-115%). Dramatize objectives, obstacles, decisions,
-consequences and discoveries through action, specific dialogue and subtext. The protagonist must
-make consequential choices; supporting characters need independent agency. Never pad with repeated
-atmosphere, restated feelings, generic transitions or summary. Make sentences natural for spoken audio.
+original cinematic story; never explains psychology to the audience. Preserve character identity,
+chronology, speculative rules, causality and EACH allocated word count (85%-115%). Dramatize
+objectives, obstacles, decisions, consequences and discoveries through action. The protagonist
+must make consequential choices. Never pad with repeated atmosphere, restated feelings, generic
+transitions or summary. Make sentences natural for spoken audio. When a scene's outline lists
+arc_movements, the narration must deliver those movements on the page (for character_wound, the
+wound itself must appear in the screenplay).
+
+{identity_block(brief.get("narrative_type"))}
 
 Return ONLY JSON {{"scenes": [...]}} in requested order. Each object needs scene_id, title,
 section_type (the exact canonical value from the outline), narrative_function (the exact free-text
@@ -227,25 +244,46 @@ PREVIOUS BATCH ENDING: {previous_ending or 'This is the opening batch.'}"""
 
 
 def _editorial_review(script: dict, brief: dict, bible: dict, outline: dict) -> dict:
+    narrative_type = brief.get("narrative_type")
+    strategy_rule = (
+        "This is a Type A story: score it." if narrative_type == TYPE_A else
+        'This is not a Type A story: use {"score": null, "not_applicable": true, '
+        '"evidence": ["why it does not apply"]}.'
+    )
     contract = f"""Act as a skeptical senior fiction editor. Review without rewriting. Test every
 continuity claim against the supplied Character Bible, outline and exact scene evidence. A high
 score never cancels a contradiction or deterministic duration failure. Distinguish confirmed facts
-from suspicions; do not invent off-page motives or events.
+from suspicions; do not invent off-page motives or events. Judge the episode against the channel
+identity below.
+
+{identity_block(narrative_type)}
+
+{TITLE_POLICY}
 
 Return ONLY JSON with:
-- dimensions: exactly these 15 keys, each {{"score": 1-10, "evidence": [specific scene evidence]}}:
+- dimensions: exactly these {len(EDITORIAL_DIMENSIONS)} keys, each {{"score": 1-10, "evidence": [specific scene evidence]}}:
 {json.dumps(list(EDITORIAL_DIMENSIONS))}
+  Identity dimensions, each citing scene evidence:
+  channel_identity_adherence: ideas emerge through choice, consequence, image and subtext.
+  hook_strength: the first 60-75 narrated words open on a situation with a striking fact and an
+  open question. title_curiosity: the title follows the title policy and creates curiosity.
+  philosophical_integration: meaning surfaces briefly after the reversal, never as a lecture.
+  ending_openness: a final choice or recognition, an uncomfortable open question, no moral.
+  strategy_success_then_cost: the strategy succeeds first and its hidden cost emerges
+  progressively. {strategy_rule}
 - findings: an array of objects with severity (blocking|major|minor|suggestion), issue_type,
 scene_ids (integer array), claim, evidence (string array), why_it_matters, recommendation,
-certainty (confirmed|probable|possible).
+certainty (confirmed|probable|possible). Any lecture-like or explanatory passage is at least a
+major finding with issue_type "lecture".
 - strengths and revision_priorities as arrays."""
     context = f"""STORY BRIEF: {compact_json(brief)}
 CHARACTER BIBLE: {compact_json(bible)}
 OUTLINE: {compact_json(outline)}
 SCREENPLAY: {compact_json(script)}"""
     return _generate_json(
-        contract, "editorial review", validate_editorial_assessment, context=context,
-        stage="editorial_review", temperature_key="editorial_review",
+        contract, "editorial review",
+        lambda value: validate_editorial_assessment(value, narrative_type, allow_legacy=False),
+        context=context, stage="editorial_review", temperature_key="editorial_review",
     )
 
 
@@ -402,6 +440,7 @@ def _write_script(brief: dict, video_type: str, output: Path, target: float,
         "video_type": video_type,
         "title": brief["video_title"] + (" #Shorts" if video_type == "shorts" else ""),
         "description": brief["description"],
+        "thumbnail_text": brief.get("thumbnail_text", ""),
         "tags": brief.get("tags", []),
         "narrative_type": brief["narrative_type"],
         "psychological_theme": brief["psychological_theme"],
@@ -415,7 +454,7 @@ def _write_script(brief: dict, video_type: str, output: Path, target: float,
     script, repair_attempts = _expand_underlength_scenes(script, brief, bible, outline)
     atomic_write_json(output / "script.json", script)
 
-    review = deterministic_review(script, target, outline, repair_attempts)
+    review = deterministic_review(script, target, outline, repair_attempts, brief)
     use_editor = (getattr(config, "NARRATIVE_REVIEW_ENABLED", True)
                   if narrative_review is None else narrative_review)
     if use_editor:
@@ -464,6 +503,7 @@ def regenerate_scene(script: dict, brief: dict, bible: dict, outline: dict,
     review = deterministic_review(
         revised, float(revised.get("target_duration_minutes", 15)), outline,
         [{"scene_ids": [int(scene_id)], "kind": "manual_scene_regeneration", "success": True}],
+        brief,
     )
     review = merge_editorial_review(review, None)
     review["editorial_review_stale"] = True

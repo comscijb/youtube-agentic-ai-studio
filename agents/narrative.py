@@ -10,17 +10,31 @@ from pathlib import Path
 
 
 SCHEMA_VERSION = 2
-NARRATIVE_CONTRACT_VERSION = 3
+NARRATIVE_CONTRACT_VERSION = 4
+# Contract v3 introduced canonical section_type; v4 adds optional arc_movements.
+CANONICAL_TYPE_CONTRACT = 3
 CONTENT_MODE = "cinematic_fiction"
 SCENE_TYPES = (
     "opening", "setup", "development", "reversal", "climax", "resolution", "aftermath",
 )
-EDITORIAL_DIMENSIONS = (
+LEGACY_EDITORIAL_DIMENSIONS = (
     "structural_coherence", "causal_continuity", "chronological_continuity",
     "character_consistency", "character_agency", "dialogue_and_subtext",
     "dramatic_progression", "emotional_escalation", "reversal_quality",
     "climax_effectiveness", "ending_resonance", "originality",
     "literary_style", "repetition_control", "visual_feasibility",
+)
+IDENTITY_EDITORIAL_DIMENSIONS = (
+    "channel_identity_adherence", "hook_strength", "title_curiosity",
+    "philosophical_integration", "ending_openness", "strategy_success_then_cost",
+)
+EDITORIAL_DIMENSIONS = LEGACY_EDITORIAL_DIMENSIONS + IDENTITY_EDITORIAL_DIMENSIONS
+# Dimensions that may be marked not applicable for non-Type-A stories.
+TYPE_A_ONLY_DIMENSIONS = ("strategy_success_then_cost",)
+TYPE_A = "realistic_psychological_fiction"
+ARC_MOVEMENTS = (
+    "hook", "character_wound", "mechanism", "escalation_success",
+    "hidden_cost", "reversal", "philosophical_layer", "ending",
 )
 NARRATIVE_TYPES = {
     "realistic_psychological_fiction",
@@ -342,7 +356,7 @@ def normalize_outline(outline: dict) -> dict:
     if not isinstance(outline, dict):
         return outline
     normalized = _trim_strings(deepcopy(outline))
-    current_contract = normalized.get("narrative_contract_version", 0) == NARRATIVE_CONTRACT_VERSION
+    current_contract = normalized.get("narrative_contract_version", 0) >= CANONICAL_TYPE_CONTRACT
     scenes = normalized.get("scenes")
     if isinstance(scenes, list):
         for index, scene in enumerate(scenes):
@@ -366,7 +380,7 @@ def normalize_script(script: dict, outline: dict | None = None) -> dict:
     if not isinstance(script, dict):
         return script
     normalized = _trim_strings(deepcopy(script))
-    current_contract = normalized.get("narrative_contract_version", 0) == NARRATIVE_CONTRACT_VERSION
+    current_contract = normalized.get("narrative_contract_version", 0) >= CANONICAL_TYPE_CONTRACT
     plans = {}
     if isinstance(outline, dict):
         for plan in normalize_outline(outline).get("scenes", []):
@@ -476,6 +490,16 @@ def outline_scene_issues(outline: dict, bible: dict,
         target_words = scene.get("target_words", 0)
         if not isinstance(target_words, int) or target_words < 20:
             problems.append("target_words must be an integer >= 20")
+        if "arc_movements" in scene:
+            movements = scene["arc_movements"]
+            if not isinstance(movements, list) or any(
+                    not isinstance(item, str) for item in movements):
+                problems.append("arc_movements must be an array of strings")
+            else:
+                unknown = [item for item in movements if item not in ARC_MOVEMENTS]
+                if unknown:
+                    problems.append(f"arc_movements has unknown values: {', '.join(unknown)}; "
+                                    f"allowed: {', '.join(ARC_MOVEMENTS)}")
         if problems:
             issues.setdefault(key, []).extend(problems)
     return issues
@@ -609,9 +633,22 @@ def validate_script(script: dict, character_bible: dict | None = None,
     return script
 
 
+def missing_arc_movements(outline: dict | None, narrative_type: str | None) -> list[str]:
+    """Type A movements no scene declares; empty for B/C or outlines predating the field."""
+    if narrative_type != TYPE_A or not isinstance(outline, dict):
+        return []
+    scenes = [scene for scene in outline.get("scenes") or [] if isinstance(scene, dict)]
+    if not any("arc_movements" in scene for scene in scenes):
+        return []
+    declared = {item for scene in scenes for item in scene.get("arc_movements") or []
+                if isinstance(item, str)}
+    return [movement for movement in ARC_MOVEMENTS if movement not in declared]
+
+
 def deterministic_review(script: dict, target_duration_minutes: float,
                          outline: dict | None = None,
-                         repair_attempts: list | None = None) -> dict:
+                         repair_attempts: list | None = None,
+                         brief: dict | None = None) -> dict:
     """Measure objective readiness; editorial opinion can never erase these blockers."""
     script = normalize_script(script, outline)
     sections = script["sections"]
@@ -737,6 +774,21 @@ def deterministic_review(script: dict, target_duration_minutes: float,
             f"{term} ({count})" for term, count in repeated_terms.items()
         ))
 
+    narrative_type = script.get("narrative_type")
+    missing_movements = missing_arc_movements(outline, narrative_type)
+    if missing_movements:
+        major_issues.append({
+            "severity": "major", "issue_type": "arc_movements", "scene_ids": [],
+            "claim": ("The Type A outline declares no scene for these movements: "
+                      + ", ".join(missing_movements) + "."),
+            "evidence": [f"missing={missing_movements}"],
+            "recommendation": "Express the missing movements or confirm the deliberate compression.",
+        })
+    title_brief = brief or {"psychological_theme": script.get("psychological_theme", "")}
+    title_findings = validate_title(script.get("title", ""), title_brief)
+    for finding in title_findings:
+        (blocking_issues if finding["severity"] == "blocking" else major_issues).append(finding)
+
     status = "human_review_required"
     if not complete_shape:
         status = "structurally_invalid"
@@ -747,6 +799,13 @@ def deterministic_review(script: dict, target_duration_minutes: float,
         "narrative_contract_version": NARRATIVE_CONTRACT_VERSION,
         "content_mode": CONTENT_MODE,
         "status": status,
+        "narrative_type": narrative_type,
+        "title_review": {
+            "title": script.get("title", ""),
+            "passes": title_passes(title_findings),
+            "findings": title_findings,
+        },
+        "missing_arc_movements": missing_movements,
         "word_count": words,
         "target_word_count": expected,
         "word_count_ratio": round(total_ratio, 4),
@@ -784,17 +843,271 @@ def deterministic_review(script: dict, target_duration_minutes: float,
     }
 
 
-def validate_editorial_assessment(value: dict) -> dict:
+_THESIS_PATTERNS = (
+    ("psychology of", r"\bpsychology of\b"), ("science of", r"\bscience of\b"),
+    ("philosophy of", r"\bphilosophy of\b"), ("a story about", r"\ba story about\b"),
+    ("explained", r"\bexplained\b"), ("the truth about", r"\bthe truth about\b"),
+    ("why", r"\bwhy\b"), ("how", r"\bhow\b"), ("lesson", r"\blessons?\b"),
+    ("what happens when", r"\bwhat happens when\b"),
+)
+_PERSON_WORDS = {
+    "i", "me", "my", "we", "our", "you", "your", "he", "him", "his", "she", "her", "hers",
+    "they", "them", "their", "man", "men", "woman", "women", "boy", "girl", "child", "kid",
+    "father", "mother", "dad", "mom", "son", "daughter", "wife", "husband", "brother", "sister",
+    "friend", "friends", "boss", "stranger", "neighbor", "neighbour", "doctor", "teacher",
+    "widow", "widower", "family", "everyone", "nobody", "someone", "people", "partner",
+    "lover", "twin", "grandfather", "grandmother", "colleague", "rival", "employee", "artist",
+}
+_NUMBER_WORDS = {
+    "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven",
+    "twelve", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety",
+    "hundred", "thousand",
+}
+_TIME_WORDS = {
+    "year", "years", "month", "months", "week", "weeks", "day", "days", "night", "nights",
+    "hour", "hours", "minute", "minutes", "decade", "decades", "age", "birthday", "lifetime",
+}
+_THEME_STOPWORDS = {
+    "and", "or", "of", "the", "a", "an", "to", "with", "in", "on", "for", "vs", "versus",
+    "its", "their", "being", "existence", "human", "fear", "need",
+}
+_SUFFIXES = ("iousness", "iously", "ious", "ness", "ment", "ation", "ions", "ion", "ies",
+             "ied", "ying", "ing", "ful", "ed", "es", "s", "y", "e")
+_QUOTED = re.compile(r"\"[^\"]*\"|“[^”]*”")
+TITLE_MAX_CHARS = 70
+TITLE_MAX_WORDS = 12
+THUMBNAIL_MAX_WORDS = 5
+
+
+def _stem(word: str) -> str:
+    for suffix in _SUFFIXES:
+        if word.endswith(suffix) and len(word) - len(suffix) >= 3:
+            return word[:-len(suffix)]
+    return word
+
+
+def _words(text: str) -> list[str]:
+    return re.findall(r"[a-z0-9]+(?:'[a-z]+)?", text.lower())
+
+
+def theme_words(brief: dict | None) -> list[str]:
+    theme = str((brief or {}).get("psychological_theme", "") or "")
+    return [word for word in _words(theme) if len(word) >= 3 and word not in _THEME_STOPWORDS]
+
+
+def _matches_theme(word: str, themes: list[str]) -> bool:
+    stem = _stem(word)
+    for theme in themes:
+        other = _stem(theme)
+        shorter, longer = sorted((stem, other), key=len)
+        if stem == other or (len(shorter) >= 4 and longer.startswith(shorter)):
+            return True
+    return False
+
+
+def _strip_shorts(title: str) -> str:
+    return re.sub(r"\s*#shorts\s*$", "", str(title or ""), flags=re.I).strip()
+
+
+def _title_finding(severity: str, rule: str, claim: str, evidence: list[str],
+                   recommendation: str) -> dict:
+    return {
+        "severity": severity, "issue_type": "title_policy", "rule": rule, "scene_ids": [],
+        "claim": claim, "evidence": evidence, "recommendation": recommendation,
+    }
+
+
+def _human_anchor(text: str, words: list[str]) -> bool:
+    return bool(_QUOTED.search(text)) or any(
+        word in _PERSON_WORDS or word in _NUMBER_WORDS or word in _TIME_WORDS
+        or word.isdigit() for word in words
+    )
+
+
+def _opens_on_a_person(words: list[str]) -> bool:
+    """True when the title is a statement about a concrete person.
+
+    Examples: "He Secretly Wanted...", "The Man Who Needed...", "At 37, She...".
+    """
+    if not words:
+        return False
+    if words[0] in _PERSON_WORDS or words[0].isdigit():
+        return True
+    if words[0] in {"the", "a", "an", "my", "his", "her"} and len(words) > 1 \
+            and words[1] in _PERSON_WORDS:
+        return True
+    return words[0] == "at" and len(words) > 1 and (words[1].isdigit() or words[1] in _NUMBER_WORDS)
+
+
+def validate_title(title: str, brief: dict | None = None) -> list[dict]:
+    """Deterministic title policy: the title must not explain the thesis.
+
+    Blocking findings make the title unpublishable; a major finding warns that
+    the title has no concrete human anchor. The ``#Shorts`` suffix is ignored.
+    A theme word is tolerated inside a quoted line, or when the whole title is a
+    statement about a concrete person ("The Man Who Needed Everyone to Envy Him");
+    otherwise naming the theme explains the thesis.
+    """
+    text = _strip_shorts(title)
+    findings = []
+    if not text:
+        return [_title_finding("blocking", "empty", "The title is empty.", [],
+                               "Write a title about a person and a situation.")]
+    lowered = text.lower()
+    unquoted = _QUOTED.sub(" ", text)
+    for name, pattern in _THESIS_PATTERNS:
+        if re.search(pattern, _QUOTED.sub(" ", lowered)):
+            findings.append(_title_finding(
+                "blocking", "thesis_pattern",
+                f"The title uses the explainer pattern '{name}'.", [text],
+                "Present a person and a situation instead of announcing the theme.",
+            ))
+    if ":" in unquoted:
+        findings.append(_title_finding(
+            "blocking", "colon_subtitle", "The title uses a colon subtitle.", [text],
+            "Use one curiosity-driven line without a subtitle.",
+        ))
+    words = _words(text)
+    if (re.match(r"^the\s+[a-z][a-z'-]*\s+of\b", lowered)
+            and len(words) > 1 and words[1] not in _PERSON_WORDS):
+        findings.append(_title_finding(
+            "blocking", "abstract_noun_form",
+            f"The title uses the abstract form 'The <Noun> of ...' ('{' '.join(words[:3])}').",
+            [text], "Name a person and what they did, wanted or lost.",
+        ))
+    themes = theme_words(brief)
+    unquoted_words = _words(unquoted)
+    named = sorted({word for word in unquoted_words if _matches_theme(word, themes)})
+    if named and not _opens_on_a_person(words):
+        findings.append(_title_finding(
+            "blocking", "names_theme",
+            f"The title names the psychological theme ({', '.join(named)}).",
+            [text, f"psychological_theme={(brief or {}).get('psychological_theme', '')}"],
+            "Let the audience discover the theme; keep the theme word out of the title.",
+        ))
+    if len(text) > TITLE_MAX_CHARS or len(text.split()) > TITLE_MAX_WORDS:
+        findings.append(_title_finding(
+            "blocking", "too_long",
+            f"The title has {len(text)} characters and {len(text.split())} words "
+            f"(limit {TITLE_MAX_CHARS} characters, {TITLE_MAX_WORDS} words).",
+            [text], "Shorten the title.",
+        ))
+    if not _human_anchor(text, words):
+        findings.append(_title_finding(
+            "major", "no_human_anchor",
+            "The title has no concrete human anchor (person, pronoun, age, number, time span "
+            "or quoted line).", [text], "Anchor the title in a specific person or situation.",
+        ))
+    return findings
+
+
+def validate_thumbnail_text(text: str, brief: dict | None = None) -> list[dict]:
+    value = str(text or "").strip()
+    findings = []
+    if not value:
+        return [_title_finding("blocking", "thumbnail_empty", "Thumbnail text is empty.", [],
+                               "Write up to five words, often a line of inner voice.")]
+    if len(value.split()) > THUMBNAIL_MAX_WORDS:
+        findings.append(_title_finding(
+            "blocking", "thumbnail_too_long",
+            f"Thumbnail text has {len(value.split())} words (limit {THUMBNAIL_MAX_WORDS}).",
+            [value], "Cut it to five words or fewer.",
+        ))
+    if "#" in value:
+        findings.append(_title_finding("blocking", "thumbnail_hashtag",
+                                       "Thumbnail text contains a hashtag.", [value],
+                                       "Remove hashtags from the thumbnail."))
+    named = sorted({word for word in _words(value) if _matches_theme(word, theme_words(brief))})
+    if named:
+        findings.append(_title_finding(
+            "blocking", "thumbnail_names_theme",
+            f"Thumbnail text names the psychological theme ({', '.join(named)}).", [value],
+            "Use a line of inner voice instead of the theme.",
+        ))
+    for finding in findings:
+        finding["issue_type"] = "thumbnail_text_policy"
+    return findings
+
+
+def title_passes(findings: list[dict]) -> bool:
+    return not any(item["severity"] == "blocking" for item in findings)
+
+
+def select_title(brief: dict) -> dict:
+    """Choose the first passing title and thumbnail text; record every result.
+
+    Returns a ``title_review`` record with status ``passed`` or
+    ``revision_required``. Candidates come from ``title_candidates``
+    (objects with title/rationale, or strings), then ``video_title``.
+    """
+    candidates = []
+    for item in brief.get("title_candidates") or []:
+        if isinstance(item, dict) and str(item.get("title", "")).strip():
+            candidates.append({"title": str(item["title"]).strip(),
+                               "rationale": str(item.get("rationale", "")).strip()})
+        elif isinstance(item, str) and item.strip():
+            candidates.append({"title": item.strip(), "rationale": ""})
+    if brief.get("video_title") and all(
+            item["title"] != brief["video_title"] for item in candidates):
+        candidates.append({"title": str(brief["video_title"]).strip(), "rationale": ""})
+    for item in candidates:
+        item["findings"] = validate_title(item["title"], brief)
+        item["passes"] = title_passes(item["findings"])
+    thumbnails = []
+    for text in brief.get("thumbnail_text_candidates") or []:
+        if isinstance(text, str) and text.strip():
+            findings = validate_thumbnail_text(text, brief)
+            thumbnails.append({"text": text.strip(), "findings": findings,
+                               "passes": title_passes(findings)})
+    chosen = next((item for item in candidates if item["passes"]), None)
+    thumb = next((item for item in thumbnails if item["passes"]), None)
+    status = "passed" if chosen and thumb else "revision_required"
+    selected = chosen or (candidates[0] if candidates else {"title": "", "findings": []})
+    return {
+        "status": status,
+        "selected_title": selected["title"],
+        "selected_title_findings": selected["findings"],
+        "selected_thumbnail_text": (thumb or (thumbnails[0] if thumbnails else {"text": ""}))["text"],
+        "title_candidates": candidates,
+        "thumbnail_text_candidates": thumbnails,
+    }
+
+
+def validate_editorial_assessment(value: dict, narrative_type: str | None = None,
+                                  allow_legacy: bool = True) -> dict:
+    """Validate an editorial assessment.
+
+    New assessments carry all EDITORIAL_DIMENSIONS. Reports written before the
+    identity dimensions existed (exactly the 15 legacy keys) remain readable
+    when ``allow_legacy``. A Type-A-only dimension may be marked
+    ``{"score": null, "not_applicable": true, "evidence": [reason]}`` for other
+    narrative types, and must be scored for Type A.
+    """
     _require_mapping(value, "editorial assessment")
     dimensions = value.get("dimensions")
-    if not isinstance(dimensions, dict) or set(dimensions) != set(EDITORIAL_DIMENSIONS):
+    keys = set(dimensions) if isinstance(dimensions, dict) else set()
+    legacy = allow_legacy and keys == set(LEGACY_EDITORIAL_DIMENSIONS)
+    if keys != set(EDITORIAL_DIMENSIONS) and not legacy:
+        missing = [name for name in EDITORIAL_DIMENSIONS if name not in keys]
+        extra = sorted(keys - set(EDITORIAL_DIMENSIONS))
         raise NarrativeValidationError(
-            "editorial assessment requires exactly the 15 named dimensions"
+            f"editorial assessment requires exactly the {len(EDITORIAL_DIMENSIONS)} named "
+            f"dimensions; missing: {', '.join(missing) or 'none'}; unexpected: {', '.join(extra) or 'none'}"
         )
     for name, rating in dimensions.items():
-        if not isinstance(rating, dict) or not isinstance(rating.get("score"), (int, float)):
+        if (isinstance(rating, dict) and rating.get("not_applicable") is True
+                and name in TYPE_A_ONLY_DIMENSIONS):
+            if narrative_type == TYPE_A:
+                raise NarrativeValidationError(
+                    f"editorial dimension {name} must be scored for realistic_psychological_fiction"
+                )
+            if rating.get("score") is not None:
+                raise NarrativeValidationError(
+                    f"editorial dimension {name} marked not_applicable must have score null"
+                )
+        elif not isinstance(rating, dict) or not isinstance(rating.get("score"), (int, float)):
             raise NarrativeValidationError(f"editorial dimension {name} requires numeric score")
-        if not 1 <= float(rating["score"]) <= 10:
+        elif not 1 <= float(rating["score"]) <= 10:
             raise NarrativeValidationError(f"editorial dimension {name} score must be 1-10")
         evidence = rating.get("evidence")
         if not isinstance(evidence, list) or not evidence or any(
@@ -829,7 +1142,7 @@ def merge_editorial_review(deterministic: dict, assessment: dict | None) -> dict
         )
         merged["editorial_validation_complete"] = False
         return merged
-    assessment = validate_editorial_assessment(assessment)
+    assessment = validate_editorial_assessment(assessment, merged.get("narrative_type"))
     merged["editorial_assessment"] = assessment
     merged["editorial_validation_complete"] = True
     findings = assessment["findings"]
