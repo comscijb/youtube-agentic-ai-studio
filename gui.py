@@ -18,6 +18,7 @@ from agents.narrative import (
     atomic_write_json, invalidate_downstream, invalidate_scene_outputs, load_json,
     title_passes, validate_title,
 )
+from agents import voice_calibration
 from video.timeline import load_timeline
 
 from flask import Flask, Response, jsonify, request, send_file, abort
@@ -892,6 +893,9 @@ def get_settings():
         "voice_id":        config.VOICE_ID,
         "voice_rate":      config.VOICE_RATE,
         "voice_pitch":     config.VOICE_PITCH,
+        "configured_wpm":  voice_calibration.configured_wpm(),
+        "calibrated_wpm":  voice_calibration.calibrated_wpm(),
+        "planning_wpm":    voice_calibration.planning_wpm(),
         "gemini_model":    config.GEMINI_MODEL,
         "overlay":         config.OVERLAY_OPACITY,
         "kb_start":        config.KB_ZOOM_START,

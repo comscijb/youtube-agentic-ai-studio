@@ -229,10 +229,10 @@ def _draw_lower_third(frame, caption, alpha, section_title=""):
 #  NORMAL VIDEO — SRT CAPTION OVERLAY
 # ══════════════════════════════════════════════════════════════
 
-NORMAL_CAP_FONT_SIZE = 36       # smaller than Shorts (56px) — 1920×1080 context
+NORMAL_CAP_FONT_SIZE = int(getattr(config, "CAPTION_FONT_SIZE", 36))      # 1920×1080 context
 NORMAL_CAP_BG        = (0, 0, 0, 160)   # semi-transparent dark pill
 NORMAL_CAP_FG        = (255, 255, 255)
-NORMAL_CAP_MARGIN_B  = 90       # px from bottom (above progress bar)
+NORMAL_CAP_MARGIN_B  = int(getattr(config, "CAPTION_BOTTOM_MARGIN", 90))   # px from bottom
 
 
 def _draw_normal_caption(frame: Image.Image, text: str) -> Image.Image:

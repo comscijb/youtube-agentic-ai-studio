@@ -22,6 +22,7 @@ import sys
 from pathlib import Path
 
 import config
+from agents import voice_calibration
 
 PASS, WARN, FAIL = "PASS", "WARN", "FAIL"
 DEFAULT_LONG_IMAGE_SECONDS = 20.0
@@ -141,15 +142,56 @@ def environment_checks(output_dir: Path) -> list[tuple[str, str, str]]:
     return checks
 
 
-def run(script_path: Path, *, long_image_seconds: float = DEFAULT_LONG_IMAGE_SECONDS) -> int:
+def estimate_wpm() -> tuple[float, str, str]:
+    """(effective wpm, VOICE_RATE to apply, description).
+
+    A calibrated value is measured delivery at the configured rate, so the rate
+    is not applied twice.
+    """
+    calibrated = voice_calibration.calibrated_wpm()
+    configured = voice_calibration.configured_wpm()
+    rate = getattr(config, "VOICE_RATE", "+0%")
+    if calibrated:
+        return calibrated, "+0%", (f"{calibrated} wpm measured for {getattr(config, 'VOICE_ID', '')} "
+                                   f"{rate} (configured {configured:g})")
+    return configured, rate, f"{configured:g} wpm configured x VOICE_RATE {rate} (not calibrated)"
+
+
+def live_tts_check() -> tuple[str, str, str]:
+    """Synthesise one short sentence and confirm audio and WordBoundary events."""
+    import os
+    import tempfile
+    try:
+        from video import narrator
+    except Exception as exc:          # moviepy/edge-tts missing
+        return ("live TTS", FAIL, f"cannot import the narrator: {exc.__class__.__name__}")
+    with tempfile.TemporaryDirectory() as temp:
+        path = os.path.join(temp, "probe.mp3")
+        try:
+            events = narrator.synthesise_scene(
+                "The quiet house was waiting for him.", path, "live probe")
+        except Exception as exc:
+            return ("live TTS", FAIL, f"{exc.__class__.__name__}: {exc}")
+        size = os.path.getsize(path) if os.path.exists(path) else 0
+    if not size:
+        return ("live TTS", FAIL, "no audio received")
+    if not events:
+        return ("live TTS", WARN, f"audio OK ({size} bytes) but no WordBoundary events; "
+                                  f"captions will use proportional timing")
+    return ("live TTS", PASS, f"audio OK ({size} bytes), {len(events)} word timings")
+
+
+def run(script_path: Path, *, long_image_seconds: float = DEFAULT_LONG_IMAGE_SECONDS,
+        live: bool = False) -> int:
     import json
 
     rows, checks = [], []
+    wpm, rate, wpm_note = estimate_wpm()
     try:
         script = json.loads(script_path.read_text(encoding="utf-8"))
         rows = scene_rows(
-            script, wpm=float(getattr(config, "NARRATION_WPM", 125)),
-            voice_rate=getattr(config, "VOICE_RATE", "+0%"),
+            script, wpm=wpm,
+            voice_rate=rate,
             interval=float(getattr(config, "BROLL_INTERVAL", 10.0)),
             long_image_seconds=long_image_seconds,
         )
@@ -158,12 +200,13 @@ def run(script_path: Path, *, long_image_seconds: float = DEFAULT_LONG_IMAGE_SEC
     except (OSError, ValueError) as exc:
         checks.append(("script", FAIL, f"cannot read {script_path}: {exc.__class__.__name__}"))
     checks += environment_checks(script_path.parent)
+    checks.append(("narration wpm", PASS, wpm_note))
+    if live:
+        checks.append(live_tts_check())
 
     if rows:
-        effective = float(getattr(config, "NARRATION_WPM", 125)) * rate_factor(
-            getattr(config, "VOICE_RATE", "+0%"))
-        print(f"Narration estimate: {getattr(config, 'NARRATION_WPM', 125)} wpm x VOICE_RATE "
-              f"{getattr(config, 'VOICE_RATE', '+0%')} = {effective:.1f} wpm; images cycle every "
+        effective = wpm * rate_factor(rate)
+        print(f"Narration estimate: {wpm_note} = {effective:.1f} wpm; images cycle every "
               f"{getattr(config, 'BROLL_INTERVAL', 10.0):g}s; flag > {long_image_seconds:g}s per image\n")
         print(f"  {'scene':>5}  {'words':>5}  {'est_s':>6}  {'images':>6}  {'slots':>5}  "
               f"{'s/image':>7}  status")
@@ -193,8 +236,10 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Offline render-readiness check.")
     parser.add_argument("--script", default=str(Path(config.OUTPUT_DIR) / "script.json"))
     parser.add_argument("--long-image-seconds", type=float, default=DEFAULT_LONG_IMAGE_SECONDS)
+    parser.add_argument("--live", action="store_true",
+                        help="Also synthesise one short sentence with Edge TTS (network).")
     args = parser.parse_args(argv)
-    return run(Path(args.script), long_image_seconds=args.long_image_seconds)
+    return run(Path(args.script), long_image_seconds=args.long_image_seconds, live=args.live)
 
 
 if __name__ == "__main__":

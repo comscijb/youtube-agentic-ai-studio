@@ -7,6 +7,7 @@ from pathlib import Path
 import config
 from agents import structured
 from agents.gemini_client import generate
+from agents.voice_calibration import planning_wpm
 from agents.identity import STACKED_MODIFIER_RULE, TITLE_POLICY, identity_block
 from agents.structured import SceneScope, compact_json
 from agents.narrative import (
@@ -112,13 +113,14 @@ def _outline(brief: dict, bible: dict, video_type: str, target_minutes: float,
              output: Path, force: bool) -> dict:
     source_hash = stable_hash({"brief": brief, "bible": bible, "video_type": video_type,
                                "target_minutes": target_minutes,
-                               "contract": NARRATIVE_CONTRACT_VERSION})
+                               "contract": NARRATIVE_CONTRACT_VERSION,
+                               "wpm": planning_wpm()})
     path = output / "story_outline.json"
     if not force:
         cached = _cached(path, source_hash, validate_outline, bible)
         if cached:
             return cached
-    wpm = int(getattr(config, "NARRATION_WPM", 125))
+    wpm = planning_wpm()
     target_words = 110 if video_type == "shorts" else round(target_minutes * wpm)
     scene_count = 4 if video_type == "shorts" else max(8, min(14, round(target_minutes * .75)))
     narrative_type = brief.get("narrative_type")
@@ -659,7 +661,7 @@ def _write_script(brief: dict, video_type: str, output: Path, target: float,
         "tags": brief.get("tags", []),
         "narrative_type": brief["narrative_type"],
         "psychological_theme": brief["psychological_theme"],
-        "planned_words_per_minute": int(getattr(config, "NARRATION_WPM", 125)),
+        "planned_words_per_minute": planning_wpm(),
         "target_duration_minutes": target,
         "source_hash": stable_hash({"brief": brief, "bible": bible, "outline": outline}),
         "characters": bible["characters"],

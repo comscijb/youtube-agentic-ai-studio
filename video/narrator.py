@@ -1,19 +1,32 @@
 """
 Narrator — Microsoft Edge TTS (100% free)
-Generates broadcast-quality voiceover + word-level subtitle (SRT) file.
-The SRT is used by the Shorts creator to burn in synced captions.
+Generates broadcast-quality voiceover + word-timed subtitle (SRT) file.
 
-Compatible with all edge-tts versions (6.0 → 7.x).
+- Requests WordBoundary events (edge-tts >= 7 sends only SentenceBoundary
+  unless Communicate(..., boundary="WordBoundary") is passed).
+- Each scene is synthesised separately with bounded retries and cached by
+  hash(text, voice, rate, pitch, edge-tts version): re-running narration only
+  re-synthesises scenes whose text changed.
+- Measured delivery (words per minute) is recorded for planning.
 Uses MoviePy's AudioFileClip for duration — guaranteed to match the video render.
 """
+import asyncio
+import hashlib
+import importlib.metadata
+import inspect
+import json
 import os
 import re
-import asyncio
+import shutil
 import tempfile
+import time
+
 import edge_tts
 import config
 from moviepy.editor import AudioFileClip, concatenate_audioclips
 from agents.narrative import assert_no_mojibake
+from agents.voice_calibration import record as record_calibration
+from video.captions import align_words, build_cues, proportional_words
 from video.timeline import write_shifted_srt, write_timeline
 
 # Voices known to emit WordBoundary events (needed for word-synced captions).
@@ -22,6 +35,9 @@ WORD_SYNCED_VOICES = [
     ("en-US-AndrewNeural", "Andrew (US, Warm male)"),
     ("en-GB-LibbyNeural",  "Libby  (UK, Clear female)"),
 ]
+RETRY_DELAYS = (2, 5, 10)      # seconds before attempts 2, 3 and 4
+_sleep = time.sleep
+_upgrade_hint_shown = False
 
 
 # ══════════════════════════════════════════════════════════════
@@ -46,7 +62,6 @@ def _get_audio_duration_ms(audio_path: str) -> float:
     Falls back to a rough file-size estimate only if MoviePy itself fails.
     """
     try:
-        from moviepy.editor import AudioFileClip
         clip = AudioFileClip(audio_path)
         dur  = clip.duration          # seconds, same value creator.py gets
         clip.close()
@@ -61,8 +76,23 @@ def _get_audio_duration_ms(audio_path: str) -> float:
         return 60_000
 
 
+def edge_tts_version() -> str:
+    try:
+        return importlib.metadata.version("edge-tts")
+    except importlib.metadata.PackageNotFoundError:
+        return getattr(edge_tts, "__version__", "unknown")
+
+
+def supports_word_boundary() -> bool:
+    """edge-tts >= 7 exposes Communicate(boundary=...); older versions always send words."""
+    try:
+        return "boundary" in inspect.signature(edge_tts.Communicate.__init__).parameters
+    except (TypeError, ValueError):
+        return False
+
+
 # ══════════════════════════════════════════════════════════════
-#  SRT WRITERS
+#  SRT WRITER
 # ══════════════════════════════════════════════════════════════
 
 def _write_srt_blocks(blocks: list[tuple[float, float, str]], srt_path: str) -> int:
@@ -79,238 +109,112 @@ def _write_srt_blocks(blocks: list[tuple[float, float, str]], srt_path: str) -> 
     return len(blocks)
 
 
-def _group_word_events(word_events: list, words_per_cue: int = 5) -> list:
-    """Group word-boundary events into (start_ms, end_ms, text) caption blocks."""
-    blocks = []
-    for i in range(0, len(word_events), words_per_cue):
-        chunk = word_events[i : i + words_per_cue]
-        blocks.append((
-            chunk[0]["start_ms"],
-            chunk[-1]["end_ms"],
-            " ".join(w["word"] for w in chunk),
-        ))
-    return blocks
-
-
-def _try_submaker_srt(submaker, srt_path: str) -> int:
-    """
-    Ask SubMaker to produce SRT content, trying every known method name
-    across all edge-tts versions:
-
-      6.1.0–6.1.8 : submaker.generate_subs(words_in_cue=N)  → str
-      6.1.9–6.x   : submaker.merge_subs(words_in_cue=N)     → str
-      7.x          : str(submaker)  or  submaker.srt         → str
-
-    Returns cue count, or 0 if nothing produces valid SRT content.
-    """
-    srt_content = None
-
-    # Named methods first (most reliable)
-    for method in ("merge_subs", "generate_subs"):
-        fn = getattr(submaker, method, None)
-        if callable(fn):
-            try:
-                result = fn(words_in_cue=5)
-                if result and "-->" in result:
-                    srt_content = result
-                    break
-            except Exception as e:
-                print(f"   → SubMaker.{method}() error: {e}")
-
-    # .srt property (7.x)
-    if not srt_content:
-        raw = getattr(submaker, "srt", None)
-        if isinstance(raw, str) and "-->" in raw:
-            srt_content = raw
-
-    # __str__ (some 7.x builds)
-    if not srt_content:
-        try:
-            raw = str(submaker)
-            if "-->" in raw:
-                srt_content = raw
-        except Exception:
-            pass
-
-    if not srt_content:
-        return 0
-
-    with open(srt_path, "w", encoding="utf-8") as f:
-        f.write(srt_content)
-    return srt_content.count(" --> ")
-
-
-def _build_sentence_srt(text: str, audio_path: str, srt_path: str) -> int:
-    """
-    Fallback SRT builder using CHARACTER-based proportional timing.
-
-    Why character-based instead of word-based:
-      TTS engines speak at roughly constant character rate, not word rate.
-      "if" (~100ms) and "internationalization" (~700ms) should not get the
-      same time budget. Character count × ms_per_char + inter-word pause
-      is a much better model of actual speech duration per word.
-
-    Each word is allocated:
-      duration_ms = len(word) * ms_per_char + INTER_WORD_MS
-
-    Where ms_per_char is derived from total_ms / total_weighted_chars so
-    that all word durations sum exactly to total_ms.
-
-    Captions are grouped into chunks of up to 6 words. No cue ever ends
-    past total_ms — the last cue is pinned to total_ms exactly.
-    """
-    total_ms  = _get_audio_duration_ms(audio_path)
-    sentences = [s.strip() for s in re.split(r'(?<=[.!?…])\s+', text) if s.strip()]
-    all_words = [w for s in sentences for w in s.split()]
-
-    if not all_words:
-        open(srt_path, "w", encoding="utf-8").close()
-        return 0
-
-    # Each gap between words is modelled as 1.5 "equivalent characters"
-    INTER_WORD_CHAR_EQ = 1.5
-    total_weighted = sum(len(w) for w in all_words) + len(all_words) * INTER_WORD_CHAR_EQ
-    ms_per_char    = total_ms / total_weighted
-
-    # Pre-compute cumulative start time for every word
-    word_starts = []
-    cursor      = 0.0
-    for w in all_words:
-        word_starts.append(cursor)
-        cursor += len(w) * ms_per_char + INTER_WORD_CHAR_EQ * ms_per_char
-
-    blocks     = []
-    word_index = 0   # absolute index into all_words / word_starts
-
-    for sentence in sentences:
-        s_words = sentence.split()
-        # Group sentence words into chunks of up to 6
-        for ci in range(0, len(s_words), 6):
-            chunk      = s_words[ci : ci + 6]
-            chunk_abs  = word_index + ci
-            c_start    = word_starts[chunk_abs]
-            # End = start of the word AFTER the last word in chunk
-            last_abs   = chunk_abs + len(chunk) - 1
-            last_word  = all_words[last_abs]
-            c_end      = min(
-                word_starts[last_abs] + len(last_word) * ms_per_char,
-                total_ms,
-            )
-            if c_start >= total_ms:
-                break
-            blocks.append((c_start, c_end, " ".join(chunk)))
-        word_index += len(s_words)
-
-    # Pin last cue to exact audio end (floating-point safety)
-    if blocks:
-        blocks[-1] = (blocks[-1][0], total_ms, blocks[-1][2])
-
-    cues       = _write_srt_blocks(blocks, srt_path)
-    actual_end = blocks[-1][1] / 1000 if blocks else 0.0
-    print(f"   → Sentence-level SRT: {cues} cues, 0.0s → {actual_end:.1f}s "
-          f"(audio: {total_ms/1000:.1f}s) — exact match ✓")
-    return cues
+def scene_cues(text: str, events: list[dict], duration_s: float) -> list[tuple]:
+    """Word-timed cues when events exist, else character-proportional timing."""
+    words = align_words(text, events) if events else proportional_words(text, duration_s)
+    return build_cues(words, end_limit=duration_s)
 
 
 # ══════════════════════════════════════════════════════════════
 #  TTS SYNTHESIS
 # ══════════════════════════════════════════════════════════════
 
-async def _synthesise(text: str, audio_path: str, srt_path: str) -> int:
-    """
-    Stream edge-tts audio + word-boundary events.
-    Tries SubMaker → raw WordBoundary events → sentence fallback.
-    Returns the number of SRT cues written.
-    """
-    communicate = edge_tts.Communicate(
-        text,
-        config.VOICE_ID,
-        rate=config.VOICE_RATE,
-        pitch=config.VOICE_PITCH,
-    )
+def _communicate(text: str):
+    kwargs = {"rate": config.VOICE_RATE, "pitch": config.VOICE_PITCH}
+    if supports_word_boundary():
+        kwargs["boundary"] = "WordBoundary"
+    return edge_tts.Communicate(text, config.VOICE_ID, **kwargs)
 
-    # Instantiate SubMaker (may not exist in very old edge-tts)
-    try:
-        submaker     = edge_tts.SubMaker()
-        use_submaker = True
-    except Exception:
-        submaker     = None
-        use_submaker = False
 
+async def _synthesise(text: str, audio_path: str) -> list[dict]:
+    """Stream one scene's audio to ``audio_path``; return WordBoundary events (ms)."""
     audio_chunks = []
-    word_events  = []   # manual fallback list
-
-    async for event in communicate.stream():
+    events = []
+    async for event in _communicate(text).stream():
         if event["type"] == "audio":
             audio_chunks.append(event["data"])
-
         elif event["type"] == "WordBoundary":
-            # Feed SubMaker using whichever ingestion method this version has
-            if use_submaker and submaker is not None:
-                for feed_name in ("feed", "create_sub"):
-                    fn = getattr(submaker, feed_name, None)
-                    if not callable(fn):
-                        continue
-                    try:
-                        if feed_name == "feed":
-                            fn(event)   # 6.1.9+: takes the whole event dict
-                        else:
-                            fn(         # 6.1.0–6.1.8: takes (offset_tuple, text)
-                                (event["offset"], event["duration"]),
-                                event["text"],
-                            )
-                    except Exception:
-                        pass
-                    break
-
-            # Always collect manually too — used if SubMaker yields nothing
-            offset_ms   = event["offset"]   / 10_000   # 100-ns ticks → ms
-            duration_ms = event["duration"] / 10_000
-            word_events.append({
-                "word":     event["text"],
+            offset_ms = event["offset"] / 10_000          # 100-ns ticks → ms
+            events.append({
+                "text": event["text"],
                 "start_ms": offset_ms,
-                "end_ms":   offset_ms + duration_ms,
+                "end_ms": offset_ms + event["duration"] / 10_000,
             })
-
-    # ── Save audio (must happen before any duration checks) ─────────────────
+    if not audio_chunks:
+        raise edge_tts.exceptions.NoAudioReceived("No audio was received for this scene.")
     with open(audio_path, "wb") as f:
         for chunk in audio_chunks:
             f.write(chunk)
+    return events
 
-    # ── SRT generation cascade ───────────────────────────────────────────────
-    cue_count = 0
 
-    # 1. SubMaker (covers 6.1.x and 7.x)
-    if use_submaker and submaker is not None:
-        cue_count = _try_submaker_srt(submaker, srt_path)
-        if cue_count:
-            print(f"   → SubMaker SRT: {cue_count} cues  ✓")
+def _http_status(exc) -> int | None:
+    for name in ("status", "status_code", "code"):
+        value = getattr(exc, name, None)
+        if isinstance(value, int):
+            return value
+    match = re.search(r"\b(403|5\d\d)\b", str(exc))
+    return int(match.group(1)) if match else None
 
-    # 2. Raw WordBoundary events (covers 6.0.x)
-    if cue_count == 0 and word_events:
-        print(f"   → SubMaker empty; building from {len(word_events)} WordBoundary events…")
-        blocks    = _group_word_events(word_events)
-        cue_count = _write_srt_blocks(blocks, srt_path)
-        if cue_count:
-            print(f"   → WordBoundary SRT: {cue_count} cues  ✓")
 
-    # 3. Sentence-level fallback (always works, uses AudioFileClip for duration)
-    if cue_count == 0:
-        if not word_events:
-            # Microsoft periodically disables WordBoundary events server-side.
-            # The sentence-level fallback always produces correct timing, but
-            # word-synced captions require a voice that still emits events.
-            alternatives = [(v, n) for v, n in WORD_SYNCED_VOICES if v != config.VOICE_ID]
-            print(f"   ⚠ '{config.VOICE_ID}' sent no word-timing data (Microsoft server change).")
-            print( "      Captions are sentence-level (timing is correct, sync is approximate).")
-            if alternatives:
-                print( "      For word-synced captions, switch voice in the GUI or set in config.py:")
-                for voice_id, label in alternatives:
-                    print(f"        {label:<28}  VOICE_ID = \"{voice_id}\"")
-        print("   → Using sentence-level caption fallback (approximate sync)…")
-        cue_count = _build_sentence_srt(text, audio_path, srt_path)
+def _retryable(exc) -> bool:
+    exceptions = getattr(edge_tts, "exceptions", None)
+    edge_errors = tuple(
+        getattr(exceptions, name) for name in
+        ("NoAudioReceived", "WebSocketError", "UnexpectedResponse", "UnknownResponse")
+        if exceptions is not None and hasattr(exceptions, name)
+    )
+    status = _http_status(exc)
+    return (isinstance(exc, edge_errors + (asyncio.TimeoutError, ConnectionError))
+            or status == 403 or (status is not None and 500 <= status < 600)
+            or exc.__class__.__module__.startswith("aiohttp"))
 
-    return cue_count
+
+def synthesise_scene(text: str, audio_path: str, label: str = "") -> list[dict]:
+    """Synthesise with up to len(RETRY_DELAYS) retries on transient Edge TTS failures."""
+    global _upgrade_hint_shown
+    for attempt in range(len(RETRY_DELAYS) + 1):
+        try:
+            return asyncio.run(_synthesise(text, audio_path))
+        except Exception as exc:
+            if not _retryable(exc) or attempt == len(RETRY_DELAYS):
+                raise
+            if _http_status(exc) == 403 and not _upgrade_hint_shown:
+                _upgrade_hint_shown = True
+                print(f"   ⚠ Edge TTS answered 403. Outdated clients are rejected: "
+                      f"pip install -U edge-tts (installed {edge_tts_version()}).")
+            delay = RETRY_DELAYS[attempt]
+            print(f"   ⚠ {label or 'scene'}: {exc.__class__.__name__}; retry "
+                  f"{attempt + 1}/{len(RETRY_DELAYS)} in {delay}s")
+            _sleep(delay)
+    raise RuntimeError("unreachable")
+
+
+def cache_key(text: str) -> str:
+    payload = json.dumps([text, config.VOICE_ID, config.VOICE_RATE, config.VOICE_PITCH,
+                          edge_tts_version(), supports_word_boundary()], ensure_ascii=False)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def cached_scene(text: str, cache_dir: str, scene_audio: str, label: str) -> tuple[list, bool]:
+    """Copy a cached synthesis into ``scene_audio`` or synthesise and cache it."""
+    key = cache_key(text)
+    cached_audio = os.path.join(cache_dir, f"{key}.mp3")
+    cached_events = os.path.join(cache_dir, f"{key}.json")
+    if os.path.isfile(cached_audio) and os.path.isfile(cached_events):
+        try:
+            with open(cached_events, encoding="utf-8") as f:
+                events = json.load(f)
+            shutil.copyfile(cached_audio, scene_audio)
+            return events, True
+        except (OSError, ValueError):
+            pass
+    events = synthesise_scene(text, scene_audio, label)
+    os.makedirs(cache_dir, exist_ok=True)
+    shutil.copyfile(scene_audio, cached_audio)
+    with open(cached_events, "w", encoding="utf-8") as f:
+        json.dump(events, f)
+    return events, False
 
 
 # ══════════════════════════════════════════════════════════════
@@ -319,9 +223,9 @@ async def _synthesise(text: str, audio_path: str, srt_path: str) -> int:
 
 def generate_narration(script: dict, output_dir: str) -> str:
     """
-    Synthesises each scene independently, then concatenates without inserting
-    silence. Exact scene durations drive both the SRT offsets and video timeline.
-    Returns path to the saved audio file.
+    Synthesises each scene independently (cached), then concatenates without
+    inserting silence. Exact scene durations drive both the SRT offsets and
+    video timeline. Returns path to the saved audio file.
     """
     assert_no_mojibake(script, "speech synthesis")
     os.makedirs(output_dir, exist_ok=True)
@@ -331,21 +235,28 @@ def generate_narration(script: dict, output_dir: str) -> str:
         raise ValueError("Script contains no narratable scenes")
     audio_path = os.path.join(output_dir, "narration.mp3")
     srt_path   = os.path.join(output_dir, "narration.srt")
+    cache_dir  = os.path.join(output_dir, ".tts_cache")
     clips = []
     durations = []
     scene_srts = []
     cursor = 0.0
+    scenes_without_words = []
     with tempfile.TemporaryDirectory(prefix="private_gravity_tts_") as temp_dir:
         try:
             for index, section in enumerate(sections, 1):
                 text = section["narration"].strip()
                 scene_audio = os.path.join(temp_dir, f"scene_{index:03d}.mp3")
                 scene_srt = os.path.join(temp_dir, f"scene_{index:03d}.srt")
-                print(f"   → Synthesising scene {index}/{len(sections)} ({len(text.split())} words)…")
-                asyncio.run(_synthesise(text, scene_audio, scene_srt))
+                label = f"scene {index}/{len(sections)}"
+                events, hit = cached_scene(text, cache_dir, scene_audio, label)
+                print(f"   → {'Reused' if hit else 'Synthesised'} {label} "
+                      f"({len(text.split())} words, {len(events)} word timings)")
                 clip = AudioFileClip(scene_audio)
                 duration = float(clip.duration)
                 clips.append(clip)
+                if not events:
+                    scenes_without_words.append(index)
+                _write_srt_blocks(scene_cues(text, events, duration), scene_srt)
                 durations.append(duration)
                 scene_srts.append((scene_srt, cursor))
                 cursor += duration
@@ -357,42 +268,34 @@ def generate_narration(script: dict, output_dir: str) -> str:
             for clip in clips:
                 clip.close()
 
+    if scenes_without_words:
+        print(f"   ⚠ No WordBoundary events for scene(s) {scenes_without_words} "
+              f"(edge-tts {edge_tts_version()}; word timings need "
+              f"Communicate(boundary=\"WordBoundary\"), supported: {supports_word_boundary()}). "
+              "Those captions use proportional timing.")
+
     # The concatenated file can differ by a few codec milliseconds. Pin the
     # last scene to the exact duration MoviePy will later attach to the video.
     rendered_duration = _get_audio_duration_ms(audio_path) / 1000
     durations[-1] += rendered_duration - sum(durations)
     write_timeline(os.path.join(output_dir, "scene_timeline.json"), sections, durations)
 
+    words = sum(len(section["narration"].split()) for section in sections)
+    entry = record_calibration(words, rendered_duration)
+    if entry:
+        print(f"   → Measured delivery: {entry['wpm']} wpm for {config.VOICE_ID} "
+              f"{config.VOICE_RATE} (saved for planning)")
+
     # ── Post-run report ──────────────────────────────────────────────────────
-    size_kb     = os.path.getsize(audio_path) // 1024
-    audio_dur_s = rendered_duration
-
-    if not os.path.exists(srt_path):
-        print(f"   ⚠ ERROR: SRT file missing at {srt_path}")
-        return audio_path
-
-    content        = open(srt_path, encoding="utf-8").read()
-    verified_count = content.count(" --> ")
-
-    # Find the last timestamp in the SRT to measure caption coverage
-    timestamps = re.findall(r"--> (\d+:\d+:\d+,\d+)", content)
-    if timestamps:
-        def _ts_to_ms(ts: str) -> int:
-            h, m, rest = ts.split(":")
-            s, ms = rest.split(",")
-            return int(h) * 3_600_000 + int(m) * 60_000 + int(s) * 1_000 + int(ms)
-        cap_end_s = max(_ts_to_ms(ts) for ts in timestamps) / 1000
-    else:
-        cap_end_s = 0.0
-
-    coverage = (cap_end_s / audio_dur_s * 100) if audio_dur_s > 0 else 0
-
-    print(f"   → Audio : {size_kb} KB  |  {audio_dur_s:.1f}s")
-    print(f"   → SRT   : {verified_count} cues  |  covers 0s → {cap_end_s:.1f}s  ({coverage:.0f}%)")
-
+    with open(srt_path, encoding="utf-8") as f:
+        content = f.read()
+    timestamps = re.findall(r"--> (\d+):(\d+):(\d+),(\d+)", content)
+    cap_end_s = max((int(h) * 3600 + int(m) * 60 + int(s) + int(ms) / 1000
+                     for h, m, s, ms in timestamps), default=0.0)
+    coverage = (cap_end_s / rendered_duration * 100) if rendered_duration > 0 else 0
+    print(f"   → Audio : {os.path.getsize(audio_path) // 1024} KB  |  {rendered_duration:.1f}s")
+    print(f"   → SRT   : {content.count(' --> ')} cues  |  covers 0s → {cap_end_s:.1f}s "
+          f"({coverage:.0f}%)")
     if coverage < 85:
-        print(f"   ⚠ Caption coverage {coverage:.0f}% — captions will disappear before audio ends.")
-        print( "      Fix: change VOICE_ID in config.py to  en-GB-RyanNeural")
-        print( "      That voice emits proper word-level timing events.")
-
+        print(f"   ⚠ Caption coverage is {coverage:.0f}%; check the scenes listed above.")
     return audio_path

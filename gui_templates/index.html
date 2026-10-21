@@ -668,6 +668,7 @@ input[type=range]{width:100%;accent-color:var(--primary)}
                   <span class="range-val" id="s-voice-rate-val">-5%</span>
                 </div>
                 <input type="hidden" id="s-voice-rate" value="-5%">
+                <div class="help-text" id="s-wpm-info"></div>
               </div>
               <div class="settings-field">
                 <div class="field-label">Pitch</div>
@@ -1363,6 +1364,9 @@ function loadSettings() {
     document.getElementById('s-channel-name').value = d.channel_name|| '';
     document.getElementById('s-channel-desc').value = d.channel_desc|| '';
     document.getElementById('s-voice').value        = d.voice_id    || 'en-US-AndrewNeural';
+    document.getElementById('s-wpm-info').textContent = d.calibrated_wpm
+      ? `Planning: ${d.planning_wpm} wpm measured for this voice and rate (configured ${d.configured_wpm}).`
+      : `Planning: ${d.planning_wpm} wpm configured (no measurement yet for this voice and rate).`;
     // Rate: sync hidden input, range slider, and display span
     const rate = d.voice_rate || '-5%';
     const rateNum = parseInt(rate) || -5;

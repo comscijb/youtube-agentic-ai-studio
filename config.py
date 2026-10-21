@@ -75,6 +75,20 @@ NARRATIVE_TYPE = os.getenv("NARRATIVE_TYPE", "auto")
 PSYCHOLOGICAL_THEME = os.getenv("PSYCHOLOGICAL_THEME", "")
 TARGET_DURATION_MINUTES = float(os.getenv("TARGET_DURATION_MINUTES", "15"))
 NARRATION_WPM = int(os.getenv("NARRATION_WPM", "125"))
+# Planning uses the measured delivery of the configured voice + rate from
+# data/voice_calibration.json (updated after every narration) when available;
+# NARRATION_WPM is the fallback. AndrewNeural at -5% measured ~151.6 wpm, so a
+# 12-minute episode targets ~1 820 words.
+# Captions (normal 16:9 videos): cue limits and placement.
+CAPTION_MAX_WORDS = 7
+CAPTION_MAX_CHARS = 42
+CAPTION_MIN_SECONDS = 0.8
+CAPTION_MAX_SECONDS = 4.5
+CAPTION_LEAD_IN_SECONDS = 0.08
+CAPTION_FONT_SIZE = 36
+CAPTION_BOTTOM_MARGIN = 90        # px from the bottom edge, above the progress bar
+VOICE_CALIBRATION_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "voice_calibration.json")
+USE_CALIBRATED_WPM = os.getenv("USE_CALIBRATED_WPM", "true").lower() in ("1", "true", "yes", "on")
 NARRATIVE_REVIEW_ENABLED = os.getenv(
     "NARRATIVE_REVIEW_ENABLED", "true"
 ).lower() in ("1", "true", "yes", "on")
