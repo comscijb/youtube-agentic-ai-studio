@@ -35,6 +35,8 @@ class PreflightTests(unittest.TestCase):
         self.music = root / "music"
         self.music.mkdir()
         (self.music / "track.mp3").write_bytes(b"mp3")
+        (self.music / "tracks.json").write_text(json.dumps([
+            {"file": "track.mp3", "moods": ["dark"], "license": "CC0"}]), encoding="utf-8")
         self.patches = [
             patch.object(config, "NARRATION_WPM", 120),
             patch.object(config, "VOICE_RATE", "+0%"),

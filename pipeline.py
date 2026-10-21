@@ -15,6 +15,7 @@ import config
 from agents.researcher   import research_topic
 from agents.scriptwriter import write_script
 from video.narrator      import generate_narration
+from video.music         import prepare_final_audio
 from video.stock         import download_images
 from video.creator       import create_video
 from review.app          import start_review_server
@@ -74,6 +75,10 @@ def run():
     # ── 4. Narration ──────────────────────────────────────────
     banner("4 / 6  ·  Generating voiceover  [Edge TTS — free]")
     audio_path = generate_narration(script, config.OUTPUT_DIR)
+    audio_path = prepare_final_audio(
+        audio_path, os.path.join(config.OUTPUT_DIR, "narration_mixed.mp3"),
+        episode={**research, **script}, output_dir=config.OUTPUT_DIR,
+    )
     print(f"\n  ✅  Audio: {audio_path}")
 
     # ── 5. Video ──────────────────────────────────────────────

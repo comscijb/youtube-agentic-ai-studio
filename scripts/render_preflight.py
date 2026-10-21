@@ -114,9 +114,18 @@ def environment_checks(output_dir: Path) -> list[tuple[str, str, str]]:
         library = Path(getattr(config, "MUSIC_LIBRARY_DIR", "music library"))
         tracks = [path for path in library.glob("*") if path.suffix.lower() in (".mp3", ".wav")] \
             if library.is_dir() else []
-        checks.append(("music", PASS if tracks else WARN,
-                       f"{len(tracks)} track(s) in {library}" if tracks
-                       else f"MUSIC_ENABLED but no .mp3/.wav in {library}; video will have no music"))
+        if not tracks:
+            checks.append(("music", WARN,
+                           f"!!! MUSIC_ENABLED but NO .mp3/.wav in {library}: the episode will be "
+                           "rendered with NARRATION ONLY. Add licensed tracks (and tracks.json)."))
+        else:
+            from video.music import METADATA_FILE, library_tracks
+            unlicensed = [track["file"] for track in library_tracks(str(library))
+                          if not track["license"]]
+            checks.append(("music", WARN if unlicensed else PASS,
+                           f"{len(tracks)} track(s) in {library}"
+                           + (f"; {len(unlicensed)} without license/attribution in {METADATA_FILE} "
+                              "(moods are inferred from file names)" if unlicensed else "")))
     else:
         checks.append(("music", PASS, "music disabled"))
     target = output_dir if output_dir.exists() else output_dir.parent
@@ -155,6 +164,27 @@ def estimate_wpm() -> tuple[float, str, str]:
         return calibrated, "+0%", (f"{calibrated} wpm measured for {getattr(config, 'VOICE_ID', '')} "
                                    f"{rate} (configured {configured:g})")
     return configured, rate, f"{configured:g} wpm configured x VOICE_RATE {rate} (not calibrated)"
+
+
+def loudness_check(output_dir: Path) -> tuple[str, str, str]:
+    """Measured loudness of an existing final mix (local ffmpeg, no network)."""
+    candidates = [output_dir / name for name in ("narration_mixed.mp3", "final_video.mp4")]
+    existing = next((path for path in candidates if path.is_file()), None)
+    if existing is None:
+        return ("loudness", PASS, "no rendered audio yet")
+    try:
+        from video.music import measure_loudness
+        measured = measure_loudness(str(existing))
+    except Exception as exc:
+        return ("loudness", WARN, f"could not measure {existing.name}: {exc.__class__.__name__}")
+    target = float(getattr(config, "LOUDNESS_TARGET_LUFS", -14.0))
+    peak = float(getattr(config, "LOUDNESS_TRUE_PEAK", -1.0))
+    ok = (abs(measured["integrated_lufs"] - target) <= 1.0
+          and measured["true_peak_dbtp"] <= peak + 0.5)
+    return ("loudness", PASS if ok else WARN,
+            f"{existing.name}: {measured['integrated_lufs']:.1f} LUFS, true peak "
+            f"{measured['true_peak_dbtp']:.1f} dBTP (target {target:g} LUFS, <= {peak:g} dBTP)"
+            + ("" if ok else "; re-run the music step to normalise"))
 
 
 def live_tts_check() -> tuple[str, str, str]:
@@ -201,6 +231,7 @@ def run(script_path: Path, *, long_image_seconds: float = DEFAULT_LONG_IMAGE_SEC
         checks.append(("script", FAIL, f"cannot read {script_path}: {exc.__class__.__name__}"))
     checks += environment_checks(script_path.parent)
     checks.append(("narration wpm", PASS, wpm_note))
+    checks.append(loudness_check(script_path.parent))
     if live:
         checks.append(live_tts_check())
 

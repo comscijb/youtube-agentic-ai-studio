@@ -94,10 +94,14 @@ def get_service(interactive: bool = True):
 _get_service = get_service
 
 
-def build_upload_description(script: dict) -> str:
-    """The description pipeline.py has always uploaded: story text, footer, hashtags."""
+def build_upload_description(script: dict, output_dir: str | None = None) -> str:
+    """The description pipeline.py uploads: story text, music credit, footer, hashtags."""
+    from video.music import music_attribution
+
+    credit = music_attribution(output_dir or config.OUTPUT_DIR)
     return (
         script.get("description", "") + "\n\n"
+        + (f"Music: {credit}\n\n" if credit else "")
         + "─────────────────────────────\n"
         + f"{config.CHANNEL_NAME} — original cinematic psychological fiction.\n"
         + "─────────────────────────────\n"

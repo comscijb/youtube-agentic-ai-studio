@@ -219,6 +219,9 @@ def _build_description(script, research, video_type: str = "normal", output_dir=
             attributed.append(f"{asset['creator']} — {asset['source_url']}{license_note}")
     if attributed:
         lines += ["Visual credits:", *dict.fromkeys(attributed), ""]
+    music_credit = (manifest.get("music") or {}).get("attribution") if (manifest.get("music") or {}).get("track") else ""
+    if music_credit:
+        lines += [f"Music: {music_credit}", ""]
 
     tags = script.get("tags", [])
     if tags: lines.append(" ".join(f"#{t.replace(' ','')}" for t in tags[:8]))
@@ -258,7 +261,7 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
         from video.narrator      import generate_narration
         from video.stock         import download_images, load_existing_images
         from video.creator       import create_video
-        from video.music         import mix_music_with_narration
+        from video.music         import prepare_final_audio
 
         # ── Research ──────────────────────────────────────────
         if "research" in steps:
@@ -384,16 +387,15 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
 
         # ── Music  (optional, non-blocking) ───────────────────
         final_audio_path = _state["audio_path"]
-        if config.MUSIC_ENABLED and "music" in steps:
-            _log("Mixing background music from library…")
+        if "music" in steps:
+            _log("Preparing final audio (music, ducking, -14 LUFS loudness)…")
             mixed_path = os.path.join(config.OUTPUT_DIR, "narration_mixed.mp3")
-            final_audio_path = mix_music_with_narration(
-                narration_path = _state["audio_path"],
-                output_path    = mixed_path,
-                music_volume   = getattr(config, "MUSIC_VOLUME", 0.12),
-                library_dir    = getattr(config, "MUSIC_LIBRARY_DIR", ""),
+            final_audio_path = prepare_final_audio(
+                _state["audio_path"], mixed_path,
+                episode={**(research or {}), **(script or {})},
+                output_dir=config.OUTPUT_DIR,
             )
-            _log("Audio ready (narration + music)")
+            _log("Audio ready")
 
         _check_stop("music")
 

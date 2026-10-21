@@ -262,6 +262,14 @@ PUBLICATION_SYNC_INTERVAL_MINUTES = float(os.getenv("PUBLICATION_SYNC_INTERVAL_M
 MUSIC_ENABLED     = True
 MUSIC_VOLUME      = 0.12          # 0.0–1.0  (0.12 = subtle underscore)
 MUSIC_LIBRARY_DIR = os.path.join(os.path.dirname(__file__), "music library")
+# Optional "music library/tracks.json": [{"file", "moods", "license",
+# "source_url", "attribution"}]; tracks are chosen by mood overlap with the
+# episode's theme and intended emotional experience.
+MUSIC_DUCKING_RATIO     = 8       # sidechain ratio: higher = music dips further under speech
+MUSIC_DUCKING_THRESHOLD = 0.03    # narration level that starts the ducking (0-1)
+# Final mix loudness (YouTube reference): two-pass ffmpeg loudnorm.
+LOUDNESS_TARGET_LUFS = -14.0
+LOUDNESS_TRUE_PEAK   = -1.0
 
 # ─────────────────────────────────────────
 #  Paths  (do not change unless you know what you're doing)
