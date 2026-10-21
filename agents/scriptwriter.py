@@ -7,7 +7,7 @@ from pathlib import Path
 import config
 from agents import structured
 from agents.gemini_client import generate
-from agents.identity import TITLE_POLICY, identity_block
+from agents.identity import STACKED_MODIFIER_RULE, TITLE_POLICY, identity_block
 from agents.structured import SceneScope, compact_json
 from agents.narrative import (
     CONTENT_MODE,
@@ -345,7 +345,7 @@ ID, canonical section_type, narrative_function, established fact, chronology, ch
 causal outcome and useful line already present. Add substantive dramatic action, consequential
 choice, credible discovery, specific dialogue and subtext until each scene reaches 85%-115% of its
 target. Do not add filler, repeated atmosphere, exposition summaries, new characters, new rules or
-unsupported twists.
+unsupported twists. {STACKED_MODIFIER_RULE}
 
 EXACT DEFICITS: {compact_json(batch)}"""
         context = f"""SELECTED SCENES: {compact_json(selected)}

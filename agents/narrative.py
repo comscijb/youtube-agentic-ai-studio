@@ -633,6 +633,88 @@ def validate_script(script: dict, character_bible: dict | None = None,
     return script
 
 
+STYLE_INTENSIFIERS = (
+    "utterly", "unmitigated", "unadulterated", "absolute", "sheer", "devastating", "profound",
+    "immaculate", "impeccable",
+)
+_INTENSIFYING_ADVERBS = {
+    "utterly", "profoundly", "deeply", "impossibly", "unbearably", "achingly", "perfectly",
+    "completely", "absolutely", "entirely", "terribly", "infinitely", "unspeakably",
+}
+# A stacked pair must follow a determiner or preposition ("with pure, unmitigated
+# estrangement"); this keeps clauses such as "She turned, nodding slowly" out.
+_MODIFIER_LEADS = {
+    "a", "an", "the", "his", "her", "their", "its", "my", "your", "our", "with", "of", "in",
+    "into", "to", "from", "by", "for", "at", "on", "such", "this", "that", "some", "no", "and",
+    "was", "is", "were", "only", "but",
+}
+_COMMON_ADJECTIVES = {
+    "pure", "cold", "quiet", "soft", "dark", "bright", "deep", "sharp", "raw", "bare", "thin",
+    "heavy", "faint", "warm", "calm", "still", "sweet", "bitter", "harsh", "gentle", "cruel",
+    "empty", "hollow", "slow", "steady", "perfect", "total", "complete", "utter", "vast",
+    "grim", "stark", "pale", "clean", "smooth", "tight", "brittle", "dull", "fierce",
+}
+_NOT_NOUNS = {
+    "and", "or", "but", "as", "to", "the", "a", "an", "of", "in", "on", "with", "that", "than",
+    "then", "he", "she", "they", "it", "his", "her", "their", "was", "is", "were",
+}
+_ADJECTIVE_SUFFIX = re.compile(r"(ful|less|ous|ive|al|ed|ing|ic|ent|ant|able|ible|ish|ary)$")
+# Lookaheads so overlapping candidates ("with sorrow, but with pure, ...") are all seen.
+_STACKED_PAIR = re.compile(r"(?=\b([a-z']+)\s+([a-z'-]+),\s+([a-z'-]+)\s+([a-z'-]+)\b)")
+_ADVERB_STACK = re.compile(r"(?=\b([a-z]+ly)\s+([a-z'-]+)\s+([a-z'-]+)\b)")
+_INTENSIFIER = re.compile(r"\b(" + "|".join(STYLE_INTENSIFIERS) + r")\b")
+
+
+def _adjective_like(word: str) -> bool:
+    return (word in _COMMON_ADJECTIVES or word in STYLE_INTENSIFIERS
+            or (len(word) > 4 and not word.endswith("ly") and bool(_ADJECTIVE_SUFFIX.search(word))))
+
+
+def _noun_like(word: str) -> bool:
+    return word not in _NOT_NOUNS and not word.endswith("ly")
+
+
+def stacked_modifier_lint(sections: list[dict], threshold: int | None = None) -> dict:
+    """Count stacked modifiers and intensifiers per scene (warning-level only)."""
+    if threshold is None:
+        try:
+            import config
+            threshold = int(getattr(config, "NARRATIVE_STYLE_LINT_THRESHOLD", 3))
+        except ImportError:  # pragma: no cover
+            threshold = 3
+    per_scene, examples, total = {}, [], 0
+    for scene in sections:
+        text = str(scene.get("narration", "")).lower()
+        spans, found = [], []
+        for match in _STACKED_PAIR.finditer(text):
+            lead, first, second, noun = match.groups()
+            if (lead in _MODIFIER_LEADS and _adjective_like(first) and _adjective_like(second)
+                    and _noun_like(noun)):
+                spans.append(match.span(2))
+                found.append(f"{first}, {second} {noun}")
+        for match in _ADVERB_STACK.finditer(text):
+            adverb, adjective, noun = match.groups()
+            if adverb in _INTENSIFYING_ADVERBS and _adjective_like(adjective) and _noun_like(noun):
+                spans.append(match.span(1))
+                found.append(f"{adverb} {adjective} {noun}")
+        stacked = len(found)
+        intensifiers = 0
+        for match in _INTENSIFIER.finditer(text):
+            covered = any(start <= match.start() < end + 40 for start, end in spans)
+            if not covered:
+                intensifiers += 1
+                found.append(match.group(1))
+        count = stacked + intensifiers
+        total += count
+        examples += [f"scene {scene.get('id')}: {item}" for item in found]
+        per_scene[str(scene.get("id"))] = {
+            "stacked_modifiers": stacked, "intensifiers": intensifiers, "total": count,
+            "examples": found[:5],
+        }
+    return {"total": total, "threshold": threshold, "per_scene": per_scene,
+            "examples": examples[:10]}
+
+
 def missing_arc_movements(outline: dict | None, narrative_type: str | None) -> list[str]:
     """Type A movements no scene declares; empty for B/C or outlines predating the field."""
     if narrative_type != TYPE_A or not isinstance(outline, dict):
@@ -773,6 +855,19 @@ def deterministic_review(script: dict, target_duration_minutes: float,
         warnings.append("Possible motif overuse: " + ", ".join(
             f"{term} ({count})" for term, count in repeated_terms.items()
         ))
+    style_lint = stacked_modifier_lint(sections)
+    minor_issues = []
+    if style_lint["total"] > style_lint["threshold"]:
+        issue = {
+            "severity": "minor", "issue_type": "style",
+            "scene_ids": [int(sid) for sid, item in style_lint["per_scene"].items() if item["total"]],
+            "claim": (f"{style_lint['total']} stacked modifiers or intensifiers "
+                      f"(threshold {style_lint['threshold']}) read badly aloud."),
+            "evidence": style_lint["examples"],
+            "recommendation": "Keep one precise word or replace the emphasis with a concrete action.",
+        }
+        minor_issues.append(issue)
+        warnings.append(issue["claim"])
 
     narrative_type = script.get("narrative_type")
     missing_movements = missing_arc_movements(outline, narrative_type)
@@ -835,6 +930,8 @@ def deterministic_review(script: dict, target_duration_minutes: float,
             "total_word_budget": total_min <= total_ratio <= total_max,
             "scene_word_budgets": all(item["status"] == "within_target" for item in scene_budgets),
         },
+        "minor_issues": minor_issues,
+        "style_lint": style_lint,
         "warnings": warnings,
         "editorial_assessment": None,
         "editorial_validation_complete": False,

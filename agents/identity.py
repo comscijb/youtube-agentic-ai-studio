@@ -65,8 +65,15 @@ TYPE_A_MOVEMENTS = (
      "reveals something new — not merely suffering the expected consequence."),
 )
 
+STACKED_MODIFIER_RULE = (
+    "Avoid stacking two or more adjectives, or an adverb + adjective, on one noun for emphasis "
+    "(\"pure, unmitigated estrangement\", \"devastating, unhurried calm\"); prefer one precise "
+    "word or a concrete action; never write intensifier pairs."
+)
+
 CRAFT_RULES = (
     "Dramatize with direct, specific dialogue and subtext.",
+    STACKED_MODIFIER_RULE,
     "Vary rhythm between description, action, dialogue, plain observation and silence.",
     "Avoid repeating the same sensory vocabulary (an earlier draft overused glass, heavy, stone, "
     "polished, silence, shadow).",

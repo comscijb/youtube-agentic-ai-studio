@@ -95,6 +95,9 @@ NARRATIVE_SEMANTIC_REVISION_BATCH_SIZE = int(os.getenv("NARRATIVE_SEMANTIC_REVIS
 NARRATIVE_SEMANTIC_REREVIEW = os.getenv(
     "NARRATIVE_SEMANTIC_REREVIEW", "true"
 ).lower() in ("1", "true", "yes", "on")
+# Above this many stacked modifiers/intensifiers per episode the deterministic
+# review adds a minor (never blocking) style finding.
+NARRATIVE_STYLE_LINT_THRESHOLD = int(os.getenv("NARRATIVE_STYLE_LINT_THRESHOLD", "3"))
 NARRATIVE_SEMANTIC_REVISION_TYPES = (
     "lecture", "continuity", "unintroduced_character", "character_consistency", "agency",
     "causality", "repetition", "style",
