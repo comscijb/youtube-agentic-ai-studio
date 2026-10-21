@@ -400,6 +400,198 @@ OUTLINE: {compact_json(outline)}"""
     return revised, attempts
 
 
+SEMANTIC_REVISION_TYPES = (
+    "lecture", "continuity", "unintroduced_character", "character_consistency", "agency",
+    "causality", "repetition", "style",
+)
+# Reviewer spellings -> canonical eligible type. Unknown types are not eligible.
+_SEMANTIC_ALIASES = {
+    "lecture": "lecture", "didactic": "lecture", "exposition": "lecture",
+    "explanation": "lecture", "lecturing": "lecture",
+    "continuity": "continuity", "causal_continuity": "continuity",
+    "chronological_continuity": "continuity", "continuity_error": "continuity",
+    "object_continuity": "continuity", "costume_continuity": "continuity",
+    "unintroduced_character": "unintroduced_character", "new_character": "unintroduced_character",
+    "unestablished_character": "unintroduced_character",
+    "unintroduced_characters": "unintroduced_character",
+    "character_consistency": "character_consistency", "character_inconsistency": "character_consistency",
+    "agency": "agency", "character_agency": "agency", "passivity": "agency",
+    "causality": "causality", "causal_logic": "causality",
+    "repetition": "repetition", "repetition_control": "repetition", "repetitive": "repetition",
+    "style": "style", "literary_style": "style", "prose_style": "style",
+}
+
+
+def semantic_issue_type(raw) -> str | None:
+    """Normalize a reviewer issue_type; None when it is not eligible for revision."""
+    key = "_".join(str(raw or "").strip().lower().replace("-", " ").split())
+    canonical = _SEMANTIC_ALIASES.get(key)
+    allowed = getattr(config, "NARRATIVE_SEMANTIC_REVISION_TYPES", SEMANTIC_REVISION_TYPES)
+    return canonical if canonical in allowed else None
+
+
+def eligible_semantic_findings(review: dict, script: dict) -> dict[int, list[dict]]:
+    """Map screenplay scene id -> eligible editorial findings (discarded ones never count)."""
+    ids = {int(scene["id"]): int(scene["id"]) for scene in script.get("sections", [])}
+    ids.update({scene.get("outline_scene_id"): int(scene["id"])
+                for scene in script.get("sections", [])})
+    by_scene: dict[int, list[dict]] = {}
+    for finding in review.get("blocking_issues", []) + review.get("major_issues", []):
+        if "certainty" not in finding:          # deterministic issue, not editorial
+            continue
+        if finding.get("certainty") not in ("confirmed", "probable"):
+            continue
+        if semantic_issue_type(finding.get("issue_type")) is None:
+            continue
+        for raw in finding.get("scene_ids") or []:
+            scene_id = ids.get(raw if not isinstance(raw, str) or not raw.isdigit() else int(raw))
+            if scene_id is not None:
+                by_scene.setdefault(scene_id, []).append(finding)
+    return by_scene
+
+
+def _semantic_revision(script: dict, brief: dict, bible: dict, outline: dict, review: dict,
+                       output: Path, target: float, repair_attempts: list) -> tuple[dict, dict]:
+    """One bounded rewrite of the scenes cited by eligible editorial findings.
+
+    Unaffected scenes stay byte-for-byte; each revised scene must stay within
+    85%-115% of its allocation. Afterwards the deterministic review runs again
+    plus at most one editorial re-review. Never loops further.
+    """
+    if not getattr(config, "NARRATIVE_SEMANTIC_REVISION_ENABLED", True):
+        return script, review
+    by_scene = eligible_semantic_findings(review, script)
+    if not by_scene:
+        return script, review
+    batch_size = max(1, int(getattr(config, "NARRATIVE_SEMANTIC_REVISION_BATCH_SIZE", 3)))
+    max_calls = max(0, int(getattr(config, "NARRATIVE_SEMANTIC_REVISION_MAX_CALLS", 1)))
+    scene_ids = sorted(by_scene)
+    revised = script
+    revisions = []
+    for offset in range(0, len(scene_ids), batch_size):
+        if len(revisions) >= max_calls:
+            break
+        ids = scene_ids[offset:offset + batch_size]
+        selected = [scene for scene in revised["sections"] if scene["id"] in ids]
+        neighbors = [scene for scene in revised["sections"]
+                     if scene["id"] not in ids and any(abs(scene["id"] - i) == 1 for i in ids)]
+        findings = []
+        for scene_id in ids:
+            for finding in by_scene[scene_id]:
+                if finding not in findings:
+                    findings.append(finding)
+        budgets = {scene["id"]: scene["target_words"] for scene in selected}
+        contract = f"""You are performing one bounded editorial revision of a Private Gravity screenplay.
+Return ONLY the SELECTED SCENES supplied after this contract, in order, as {{"scenes": [...]}} with
+the same keys. Fix exactly the problems in the EDITORIAL FINDINGS by following their
+recommendations, through dramatized action, dialogue and subtext. Preserve every scene id,
+canonical section_type, narrative_function, established fact, chronology, character identity,
+causal outcome and every line the findings do not touch. Do not add new characters, rules or
+twists. Never let the narrator explain psychology or cite thinkers academically.
+
+{identity_block(brief.get("narrative_type"))}
+
+WORD BUDGETS (each revised narration must stay between 85% and 115% of its target):
+{compact_json([{"id": i, "target_words": w, "minimum": int(w * .85) + 1, "maximum": int(w * 1.15)}
+               for i, w in budgets.items()])}
+
+EDITORIAL FINDINGS:
+{compact_json([{key: finding.get(key) for key in ("severity", "issue_type", "scene_ids", "claim",
+                "evidence", "recommendation")} for finding in findings])}"""
+        context = f"""SELECTED SCENES: {compact_json(selected)}
+NEIGHBOR SCENES (read-only): {compact_json(neighbors)}
+STORY BRIEF: {compact_json(brief)}
+CHARACTER BIBLE: {compact_json(bible)}"""
+
+        def validate_revision(value, ids=ids, budgets=budgets):
+            scenes = value.get("scenes")
+            if not isinstance(scenes, list) or [scene.get("id") for scene in scenes] != ids:
+                raise NarrativeValidationError(
+                    f"semantic revision must return scenes {ids} in order"
+                )
+            for scene in scenes:
+                if not isinstance(scene.get("narration"), str):
+                    raise NarrativeValidationError(f"revised scene {scene['id']} requires narration")
+                ratio = len(scene["narration"].split()) / budgets[scene["id"]]
+                if ratio < .85 or ratio > 1.15:
+                    raise NarrativeValidationError(
+                        f"revised scene {scene['id']} is outside 85%-115% of its "
+                        f"{budgets[scene['id']]}-word budget ({ratio:.1%})"
+                    )
+            return scenes
+
+        record = {
+            "kind": "targeted_semantic_revision", "scene_ids": ids, "success": False,
+            "findings_addressed": [
+                {key: finding.get(key) for key in ("severity", "issue_type", "scene_ids", "claim")}
+                for finding in findings
+            ],
+            "word_counts": {str(scene["id"]): {"before": len(scene["narration"].split())}
+                            for scene in selected},
+        }
+        try:
+            replacements = _generate_json(
+                contract, "semantic revision", validate_revision, context=context,
+                stage=f"semantic_revision {'-'.join(str(i) for i in ids)}",
+                temperature_key="expansion",
+            )
+            by_id = {scene["id"]: scene for scene in replacements}
+            updated = []
+            for original in revised["sections"]:
+                replacement = by_id.get(original["id"])
+                if replacement is None:
+                    updated.append(original)
+                    continue
+                merged = dict(original)
+                merged.update(replacement)
+                for field in ("id", "outline_scene_id", "section_type", "narrative_function",
+                              "target_words"):
+                    merged[field] = original.get(field)
+                merged["bullet_points"] = []
+                updated.append(merged)
+            candidate = validate_script(dict(revised, sections=updated), bible, outline)
+            for scene in candidate["sections"]:
+                if str(scene["id"]) in record["word_counts"]:
+                    record["word_counts"][str(scene["id"])]["after"] = len(scene["narration"].split())
+            revised = candidate
+            record["success"] = True
+        except NarrativeValidationError as exc:
+            record["error"] = str(exc)
+        revisions.append(record)
+
+    if not any(item["success"] for item in revisions):
+        review = dict(review, semantic_revisions=revisions)
+        return script, review
+
+    atomic_write_json(output / "script.pre_revision.json", script)
+    attempts = list(repair_attempts) + [
+        {key: item[key] for key in ("kind", "scene_ids", "success")} for item in revisions
+    ]
+    new_review = deterministic_review(revised, target, outline, attempts, brief)
+    rereview = {"performed": False}
+    if getattr(config, "NARRATIVE_SEMANTIC_REREVIEW", True):
+        print("   -> Re-running editorial review after the semantic revision...")
+        new_review = merge_editorial_review(
+            new_review, _editorial_review(revised, brief, bible, outline, new_review), bible
+        )
+        rereview = {
+            "performed": True, "status": new_review["status"],
+            "remaining_major_or_blocking": len([
+                item for item in new_review["blocking_issues"] + new_review["major_issues"]
+                if "certainty" in item
+            ]),
+        }
+    else:
+        new_review = merge_editorial_review(new_review, None)
+        new_review["editorial_review_stale"] = True
+        new_review["pre_revision_editorial_assessment"] = review.get("editorial_assessment")
+    for item in revisions:
+        item["rereview"] = rereview
+    new_review["semantic_revisions"] = revisions
+    new_review["pre_revision_status"] = review.get("status")
+    return revised, new_review
+
+
 def write_script(
     research: dict,
     video_type: str = "normal",
@@ -485,6 +677,12 @@ def _write_script(brief: dict, video_type: str, output: Path, target: float,
         review = merge_editorial_review(
             review, _editorial_review(script, brief, bible, outline, review), bible
         )
+        revised, review = _semantic_revision(
+            script, brief, bible, outline, review, output, target, repair_attempts
+        )
+        if revised is not script:
+            script = revised
+            atomic_write_json(output / "script.json", script)
     else:
         review = merge_editorial_review(review, None)
     review["source_hash"] = stable_hash(script)
