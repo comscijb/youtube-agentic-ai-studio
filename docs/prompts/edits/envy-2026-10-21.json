@@ -1,0 +1,17 @@
+[
+  {
+    "scene_id": "s01",
+    "find": "Yet as he aligned the smoked decanters two hours before their fifth anniversary dinner, he could not look at Elena without calculating how she would appear to Marcus Croft.",
+    "replace": "Yet as he aligned the smoked decanters two hours before their fifth anniversary dinner—eight guests, with Marcus Croft seated directly across from Elena—he could not look at his wife without calculating how she would appear to the one man whose envy he wanted most."
+  },
+  {
+    "scene_id": "s08",
+    "find": "René Girard wrote that human desire is mimetic—we rarely want what we possess; we only want what another person covets. Julian had never truly loved the loft, the bespoke joinery, or even his marriage for what they were. He had loved them because Marcus Croft looked at them with an aching greed.",
+    "replace": "Julian looked past him at the bespoke joinery, the framed ferns, the empty chair where Elena had sat, and understood that none of it had ever been his. Its value had always lived in another man's eyes. He had not wanted the loft, or the table, or even the marriage. He had wanted Marcus to want them."
+  },
+  {
+    "scene_id": "s07",
+    "find": "from her cardigan pocket",
+    "replace": "from the pocket of her trousers"
+  }
+]
