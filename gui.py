@@ -91,88 +91,9 @@ def _stage(name, status):
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _make_thumbnail(script, image_map, output_dir):
-    from PIL import Image, ImageDraw, ImageFont
-
-    TW, TH = 1280, 720
-    title = script.get("title", "")
-    C = config.COLORS
-
-    def _font(variant, size):
-        for p in config.FONT_PATHS.get(variant, config.FONT_PATHS["regular"]):
-            try: return ImageFont.truetype(p, size)
-            except: pass
-        return ImageFont.load_default()
-
-    def _wrap(draw, text, font, max_w):
-        words, lines, cur = text.split(), [], []
-        for w in words:
-            test = " ".join(cur + [w])
-            if draw.textbbox((0,0), test, font=font)[2] > max_w and cur:
-                lines.append(" ".join(cur)); cur = [w]
-            else: cur.append(w)
-        if cur: lines.append(" ".join(cur))
-        return lines or [text]
-
-    def _shadow(draw, xy, text, font, fill, r=5):
-        x, y = xy
-        for dx in range(-r, r+1, 2):
-            for dy in range(-r, r+1, 2):
-                if abs(dx)+abs(dy) >= r:
-                    draw.text((x+dx, y+dy), text, font=font, fill=(0,0,0))
-        draw.text((x,y), text, font=font, fill=fill)
-
-    # Background
-    # FIX: For Shorts, image_map values are lists of paths. Unwrap to a single path.
-    def _first_path(v):
-        if isinstance(v, list):
-            return v[0] if v else None
-        return v
-
-    bg_path = _first_path(image_map.get(1)) or next(
-        (_first_path(v) for v in image_map.values() if v), None
-    )
-    if bg_path and os.path.exists(bg_path):
-        bg = Image.open(bg_path).convert("RGB")
-        bw, bh = bg.size
-        scale = max(TW/bw, TH/bh)
-        bg = bg.resize((int(bw*scale), int(bh*scale)), Image.LANCZOS)
-        nw, nh = bg.size
-        bg = bg.crop(((nw-TW)//2, (nh-TH)//2, (nw-TW)//2+TW, (nh-TH)//2+TH))
-    else:
-        bg = Image.new("RGB", (TW, TH), C["background"])
-
-    # Dark overlay
-    ov = Image.new("RGBA", (TW, TH), (0,0,0,0))
-    od = ImageDraw.Draw(ov)
-    for x in range(TW):
-        od.line([(x,0),(x,TH)], fill=(0,0,10, int(190*(1-x/TW*0.45))))
-    od.rectangle([0, TH-80, TW, TH], fill=(0,0,0,185))
-    bg = Image.alpha_composite(bg.convert("RGBA"), ov).convert("RGB")
-    draw = ImageDraw.Draw(bg)
-
-    # Accent bar
-    draw.rectangle([60, 100, 700, 108], fill=C["primary"])
-
-    # Title
-    font_big = _font("bold", 92)
-    font_sm  = _font("bold", 70)
-    lines = _wrap(draw, title.upper(), font_big, TW-140)
-    if len(lines) > 2: font_big = font_sm; lines = _wrap(draw, title.upper(), font_big, TW-140)
-    lines = lines[:2]
-
-    for i, line in enumerate(lines):
-        words = line.split(" ", 1)
-        fw = words[0]; rest = words[1] if len(words) > 1 else ""
-        fw_w = draw.textbbox((0,0), fw+" ", font=font_big)[2]
-        _shadow(draw, (60, 130+i*108), fw, font_big, fill=C["highlight"], r=6)
-        if rest: _shadow(draw, (60+fw_w, 130+i*108), rest, font_big, fill=C["white"], r=6)
-
-    # Channel name
-    _shadow(draw, (60, TH-60), config.CHANNEL_NAME.upper(), _font("bold", 36), fill=C["light"], r=3)
-
-    out = os.path.join(output_dir, "thumbnail.jpg")
-    bg.save(out, "JPEG", quality=95)
-    return out
+    from video.thumbnail import make_thumbnail
+    brief = _state.get("research") or load_json(Path(output_dir, "story_brief.json")) or {}
+    return make_thumbnail(script, image_map, output_dir, brief)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
