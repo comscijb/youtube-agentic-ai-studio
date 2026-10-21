@@ -15,6 +15,13 @@ import config
 from moviepy.editor import AudioFileClip, concatenate_audioclips
 from video.timeline import write_shifted_srt, write_timeline
 
+# Voices known to emit WordBoundary events (needed for word-synced captions).
+# scripts/render_preflight.py reads this literal without importing the module.
+WORD_SYNCED_VOICES = [
+    ("en-US-AndrewNeural", "Andrew (US, Warm male)"),
+    ("en-GB-LibbyNeural",  "Libby  (UK, Clear female)"),
+]
+
 
 # ══════════════════════════════════════════════════════════════
 #  HELPERS
@@ -292,11 +299,7 @@ async def _synthesise(text: str, audio_path: str, srt_path: str) -> int:
             # Microsoft periodically disables WordBoundary events server-side.
             # The sentence-level fallback always produces correct timing, but
             # word-synced captions require a voice that still emits events.
-            WORD_SYNCED = [
-                ("en-US-AndrewNeural", "Andrew (US, Warm male)"),
-                ("en-GB-LibbyNeural",  "Libby  (UK, Clear female)"),
-            ]
-            alternatives = [(v, n) for v, n in WORD_SYNCED if v != config.VOICE_ID]
+            alternatives = [(v, n) for v, n in WORD_SYNCED_VOICES if v != config.VOICE_ID]
             print(f"   ⚠ '{config.VOICE_ID}' sent no word-timing data (Microsoft server change).")
             print( "      Captions are sentence-level (timing is correct, sync is approximate).")
             if alternatives:
