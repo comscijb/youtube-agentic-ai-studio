@@ -52,6 +52,15 @@ STOCK_FALLBACK_PROVIDER   = os.getenv("STOCK_FALLBACK_PROVIDER", "openverse").lo
 STOCK_CACHE_ENABLED       = os.getenv("STOCK_CACHE_ENABLED", "true").lower() in ("1", "true", "yes", "on")
 STOCK_LICENSE_LOG_ENABLED = os.getenv("STOCK_LICENSE_LOG_ENABLED", "true").lower() in ("1", "true", "yes", "on")
 STOCK_LOCAL_ASSET_DIR     = os.getenv("STOCK_LOCAL_ASSET_DIR", "assets/stock_approved")
+# Stock is the fallback for environment/object shots. Candidates must share at
+# least this share of the short query's terms with their tags, must not be
+# bright/saturated (dark channel palette), must not look like text/signage, and
+# cannot show identifiable people when the shot is about a specific character.
+STOCK_MIN_RELEVANCE  = float(os.getenv("STOCK_MIN_RELEVANCE", "0.4"))
+STOCK_TONE_FILTER    = True
+STOCK_MAX_LUMINANCE  = 150        # mean 0-255
+STOCK_MAX_SATURATION = 140        # mean 0-255, applied to brighter images only
+STOCK_TEXT_THRESHOLD = 0.4        # 0-1 text/signage likelihood
 
 # ─────────────────────────────────────────
 #  Your Channel Identity
