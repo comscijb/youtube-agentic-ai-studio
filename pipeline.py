@@ -18,7 +18,7 @@ from video.narrator      import generate_narration
 from video.stock         import download_images
 from video.creator       import create_video
 from review.app          import start_review_server
-from uploader.youtube    import upload_to_youtube
+from uploader.youtube    import build_upload_description, upload_to_youtube
 from agents.narrative import atomic_write_json
 from uploader.publications import sync_publications_safely
 
@@ -93,13 +93,19 @@ def run():
         {k: v for k, v in review_data.items() if k != "video_path"},
     )
 
-    approved = start_review_server(review_data)
+    # The approval is bound to exactly what upload_to_youtube sends.
+    upload = {
+        "video_path": video_path, "title": script["title"],
+        "description": build_upload_description(script), "tags": script.get("tags", []),
+        "thumbnail_path": None,
+    }
+    approved = start_review_server(review_data, run_dir=config.OUTPUT_DIR, upload=upload)
 
     # ── Upload or stop ────────────────────────────────────────
     if approved:
         banner("🚀  Uploading to YouTube")
         url = upload_to_youtube(script, video_path)
-        print(f"\n  🎉  Video live: {url}\n")
+        print(f"\n  🎉  Uploaded: {url} (recorded as pending publication)\n")
     else:
         print("\n  ❌  Rejected — pipeline stopped.")
         print("      Tip: edit output/script.json and re-run just the video step.\n")

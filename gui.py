@@ -727,6 +727,34 @@ def _upload_metadata() -> dict:
     }
 
 
+@app.route("/api/review-gate")
+def get_review_gate():
+    """Checklist, narrative status, title and license findings, approval validity."""
+    from uploader.approval import review_summary
+    meta = _upload_metadata()
+    if not meta["video_path"] or not os.path.exists(meta["video_path"]):
+        return jsonify({"ok": False, "error": "No video to review"})
+    return jsonify({"ok": True, **review_summary(config.OUTPUT_DIR, **meta)})
+
+
+@app.route("/api/approve-upload", methods=["POST"])
+def approve_upload():
+    from uploader.approval import UploadNotApproved, approve
+    body = request.get_json(force=True) or {}
+    meta = _upload_metadata()
+    try:
+        record = approve(
+            config.OUTPUT_DIR, checklist=body.get("checklist") or {},
+            notes=body.get("notes", ""),
+            title_override_reason=body.get("title_override_reason", ""),
+            status_override_reason=body.get("status_override_reason", ""),
+            **meta,
+        )
+    except UploadNotApproved as exc:
+        return jsonify({"ok": False, "error": str(exc), "reasons": exc.reasons}), 400
+    return jsonify({"ok": True, "approved_at": record["approved_at"]})
+
+
 @app.route("/api/upload", methods=["POST"])
 def upload():
     if _state.get("uploading"):
@@ -737,6 +765,11 @@ def upload():
     body    = request.get_json(force=True) or {}
     privacy = body.get("privacy", config.VIDEO_PRIVACY)
     publish_at = body.get("publish_at", "").strip()   # RFC 3339 datetime or ""
+    from uploader.approval import check_approval
+    problems = check_approval(config.OUTPUT_DIR, **_upload_metadata())
+    if problems:
+        return jsonify({"ok": False, "error": "Upload refused: " + "; ".join(problems),
+                        "reasons": problems}), 409
 
     def _do_upload():
         _state["uploading"]  = True

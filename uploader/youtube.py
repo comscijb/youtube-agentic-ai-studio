@@ -8,7 +8,7 @@ import os
 import pickle
 
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
+from googleapiclient.http import MediaIoBaseUpload
 from google_auth_oauthlib.flow import InstalledAppFlow
 
 import config
@@ -131,31 +131,35 @@ def upload_video(video_path: str, *, title: str, description: str, tags=None,
     if publish_at:
         body["status"]["publishAt"] = publish_at
 
-    media = MediaFileUpload(
-        video_path,
-        mimetype="video/mp4",
-        resumable=True,
-        chunksize=5 * 1024 * 1024,   # 5 MB chunks
-    )
-    insert_req = youtube.videos().insert(
-        part=",".join(body.keys()),
-        body=body,
-        media_body=media,
-    )
+    # Own the file handles so they close after the upload (Windows keeps
+    # files opened by MediaFileUpload locked until garbage collection).
+    with open(video_path, "rb") as handle:
+        media = MediaIoBaseUpload(
+            handle,
+            mimetype="video/mp4",
+            resumable=True,
+            chunksize=5 * 1024 * 1024,   # 5 MB chunks
+        )
+        insert_req = youtube.videos().insert(
+            part=",".join(body.keys()),
+            body=body,
+            media_body=media,
+        )
 
-    response = None
-    while response is None:
-        status, response = insert_req.next_chunk()
-        if status and progress:
-            progress(int(status.progress() * 100))
+        response = None
+        while response is None:
+            status, response = insert_req.next_chunk()
+            if status and progress:
+                progress(int(status.progress() * 100))
     video_id = response["id"]
 
     if thumbnail_path and os.path.exists(thumbnail_path):
         try:
-            youtube.thumbnails().set(
-                videoId=video_id,
-                media_body=MediaFileUpload(thumbnail_path, mimetype="image/jpeg"),
-            ).execute()
+            with open(thumbnail_path, "rb") as handle:
+                youtube.thumbnails().set(
+                    videoId=video_id,
+                    media_body=MediaIoBaseUpload(handle, mimetype="image/jpeg"),
+                ).execute()
         except Exception as exc:
             print(f"   WARNING: thumbnail upload failed ({exc.__class__.__name__}); video kept.")
     if progress:
@@ -168,11 +172,18 @@ def upload_run(run_dir: str, *, video_path: str, title: str, description: str, t
                thumbnail_path: str | None = None, progress=None, service=None) -> dict:
     """Upload a generated run and record it in the publication ledger.
 
-    Returns the ledger record (state ``uploaded_pending_publication``); the
-    sync later marks it published and bans its topic.
+    Refused (UploadNotApproved) unless ``<run_dir>/review_approval.json`` is a
+    complete approval of exactly these artifacts. Returns the ledger record
+    (state ``uploaded_pending_publication``); the sync later marks it
+    published and bans its topic.
     """
     from uploader import publications
+    from uploader.approval import require_approval
 
+    approval = require_approval(
+        run_dir, video_path=video_path, title=title, description=description, tags=tags,
+        thumbnail_path=thumbnail_path,
+    )
     video_id = upload_video(
         video_path, title=title, description=description, tags=tags, privacy=privacy,
         publish_at=publish_at, thumbnail_path=thumbnail_path, progress=progress,
@@ -181,6 +192,12 @@ def upload_run(run_dir: str, *, video_path: str, title: str, description: str, t
     return publications.record_upload(
         video_id, run_dir, title=title, video_path=video_path,
         scheduled_publish_at=publish_at or None,
+        extra={"review": {
+            "approved_at": approval.get("approved_at"),
+            "narrative_status": approval.get("narrative_status"),
+            "status_override_reason": approval.get("status_override_reason", ""),
+            "title_override_reason": approval.get("title_override_reason", ""),
+        }},
     )
 
 

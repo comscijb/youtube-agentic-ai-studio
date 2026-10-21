@@ -281,11 +281,13 @@ class UploadAndRegistrationTests(LedgerTestCase):
     def test_upload_run_uploads_then_records_pending(self):
         service = FakeService(inserted_id="vidupload1")
         progress = []
-        record = quiet(youtube.upload_run, str(self.run_dir),
-                       video_path=str(self.run_dir / "final_video.mp4"), title="He Waited",
-                       description="d", tags=["a"], thumbnail_path=None,
-                       progress=progress.append, service=service,
-                       publish_at="2099-01-01T12:00:00Z")
+        # The review gate is covered by tests/test_approval.py.
+        with patch("uploader.approval.require_approval", return_value={}):
+            record = quiet(youtube.upload_run, str(self.run_dir),
+                           video_path=str(self.run_dir / "final_video.mp4"), title="He Waited",
+                           description="d", tags=["a"], thumbnail_path=None,
+                           progress=progress.append, service=service,
+                           publish_at="2099-01-01T12:00:00Z")
         body = service.videos().insert_calls[0]["body"]
         self.assertEqual(body["status"]["privacyStatus"], "private")
         self.assertEqual(body["status"]["publishAt"], "2099-01-01T12:00:00Z")

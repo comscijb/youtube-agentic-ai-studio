@@ -302,8 +302,19 @@
       <div class="card action-card">
         <div class="card-header">✅ Your decision</div>
         <div class="card-body">
-          <button class="btn btn-approve" id="btn-approve" onclick="decide('approve')">
-            ✅ Looks great — upload to YouTube
+          <div id="gate-status" style="font-size:13px;line-height:1.6;margin-bottom:10px"></div>
+          <div id="gate-checklist" style="display:flex;flex-direction:column;gap:6px;font-size:13px;margin-bottom:10px"></div>
+          <div id="gate-title-reason-wrap" style="display:none;margin-bottom:8px">
+            <div style="font-size:12px;margin-bottom:3px">Title policy override reason</div>
+            <input type="text" id="gate-title-reason" style="width:100%" oninput="updateApprove()">
+          </div>
+          <div id="gate-status-reason-wrap" style="display:none;margin-bottom:8px">
+            <div style="font-size:12px;margin-bottom:3px">Narrative status override reason</div>
+            <input type="text" id="gate-status-reason" style="width:100%" oninput="updateApprove()">
+          </div>
+          <textarea id="gate-notes" rows="2" style="width:100%;margin-bottom:10px" placeholder="Optional reviewer notes"></textarea>
+          <button class="btn btn-approve" id="btn-approve" onclick="decide('approve')" disabled>
+            ✅ Approve and upload to YouTube
           </button>
           <button class="btn btn-reject" id="btn-reject" onclick="decide('reject')">
             ❌ Reject — don't upload
@@ -341,6 +352,10 @@ async function load() {
     strip.appendChild(el);
   });
 
+  // Uploads send this description, so the reviewer reads exactly that text.
+  if (data.upload_description) document.getElementById('vid-desc').textContent = data.upload_description;
+  renderGate(data.gate, data.privacy);
+
   // Script sections
   const list = document.getElementById('script-list');
   (script.sections || []).forEach(s => {
@@ -358,12 +373,62 @@ async function load() {
   });
 }
 
+let _gate = null;
+function renderGate(gate, privacy) {
+  _gate = gate;
+  if (!gate) return;
+  const lines = [`Narrative status: <strong>${gate.narrative_status}</strong>` +
+    (gate.status_override_required ? ' — requires a typed override reason' : '')];
+  if (!gate.title_passes) lines.push('Title policy: ' + gate.title_findings.map(f => f.severity.toUpperCase() + ': ' + f.claim).join(' · '));
+  if (gate.license_flags.length) lines.push('License log flags: ' + gate.license_flags.join(' · '));
+  lines.push(privacy === 'public' ? '<strong>Approving uploads the video PUBLIC immediately.</strong>'
+                                  : `Approving uploads the video as ${privacy}.`);
+  document.getElementById('gate-status').innerHTML = lines.join('<br>');
+  const list = document.getElementById('gate-checklist');
+  Object.entries(gate.checklist).forEach(([key, label]) => {
+    const row = document.createElement('label');
+    row.innerHTML = `<input type="checkbox" data-key="${key}" onchange="updateApprove()"> <span></span>`;
+    row.querySelector('span').textContent = label;
+    list.appendChild(row);
+  });
+  document.getElementById('gate-title-reason-wrap').style.display = gate.title_passes ? 'none' : '';
+  document.getElementById('gate-status-reason-wrap').style.display = gate.status_override_required ? '' : 'none';
+}
+
+function gateChecklist() {
+  const result = {};
+  document.querySelectorAll('#gate-checklist input[type=checkbox]').forEach(cb => { result[cb.dataset.key] = cb.checked; });
+  return result;
+}
+
+function updateApprove() {
+  const checks = Object.values(gateChecklist());
+  document.getElementById('btn-approve').disabled = !(_gate && checks.length && checks.every(Boolean)
+    && (_gate.title_passes || document.getElementById('gate-title-reason').value.trim().length >= 10)
+    && (!_gate.status_override_required || document.getElementById('gate-status-reason').value.trim().length >= 10));
+}
+
 async function decide(action) {
+  if (action === 'approve' && !confirm('This video will be uploaded to YouTube now and will be PUBLIC immediately unless your configured privacy says otherwise. Continue?')) return;
   document.getElementById('btn-approve').disabled = true;
   document.getElementById('btn-reject').disabled  = true;
 
-  const res = await fetch('/api/' + action, { method: 'POST' });
-  const { status } = await res.json();
+  const res = await fetch('/api/' + action, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(action === 'approve' ? {
+      checklist: gateChecklist(),
+      notes: document.getElementById('gate-notes').value,
+      title_override_reason: document.getElementById('gate-title-reason').value,
+      status_override_reason: document.getElementById('gate-status-reason').value,
+    } : {})
+  });
+  const { status, reasons } = await res.json();
+  if (status === 'refused') {
+    alert('Approval refused:\n' + reasons.join('\n'));
+    document.getElementById('btn-reject').disabled = false;
+    updateApprove();
+    return;
+  }
 
   const banner = document.getElementById('decision-banner');
   const badge  = document.getElementById('status-badge');

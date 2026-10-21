@@ -504,6 +504,23 @@ input[type=range]{width:100%;accent-color:var(--primary)}
             </div>
           </div>
 
+          <div class="upload-section" id="review-gate">
+            <div style="font-size:12px;font-weight:600;color:var(--dim);margin-bottom:6px">Pre-publication review</div>
+            <div id="gate-status" style="font-size:11px;line-height:1.5;margin-bottom:6px"></div>
+            <div id="gate-checklist" style="display:flex;flex-direction:column;gap:4px;font-size:12px"></div>
+            <div id="gate-title-reason-wrap" style="display:none;margin-top:6px">
+              <div class="field-label" style="margin-bottom:2px">Title policy override reason</div>
+              <input type="text" id="gate-title-reason" placeholder="Why publish this title anyway?" oninput="updateGateButtons()">
+            </div>
+            <div id="gate-status-reason-wrap" style="display:none;margin-top:6px">
+              <div class="field-label" style="margin-bottom:2px">Narrative status override reason</div>
+              <input type="text" id="gate-status-reason" placeholder="Why upload despite the narrative status?" oninput="updateGateButtons()">
+            </div>
+            <textarea id="gate-notes" rows="2" style="font-size:12px;margin-top:6px" placeholder="Optional reviewer notes"></textarea>
+            <button class="btn btn-ghost" id="gate-approve-btn" style="margin-top:6px;font-size:12px" onclick="approveUpload()" disabled>✔ Record approval</button>
+            <div id="gate-msg" style="font-size:11px;margin-top:4px"></div>
+          </div>
+
           <div class="upload-section">
             <div style="font-size:12px;font-weight:600;color:var(--dim);margin-bottom:10px">Upload to YouTube</div>
 
@@ -521,7 +538,7 @@ input[type=range]{width:100%;accent-color:var(--primary)}
                   <option value="unlisted">Unlisted</option>
                   <option value="private">Private</option>
                 </select>
-                <button class="btn btn-success" id="upload-btn" onclick="uploadToYouTube()">
+                <button class="btn btn-success" id="upload-btn" onclick="uploadToYouTube()" disabled>
                   ▲ Upload
                 </button>
               </div>
@@ -540,7 +557,7 @@ input[type=range]{width:100%;accent-color:var(--primary)}
                     <option value="public">Public at scheduled time</option>
                     <option value="unlisted">Unlisted at scheduled time</option>
                   </select>
-                  <button class="btn btn-amber" id="schedule-btn" onclick="scheduleUpload()">
+                  <button class="btn btn-amber" id="schedule-btn" onclick="scheduleUpload()" disabled>
                     📅 Schedule
                   </button>
                 </div>
@@ -1064,6 +1081,7 @@ function loadReviewData() {
     }
   });
   // Script data
+  loadReviewGate();
   fetch('/api/output').then(r=>r.json()).then(d => {
     document.getElementById('edit-title').value  = d.title  || '';
     checkTitle();
@@ -1168,6 +1186,7 @@ async function saveEdits() {
       document.getElementById('save-btn').textContent = '✓ Saved';
       setTimeout(()=>{document.getElementById('save-btn').textContent='Save Changes';},1500);
       _dirty = false;
+      loadReviewGate();
     }
   });
 }
@@ -1205,12 +1224,83 @@ function switchUploadMode(mode) {
   document.getElementById('upane-schedule').style.display = mode==='schedule' ? '' : 'none';
 }
 
+// ── Pre-publication review gate ───────────────────────────
+let _gate = null;
+function loadReviewGate() {
+  fetch('/api/review-gate').then(r=>r.json()).then(d => {
+    if (!d.ok) { _gate = null; updateGateButtons(); return; }
+    _gate = d;
+    const status = document.getElementById('gate-status');
+    const lines = [];
+    lines.push(`Narrative status: <strong>${d.narrative_status}</strong>` +
+               (d.status_override_required ? ' — upload blocked unless you type an override reason' : ''));
+    if (!d.title_passes) lines.push('<span style="color:var(--red,#e05252)">Title/thumbnail text break the title policy (see findings under the title).</span>');
+    if (d.license_flags.length) lines.push(`<span style="color:var(--yellow,#e0b252)">License log flags: ${d.license_flags.length}</span>`);
+    lines.push(d.approval_valid ? '<span style="color:var(--green,#4caf50)">✓ A valid approval exists for these exact files.</span>'
+                                : `Not approved: ${d.approval_problems.join('; ')}`);
+    status.innerHTML = lines.join('<br>');
+    const list = document.getElementById('gate-checklist');
+    list.innerHTML = '';
+    Object.entries(d.checklist).forEach(([key, label]) => {
+      const row = document.createElement('label');
+      row.style.cssText = 'display:flex;gap:6px;align-items:flex-start;cursor:pointer';
+      row.innerHTML = `<input type="checkbox" data-key="${key}" onchange="updateGateButtons()"><span></span>`;
+      row.querySelector('span').textContent = label;
+      list.appendChild(row);
+    });
+    if (d.license_flags.length) {
+      const flags = document.createElement('div');
+      flags.style.cssText = 'font-size:11px;color:var(--muted)';
+      flags.textContent = d.license_flags.join(' · ');
+      list.appendChild(flags);
+    }
+    document.getElementById('gate-title-reason-wrap').style.display = d.title_passes ? 'none' : '';
+    document.getElementById('gate-status-reason-wrap').style.display = d.status_override_required ? '' : 'none';
+    updateGateButtons();
+  });
+}
+
+function gateChecklist() {
+  const result = {};
+  document.querySelectorAll('#gate-checklist input[type=checkbox]').forEach(cb => { result[cb.dataset.key] = cb.checked; });
+  return result;
+}
+
+function updateGateButtons() {
+  const checks = Object.values(gateChecklist());
+  const complete = _gate && checks.length && checks.every(Boolean)
+    && (_gate.title_passes || document.getElementById('gate-title-reason').value.trim().length >= 10)
+    && (!_gate.status_override_required || document.getElementById('gate-status-reason').value.trim().length >= 10);
+  document.getElementById('gate-approve-btn').disabled = !complete;
+  const approved = !!(_gate && _gate.approval_valid);
+  document.getElementById('upload-btn').disabled = !approved;
+  document.getElementById('schedule-btn').disabled = !approved;
+}
+
+function approveUpload() {
+  const msg = document.getElementById('gate-msg');
+  fetch('/api/approve-upload', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      checklist: gateChecklist(),
+      notes: document.getElementById('gate-notes').value,
+      title_override_reason: document.getElementById('gate-title-reason').value,
+      status_override_reason: document.getElementById('gate-status-reason').value,
+    })
+  }).then(r=>r.json()).then(d => {
+    msg.style.color = d.ok ? 'var(--green,#4caf50)' : 'var(--red,#e05252)';
+    msg.textContent = d.ok ? `✓ Approved at ${d.approved_at}` : ('✗ ' + (d.reasons || [d.error]).join('; '));
+    loadReviewGate();
+  });
+}
+
 function scheduleUpload() {
   const dt = document.getElementById('schedule-datetime').value;
   if (!dt) { alert('Please pick a date and time.'); return; }
   // Convert local datetime to RFC 3339 (UTC) as YouTube requires
   const publishAt = new Date(dt).toISOString();
   const privacy   = document.getElementById('schedule-privacy').value;
+  if (!confirm(`This video will be uploaded now and become ${privacy.toUpperCase()} at ${new Date(dt).toString()}. Continue?`)) return;
   const btn = document.getElementById('schedule-btn');
   btn.disabled = true; btn.textContent = '⏳ Uploading…';
   document.getElementById('upload-progress-wrap').style.display = 'block';
@@ -1232,6 +1322,10 @@ function scheduleUpload() {
 function uploadToYouTube() {
   const btn = document.getElementById('upload-btn');
   const privacy = document.getElementById('upload-privacy').value;
+  const warning = privacy === 'public'
+    ? 'This video will be PUBLIC immediately. Continue?'
+    : `This video will be uploaded as ${privacy.toUpperCase()}. Continue?`;
+  if (!confirm(warning)) return;
   btn.disabled = true;
   document.getElementById('upload-progress-wrap').style.display = 'block';
   document.getElementById('upload-status').textContent = 'Starting upload…';
