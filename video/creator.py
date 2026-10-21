@@ -13,6 +13,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from moviepy.editor import VideoClip, AudioFileClip, ColorClip, concatenate_videoclips
 
 import config
+from agents.narrative import assert_no_mojibake
 from video.timeline import load_timeline, proportional_scene_durations, write_timeline
 
 # ── globals (overwritten per call) ────────────────────────────
@@ -785,6 +786,7 @@ def create_video(script: dict, audio_path: str, output_dir: str,
     video_type: "normal" | "shorts"
     """
     global W, H, FPS
+    assert_no_mojibake(script, "caption rendering")
 
     # Clear font cache when dimensions change (Shorts vs Normal have different
     # optimal sizes, but the same font object can be shared across renders).

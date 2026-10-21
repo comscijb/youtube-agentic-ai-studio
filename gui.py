@@ -281,7 +281,7 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
             _log(f"Topic: {research['video_title']}")
         else:
             try:
-                with open(f"{config.OUTPUT_DIR}/research.json") as f:
+                with open(f"{config.OUTPUT_DIR}/research.json", encoding="utf-8") as f:
                     _state["research"] = json.load(f)
             except: pass
 
@@ -312,7 +312,7 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
             _log(f"Script: {len(script['sections'])} sections")
         else:
             try:
-                with open(f"{config.OUTPUT_DIR}/script.json") as f:
+                with open(f"{config.OUTPUT_DIR}/script.json", encoding="utf-8") as f:
                     _state["script"] = json.load(f)
             except: pass
             _state["character_bible"] = load_json(os.path.join(config.OUTPUT_DIR, "character_bible.json"))
@@ -800,6 +800,50 @@ def upload():
 
 # ── Settings read / write ─────────────────────────────────────────────────────
 
+_CONFIG_PATCH_KEYS = {
+    "MUSIC_ENABLED":     "music_enabled",
+    "MUSIC_VOLUME":      "music_volume",
+    "CHANNEL_NAME":      "channel_name",
+    "VOICE_ID":          "voice_id",
+    "VOICE_RATE":        "voice_rate",
+    "VOICE_PITCH":       "voice_pitch",
+    "OVERLAY_OPACITY":   "overlay",
+    "KB_ZOOM_START":     "kb_start",
+    "KB_ZOOM_END":       "kb_end",
+    "VIDEO_PRIVACY":     "privacy",
+    "BROLL_INTERVAL":    "broll_interval",
+    "BROLL_XFADE_DUR":   "broll_xfade",
+    "RENDER_PRESET":     "render_preset",
+}
+
+
+def patch_config_source(src: str, body: dict) -> str:
+    """Rewrite the first assignment of each edited setting; keep line endings intact."""
+    newline = "\r\n" if "\r\n" in src else "\n"
+    for attr, key in _CONFIG_PATCH_KEYS.items():
+        val = body.get(key)
+        if val is None:
+            continue
+        pat = rf'({re.escape(attr)}\s*=\s*)[^\r\n]+'
+        value = f'"{val}"' if isinstance(val, str) else str(val)
+        src = re.sub(pat, lambda match: match.group(1) + value, src, count=1)
+    # Channel description (multiline)
+    if "channel_desc" in body:
+        cd = body["channel_desc"].replace('"""', "'''").replace("\r\n", "\n").replace("\n", newline)
+        pat = r'(CHANNEL_DESCRIPTION\s*=\s*)"""[\s\S]*?"""'
+        replacement = f'CHANNEL_DESCRIPTION = """{newline}{cd}{newline}"""'
+        src = re.sub(pat, lambda match: replacement, src, count=1)
+    return src
+
+
+def patch_config_file(cfg_path: str, body: dict) -> None:
+    """config.py contains non-ASCII (box-drawing) characters: always UTF-8, never translate EOLs."""
+    with open(cfg_path, encoding="utf-8", newline="") as f:
+        src = f.read()
+    with open(cfg_path, "w", encoding="utf-8", newline="") as f:
+        f.write(patch_config_source(src, body))
+
+
 def _key_configured(value):
     value = str(value or "").strip()
     return bool(value and not value.startswith("YOUR_") and "your_" not in value.lower())
@@ -963,40 +1007,7 @@ def save_settings():
     # Patch config.py file on disk
     cfg_path = os.path.join(ROOT, "config.py")
     try:
-        with open(cfg_path) as f: src = f.read()
-
-        patches = {
-            "MUSIC_ENABLED":     body.get("music_enabled"),
-            "MUSIC_VOLUME":      body.get("music_volume"),
-            "CHANNEL_NAME":      body.get("channel_name"),
-            "VOICE_ID":          body.get("voice_id"),
-            "VOICE_RATE":        body.get("voice_rate"),
-            "VOICE_PITCH":       body.get("voice_pitch"),
-            "OVERLAY_OPACITY":   body.get("overlay"),
-            "KB_ZOOM_START":     body.get("kb_start"),
-            "KB_ZOOM_END":       body.get("kb_end"),
-            "VIDEO_PRIVACY":     body.get("privacy"),
-            "BROLL_INTERVAL":    body.get("broll_interval"),
-            "BROLL_XFADE_DUR":   body.get("broll_xfade"),
-            "RENDER_PRESET":     body.get("render_preset"),
-        }
-        for attr, val in patches.items():
-            if val is None: continue
-            # Replace the first assignment of this variable
-            if isinstance(val, str):
-                pat = rf'({re.escape(attr)}\s*=\s*)[^\n]+'
-                src = re.sub(pat, rf'\g<1>"{val}"', src, count=1)
-            else:
-                pat = rf'({re.escape(attr)}\s*=\s*)[^\n]+'
-                src = re.sub(pat, rf'\g<1>{val}', src, count=1)
-
-        # Channel description (multiline)
-        if "channel_desc" in body:
-            cd = body["channel_desc"].replace('"""', "'''")
-            pat = r'(CHANNEL_DESCRIPTION\s*=\s*)"""[\s\S]*?"""'
-            src = re.sub(pat, f'CHANNEL_DESCRIPTION = """\n{cd}\n"""', src, count=1)
-
-        with open(cfg_path, "w") as f: f.write(src)
+        patch_config_file(cfg_path, body)
     except Exception as e:
         return jsonify({"ok": False, "error": f"Saved to memory but disk write failed: {e}"})
 

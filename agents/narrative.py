@@ -150,6 +150,59 @@ def write_debug_artifact(run_dir, stage: str, sections: dict, secrets=()) -> Pat
         return None
 
 
+MOJIBAKE_MARKERS = ("â€", "Ã©", "Ã", "â€™", "â€œ", "â€”")
+# A UTF-8 lead byte decoded as cp1252 followed by 1-3 continuation bytes
+# decoded the same way ("â€™" for "’", "Ã©" for "é").
+_CP1252_CONTINUATION = (
+    "\u0080-¿ŒœŠšŸŽžƒˆ˜"
+    "–—‘’‚“”„†‡•…"
+    "‰‹›€™"
+)
+_MOJIBAKE_RUN = re.compile(f"[Â-ô][{_CP1252_CONTINUATION}]{{1,3}}")
+
+
+class MojibakeError(ValueError):
+    """Narration contains UTF-8 text that was decoded with the wrong codec."""
+
+
+def has_mojibake(text) -> bool:
+    return any(marker in str(text or "") for marker in MOJIBAKE_MARKERS)
+
+
+def repair_mojibake(text: str) -> str:
+    """Undo cp1252-mis-decoded UTF-8 run by run; leave anything else untouched."""
+    def to_byte(char: str) -> bytes:
+        # Bytes undefined in cp1252 (0x81, 0x8D, 0x8F, 0x90, 0x9D) survive
+        # Windows decoding as the same-numbered control characters.
+        return bytes([ord(char)]) if ord(char) < 256 else char.encode("cp1252")
+
+    def fix(match):
+        try:
+            return b"".join(to_byte(char) for char in match.group()).decode("utf-8")
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            return match.group()
+    return _MOJIBAKE_RUN.sub(fix, str(text))
+
+
+def assert_no_mojibake(script: dict, stage: str = "narration") -> None:
+    """Stop before TTS or caption rendering when narration text is mis-decoded."""
+    bad = []
+    for scene in script.get("sections", []):
+        for field in ("narration", "caption_text", "on_screen_text", "title"):
+            value = scene.get(field)
+            if has_mojibake(value):
+                marker = next(m for m in MOJIBAKE_MARKERS if m in value)
+                at = value.index(marker)
+                bad.append(f"scene {scene.get('id')} {field}: ...{value[max(0, at - 20):at + 12]}...")
+                break
+    if bad:
+        raise MojibakeError(
+            f"Mis-decoded text (mojibake) found before {stage}; it would be spoken and captioned "
+            "incorrectly. " + "; ".join(bad)
+            + ". Repair with: python -m scripts.repair_text_encoding (dry run first)."
+        )
+
+
 def stable_hash(value) -> str:
     encoded = json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()

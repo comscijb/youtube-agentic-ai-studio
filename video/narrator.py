@@ -13,6 +13,7 @@ import tempfile
 import edge_tts
 import config
 from moviepy.editor import AudioFileClip, concatenate_audioclips
+from agents.narrative import assert_no_mojibake
 from video.timeline import write_shifted_srt, write_timeline
 
 # Voices known to emit WordBoundary events (needed for word-synced captions).
@@ -163,7 +164,7 @@ def _build_sentence_srt(text: str, audio_path: str, srt_path: str) -> int:
     all_words = [w for s in sentences for w in s.split()]
 
     if not all_words:
-        open(srt_path, "w").close()
+        open(srt_path, "w", encoding="utf-8").close()
         return 0
 
     # Each gap between words is modelled as 1.5 "equivalent characters"
@@ -322,6 +323,7 @@ def generate_narration(script: dict, output_dir: str) -> str:
     silence. Exact scene durations drive both the SRT offsets and video timeline.
     Returns path to the saved audio file.
     """
+    assert_no_mojibake(script, "speech synthesis")
     os.makedirs(output_dir, exist_ok=True)
     sections = [section for section in script["sections"]
                 if section.get("narration", "").strip()]
