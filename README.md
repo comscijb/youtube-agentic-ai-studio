@@ -194,6 +194,21 @@ AI Model → Check Available Models**, or run the explicit diagnostic:
 python diagnose_gemini.py
 ```
 
+### Timeouts, thinking and temperature
+
+| Setting (`.env`) | Default | Meaning |
+|---|---|---|
+| `GEMINI_TIMEOUT_SECONDS` | `300` | Request deadline for long stages (sent to the server). A `504 DEADLINE_EXCEEDED` is retried once on the same model with twice the deadline (max 600 s), then falls back. |
+| `GEMINI_THINKING_LEVEL` | *(empty)* | `minimal`, `low`, `medium`, `high`, or an integer token budget; empty keeps the model default. |
+| `GEMINI_MAX_OUTPUT_TOKENS` | `0` | Optional output cap; `0` keeps the model limit. |
+| `GEMINI_REPAIR_MAX_CHARS` | `120000` | Largest repair prompt; larger outline repairs only resend the invalid scenes. |
+
+Every JSON stage uses JSON mode and its own temperature (`GEMINI_STAGE_TEMPERATURES` in
+`config.py`: premise 0.9, bible 0.7, outline 0.6, scenes 0.85, expansion 0.7, editorial 0.2,
+repair 0.2). Each call logs stage, model, prompt size, elapsed time and outcome — never prompt
+content. When a stage fails, the raw response and the error are saved (secrets redacted) to
+`<run_dir>/debug/<stage>-<n>.txt`.
+
 ## Tests and opt-in narrative smoke test
 
 The default suite is offline and uses mocks/local fixtures:
@@ -235,7 +250,7 @@ Check each provider's current pricing and project limits before production use.
 
 ## Narrative QA and safe benchmarks
 
-Private Gravity uses narrative contract v3 while keeping schema-v2 artifacts readable. A scene's
+Private Gravity uses narrative contract v4 while keeping schema-v2 and contract-v3 artifacts readable. A scene's
 canonical `section_type` (`opening`, `setup`, `development`, `reversal`, `climax`, `resolution`,
 or `aftermath`) is separate from its free-text `narrative_function`.
 
@@ -272,7 +287,86 @@ QA report with `tests/fixtures/architecture_of_envy_benchmark.json` before accep
 
 ```powershell
 python -m scripts.regenerate_narrative_benchmark --confirm-live --minutes 12
+# if it stops mid-way, reuse the valid brief/bible/outline already generated:
+python -m scripts.regenerate_narrative_benchmark --confirm-live --minutes 12 --resume output/benchmarks/<dir>
 ```
+
+The benchmark prints a per-stage timing table at the end, also on failure.
+
+### Channel identity and title policy
+
+`agents/identity.py` is the single source of the channel identity (promise, episode types A/B/C,
+the Type A movements, craft rules such as *no stacked modifiers*, and the title policy). It is
+injected into the story, outline, scene and editorial prompts. Outlines are contract v4: Type A
+scenes declare `arc_movements`; a missing movement is a major (not blocking) finding.
+
+Titles must present a person and a situation, never explain the thesis. "The Psychology of …",
+"Why …", colon subtitles, "The <Noun> of …" and the theme word block publication; a title with no
+concrete human anchor is a major finding. The Story Development Agent proposes five titles and
+three thumbnail texts (max 5 words) and keeps the first passing pair. Each brief also states a
+`psychological_angle`: one sentence naming the specific mechanism explored (for example "needing
+to be envied as a substitute for self-worth"), distinct from the broad `psychological_theme`.
+
+### Editorial review reliability and semantic revision
+
+Word counts and duration are owned by the deterministic checks and passed to the editor as
+facts. Editorial findings about duration or word count, or whose numbers (word counts, scene
+counts, ages) contradict the script or Character Bible, are moved to
+`discarded_editorial_findings` and never affect the status or the upload gate.
+
+Remaining confirmed/probable major or blocking findings of type lecture, continuity,
+unintroduced character, character consistency, agency, causality, repetition or style trigger
+one bounded **semantic revision**: only the cited scenes are rewritten (each within 85–115% of
+its budget, other scenes untouched), followed by one editorial re-review. Worst-case cost: +1
+revision call and +1 re-review call per episode. Details are recorded under
+`semantic_revisions` in `narrative_review.json`, and the pre-revision script is kept as
+`script.pre_revision.json`. Switches: `NARRATIVE_SEMANTIC_REVISION_ENABLED`,
+`NARRATIVE_SEMANTIC_REVISION_MAX_CALLS` (1), `NARRATIVE_SEMANTIC_REREVIEW`. A deterministic style
+lint counts stacked modifiers and intensifiers per scene and adds a minor finding above
+`NARRATIVE_STYLE_LINT_THRESHOLD` (3 per episode).
+
+### Promote a benchmark and check render readiness
+
+```powershell
+python -m scripts.promote_benchmark --source output/benchmarks/<dir> --edits docs/prompts/edits/<file>.json [--rerun-editorial --confirm-live]
+python -m scripts.render_preflight
+```
+
+`promote_benchmark` archives the current `output/` into `output/benchmarks/archive-<timestamp>/`
+(once per distinct content), copies the benchmark artifacts into `output/`, applies human edits
+(`{scene_id, find, replace}`, each `find` must occur exactly once or nothing changes), re-runs the
+deterministic review and invalidates narration, images, video, thumbnail and any approval.
+`render_preflight` is offline: it estimates narration per scene, flags scenes where one image
+stays on screen too long, and checks moviepy 1.0.3, numpy < 2, ffmpeg, fonts, music, disk space,
+Edge TTS and stock key presence. It exits non-zero on FAIL.
+
+---
+
+## Publishing: approval gate, ledger and banned topics
+
+Uploads are **public by default**, so every upload (GUI or `pipeline.py`) requires a recorded
+review in `<run_dir>/review_approval.json`: watched the full video, read the narrative review,
+title and thumbnail text pass the policy (or a written override), license log reviewed,
+description and tags reviewed. The approval is bound to hashes of the script, video, title,
+description, tags and thumbnail; any later change invalidates it. Status `revision_required` or
+`structurally_invalid` additionally needs a typed override reason, stored in the approval and
+in the ledger.
+
+Each upload is recorded in `data/publications.json` as pending. A topic enters
+`banned_topics.txt` only when YouTube reports the video as public and processed (scheduled
+videos stay pending until `publishAt`). Sync runs when the GUI starts and every
+`PUBLICATION_SYNC_INTERVAL_MINUTES` (30), at pipeline start, before automatic premise
+generation, and on demand:
+
+```powershell
+python -m scripts.sync_publications
+python -m scripts.register_publication --video-id <id> --run-dir <dir>   # manual uploads
+```
+
+Sync uses `videos.list`, which requires the `youtube.readonly` scope in addition to
+`youtube.upload`; a stored token without it triggers a one-time re-consent in the browser.
+Banned-topic lines can be plain premises or `theme: … | angle: … | premise: … | title: … |
+video: … | published: …`; the same theme may return from a clearly different angle.
 
 ---
 

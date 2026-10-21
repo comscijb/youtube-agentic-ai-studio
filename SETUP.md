@@ -155,6 +155,7 @@ Skip this step if you just want to generate videos locally without uploading.
    - User Type: **External**
    - Fill in app name, support email, and developer email
    - Scopes: click **Add or remove scopes** → search "youtube" → select `youtube.upload`
+     and `youtube.readonly` (needed to detect when an upload becomes public)
    - Test users: add your own Gmail address
 4. Back in Credentials → **Create Credentials → OAuth client ID**
    - Application type: **Desktop app**
@@ -166,6 +167,10 @@ Skip this step if you just want to generate videos locally without uploading.
 ### 4d. First-time authentication
 
 On your first run, a browser window will open asking you to sign in with Google and grant permission. This only happens once — the token is saved locally as `youtube_token.pickle`.
+
+Tokens created before `youtube.readonly` was added lack that scope. Run
+`python -m scripts.sync_publications` once: it detects the missing scope and asks for consent
+again. Background sync never opens a browser; it logs a warning and continues.
 
 > If you see a "Google hasn't verified this app" warning, click **Advanced → Go to (app name) (unsafe)**. This is expected for personal OAuth apps in testing mode.
 
@@ -185,6 +190,11 @@ PSYCHOLOGICAL_THEME = ""            # blank lets the Story Development Agent cho
 TARGET_DURATION_MINUTES = 15         # regular episodes accept 12–20
 NARRATIVE_REVIEW_ENABLED = True      # adds one Gemini editorial-review call
 ```
+
+Generation reliability and cost settings live in `.env` (see `.env.example`):
+`GEMINI_TIMEOUT_SECONDS` (300), `GEMINI_THINKING_LEVEL` (empty = model default),
+`GEMINI_REPAIR_MAX_CHARS`, `NARRATIVE_SEMANTIC_REVISION_ENABLED` (true; worst case +2 Gemini
+calls per episode) and `PUBLICATION_SYNC_INTERVAL_MINUTES` (30).
 
 The GUI exposes the same controls per run. Exact-premise mode preserves the
 entered premise; automatic mode compares weighted candidates. Disable the
@@ -209,6 +219,13 @@ python pipeline.py
 ```
 
 Runs the full pipeline in the terminal. The review dashboard opens automatically in your browser when the video is ready.
+
+### Before uploading
+
+Upload is refused until the review checklist is completed in the GUI review panel (or the
+pipeline dashboard). Uploads are public by default; a narrative status of `revision_required`
+or `structurally_invalid` additionally needs a typed override reason. Before the first render,
+run `python -m scripts.render_preflight` to check the toolchain offline.
 
 ---
 
