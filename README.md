@@ -338,7 +338,35 @@ python -m scripts.render_preflight
 deterministic review and invalidates narration, images, video, thumbnail and any approval.
 `render_preflight` is offline: it estimates narration per scene, flags scenes where one image
 stays on screen too long, and checks moviepy 1.0.3, numpy < 2, ffmpeg, fonts, music, disk space,
-Edge TTS and stock key presence. It exits non-zero on FAIL.
+Edge TTS and stock key presence. It exits non-zero on FAIL. `--live` also synthesises one short
+sentence to confirm Edge TTS audio and word timings.
+
+---
+
+## Render quality
+
+- **Encoding.** All text files are read and written as UTF-8. Narration and caption rendering
+  stop with a clear error if a scene contains mojibake (`â€™`, `Ã©`…);
+  `python -m scripts.repair_text_encoding` shows a dry-run diff and `--apply` repairs
+  `output/*.json` (keeping `.bak` copies).
+- **Narration.** Edge TTS is asked for `WordBoundary` events, each scene is retried on transient
+  failures (2/5/10 s) and cached in `output/.tts_cache`, so editing one scene only re-synthesises
+  that scene. Measured speed per voice and rate is saved in `data/voice_calibration.json` and
+  used for planning: with `en-US-AndrewNeural` at −5% (≈151.6 wpm) a 12-minute episode targets
+  ≈1 820 words. `NARRATION_WPM` is the fallback; `USE_CALIBRATED_WPM=false` disables it.
+- **Captions.** Cues follow real word timings: ≤ 7 words / 42 characters, never across a
+  sentence, 0.8–4.5 s, 80 ms lead-in (`CAPTION_*` settings in `config.py`).
+- **Music and loudness.** Put licensed tracks in `music library/` and describe them in
+  `music library/tracks.json` (`file`, `moods`, `license`, `source_url`, `attribution`); without
+  metadata the mood is read from "Title - Artist - Genre - Mood" file names. The track is chosen
+  by mood, looped with crossfades, ducked under the narration, and the final mix is normalised to
+  −14 LUFS / −1 dBTP. Attribution is added to the YouTube description.
+- **Stock (fallback provider).** Short 3–5-word queries, a tag-relevance threshold
+  (`STOCK_MIN_RELEVANCE`), dark-palette tone filtering, text/signage rejection, and no
+  identifiable people in shots about a specific character. Scores and rejection reasons are in
+  `asset_manifest.json`.
+- **Thumbnail.** The validated `thumbnail_text` (≤ 5 words) over the episode's strongest human
+  shot; the title is not repeated.
 
 ---
 
