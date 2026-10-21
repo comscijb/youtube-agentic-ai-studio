@@ -1133,8 +1133,88 @@ def validate_editorial_assessment(value: dict, narrative_type: str | None = None
     return value
 
 
-def merge_editorial_review(deterministic: dict, assessment: dict | None) -> dict:
+_DURATION_TERMS = re.compile(r"duration|word count|words|runtime|length|minutes|wpm", re.I)
+_NUMBER = re.compile(r"\d")
+_WORD_COUNT = re.compile(r"(\d[\d,]*)\s+(?:narrated\s+|spoken\s+)?words?\b", re.I)
+_SCENE_COUNT = re.compile(r"(\d+)\s+scenes\b", re.I)
+_AGE = re.compile(r"\b(?:aged?\s+(\d{1,3})|(\d{1,3})[- ]years?[- ]old)\b", re.I)
+# Word counts below this are passage-level ("a 40-word speech") and cannot be
+# checked against scene or episode totals.
+_MIN_VERIFIABLE_WORD_COUNT = 100
+
+
+def _finding_text(finding: dict) -> str:
+    evidence = finding.get("evidence") or []
+    return " ".join([str(finding.get("claim", ""))] + [str(item) for item in evidence])
+
+
+def _known_word_counts(deterministic: dict) -> set[int]:
+    counts = {deterministic.get("word_count"), deterministic.get("target_word_count")}
+    for budget in deterministic.get("scene_budgets") or []:
+        counts.update({budget.get("actual_words"), budget.get("target_words")})
+    return {value for value in counts if isinstance(value, int)}
+
+
+def _bible_ages(bible: dict | None) -> dict[str, int]:
+    ages = {}
+    for character in (bible or {}).get("characters") or []:
+        match = re.search(r"\d{1,3}", str(character.get("age", "")))
+        if match and character.get("name"):
+            ages[str(character["name"])] = int(match.group())
+    return ages
+
+
+def screen_editorial_findings(findings: list[dict], deterministic: dict,
+                              bible: dict | None = None) -> tuple[list[dict], list[dict]]:
+    """Split editorial findings into kept and discarded.
+
+    LLM reviewers cannot count words: duration and word-count verdicts belong
+    to the deterministic report (``deterministic_owner``). Remaining numeric
+    claims about words, scenes or ages are checked against the artifacts and
+    dropped when contradicted (``contradicted_by_artifacts``).
+    """
+    kept, discarded = [], []
+    known = _known_word_counts(deterministic)
+    scene_count = deterministic.get("scene_count")
+    ages = _bible_ages(bible)
+    for finding in findings:
+        claim = str(finding.get("claim", ""))
+        if (_DURATION_TERMS.search(str(finding.get("issue_type", "")))
+                or (_NUMBER.search(claim) and _DURATION_TERMS.search(claim))):
+            discarded.append({**finding, "reason": "deterministic_owner", "verified_value": {
+                "word_count": deterministic.get("word_count"),
+                "target_word_count": deterministic.get("target_word_count"),
+                "estimated_narration_minutes": deterministic.get("estimated_narration_minutes"),
+            }})
+            continue
+        text = _finding_text(finding)
+        contradiction = None
+        words = [int(value.replace(",", "")) for value in _WORD_COUNT.findall(text)]
+        words = [value for value in words if value >= _MIN_VERIFIABLE_WORD_COUNT]
+        if words and not any(abs(value - count) <= max(2, count * .02)
+                              for value in words for count in known):
+            contradiction = {"asserted_word_counts": words, "word_count": deterministic.get("word_count")}
+        scenes = [int(value) for value in _SCENE_COUNT.findall(text)]
+        if contradiction is None and isinstance(scene_count, int) and any(
+                value > scene_count for value in scenes):
+            contradiction = {"asserted_scene_counts": scenes, "scene_count": scene_count}
+        asserted_ages = [int(a or b) for a, b in _AGE.findall(text)]
+        named = {name: age for name, age in ages.items()
+                 if name in text or name.split()[0] in text}
+        if contradiction is None and asserted_ages and named and not set(asserted_ages) & set(named.values()):
+            contradiction = {"asserted_ages": asserted_ages, "bible_ages": named}
+        if contradiction:
+            discarded.append({**finding, "reason": "contradicted_by_artifacts",
+                              "verified_value": contradiction})
+        else:
+            kept.append(finding)
+    return kept, discarded
+
+
+def merge_editorial_review(deterministic: dict, assessment: dict | None,
+                           bible: dict | None = None) -> dict:
     merged = deepcopy(deterministic)
+    merged.setdefault("discarded_editorial_findings", [])
     if assessment is None:
         merged["status"] = (
             merged["status"] if merged["status"] in ("structurally_invalid", "revision_required")
@@ -1145,7 +1225,8 @@ def merge_editorial_review(deterministic: dict, assessment: dict | None) -> dict
     assessment = validate_editorial_assessment(assessment, merged.get("narrative_type"))
     merged["editorial_assessment"] = assessment
     merged["editorial_validation_complete"] = True
-    findings = assessment["findings"]
+    findings, discarded = screen_editorial_findings(assessment["findings"], merged, bible)
+    merged["discarded_editorial_findings"] = discarded
     merged["continuity_findings"] = [
         item for item in findings if "continu" in item["issue_type"].lower()
     ]

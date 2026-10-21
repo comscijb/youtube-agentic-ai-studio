@@ -243,7 +243,24 @@ PREVIOUS BATCH ENDING: {previous_ending or 'This is the opening batch.'}"""
     )
 
 
-def _editorial_review(script: dict, brief: dict, bible: dict, outline: dict) -> dict:
+def _measurements(deterministic: dict | None) -> dict:
+    """Deterministic facts the editor must take as given (never re-counted)."""
+    report = deterministic or {}
+    return {
+        "total_words": report.get("word_count"),
+        "target_words": report.get("target_word_count"),
+        "estimated_narration_minutes": report.get("estimated_narration_minutes"),
+        "scenes": [
+            {"scene_id": item.get("scene_id"), "actual_words": item.get("actual_words"),
+             "target_words": item.get("target_words")}
+            for item in report.get("scene_budgets") or []
+        ],
+        "style_lint": report.get("style_lint", {}),
+    }
+
+
+def _editorial_review(script: dict, brief: dict, bible: dict, outline: dict,
+                      deterministic: dict | None = None) -> dict:
     narrative_type = brief.get("narrative_type")
     strategy_rule = (
         "This is a Type A story: score it." if narrative_type == TYPE_A else
@@ -275,8 +292,14 @@ Return ONLY JSON with:
 scene_ids (integer array), claim, evidence (string array), why_it_matters, recommendation,
 certainty (confirmed|probable|possible). Any lecture-like or explanatory passage is at least a
 major finding with issue_type "lecture".
-- strengths and revision_priorities as arrays."""
-    context = f"""STORY BRIEF: {compact_json(brief)}
+- strengths and revision_priorities as arrays.
+
+WORD COUNTS AND DURATION ARE PRE-COMPUTED: the DETERMINISTIC MEASUREMENTS below are exact and
+authoritative. Do not count words, estimate runtime or report duration, length or word-count
+findings; those verdicts belong to the deterministic checks. Use style_lint as context when
+scoring literary_style."""
+    context = f"""DETERMINISTIC MEASUREMENTS: {compact_json(_measurements(deterministic))}
+STORY BRIEF: {compact_json(brief)}
 CHARACTER BIBLE: {compact_json(bible)}
 OUTLINE: {compact_json(outline)}
 SCREENPLAY: {compact_json(script)}"""
@@ -460,7 +483,7 @@ def _write_script(brief: dict, video_type: str, output: Path, target: float,
     if use_editor:
         print("   -> Running optional editorial quality review...")
         review = merge_editorial_review(
-            review, _editorial_review(script, brief, bible, outline)
+            review, _editorial_review(script, brief, bible, outline, review), bible
         )
     else:
         review = merge_editorial_review(review, None)
