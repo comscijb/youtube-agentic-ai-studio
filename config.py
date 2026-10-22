@@ -188,7 +188,7 @@ GEMINI_STAGE_TEMPERATURES = {
 # "cinematic_photo". The variant is chosen after python -m scripts.calibrate_style:
 # "engraving" | "charcoal_gouache" | "hybrid".
 VISUAL_STYLE         = os.getenv("VISUAL_STYLE", "dark_illustration")
-VISUAL_STYLE_VARIANT = os.getenv("VISUAL_STYLE_VARIANT", "hybrid")
+VISUAL_STYLE_VARIANT = os.getenv("VISUAL_STYLE_VARIANT", "engraving")   # chosen after calibration
 # Channel-level style anchors approved after python -m scripts.generate_style_refs.
 STYLE_REFS_DIR       = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "style_refs")
 # Illustrations are already low-key: much lighter darkening overlay than photos.
@@ -208,6 +208,12 @@ IMAGEGEN_SHOT_MAX_SECONDS = 12.0
 IMAGEGEN_IDENTITY_POLICY  = os.getenv("IMAGEGEN_IDENTITY_POLICY", "reference")
 IMAGEGEN_MAX_FULL_FACE_SHOTS = 6
 IMAGEGEN_FREE_MEMORY_EVERY   = 10         # call ComfyUI /free between batches of shots
+# Every generated image is checked for paper margins and comic-page gutters;
+# flawed images are regenerated with new seeds, then margins are cropped away.
+IMAGEGEN_IMAGE_CHECKS        = True
+IMAGEGEN_CHECK_RETRIES       = 2
+# At least this share of shots must be wide/establishing with small figures.
+IMAGEGEN_MIN_WIDE_SHARE      = 0.4
 
 # ─────────────────────────────────────────
 #  Video Dimensions

@@ -117,11 +117,13 @@ def identity_block(narrative_type: str | None = None, *, include_movements: bool
 # Single source of truth for the image style. Bump STYLE_VERSION whenever the
 # wording changes: the style hash is part of every image cache key and of every
 # approved reference, so a new style never reuses old images.
-STYLE_VERSION = 1
+STYLE_VERSION = 2   # 2: full-bleed single image, stronger engraving dread (Phase 3.2.1)
 VISUAL_STYLES = ("dark_illustration", "cinematic_photo")
 STYLE_VARIANTS = {
     "engraving": "scratchboard and engraved line work dominant, dense hatching and cross-hatching, "
-                 "minimal tonal wash",
+                 "minimal tonal wash; deep black negative space dominating most of the frame, a single "
+                 "small source of warm light, figures small within towering architecture unless the "
+                 "shot is a close-up, heavy shadows swallowing the edges of the room",
     "charcoal_gouache": "painterly charcoal and dry-brush gouache masses, softer edges, visible "
                         "dry-brush texture, little line work",
     "hybrid": "engraved ink line work and cross-hatching laid over painterly charcoal and gouache "
@@ -176,8 +178,8 @@ def visual_style() -> str:
 
 def style_variant() -> str:
     import config
-    variant = str(getattr(config, "VISUAL_STYLE_VARIANT", "hybrid"))
-    return variant if variant in STYLE_VARIANTS else "hybrid"
+    variant = str(getattr(config, "VISUAL_STYLE_VARIANT", "engraving"))
+    return variant if variant in STYLE_VARIANTS else "engraving"
 
 
 def is_illustration() -> bool:
@@ -212,8 +214,28 @@ def style_suffix(style: str | None = None, variant: str | None = None) -> str:
         return f"{CINEMATIC_PHOTO['medium']}, no lettering, no watermark"
     variant = variant or style_variant()
     spec = DARK_ILLUSTRATION
-    return (f"{spec['medium']}; {STYLE_VARIANTS[variant]}. {spec['atmosphere']}. {spec['people']}. "
-            f"{palette_text()}. Clean image without lettering or watermark.")
+    return (f"{FULL_BLEED}. {spec['medium']}; {STYLE_VARIANTS[variant]}. {spec['atmosphere']}. "
+            f"{spec['people']}. {palette_text()}. Clean image without lettering or watermark.")
+
+
+# Every illustration is one picture covering the whole 16:9 frame (no paper
+# margins, no comic pages); phrased positively because the negative is zeroed.
+FULL_BLEED = ("single full-bleed illustration filling the entire frame edge to edge, ink and "
+              "hatching reaching every border")
+# Words that ask for page layouts; rejected in shot descriptions (not in the suffix,
+# which itself says "every border").
+LAYOUT_TERMS = ("panel", "panels", "comic page", "storyboard", "border", "torn paper",
+                "paper edge", "frame around")
+CROWD_RULE = ("When a shot contains more than one person who is not a named character, give each a "
+              "clearly different age, build, posture and clothing; prefer a few distant, indistinct "
+              "figures in shadow over several detailed ones.")
+
+
+def layout_terms(text: str) -> list[str]:
+    """Page-layout requests in a shot description (borders, panels, storyboard...)."""
+    import re
+    lowered = str(text or "").lower()
+    return [term for term in LAYOUT_TERMS if re.search(rf"\b{re.escape(term)}\b", lowered)]
 
 
 def image_prompt_rules(style: str | None = None) -> str:
@@ -224,7 +246,8 @@ def image_prompt_rules(style: str | None = None) -> str:
     return ("Describe scenes for a dark hand-drawn illustration with cosmic dread but NO creatures: "
             "suggest a presence only through shadow, fog, scale and wrong geometry. Never mention or "
             "imply: " + ", ".join(DARK_ILLUSTRATION["exclusions"]) + ". Never include text, signs or "
-            "screens with legible writing.")
+            "screens with legible writing. Each image is ONE single full-frame picture: never request "
+            "pages, panels, frames, borders, vignettes, paper edges or multiple views. " + CROWD_RULE)
 
 
 def forbidden_terms(text: str, style: str | None = None) -> list[str]:

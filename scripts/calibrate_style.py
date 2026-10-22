@@ -27,6 +27,8 @@ from video import shot_generation as gen
 from video.imagegen_comfyui import ComfyUnavailable, ImageGenerator, ImageJob
 
 VARIANTS = ("engraving", "charcoal_gouache", "hybrid")
+# A different seed per variant, so columns differ in composition as well as texture.
+VARIANT_SEEDS = {"engraving": 4242, "charcoal_gouache": 5353, "hybrid": 6464}
 RESULT_FILE = Path(__file__).resolve().parent.parent / "data" / "style_calibration.json"
 
 
@@ -72,19 +74,25 @@ def contact_sheet(grid: list[list[str]], rows: list[str], columns: list[str], de
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Compare the dark-illustration style variants.")
     parser.add_argument("--output-dir", default=config.OUTPUT_DIR)
+    parser.add_argument("--variants", default=",".join(VARIANTS),
+                        help="comma-separated subset, e.g. --variants engraving")
     args = parser.parse_args(argv)
+    variants = [name.strip() for name in args.variants.split(",") if name.strip()]
+    unknown = [name for name in variants if name not in VARIANTS]
+    if unknown or not variants:
+        parser.error(f"unknown variants {unknown}; choose from {', '.join(VARIANTS)}")
     output = Path(args.output_dir)
     vb = load_json(output / vbible.FILE_NAME) or {}
     items = prompts(vb)
     generator = ImageGenerator(output)
     folder = output / "style_calibration"
     grid = [[] for _ in items]
-    timings = {variant: [] for variant in VARIANTS}
+    timings = {variant: [] for variant in variants}
     try:
-        for variant in VARIANTS:
+        for variant in variants:
             suffix = identity.style_suffix("dark_illustration", variant)
             for index, (label, subject) in enumerate(items):
-                job = ImageJob(job_id=f"style_{variant}_{index}", seed=4242 + index,
+                job = ImageJob(job_id=f"style_{variant}_{index}", seed=VARIANT_SEEDS[variant] + index,
                                prompt=f"An illustration: {subject}. {suffix}",
                                output_path=str(folder / f"{variant}_{index}.jpg"), size=gen.native_size())
                 started = time.monotonic()
@@ -97,12 +105,16 @@ def main(argv=None) -> int:
         print(exc, file=sys.stderr)
         return 2
     sheet = folder / "contact_sheet.jpg"
-    contact_sheet(grid, [label for label, _ in items], list(VARIANTS), sheet)
+    contact_sheet(grid, [label for label, _ in items], variants, sheet)
+    previous = load_json(RESULT_FILE) or {}
+    results = previous.get("variants", {}) if previous.get("style_version") == identity.STYLE_VERSION else {}
+    for variant, values in timings.items():
+        results[variant] = {"seconds_per_image": round(sum(values) / len(values), 1), "samples": values,
+                            "seed_base": VARIANT_SEEDS[variant]}
     RESULT_FILE.parent.mkdir(parents=True, exist_ok=True)
     RESULT_FILE.write_text(json.dumps({
         "date": datetime.now(timezone.utc).date().isoformat(), "style_version": identity.STYLE_VERSION,
-        "variants": {variant: {"seconds_per_image": round(sum(values) / len(values), 1), "samples": values}
-                     for variant, values in timings.items()},
+        "variants": results,
     }, indent=2) + "\n", encoding="utf-8")
     print(f"\nSaved {sheet} and {RESULT_FILE}.")
     print("Pick a column and set VISUAL_STYLE_VARIANT in config.py "

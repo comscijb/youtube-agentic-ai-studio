@@ -34,10 +34,10 @@ FACE_VISIBILITY = ("none", "partial", "full")
 _SENTENCE_END = re.compile(r"[.!?…][\"'”’)\]]*$")
 ORDINALS = ("first", "second", "third", "fourth")
 FRAMING = {
-    "wide": "wide shot, the figures small in the frame",
-    "establishing": "establishing wide shot of the space",
+    "wide": "wide shot, the figures small within towering architecture",
+    "establishing": "establishing wide shot of the vast space, any figure tiny",
     "medium": "medium shot, waist up",
-    "close_up": "close-up on the face and shoulders",
+    "close_up": "close-up on the face and shoulders against a dark background lit by one light source",
     "insert": "insert close-up of the object",
     "over_the_shoulder": "over-the-shoulder shot",
     "silhouette": "silhouette against the light, face not visible",
@@ -148,6 +148,9 @@ def validate_shots(value: dict, segments: list[dict], vb: dict, outline: dict, p
         banned = identity.forbidden_terms(shot.get("action", ""))
         if banned:
             problems.append(f"{sid}: the action mentions excluded subjects {banned}")
+        layout = identity.layout_terms(shot.get("action", ""))
+        if layout:
+            problems.append(f"{sid}: the action asks for a page layout {layout}; describe one single image")
         if shot.get("shot_type") not in SHOT_TYPES:
             problems.append(f"{sid}: shot_type must be one of {SHOT_TYPES}")
         if shot.get("face_visibility") not in FACE_VISIBILITY:
@@ -163,6 +166,11 @@ def validate_shots(value: dict, segments: list[dict], vb: dict, outline: dict, p
         if reuse and reuse not in seen:
             problems.append(f"{sid}: reuse_of must name an earlier shot")
         seen.add(sid)
+    wide = sum(1 for shot in shots if shot.get("shot_type") in {"wide", "establishing"})
+    min_wide = float(getattr(config, "IMAGEGEN_MIN_WIDE_SHARE", 0.4))
+    if shots and wide / len(shots) < min_wide:
+        problems.append(f"at least {min_wide:.0%} of shots must be wide/establishing with small figures; "
+                        f"got {wide}/{len(shots)}")
     full = sum(1 for shot in shots if shot.get("face_visibility") == "full")
     if policy == "limited_faces":
         limit = int(getattr(config, "IMAGEGEN_MAX_FULL_FACE_SHOTS", 6))
@@ -210,7 +218,9 @@ jargon beyond the framing; never describe faces or clothes, the visual bible sup
 face_visibility (none | partial | full) and reuse_of ("" or the shot_id of an EARLIER shot when
 showing the same image again is dramatically right, e.g. a motif returning).
 Mix wides, mediums, close-ups, inserts of objects, hands, silhouettes and over-the-shoulder shots;
-avoid two consecutive shots with the same framing. {policy_rule}
+avoid two consecutive shots with the same framing. At least {getattr(config, "IMAGEGEN_MIN_WIDE_SHARE", 0.4):.0%}
+of shots are wide or establishing, with figures small inside vast, towering spaces; close-ups keep a
+dark background with a single light source. {policy_rule}
 {identity.image_prompt_rules()}"""
     context = f"""VISUAL BIBLE: {compact_json({key: vb.get(key) for key in ("characters", "locations")})}
 SEGMENTS: {compact_json([{"shot_id": s["shot_id"], "scene_id": s["scene_id"],
@@ -309,17 +319,28 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
             subjects.append(f"{entry.get('descriptor', cid)}, wearing {outfit}" if outfit
                             else entry.get("descriptor", cid))
     article = "an" if noun[0] in "aeiou" else "a"
+    crowd = CROWD_HINT if _has_unnamed_people(shot.get("action", "")) else ""
     if references:
         lead = f"Create {article} {noun} of " + "; and ".join(subjects) if subjects else f"Create {article} {noun}"
-        prompt = f"{lead}. {shot['action']}. Setting: {location_text}. {framing}. {style_text} {style}"
+        prompt = f"{lead}. {shot['action']}. {crowd} Setting: {location_text}. {framing}. {style_text} {style}"
         kind = "ref"
     else:
         people = f" Featuring {'; and '.join(subjects)}." if subjects else ""
-        prompt = f"{article.capitalize()} {noun}: {shot['action']}.{people} Setting: {location_text}. {framing}. {style}"
+        prompt = f"{article.capitalize()} {noun}: {shot['action']}.{people} {crowd} Setting: {location_text}. {framing}. {style}"
         kind = "t2i"
     prompt = re.sub(r"\s+", " ", re.sub(r"\.\s*\.", ".", prompt)).strip()
     return {"kind": kind, "prompt": prompt, "references": references, "slots": slots,
             "seed": int(shot.get("seed", 0)) + 7919 * int(shot.get("seed_offset", 0))}
+
+
+CROWD_HINT = ("Any other people are few, distant and indistinct in shadow, each clearly different in "
+              "age, build, posture and clothing.")
+_GROUP_WORDS = {"guests", "men", "women", "people", "figures", "crowd", "others", "strangers",
+                "colleagues", "friends", "couples", "diners", "partygoers", "onlookers"}
+
+
+def _has_unnamed_people(action: str) -> bool:
+    return bool(set(re.findall(r"[a-z]+", str(action or "").lower())) & _GROUP_WORDS)
 
 
 def resolve_image(shots: list[dict], shot: dict) -> str | None:

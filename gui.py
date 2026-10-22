@@ -829,7 +829,7 @@ def imagegen_edit_shot(shot_id):
     action = str((request.get_json(force=True) or {}).get("action", "")).strip()
     if not action:
         return jsonify({"ok": False, "error": "The shot action must not be empty"}), 400
-    banned = identity.forbidden_terms(action)
+    banned = identity.forbidden_terms(action) + identity.layout_terms(action)
     if banned:
         return jsonify({"ok": False, "error": "The visual style excludes: " + ", ".join(banned)}), 400
     if not _update_shot(shot_id, lambda shot: shot.update(action=action)):

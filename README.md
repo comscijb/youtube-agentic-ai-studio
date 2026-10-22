@@ -396,9 +396,26 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   scale, fog and light only (no creatures), in the brand palette read from `config.COLORS`. The
   spec lives in `agents/identity.py` (versioned); its hash is part of every image cache key and of
   every approved reference, so a style change never reuses old images. Choose the variant with
-  `python -m scripts.calibrate_style` (`VISUAL_STYLE_VARIANT`: `engraving`, `charcoal_gouache`,
-  `hybrid`), then approve 1–2 of our own style boards (`python -m scripts.generate_style_refs`)
-  as channel-wide style anchors. Reference slots per shot: characters (≤ 2) → location (≤ 1) →
+  `python -m scripts.calibrate_style` (`VISUAL_STYLE_VARIANT`: `engraving` — the default —,
+  `charcoal_gouache`, `hybrid`; each variant has its own recorded seed base, and
+  `--variants engraving` re-renders only that column), then approve 1–2 of our own style boards
+  (`python -m scripts.generate_style_refs`) as channel-wide style anchors.
+- **Full-bleed frames, no pages.** Every style suffix asks for a single full-bleed illustration
+  filling the frame edge to edge; Gemini is told never to request pages, panels, frames, borders,
+  vignettes, paper edges or multiple views, and shot prompts containing `panel`, `comic page`,
+  `storyboard`, `border`, `torn paper`, `paper edge` or `frame around` are rejected (also in the
+  GUI editor). Every generated image is checked (`video/image_checks.py`): light, flat paper
+  margins on ≥ 3 edges or a uniform strip along a full edge count as a border, light gutters
+  crossing the frame count as a comic page. Such an image gets up to `IMAGEGEN_CHECK_RETRIES` (2)
+  new seeds; a border that persists is cropped to the largest border-free 16:9 area and upscaled.
+  The outcome (`accepted`, `regenerated`, `cropped`, …) is stored as `image_checks` in the
+  manifest. Disable with `IMAGEGEN_IMAGE_CHECKS = False`.
+- **Dread and crowds.** The `engraving` suffix asks for deep black negative space, one small warm
+  light source and figures small within towering architecture; at least `IMAGEGEN_MIN_WIDE_SHARE`
+  (40 %) of shots must be wide or establishing, and close-ups sit on a dark background with one
+  light. Unnamed groups are rendered as a few distant, indistinct guests in shadow, each of a
+  different age, build, posture and clothing — never clones.
+- **Shot references.** Reference slots per shot: characters (≤ 2) → location (≤ 1) →
   style anchor (≤ 1). In this style stock is never used for shots: a failed shot gets two new
   seeds, then the previous shot is held longer. The video overlay is lighter
   (`ILLUSTRATION_OVERLAY_OPACITY`), and the synthetic-content disclosure is a reviewer decision

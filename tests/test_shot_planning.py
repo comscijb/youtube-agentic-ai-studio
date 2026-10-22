@@ -154,7 +154,7 @@ class SegmentationTests(unittest.TestCase):
 def planned_shots(segments, full=1):
     shots = []
     for index, segment in enumerate(segments):
-        shots.append({"shot_id": segment["shot_id"], "shot_type": "medium" if index % 2 else "hands",
+        shots.append({"shot_id": segment["shot_id"], "shot_type": "medium" if index % 2 else "wide",
                       "characters": ["julian_vance"], "location_id": "loft",
                       "action": "He straightens a linen napkin", "face_visibility":
                           "full" if index < full else "partial", "reuse_of": ""})

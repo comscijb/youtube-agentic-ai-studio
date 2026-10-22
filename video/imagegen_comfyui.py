@@ -24,9 +24,11 @@ from PIL import Image
 
 import config
 from agents import identity
+from video import image_checks
 from video import imagegen_templates as templates
 
 RETRY_SEED_OFFSET = 1_000_003
+CHECK_SEED_OFFSET = 2_000_029
 
 
 class ComfyUnavailable(RuntimeError):
@@ -219,36 +221,80 @@ class ImageGenerator:
         started = self.clock()
         hit = cached.is_file()
         graph = None
+        sidecar = cached.with_suffix(".json")
+        checks = {}
+        used_seed = seed
+        if hit and sidecar.is_file():
+            try:
+                saved = json.loads(sidecar.read_text(encoding="utf-8"))
+                checks, used_seed = saved.get("image_checks", {}), saved.get("seed", seed)
+            except (OSError, ValueError):
+                pass
         if not hit:
             uploaded = [self.client.upload_image(path) for path in job.references]
-            graph = self._graph(job, seed, uploaded)
-            self._validate(graph)
-            outputs = self.client.wait(self.client.queue(graph),
-                                       timeout=float(getattr(config, "IMAGEGEN_TIMEOUT_SECONDS", 900)))
-            images = [image for output in outputs.values() for image in output.get("images", [])]
-            if not images:
-                raise GenerationFailed(f"ComfyUI returned no image for {job.job_id}")
-            data = self.client.fetch(images[0])
+            image, used_seed, graph, checks = self._render_checked(job, seed, uploaded)
             self.cache_dir.mkdir(parents=True, exist_ok=True)
-            with Image.open(BytesIO(data)) as image:
-                image.convert("RGB").save(cached, "PNG")
+            image.save(cached, "PNG")
+            sidecar.write_text(json.dumps({"seed": used_seed, "image_checks": checks}), encoding="utf-8")
         target = Path(job.output_path)
         target.parent.mkdir(parents=True, exist_ok=True)
         with Image.open(cached) as image:
             cover_resize(image, job.final_size).save(target, "JPEG", quality=93)
-        graph = graph or self._graph(job, seed, [Path(path).name for path in job.references])
+        graph = graph or self._graph(job, used_seed, [Path(path).name for path in job.references])
         _, _, mapping = templates.load_templates()
         return {
             "provider": "comfyui", "synthetic": True, "job_id": job.job_id, "kind": job.kind,
             "visual_style": identity.visual_style(), "style_hash": identity.style_hash(),
             "model": templates.model_names(graph, mapping),
-            "workflow_hash": templates.graph_hash(graph), "prompt": job.prompt, "seed": seed,
+            "workflow_hash": templates.graph_hash(graph), "prompt": job.prompt, "seed": used_seed,
+            "requested_seed": seed, "image_checks": checks,
             "size": list(job.size), "final_size": list(job.final_size),
             "references": [Path(path).name for path in job.references],
             "latent_source": job.latent_source or getattr(config, "IMAGEGEN_LATENT_SOURCE", "reference"),
             "seconds": round(self.clock() - started, 1), "cache_hit": hit,
             "local_path": str(target), "cache_key": key,
         }
+
+    def _render(self, job: ImageJob, seed: int, uploaded: list[str]) -> tuple[Image.Image, dict]:
+        graph = self._graph(job, seed, uploaded)
+        self._validate(graph)
+        outputs = self.client.wait(self.client.queue(graph),
+                                   timeout=float(getattr(config, "IMAGEGEN_TIMEOUT_SECONDS", 900)))
+        images = [image for output in outputs.values() for image in output.get("images", [])]
+        if not images:
+            raise GenerationFailed(f"ComfyUI returned no image for {job.job_id}")
+        with Image.open(BytesIO(self.client.fetch(images[0]))) as image:
+            return image.convert("RGB"), graph
+
+    def _render_checked(self, job: ImageJob, seed: int, uploaded: list[str]) -> tuple:
+        """Render; on paper margins or comic gutters try new seeds, then crop margins.
+
+        Returns (image, seed used, graph, checks record).
+        """
+        if not getattr(config, "IMAGEGEN_IMAGE_CHECKS", True):
+            image, graph = self._render(job, seed, uploaded)
+            return image, seed, graph, {}
+        retries = int(getattr(config, "IMAGEGEN_CHECK_RETRIES", 2))
+        attempts = []
+        for attempt in range(retries + 1):
+            current = seed + CHECK_SEED_OFFSET * attempt
+            image, graph = self._render(job, current, uploaded)
+            report = image_checks.inspect(image)
+            attempts.append({"seed": current, "bordered": report["bordered"], "panels": report["panels"],
+                             "margin_edges": report["margin_edges"]})
+            if not report["bordered"] and not report["panels"]:
+                return image, current, graph, {"attempts": attempts, "action": "accepted"
+                                               if attempt == 0 else "regenerated"}
+            print(f"   ⚠ {job.job_id}: "
+                  + ", ".join(name for name, flag in (("paper margins", report["bordered"]),
+                                                      ("comic panels", report["panels"])) if flag)
+                  + (f"; regenerating with a new seed ({attempt + 1}/{retries})" if attempt < retries else ""))
+        action = "kept_panels"
+        if report["bordered"]:
+            image, box = image_checks.crop_border(image)
+            action = "cropped" if not report["panels"] else "cropped_panels_remain"
+            attempts[-1]["crop_box"] = list(box)
+        return image, current, graph, {"attempts": attempts, "action": action}
 
     def generate_with_retry(self, job: ImageJob, fallback: Callable[[ImageJob], dict | None] | None = None,
                             new_seeds: int = 1) -> dict:
