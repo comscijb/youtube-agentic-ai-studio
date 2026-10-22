@@ -111,7 +111,8 @@ def build_upload_description(script: dict, output_dir: str | None = None) -> str
 
 def upload_video(video_path: str, *, title: str, description: str, tags=None,
                  privacy: str | None = None, publish_at: str = "",
-                 thumbnail_path: str | None = None, progress=None, service=None) -> str:
+                 thumbnail_path: str | None = None, progress=None, service=None,
+                 contains_synthetic_media: bool = False) -> str:
     """Upload one video and return its YouTube video_id.
 
     ``privacy`` defaults to config.VIDEO_PRIVACY ("public"). A ``publish_at``
@@ -130,6 +131,9 @@ def upload_video(video_path: str, *, title: str, description: str, tags=None,
             # If scheduling: upload as private, YouTube publishes at publishAt
             "privacyStatus":            "private" if publish_at else (privacy or config.VIDEO_PRIVACY),
             "selfDeclaredMadeForKids":  False,
+            # YouTube's altered/synthetic content disclosure (VideoStatus field
+            # verified in the installed discovery document).
+            "containsSyntheticMedia":   bool(contains_synthetic_media),
         },
     }
     if publish_at:
@@ -182,7 +186,7 @@ def upload_run(run_dir: str, *, video_path: str, title: str, description: str, t
     published and bans its topic.
     """
     from uploader import publications
-    from uploader.approval import require_approval
+    from uploader.approval import contains_synthetic_media, require_approval
 
     approval = require_approval(
         run_dir, video_path=video_path, title=title, description=description, tags=tags,
@@ -191,7 +195,7 @@ def upload_run(run_dir: str, *, video_path: str, title: str, description: str, t
     video_id = upload_video(
         video_path, title=title, description=description, tags=tags, privacy=privacy,
         publish_at=publish_at, thumbnail_path=thumbnail_path, progress=progress,
-        service=service,
+        service=service, contains_synthetic_media=contains_synthetic_media(run_dir),
     )
     return publications.record_upload(
         video_id, run_dir, title=title, video_path=video_path,

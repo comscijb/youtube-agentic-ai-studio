@@ -33,6 +33,12 @@ CHECKLIST = {
     "license_log_reviewed": "The stock license log has no flagged items, or I reviewed them.",
     "description_and_tags_reviewed": "I reviewed the description and tags.",
 }
+SYNTHETIC_ITEM = {
+    "synthetic_media_disclosed": (
+        "The video contains AI-generated realistic people/places: it will be uploaded with "
+        "YouTube's altered/synthetic content disclosure (containsSyntheticMedia) and I reviewed it."
+    ),
+}
 BLOCKED_STATUSES = {"structurally_invalid", "revision_required"}
 _MIN_REASON_CHARS = 10
 
@@ -67,6 +73,17 @@ def bindings(run_dir, *, video_path, title, description, tags=None, thumbnail_pa
         "tags": _sha256_text("\n".join(str(tag) for tag in tags or [])),
         "thumbnail": _sha256_file(thumbnail_path),
     }
+
+
+def contains_synthetic_media(run_dir) -> bool:
+    manifest = load_json(Path(run_dir) / "asset_manifest.json") or {}
+    return bool(manifest.get("synthetic_media")) or any(
+        item.get("synthetic") for item in manifest.get("generated_assets", []))
+
+
+def checklist_for(run_dir) -> dict:
+    """The base checklist, plus the synthetic-media item when generated images are used."""
+    return {**CHECKLIST, **(SYNTHETIC_ITEM if contains_synthetic_media(run_dir) else {})}
 
 
 def narrative_status(run_dir) -> str:
@@ -117,7 +134,8 @@ def review_summary(run_dir, *, title: str, **artifacts) -> dict:
         "title_findings": findings,
         "title_passes": title_passes(findings),
         "license_flags": license_flags(run_dir),
-        "checklist": CHECKLIST,
+        "checklist": checklist_for(run_dir),
+        "synthetic_media": contains_synthetic_media(run_dir),
         "approval_valid": not current,
         "approval_problems": current,
     }
@@ -128,7 +146,8 @@ def approve(run_dir, *, checklist: dict, video_path, title, description, tags=No
             status_override_reason: str = "", reviewer: str = "") -> dict:
     """Validate the checklist and write the approval bound to the current artifacts."""
     problems = []
-    missing = [key for key in CHECKLIST if checklist.get(key) is not True]
+    required = checklist_for(run_dir)
+    missing = [key for key in required if checklist.get(key) is not True]
     if missing:
         problems.append("checklist incomplete: " + ", ".join(missing))
     if not Path(video_path or "").is_file():
@@ -149,7 +168,8 @@ def approve(run_dir, *, checklist: dict, video_path, title, description, tags=No
         "schema_version": APPROVAL_SCHEMA_VERSION,
         "approved_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
         "reviewer": reviewer,
-        "checklist": {key: True for key in CHECKLIST},
+        "checklist": {key: True for key in required},
+        "synthetic_media": contains_synthetic_media(run_dir),
         "notes": str(notes or "").strip(),
         "narrative_status": status,
         "status_override_reason": status_reason if status in BLOCKED_STATUSES | {"missing"} else "",
@@ -171,7 +191,7 @@ def check_approval(run_dir, *, video_path, title, description, tags=None,
     if not record:
         return ["no review approval exists for this run; complete the review checklist"]
     problems = []
-    if any(record.get("checklist", {}).get(key) is not True for key in CHECKLIST):
+    if any(record.get("checklist", {}).get(key) is not True for key in checklist_for(run_dir)):
         problems.append("the stored approval has an incomplete checklist")
     current = bindings(run_dir, video_path=video_path, title=title, description=description,
                        tags=tags, thumbnail_path=thumbnail_path)
