@@ -84,6 +84,12 @@ class ThumbnailTests(unittest.TestCase):
         _, _, _, output = self.render(dict(SCRIPT, thumbnail_text="Envy is everywhere tonight again"))
         self.assertIn("Thumbnail text", output)
 
+    def test_dedicated_generated_thumbnail_image_wins(self):
+        with tempfile.TemporaryDirectory() as temp:
+            paths = write_images(Path(temp))
+            Image.new("RGB", (1280, 720), (10, 10, 10)).save(Path(temp, "thumbnail_bg.jpg"))
+            self.assertEqual(Path(thumbnail.choose_background(paths, temp)).name, "thumbnail_bg.jpg")
+
     def test_fallback_without_manifest_or_images(self):
         with tempfile.TemporaryDirectory() as temp:
             self.assertIsNone(thumbnail.choose_background({}, temp))

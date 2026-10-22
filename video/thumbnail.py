@@ -36,7 +36,11 @@ def _first_path(value):
 
 
 def choose_background(image_map: dict, output_dir: str) -> str | None:
-    """Most human/emotional image by manifest tags; falls back to the first image."""
+    """Dedicated generated thumbnail image if present, else the most human/emotional
+    episode image by manifest tags, else the first image."""
+    dedicated = Path(output_dir) / "thumbnail_bg.jpg"
+    if dedicated.is_file():
+        return str(dedicated)
     paths = [path for value in image_map.values()
              for path in (value if isinstance(value, list) else [value]) if path]
     paths = [path for path in paths if os.path.exists(path)]

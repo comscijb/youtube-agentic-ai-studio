@@ -7,7 +7,7 @@ Shorts  : Fast-paced 1080×1920, image slideshow (cuts every 2-3 s),
 
 Runs fully offline: MoviePy 1.0.3 + Pillow + NumPy.
 """
-import os, re, math
+import json, os, re, math
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from moviepy.editor import VideoClip, AudioFileClip, ColorClip, concatenate_videoclips
@@ -418,9 +418,108 @@ BROLL_INTERVAL  = float(getattr(config, "BROLL_INTERVAL",  10.0))
 BROLL_XFADE_DUR = float(getattr(config, "BROLL_XFADE_DUR",  1.2))
 
 
+# ══════════════════════════════════════════════════════════════
+#  SHOT LIST (generated images aligned to the narration)
+# ══════════════════════════════════════════════════════════════
+
+SHOT_XFADE = 0.5     # seconds of crossfade into the next shot at a cut
+
+
+def shot_motion(shot_type: str, index: int) -> tuple:
+    """(zoom_start, zoom_end, pan_dir) per shot type.
+
+    Close-ups and inserts push in slowly; wides drift sideways (alternating);
+    everything else gets a gentle push.
+    """
+    if shot_type in {"close_up", "insert", "hands"}:
+        return 1.0, 1.12, (0, 0)
+    if shot_type in {"wide", "establishing"}:
+        return 1.08, 1.08, ((1, 0) if index % 2 == 0 else (-1, 0))
+    return 1.0, 1.06, ((1, 0) if index % 2 == 0 else (0, 1))
+
+
+def adaptive_opacity(luminance: float, base: float | None = None) -> float:
+    """Darken bright images more, low-key (generated) images less."""
+    base = getattr(config, "CINEMATIC_OVERLAY_OPACITY", 0.38) if base is None else base
+    return round(max(0.08, min(base, base * luminance / 110.0)), 3)
+
+
+def load_shot_schedule(output_dir: str, sections: list, durations: list) -> dict | None:
+    """Map section id -> shots with section-relative timing and image paths.
+
+    Returns None (keep the stock B-roll behaviour) unless shot_list.json exists
+    and every shot resolves to an existing image.
+    """
+    from agents.shot_list import resolve_image
+
+    path = os.path.join(output_dir, "shot_list.json")
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, encoding="utf-8") as handle:
+            shots = json.load(handle).get("shots", [])
+    except (OSError, ValueError):
+        return None
+    if not shots:
+        return None
+    starts, cursor = {}, 0.0
+    for section, duration in zip(sections, durations):
+        starts[section["id"]] = (cursor, duration)
+        cursor += duration
+    schedule: dict = {}
+    for index, shot in enumerate(shots):
+        image = resolve_image(shots, shot)
+        image = image if image and os.path.isabs(image) else (
+            os.path.join(output_dir, image) if image else None)
+        if not image or not os.path.exists(image) or shot.get("section_id") not in starts:
+            print(f"   ⚠ shot_list.json is incomplete ({shot.get('shot_id')} has no image); "
+                  "using stock B-roll cycling")
+            return None
+        section_start, section_duration = starts[shot["section_id"]]
+        schedule.setdefault(shot["section_id"], []).append({
+            "shot_id": shot["shot_id"], "image": image, "shot_type": shot.get("shot_type", "medium"),
+            "start": max(0.0, float(shot["start"]) - section_start),
+            "end": min(section_duration, float(shot["end"]) - section_start), "index": index,
+        })
+    for items in schedule.values():
+        items.sort(key=lambda item: item["start"])
+        items[0]["start"] = 0.0
+        for current, following in zip(items, items[1:]):
+            current["end"] = following["start"]
+    return schedule
+
+
+def _prepare_shots(shots: list) -> list:
+    prepared = []
+    for shot in shots:
+        arr = _load_bg_image(shot["image"])
+        if arr is None:
+            continue
+        luminance = float(np.dot(arr[::8, ::8].reshape(-1, 3).mean(axis=0), [0.299, 0.587, 0.114]))
+        zoom_start, zoom_end, pan = shot_motion(shot["shot_type"], shot["index"])
+        prepared.append({**shot, "arr": arr, "opacity": adaptive_opacity(luminance),
+                         "zoom": (zoom_start, zoom_end), "pan": pan})
+    return prepared
+
+
+def shot_at(shots: list, t: float) -> int:
+    for position, shot in enumerate(shots):
+        if t < shot["end"]:
+            return position
+    return len(shots) - 1
+
+
+def _shot_frame(shot: dict, t: float) -> np.ndarray:
+    local = max(0.0, t - shot["start"])
+    duration = max(shot["end"] - shot["start"], 0.001)
+    frame = _ken_burns(shot["arr"], local, duration, zoom_start=shot["zoom"][0],
+                       zoom_end=shot["zoom"][1], pan_dir=shot["pan"])
+    return _apply_overlay(frame, shot["opacity"])
+
+
 def _make_clip(section, duration, bg_images, section_num, total_sections,
                pan_dir=(1, 0), captions: list = None, section_start_t: float = 0.0,
-               cinematic: bool = False):
+               cinematic: bool = False, shots: list | None = None):
     """
     Build a single section clip with:
       • B-roll image cycling every BROLL_INTERVAL seconds with smooth crossfade
@@ -443,8 +542,20 @@ def _make_clip(section, duration, bg_images, section_num, total_sections,
     BROLL_PAN_DIRS = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1)]
 
     def make_frame(t):
+        # ── Background: one generated image per shot, cut on its timing ────
+        if shots:
+            position = shot_at(shots, t)
+            current = shots[position]
+            frame_np = _shot_frame(current, t)
+            if position + 1 < len(shots) and t >= current["end"] - SHOT_XFADE:
+                following = shots[position + 1]
+                raw_a = (t - (current["end"] - SHOT_XFADE)) / SHOT_XFADE
+                alpha = raw_a * raw_a * (3.0 - 2.0 * raw_a)
+                frame_np = (frame_np.astype(np.float32) * (1.0 - alpha) +
+                            _shot_frame(following, following["start"]).astype(np.float32) * alpha
+                            ).astype(np.uint8)
         # ── Background: B-roll cycling with crossfade ──────────────────────
-        if n_imgs > 0:
+        elif n_imgs > 0:
             slot      = t / BROLL_INTERVAL
             cur_idx   = int(slot) % n_imgs
             img_t     = t % BROLL_INTERVAL          # time within this image slot
@@ -879,7 +990,12 @@ def create_video(script: dict, audio_path: str, output_dir: str,
         else:
             print("   → No SRT captions — subtitles will be disabled for this render.")
 
-        print(f"\n   Building {total_sections} section clips (B-roll cycling every {BROLL_INTERVAL:.0f}s):")
+        schedule = load_shot_schedule(output_dir, sections, durations)
+        if schedule:
+            print(f"\n   Building {total_sections} section clips from shot_list.json "
+                  f"({sum(len(items) for items in schedule.values())} shots):")
+        else:
+            print(f"\n   Building {total_sections} section clips (B-roll cycling every {BROLL_INTERVAL:.0f}s):")
         clips           = []
         section_start_t = 0.0   # running global timestamp for SRT lookup
 
@@ -902,9 +1018,10 @@ def create_video(script: dict, audio_path: str, output_dir: str,
             if not bg_images:
                 print(f"          ⚠ no images for section {section['id']} — gradient fallback")
 
+            section_shots = _prepare_shots(schedule.get(section["id"], [])) if schedule else None
             clip = _make_clip(section, duration, bg_images, i + 1, total_sections,
                               captions=captions, section_start_t=section_start_t,
-                              cinematic=cinematic)
+                              cinematic=cinematic, shots=section_shots)
             clips.append(clip)
             section_start_t += duration   # advance global timestamp
 
