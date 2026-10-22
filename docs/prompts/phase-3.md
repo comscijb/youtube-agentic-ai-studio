@@ -140,8 +140,10 @@ python gui.py   # re-run narration → music → video for the current output/
   Models: UNET `flux3-image-klein-int8-convrot.safetensors`, text encoder
   `qwen3vl_4b_int8_convrot.safetensors` (CLIPLoader type `flux3`), VAE `flux2-vae.safetensors`;
   KSampler `euler`/`simple`, 16 steps, cfg 1, negative = `ConditioningZeroOut(positive)`.
-- For comparison, Z-Image Turbo bf16 took ≈ 2 min per 1920×1080 image. Klein's per-image time
-  is unknown: measure it (see C).
+- Measured by the user: Klein takes **≈ 1 min per generation** on this machine (Z-Image Turbo
+  bf16 took ≈ 2 min at 1920×1080). A 40-shot episode ≈ 40–50 min of GPU time plus character
+  references — feasible in one sitting; the calibration script still records exact timings.
+- `ReferenceMultiLatent` accepts **up to 4 reference images** (`images.image0`…`images.image3`).
 - A 12-minute episode with one new image every ~8–10 s needs ~70–90 images. The design must keep
   the GPU budget workable (fewer, better-placed unique shots; ~1 MP native generation + upscale;
   caching; resumable overnight batches).
@@ -171,9 +173,14 @@ validate every `class_type` and input name against the live `/object_info` befor
    16:9 size (default 1360×752 ≈ 1 MP) → `KSampler` → `VAEDecode` → `SaveImage`. No reference,
    no layout, no upsampler.
 2. `flux3_klein_ref_api.json` — reference-conditioned generation: like (1) but conditioning
-   goes through `ReferenceMultiLatent` with `images.image0` (and `images.image1` for a second
-   character, if `/object_info` shows the dynamic input supports it) fed by `LoadImage` nodes of
-   approved character references uploaded via `/upload/image`. Make the **latent source
+   goes through `ReferenceMultiLatent` with up to **4** references (`images.image0`…`image3`,
+   confirm names in `/object_info`) fed by `LoadImage` nodes uploaded via `/upload/image`.
+   Reference slots, in order: characters present in the shot (approved portraits), then an
+   optional **location reference** (an approved establishing image of the recurring set, e.g.
+   Julian's loft) to keep the environment consistent too. The prompt names each by ordinal
+   ("the man from the first image", "the woman from the second image", "in the room from the
+   third image"). Never exceed 4; if a shot has more characters, keep the two most important
+   as references and describe the others in text. Make the **latent source
    configurable**: `reference` (as in the template) vs `empty_16x9` (EmptyFlux2LatentImage), and
    pick the default after the calibration below. Prompts use the generation-request voice:
    *"Create a photograph of the man from the first image, …"*.
@@ -221,12 +228,14 @@ source hash) producing:
   2. *Character shots* use the reference template with the approved portrait(s); prompts refer to
      "the man from the first image" / "the woman from the second image" plus action, location
      descriptor, wardrobe and composition. Faces may be visible.
-  3. *Environment/object/insert shots* use t2i with the location descriptor.
+  3. *Environment/object/insert shots* use t2i with the location descriptor; the first approved
+     establishing image of each recurring location becomes its location reference (user
+     approves it like the portraits).
   4. Keep cinematic variety: the planner still mixes silhouettes, hands, over-the-shoulder and
      objects (≈ 40–60 % of shots without a full face), which also eases the GPU budget.
   5. If the calibration shows weak identity retention, fall back automatically to the earlier
      policy (mostly `none`/`partial` faces; ≤ 6 full-face hero shots).
-- Budget: `IMAGEGEN_MAX_UNIQUE_SHOTS` (default 40 for 12 min); the planner merges or reuses shots
+- Budget: `IMAGEGEN_MAX_UNIQUE_SHOTS` (default 50 for 12 min, ≈ 1 min each); the planner merges or reuses shots
   to stay within it; remaining length is covered by Ken Burns motion on longer holds.
 
 ### C. ComfyUI provider (`video/imagegen_comfyui.py`)
