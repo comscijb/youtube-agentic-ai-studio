@@ -366,7 +366,48 @@ sentence to confirm Edge TTS audio and word timings.
   identifiable people in shots about a specific character. Scores and rejection reasons are in
   `asset_manifest.json`.
 - **Thumbnail.** The validated `thumbnail_text` (≤ 5 words) over the episode's strongest human
-  shot; the title is not repeated.
+  shot (or the dedicated generated `thumbnail_bg.jpg`); the title is not repeated.
+
+## Local image generation (ComfyUI + FLUX 3 Image Klein)
+
+Generated images replace stock for an episode once every shot has an image; stock remains the
+fallback for environment/object shots. Requirements: ComfyUI Desktop on `http://127.0.0.1:8188`
+with the models named in `workflows/flux3_klein_edit_api.json` (UNET
+`flux3-image-klein-int8-convrot`, text encoder `qwen3vl_4b_int8_convrot`, VAE `flux2-vae`).
+
+- **Templates.** `workflows/flux3_klein_t2i_api.json` and `flux3_klein_ref_api.json` are derived
+  from the exported edit workflow (layout and upsampler removed; up to 4 references through
+  `ReferenceMultiLatent`). Every graph is validated against ComfyUI's `/object_info` before it is
+  queued; if a node or model is missing you are asked to export that variant from ComfyUI.
+- **Visual bible** (`visual_bible.json`, one Gemini call): style suffix in the brand palette, an
+  immutable descriptor and per-scene wardrobe for each character, reusable location descriptors,
+  a thumbnail shot, and fixed seeds.
+- **Shot list** (`shot_list.json`, after narration, one Gemini call): cuts on sentence boundaries,
+  6–12 s per shot, at most `IMAGEGEN_MAX_UNIQUE_SHOTS` (50) unique images, a mix of framings with
+  40–60% of shots without a full face. Prompts and reference slots are composed in code: approved
+  character portraits first ("the man from the first image"), then the location reference.
+- **Identity.** Approve one of four generated portraits per character (and optionally one of two
+  establishing images per recurring location) before any shot is generated. If identity
+  retention is weak, set `IMAGEGEN_IDENTITY_POLICY=limited_faces` (≤ 6 full-face shots).
+- **Generation.** ~1 MP 16:9 (1360×752), Lanczos-upscaled to 1920×1080; cached by prompt, seed,
+  size, template, models and reference hashes; resumable; one retry with a new seed, then stock.
+  At about 1 minute per image a 50-shot episode needs roughly 50–60 minutes of GPU time.
+- **Renderer.** One image per shot for its exact timing, motion by shot type (push-in on
+  close-ups, lateral drift on wides), short crossfades, overlay adapted to image brightness.
+- **Disclosure.** Runs with generated images upload with `containsSyntheticMedia=true` and the
+  review checklist gains a synthetic-media item.
+
+```powershell
+python -m scripts.render_preflight --live        # also checks ComfyUI and Edge TTS
+python -m scripts.calibrate_imagegen             # seconds/image, VRAM, t2i vs reference contact sheet
+python -m scripts.generate_character_refs        # 4 portraits per character; approve in the GUI
+python -m scripts.generate_character_refs --approve character:<id>:<n>
+python -m scripts.generate_shots --limit 5       # quick look first
+python -m scripts.generate_shots                 # full episode (resumable)
+```
+
+In the GUI the same work is available as the "Visual bible" and "Shots (ComfyUI)" steps and in
+the Review tab (candidates, approvals, per-shot preview, new seed, edit).
 
 ---
 

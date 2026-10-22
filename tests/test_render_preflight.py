@@ -133,6 +133,29 @@ class PreflightTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertEqual(self.statuses(text)["script"], "FAIL")
 
+    def test_shot_list_progress_and_gpu_estimate(self):
+        output = self.script.parent
+        self.assertEqual(preflight.imagegen_check(output)[1], "PASS")          # no shot list
+        (output / "shot_list.json").write_text(json.dumps({"shots": [
+            {"shot_id": "a", "reuse_of": "", "image_path": "a.jpg"},
+            {"shot_id": "b", "reuse_of": ""}, {"shot_id": "c", "reuse_of": "a"}]}), encoding="utf-8")
+        (output / "a.jpg").write_bytes(b"jpg")
+        calibration = output / "cal.json"
+        calibration.write_text(json.dumps({"modes": {"ref": {"seconds_per_image": 60}}}), encoding="utf-8")
+        with patch.object(config, "IMAGEGEN_CALIBRATION_FILE", str(calibration), create=True):
+            name, status, detail = preflight.imagegen_check(output)
+        self.assertEqual(status, "WARN")
+        self.assertIn("1/2 unique shots generated", detail)
+        self.assertIn("≈ 1 min of GPU time left", detail)
+
+    def test_live_comfyui_check(self):
+        from video.imagegen_comfyui import ComfyClient
+        with patch.object(ComfyClient, "available", return_value=False):
+            self.assertEqual(preflight.comfyui_check()[1], "WARN")
+        with patch.object(ComfyClient, "available", return_value=True), \
+                patch.object(ComfyClient, "vram_used_mb", return_value=2048.0):
+            self.assertIn("2048 MB", preflight.comfyui_check()[2])
+
     def test_word_synced_voices_read_from_narrator_source(self):
         self.assertIn("en-US-AndrewNeural", preflight.word_synced_voices())
 

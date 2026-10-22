@@ -187,6 +187,38 @@ def loudness_check(output_dir: Path) -> tuple[str, str, str]:
             + ("" if ok else "; re-run the music step to normalise"))
 
 
+def imagegen_check(output_dir: Path) -> tuple[str, str, str]:
+    """Shot-list progress and the estimated GPU time left (from the calibration file)."""
+    import json
+    path = output_dir / "shot_list.json"
+    if not path.is_file():
+        return ("generated shots", PASS, "no shot_list.json: the renderer uses stock B-roll")
+    try:
+        shot_list = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return ("generated shots", WARN, "shot_list.json is unreadable")
+    from video import shot_generation
+    unique = [shot for shot in shot_list.get("shots", []) if not shot.get("reuse_of")]
+    done = [shot for shot in unique if shot.get("image_path") and (output_dir / shot["image_path"]).is_file()]
+    estimate = shot_generation.estimate_gpu_seconds(shot_list, output_dir)
+    detail = f"{len(done)}/{len(unique)} unique shots generated"
+    if len(done) < len(unique):
+        detail += (f"; ≈ {estimate / 60:.0f} min of GPU time left" if estimate else
+                   "; run python -m scripts.calibrate_imagegen for a GPU-time estimate")
+        detail += " (the renderer falls back to stock B-roll until every shot has an image)"
+    return ("generated shots", PASS if len(done) == len(unique) else WARN, detail)
+
+
+def comfyui_check() -> tuple[str, str, str]:
+    from video.imagegen_comfyui import ComfyClient
+    client = ComfyClient(timeout=5)
+    if not client.available():
+        return ("ComfyUI", WARN, f"not reachable at {client.base_url}; start ComfyUI Desktop before "
+                                 "generating shots")
+    used = client.vram_used_mb()
+    return ("ComfyUI", PASS, f"running at {client.base_url}" + (f", {used:.0f} MB VRAM in use" if used else ""))
+
+
 def live_tts_check() -> tuple[str, str, str]:
     """Synthesise one short sentence and confirm audio and WordBoundary events."""
     import os
@@ -232,8 +264,11 @@ def run(script_path: Path, *, long_image_seconds: float = DEFAULT_LONG_IMAGE_SEC
     checks += environment_checks(script_path.parent)
     checks.append(("narration wpm", PASS, wpm_note))
     checks.append(loudness_check(script_path.parent))
+    checks.append(imagegen_check(script_path.parent))
     if live:
         checks.append(live_tts_check())
+        if getattr(config, "IMAGEGEN_ENABLED", True):
+            checks.append(comfyui_check())
 
     if rows:
         effective = wpm * rate_factor(rate)
