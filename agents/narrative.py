@@ -768,6 +768,10 @@ def stacked_modifier_lint(sections: list[dict], threshold: int | None = None) ->
             "examples": examples[:10]}
 
 
+# Over-target scenes become a major issue only past this ratio (or when the total is out of range).
+OVER_BUDGET_MAJOR_RATIO = 1.30
+
+
 def missing_arc_movements(outline: dict | None, narrative_type: str | None) -> list[str]:
     """Type A movements no scene declares; empty for B/C or outlines predating the field."""
     if narrative_type != TYPE_A or not isinstance(outline, dict):
@@ -799,6 +803,7 @@ def deterministic_review(script: dict, target_duration_minutes: float,
     warnings = []
     blocking_issues = []
     major_issues = []
+    minor_issues = []
     proposed_corrections = []
 
     plan_by_id = {}
@@ -844,12 +849,19 @@ def deterministic_review(script: dict, target_duration_minutes: float,
                 f"Scene {scene.get('id')} '{scene.get('title', '')}' is {abs(deficit)} words "
                 f"{direction} its {target}-word target ({actual}/{target}; {ratio:.1%})."
             )
-            major_issues.append({
-                "severity": "major", "issue_type": "scene_word_budget",
+            # Under-development always matters. A slightly long scene inside a total
+            # that is within range is a pacing note, not a revision trigger.
+            proportionate = (deficit < 0 and not is_shorts and ratio <= OVER_BUDGET_MAJOR_RATIO
+                             and total_min <= total_ratio <= total_max)
+            issue = {
+                "severity": "minor" if proportionate else "major", "issue_type": "scene_word_budget",
                 "scene_ids": [scene.get("id")], "claim": message,
                 "evidence": [f"actual={actual}", f"target={target}", f"ratio={ratio:.4f}"],
-                "recommendation": "Revise this scene with substantive dramatic action; do not pad it.",
-            })
+                "recommendation": ("Consider tightening this scene if it drags when read aloud."
+                                   if proportionate else
+                                   "Revise this scene with substantive dramatic action; do not pad it."),
+            }
+            (minor_issues if proportionate else major_issues).append(issue)
             proposed_corrections.append({
                 "scene_id": scene.get("id"), "action": "expand" if deficit > 0 else "tighten",
                 "word_delta": abs(deficit), "preserve": ["identity", "causality", "continuity"],
@@ -909,7 +921,6 @@ def deterministic_review(script: dict, target_duration_minutes: float,
             f"{term} ({count})" for term, count in repeated_terms.items()
         ))
     style_lint = stacked_modifier_lint(sections)
-    minor_issues = []
     if style_lint["total"] > style_lint["threshold"]:
         issue = {
             "severity": "minor", "issue_type": "style",

@@ -167,6 +167,8 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
     _state["error"]   = None
     _state["stop_requested"] = False
     _stop_event.clear()
+    from agents import gemini_client
+    gemini_client.clear_call_records()
 
     def _check_stop(after_stage: str):
         """Raise if user clicked Stop."""
@@ -406,6 +408,7 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
         _log(f"ERROR: {e}", "error")
         _log_queue.put(("error", str(e)))
     finally:
+        _log(gemini_client.usage_line())
         _state["running"] = False
         sys.stdout = orig_stdout
 

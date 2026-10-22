@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
 import config
@@ -594,6 +595,11 @@ CHARACTER BIBLE: {compact_json(bible)}"""
     return revised, new_review
 
 
+# Stage checkpoints of an unfinished write_script run (scene batches, expansion,
+# editorial review, semantic revision); removed once the stage completes.
+CHECKPOINT_FOLDER = ".checkpoints"
+
+
 def write_script(
     research: dict,
     video_type: str = "normal",
@@ -615,10 +621,18 @@ def write_script(
     if video_type == "normal" and not 12 <= target <= 20:
         raise ValueError("Regular Private Gravity videos must target 12-20 minutes")
     token = structured.debug_dir.set(str(output))
+    checkpoints = output / CHECKPOINT_FOLDER
+    if force:
+        shutil.rmtree(checkpoints, ignore_errors=True)
+    checkpoint_token = structured.checkpoint_dir.set(str(checkpoints))
     try:
-        return _write_script(brief, video_type, output, target, narrative_review, force)
+        script = _write_script(brief, video_type, output, target, narrative_review, force)
     finally:
+        structured.checkpoint_dir.reset(checkpoint_token)
         structured.debug_dir.reset(token)
+    # The script stage completed: the next run should write a fresh draft.
+    shutil.rmtree(checkpoints, ignore_errors=True)
+    return script
 
 
 def _write_script(brief: dict, video_type: str, output: Path, target: float,

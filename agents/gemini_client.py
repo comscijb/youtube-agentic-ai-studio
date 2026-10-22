@@ -53,6 +53,13 @@ DEFAULT_DISCOVERY_TIMEOUT_SECONDS = 30.0
 MAX_TIMEOUT_SECONDS = 600.0
 DEADLINE_RETRY_BASE_DELAY = 2.0
 _TRANSIENT_CATEGORIES = {"temporary_server", "network_failure", "deadline_exceeded"}
+# Overload spikes last minutes, not seconds: wait on the same model before falling back.
+_BACKOFF_CATEGORIES = {"overloaded", "rate_limited"}
+DEFAULT_OVERLOAD_RETRIES = 4
+DEFAULT_OVERLOAD_BASE_DELAY = 10.0
+DEFAULT_OVERLOAD_MAX_DELAY = 90.0
+DEFAULT_MAX_CALL_WALLCLOCK = 600.0
+_OVERLOAD_PHRASES = ("high demand", "overloaded", "try again later")
 _NON_TEXT_MARKERS = (
     "-tts", "live", "image", "embedding", "veo", "imagen", "robotics", "transcribe"
 )
@@ -66,6 +73,7 @@ class GeminiErrorInfo:
     fallback_allowed: bool
     action: str
     detail: str
+    retry_after: float | None = None     # server-suggested wait (Retry-After / RetryInfo)
 
 
 class GeminiGenerationError(RuntimeError):
@@ -94,7 +102,9 @@ _model_cache_key_hash = ""
 _model_cache_expires = 0.0
 _lock = threading.RLock()
 _call_log: collections.deque = collections.deque(maxlen=500)
+_usage = collections.Counter()
 _sleep = time.sleep
+_clock = time.monotonic
 
 
 def _configured_key() -> str:
@@ -157,7 +167,9 @@ def _get_client() -> genai.Client:
                             max_delay=2.0,
                             exp_base=2.0,
                             jitter=0.25,
-                            http_status_codes=[408, 429, 500, 502, 503],
+                            # 429/503/504 are handled in generate() with longer,
+                            # visible backoff; SDK retries would compound unpredictably.
+                            http_status_codes=[408, 500, 502],
                         ),
                     ),
                 )
@@ -280,13 +292,19 @@ def generate(prompt: str, starting_model: str | None = None, *,
     transient_fallbacks = 0
     last_info = None
     last_model = ""
+    started = _clock()
+    wallclock = float(getattr(config, "GEMINI_MAX_CALL_WALLCLOCK", DEFAULT_MAX_CALL_WALLCLOCK))
+    retries = int(getattr(config, "GEMINI_OVERLOAD_RETRIES", DEFAULT_OVERLOAD_RETRIES))
 
     for model in chain:
         attempted.append(model)
         last_model = model
+        if len(attempted) > 1:
+            _usage["fallbacks"] += 1
         print(f"   -> Gemini model: {model}")
         deadline = base_timeout
         deadline_retries = 0
+        backoff_retries = 0
         while True:
             info, text = _attempt(client, model, prompt, stage, deadline, settings)
             if text:
@@ -298,12 +316,24 @@ def generate(prompt: str, starting_model: str | None = None, *,
                 delay += random.uniform(0, delay / 2)
                 print(f"   WARNING: {model} exceeded its deadline; retrying once with "
                       f"{deadline:g}s after {delay:.1f}s")
-                _sleep(delay)
+                _wait(delay, stage, model, "deadline")
+                continue
+            if info.category in _BACKOFF_CATEGORIES and backoff_retries < retries:
+                delay = _backoff_delay(info, backoff_retries)
+                if _clock() - started + delay > wallclock:
+                    print(f"   WARNING: {model} still {info.category}; the {wallclock:g}s per-call "
+                          "limit (GEMINI_MAX_CALL_WALLCLOCK) leaves no time for another wait")
+                    break
+                backoff_retries += 1
+                reason = "model overloaded" if info.category == "overloaded" else "rate limited"
+                print(f"   waiting {delay:.0f}s before retry {backoff_retries}/{retries} ({reason})")
+                _wait(delay, stage, model, info.category)
                 continue
             break
 
         last_info = info
         if not info.fallback_allowed:
+            _usage["failures"] += 1
             raise GeminiGenerationError(
                 info, model=model, fallback_attempted=fallback_attempted,
                 attempted_models=attempted,
@@ -312,6 +342,8 @@ def generate(prompt: str, starting_model: str | None = None, *,
         remaining = len(chain) - len(attempted)
         if remaining <= 0:
             break
+        if _clock() - started >= wallclock:
+            break
         if info.category in _TRANSIENT_CATEGORIES:
             if transient_fallbacks >= 1:
                 break
@@ -319,6 +351,7 @@ def generate(prompt: str, starting_model: str | None = None, *,
         fallback_attempted = True
         print(f"   WARNING: {model} failed ({info.category}); trying a verified fallback model")
 
+    _usage["failures"] += 1
     raise GeminiGenerationError(
         last_info or GeminiErrorInfo(
             "provider_unavailable", None, False, False,
@@ -376,6 +409,39 @@ def _attempt(client, model: str, prompt: str, stage: str, deadline: float,
     return info, text
 
 
+def _backoff_delay(info: GeminiErrorInfo, attempt: int) -> float:
+    """Exponential backoff with jitter (~10/20/40/80 s), or the server's own delay."""
+    base = float(getattr(config, "GEMINI_OVERLOAD_BASE_DELAY", DEFAULT_OVERLOAD_BASE_DELAY))
+    cap = float(getattr(config, "GEMINI_OVERLOAD_MAX_DELAY", DEFAULT_OVERLOAD_MAX_DELAY))
+    if info.retry_after:
+        return min(max(float(info.retry_after), 1.0), max(cap, float(info.retry_after)))
+    delay = min(cap, base * (2 ** attempt))
+    return min(cap, delay + random.uniform(0, delay * 0.1))
+
+
+def _wait(seconds: float, stage: str, model: str, reason: str) -> None:
+    """Sleep between retries (Ctrl+C interrupts it) and account for it."""
+    _usage["retries"] += 1
+    _usage["wait_seconds"] += seconds
+    print(f"   [gemini] stage={stage} model={model} wait={seconds:.0f}s reason={reason}")
+    _sleep(seconds)
+
+
+def usage_summary() -> dict:
+    with _lock:
+        calls = len(_call_log)
+    return {"calls": calls, "retries": int(_usage["retries"]),
+            "wait_seconds": round(float(_usage["wait_seconds"]), 1),
+            "fallbacks": int(_usage["fallbacks"]), "failures": int(_usage["failures"])}
+
+
+def usage_line() -> str:
+    summary = usage_summary()
+    return (f"Gemini usage: {summary['calls']} calls, {summary['retries']} retries, "
+            f"{summary['wait_seconds']:.0f}s waiting, {summary['fallbacks']} fallbacks, "
+            f"{summary['failures']} failures")
+
+
 def _record_call(stage: str, model: str, prompt_chars: int, elapsed: float,
                  deadline: int, outcome: str) -> None:
     record = {
@@ -397,8 +463,10 @@ def call_records() -> list[dict]:
 
 
 def clear_call_records() -> None:
+    """Reset per-run call records and usage counters."""
     with _lock:
         _call_log.clear()
+        _usage.clear()
 
 
 def _clamp_timeout(value) -> float:
@@ -467,13 +535,20 @@ def classify_error(exc: Exception, *, context: str = "generation") -> GeminiErro
             return GeminiErrorInfo("model_unavailable", code, False, True,
                                    "Refresh available models or choose another accessible model.", detail)
         if code == 429:
-            return GeminiErrorInfo("quota_exhausted", code, False, True,
-                                   "Review current project rate limits/billing or retry after the reported reset.", detail)
+            return GeminiErrorInfo("rate_limited", code, True, True,
+                                   "Review current project rate limits/billing or retry after the reported reset.",
+                                   detail, _retry_after(exc))
+        status = str(getattr(exc, "status", "") or "").upper()
+        if code == 503 or status == "UNAVAILABLE" or any(
+                phrase in detail.lower() for phrase in _OVERLOAD_PHRASES) and code in {500, 503}:
+            return GeminiErrorInfo("overloaded", code, True, True,
+                                   "The model is under high demand; retry in a few minutes.",
+                                   detail, _retry_after(exc))
         if code == 504 or str(getattr(exc, "status", "") or "").upper() == "DEADLINE_EXCEEDED":
             return GeminiErrorInfo("deadline_exceeded", code, True, True,
                                    "Raise GEMINI_TIMEOUT_SECONDS or retry later if the fallback also fails.",
                                    detail)
-        if code in {408, 500, 502, 503}:
+        if code in {408, 500, 502}:
             return GeminiErrorInfo("temporary_server", code, True, True,
                                    "Retry later if the verified fallback also fails.", detail)
         return GeminiErrorInfo("api_error", code, False, False,
@@ -495,6 +570,29 @@ def classify_error(exc: Exception, *, context: str = "generation") -> GeminiErro
         "Update google-genai if necessary and inspect the sanitized diagnostic output.",
         f"Unexpected Gemini SDK failure during {context}: {exc.__class__.__name__}.",
     )
+
+
+def _retry_after(exc) -> float | None:
+    """Seconds from a Retry-After header or a google.rpc.RetryInfo detail."""
+    response = getattr(exc, "response", None)
+    header = None
+    try:
+        header = response.headers.get("Retry-After") if response is not None else None
+    except AttributeError:
+        header = None
+    if header:
+        try:
+            return float(header)
+        except ValueError:
+            pass
+    details = getattr(exc, "details", None)
+    error = details.get("error", details) if isinstance(details, dict) else {}
+    for item in (error.get("details") or []) if isinstance(error, dict) else []:
+        delay = item.get("retryDelay") if isinstance(item, dict) else None
+        match = re.fullmatch(r"\s*(\d+(?:\.\d+)?)s\s*", str(delay or ""))
+        if match:
+            return float(match.group(1))
+    return None
 
 
 def diagnostic_snapshot(*, run_generation: bool = True) -> dict:

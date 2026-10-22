@@ -12,6 +12,7 @@ from pathlib import Path
 sys.path.insert(0, os.path.dirname(__file__))
 
 import config
+from agents import gemini_client
 from agents.researcher   import research_topic
 from agents.scriptwriter import write_script
 from video.narrator      import generate_narration
@@ -30,7 +31,18 @@ def banner(text: str):
     print("─" * 62)
 
 
-def run():
+def run(resume: bool = False):
+    """Full pipeline. With ``resume`` the saved story brief is reused and the
+    script stage continues from its checkpoints (bible, outline and any scene
+    batches, expansions or reviews finished before a failure)."""
+    gemini_client.clear_call_records()
+    try:
+        _run(resume)
+    finally:
+        print("\n  " + gemini_client.usage_line())
+
+
+def _run(resume: bool):
     Path(config.OUTPUT_DIR).mkdir(exist_ok=True)
     Path(config.IMAGES_DIR).mkdir(exist_ok=True)
 
@@ -46,6 +58,7 @@ def run():
         narrative_type=getattr(config, "NARRATIVE_TYPE", "auto"),
         focus_angle=getattr(config, "PSYCHOLOGICAL_THEME", ""),
         target_duration_minutes=getattr(config, "TARGET_DURATION_MINUTES", 15),
+        reuse_cached=resume,
     )
     print(f"\n  ✅  Premise: {research['topic']}")
     print(f"      Title : {research['video_title']}")
@@ -117,4 +130,8 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    import argparse
+    parser = argparse.ArgumentParser(description="Private Gravity pipeline")
+    parser.add_argument("--resume", action="store_true",
+                        help="reuse the saved story brief and continue the script stage from its checkpoints")
+    run(resume=parser.parse_args().resume)

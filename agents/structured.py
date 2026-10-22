@@ -19,11 +19,12 @@ import json
 import re
 from contextvars import ContextVar
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Callable
 
 import config
 from agents.gemini_client import GeminiGenerationError
-from agents.narrative import NarrativeValidationError, extract_json, write_debug_artifact
+from agents.narrative import NarrativeValidationError, extract_json, stable_hash, write_debug_artifact
 
 DEFAULT_STAGE_TEMPERATURES = {
     "premise": 0.9,
@@ -39,6 +40,10 @@ _VALIDATION_ERRORS = (NarrativeValidationError, ValueError, KeyError, TypeError)
 
 # Run directory for debug artifacts; set by the pipeline entry points.
 debug_dir: ContextVar[str | None] = ContextVar("narrative_debug_dir", default=None)
+# Stage checkpoints: while set, every validated result is saved here and an
+# identical later call (same label, contract and context) reuses it instead of
+# calling Gemini, so a run that failed mid-way resumes where it stopped.
+checkpoint_dir: ContextVar[str | None] = ContextVar("stage_checkpoint_dir", default=None)
 
 
 @dataclass(frozen=True)
@@ -73,12 +78,48 @@ def compose_prompt(contract: str, context: str = "") -> str:
     return f"{contract}\n\n{context}" if context else contract
 
 
+def _checkpoint_path(label: str, contract: str, context: str, stage: str | None) -> Path | None:
+    folder = checkpoint_dir.get()
+    if not folder:
+        return None
+    key = stable_hash({"label": label, "contract": contract, "context": context})
+    return Path(folder) / f"{_slug(stage or label)}-{key[:16]}.json"
+
+
 def generate_json(contract: str, label: str, validator=None, *, generator,
                   context: str = "", stage: str | None = None,
                   temperature_key: str | None = None,
                   scene_scope: SceneScope | None = None,
                   run_dir: str | None = None) -> dict:
-    """Generate one JSON object, allowing exactly one bounded repair."""
+    """Generate one JSON object, allowing exactly one bounded repair.
+
+    Inside a checkpointed run, a validated result for the same inputs is reused.
+    """
+    checkpoint = _checkpoint_path(label, contract, context, stage)
+    if checkpoint is not None and checkpoint.is_file():
+        # The checkpoint holds the validator's output (it may reshape the JSON,
+        # e.g. a scene batch becomes a list), so it is returned as saved.
+        try:
+            saved = json.loads(checkpoint.read_text(encoding="utf-8"))["value"]
+            print(f"   -> Reusing checkpoint for {label}")
+            return saved
+        except (OSError, ValueError, KeyError, TypeError):
+            pass
+    value = _generate_json(contract, label, validator, generator=generator, context=context,
+                           stage=stage, temperature_key=temperature_key,
+                           scene_scope=scene_scope, run_dir=run_dir)
+    if checkpoint is not None:
+        checkpoint.parent.mkdir(parents=True, exist_ok=True)
+        checkpoint.write_text(json.dumps({"label": label, "value": value}, ensure_ascii=False),
+                              encoding="utf-8")
+    return value
+
+
+def _generate_json(contract: str, label: str, validator=None, *, generator,
+                   context: str = "", stage: str | None = None,
+                   temperature_key: str | None = None,
+                   scene_scope: SceneScope | None = None,
+                   run_dir: str | None = None) -> dict:
     job = _Job(generator, label, stage or _slug(label), temperature_key,
                run_dir if run_dir is not None else debug_dir.get())
     raw = job.call(compose_prompt(contract, context), job.stage, temperature_key)

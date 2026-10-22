@@ -163,6 +163,13 @@ GEMINI_MAX_OUTPUT_TOKENS = int(os.getenv("GEMINI_MAX_OUTPUT_TOKENS", "0"))
 # Largest repair prompt sent in one call. Larger outline repairs are split into
 # scene-scoped repairs that only resend the invalid scenes and their neighbours.
 GEMINI_REPAIR_MAX_CHARS = int(os.getenv("GEMINI_REPAIR_MAX_CHARS", "120000"))
+# Overload (503 "high demand") and rate limits (429): wait on the SAME model with
+# exponential backoff (~10/20/40/80 s, or the server's Retry-After) before trying
+# the fallback model with the same budget. One call never exceeds the wall clock.
+GEMINI_OVERLOAD_RETRIES   = int(os.getenv("GEMINI_OVERLOAD_RETRIES", "4"))
+GEMINI_OVERLOAD_BASE_DELAY = float(os.getenv("GEMINI_OVERLOAD_BASE_DELAY", "10"))
+GEMINI_OVERLOAD_MAX_DELAY = float(os.getenv("GEMINI_OVERLOAD_MAX_DELAY", "90"))
+GEMINI_MAX_CALL_WALLCLOCK = float(os.getenv("GEMINI_MAX_CALL_WALLCLOCK", "600"))
 # Sampling temperature per generation stage.
 GEMINI_STAGE_TEMPERATURES = {
     "premise": 0.9,

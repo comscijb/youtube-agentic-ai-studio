@@ -236,6 +236,9 @@ def main(argv=None) -> int:
     if result["archive"]:
         print(f"  previous output archived in: {result['archive']}")
     print(f"  invalidated downstream files: {len(result['removed'])}")
+    if args.rerun_editorial:
+        from agents import gemini_client
+        print(gemini_client.usage_line())
     print("Next: python -m scripts.render_preflight")
     return 0
 

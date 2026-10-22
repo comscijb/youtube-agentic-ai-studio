@@ -209,6 +209,20 @@ repair 0.2). Each call logs stage, model, prompt size, elapsed time and outcome 
 content. When a stage fails, the raw response and the error are saved (secrets redacted) to
 `<run_dir>/debug/<stage>-<n>.txt`.
 
+### Overload, rate limits and resuming
+
+A `503 high demand` or `429` is retried on the **same model** first: `GEMINI_OVERLOAD_RETRIES` (4)
+waits of about 10/20/40/80 s (`GEMINI_OVERLOAD_BASE_DELAY`, `GEMINI_OVERLOAD_MAX_DELAY`, or the
+server's Retry-After), then the fallback model gets the same budget; one call never exceeds
+`GEMINI_MAX_CALL_WALLCLOCK` (600 s). Every wait is printed, Ctrl+C interrupts it, and each run ends
+with a one-line Gemini usage summary (calls, retries, waiting time, fallbacks, failures).
+
+Every stage is checkpointed. Inside the script stage each validated Gemini result (scene batches,
+expansions, editorial review, semantic revision) is saved in `output/.checkpoints/` until the
+stage completes, so re-running after a failure continues where it stopped: in the GUI leave
+"Story Brief" unchecked, or run `python pipeline.py --resume`. To review the current `output/`
+again without re-promoting: `python -m scripts.rereview_output --confirm-live`.
+
 ## Tests and opt-in narrative smoke test
 
 The default suite is offline and uses mocks/local fixtures:
@@ -256,7 +270,9 @@ or `aftermath`) is separate from its free-text `narrative_function`.
 
 For regular episodes, each scene must land within 85%–115% of its allocation and the complete
 screenplay within 90%–110% of its planned word count. Falling below 85% of the total (more than
-15% short) is blocking. Shorts use a separate, wider pacing contract. A failed check produces
+15% short) is blocking. A scene that is only slightly over its allocation (up to 130%) inside a
+total within range is a minor pacing note; under-target scenes stay major. Shorts use a separate,
+wider pacing contract. A failed check produces
 exact per-scene word deficits and a bounded targeted expansion; it never silently pads the story.
 Deterministic blockers cannot be cancelled by high editorial scores. The final statuses are
 `structurally_invalid`, `revision_required`, `human_review_required`, and
