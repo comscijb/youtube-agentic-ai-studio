@@ -7,6 +7,7 @@ from contextlib import redirect_stdout
 from pathlib import Path
 
 from PIL import Image
+from tests.style_isolation import setUpModule, tearDownModule  # noqa: F401
 
 try:
     from video import creator

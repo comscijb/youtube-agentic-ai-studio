@@ -16,6 +16,7 @@ from tests.fake_comfy import FakeComfy
 from tests.test_shot_planning import VISUAL_BIBLE
 from video import shot_generation as gen
 from video.imagegen_comfyui import ComfyClient, ImageGenerator
+from tests.style_isolation import setUpModule, tearDownModule  # noqa: F401
 
 
 def generator(output, fake):
@@ -139,7 +140,10 @@ class ShotTests(GenerationTestCase):
                         "local_path": job.output_path}
             return run
 
-        with patch.object(gen, "stock_fallback", fake_fallback):
+        with patch.object(gen, "stock_fallback", fake_fallback), \
+                patch.object(config, "VISUAL_STYLE", "cinematic_photo"):
+            # Stock is only a fallback for the legacy photographic style.
+            self.approve_all()
             summary = quiet(gen.generate_shots, self.output, generator(self.output, failing), only="s01_02")
         self.assertEqual(summary["fallback"], 1)
         entry = next(item for item in load_json(self.output / "asset_manifest.json")["generated_assets"]

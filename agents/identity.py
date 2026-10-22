@@ -111,3 +111,139 @@ def identity_block(narrative_type: str | None = None, *, include_movements: bool
                   for index, (key, text) in enumerate(TYPE_A_MOVEMENTS, 1)]
     lines += ["", "CRAFT RULES (all types):"] + [f"- {rule}" for rule in CRAFT_RULES]
     return "\n".join(lines)
+
+
+# ── Visual identity ─────────────────────────────────────────────────────────
+# Single source of truth for the image style. Bump STYLE_VERSION whenever the
+# wording changes: the style hash is part of every image cache key and of every
+# approved reference, so a new style never reuses old images.
+STYLE_VERSION = 1
+VISUAL_STYLES = ("dark_illustration", "cinematic_photo")
+STYLE_VARIANTS = {
+    "engraving": "scratchboard and engraved line work dominant, dense hatching and cross-hatching, "
+                 "minimal tonal wash",
+    "charcoal_gouache": "painterly charcoal and dry-brush gouache masses, softer edges, visible "
+                        "dry-brush texture, little line work",
+    "hybrid": "engraved ink line work and cross-hatching laid over painterly charcoal and gouache "
+              "washes",
+}
+# Brand colours used by the illustration palette, by config.COLORS key.
+_PALETTE_ROLES = (
+    ("background", "Midnight Ink", "dominant"),
+    ("primary", "Fog Blue", "midtones"),
+    ("white", "Warm Ivory", "highlights"),
+)
+_ACCENT_ROLES = (("highlight", "Antique Gold"), ("accent", "Muted Copper"))
+_PUNCTUATION = ("red", "Dusty Crimson")
+
+DARK_ILLUSTRATION = {
+    "medium": "dark hand-drawn illustration: ink drawing with scratchboard and engraving-like "
+              "hatching and cross-hatching, charcoal and dry-brush gouache washes, visible paper "
+              "grain, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic",
+    # Worded positively: with zeroed negative conditioning, naming "monsters" or
+    # "creatures" here would invite them.
+    "atmosphere": "cosmic dread carried only by space and light: oppressive scale with small figures "
+                  "against vast rooms, towering doorways and endless staircases, deep pooled shadows, "
+                  "a single dominant light source, smoke and fog tendrils and shadows that suggest an "
+                  "unseen presence and stay formless, subtly wrong geometry (corridors too long, "
+                  "ceilings lost in darkness), stillness, isolation",
+    "people": "stylised but consistent faces with gaunt planes, long shadows and expressive hands",
+    "exclusions": ("tentacles", "monsters", "creatures", "eldritch beings", "giant eyes", "gore",
+                   "occult symbols", "text", "letters", "watermark", "signature", "photorealism",
+                   "3D render", "glossy CGI", "anime", "cartoon", "bright saturated colour"),
+}
+CINEMATIC_PHOTO = {
+    "medium": "cinematic still, low-key lighting, muted palette, 35 mm film grain, shallow depth of "
+              "field, photorealistic",
+    "exclusions": ("text", "letters", "watermark", "signature"),
+}
+
+
+def _hex(rgb) -> str:
+    return "#" + "".join(f"{int(channel):02X}" for channel in rgb)
+
+
+def _color(key: str) -> str:
+    import config
+    return _hex(getattr(config, "COLORS", {}).get(key, (0, 0, 0)))
+
+
+def visual_style() -> str:
+    import config
+    style = str(getattr(config, "VISUAL_STYLE", "dark_illustration"))
+    return style if style in VISUAL_STYLES else "dark_illustration"
+
+
+def style_variant() -> str:
+    import config
+    variant = str(getattr(config, "VISUAL_STYLE_VARIANT", "hybrid"))
+    return variant if variant in STYLE_VARIANTS else "hybrid"
+
+
+def is_illustration() -> bool:
+    return visual_style() == "dark_illustration"
+
+
+def palette_text() -> str:
+    """Palette rule built from config.COLORS (hex values are never hard-coded here)."""
+    base = ", ".join(f"{name} {_color(key)} ({role})" for key, name, role in _PALETTE_ROLES)
+    accents = " or ".join(f"{name} {_color(key)}" for key, name in _ACCENT_ROLES)
+    key, name = _PUNCTUATION
+    return (f"near-monochrome duotone palette: {base}; a single warm accent per image, {accents}, "
+            f"only on the light source or the story's focal object; {name} {_color(key)} only for "
+            "rare emotional punctuation (wine, a wound, a ring)")
+
+
+def negative_terms(style: str | None = None) -> tuple:
+    style = style or visual_style()
+    return (DARK_ILLUSTRATION if style == "dark_illustration" else CINEMATIC_PHOTO)["exclusions"]
+
+
+def style_suffix(style: str | None = None, variant: str | None = None) -> str:
+    """Appended to every image prompt.
+
+    The FLUX graphs zero out the negative conditioning (cfg 1), so naming the
+    exclusions here would *invite* them ("tentacles" in a prompt tends to draw
+    tentacles). Exclusions are rules for the prompt writers (``image_prompt_rules``)
+    and are checked in code (``forbidden_terms``); the suffix stays positive.
+    """
+    style = style or visual_style()
+    if style == "cinematic_photo":
+        return f"{CINEMATIC_PHOTO['medium']}, no lettering, no watermark"
+    variant = variant or style_variant()
+    spec = DARK_ILLUSTRATION
+    return (f"{spec['medium']}; {STYLE_VARIANTS[variant]}. {spec['atmosphere']}. {spec['people']}. "
+            f"{palette_text()}. Clean image without lettering or watermark.")
+
+
+def image_prompt_rules(style: str | None = None) -> str:
+    """Rules for Gemini when it writes visual descriptions and shot actions."""
+    style = style or visual_style()
+    if style == "cinematic_photo":
+        return "Describe photographic, realistic scenes. Never include text, signs or screens with legible writing."
+    return ("Describe scenes for a dark hand-drawn illustration with cosmic dread but NO creatures: "
+            "suggest a presence only through shadow, fog, scale and wrong geometry. Never mention or "
+            "imply: " + ", ".join(DARK_ILLUSTRATION["exclusions"]) + ". Never include text, signs or "
+            "screens with legible writing.")
+
+
+def forbidden_terms(text: str, style: str | None = None) -> list[str]:
+    """Excluded subjects that slipped into a prompt (checked before generation)."""
+    import re
+    lowered = str(text or "").lower()
+    terms = [term for term in negative_terms(style)
+             if term not in {"text", "letters", "photorealism", "bright saturated colour"}]
+    return [term for term in terms if re.search(rf"\b{re.escape(term.lower())}\b", lowered)]
+
+
+def image_noun(style: str | None = None) -> str:
+    """'illustration' or 'photograph' for the generation-request voice."""
+    return "photograph" if (style or visual_style()) == "cinematic_photo" else "illustration"
+
+
+def style_hash(style: str | None = None, variant: str | None = None) -> str:
+    import hashlib
+    style = style or visual_style()
+    payload = f"{STYLE_VERSION}|{style}|{variant or style_variant() if style == 'dark_illustration' else ''}|" \
+              f"{style_suffix(style, variant)}"
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]

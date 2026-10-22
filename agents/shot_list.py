@@ -38,7 +38,7 @@ FRAMING = {
     "establishing": "establishing wide shot of the space",
     "medium": "medium shot, waist up",
     "close_up": "close-up on the face and shoulders",
-    "insert": "insert close-up of the object, shallow depth of field",
+    "insert": "insert close-up of the object",
     "over_the_shoulder": "over-the-shoulder shot",
     "silhouette": "silhouette against the light, face not visible",
     "hands": "close-up of the hands only, face out of frame",
@@ -142,8 +142,12 @@ def validate_shots(value: dict, segments: list[dict], vb: dict, outline: dict, p
     locations = {item["location_id"] for item in vb.get("locations", [])}
     seen = set()
     problems = []
+    from agents import identity
     for shot in shots:
         sid = shot["shot_id"]
+        banned = identity.forbidden_terms(shot.get("action", ""))
+        if banned:
+            problems.append(f"{sid}: the action mentions excluded subjects {banned}")
         if shot.get("shot_type") not in SHOT_TYPES:
             problems.append(f"{sid}: shot_type must be one of {SHOT_TYPES}")
         if shot.get("face_visibility") not in FACE_VISIBILITY:
@@ -181,8 +185,10 @@ def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bo
     cues = parse_srt(output / "narration.srt")
     policy = str(getattr(config, "IMAGEGEN_IDENTITY_POLICY", "reference"))
     segments = plan_segments(script, timeline, cues)
+    from agents import identity
     source_hash = stable_hash({"version": SHOT_LIST_VERSION, "segments": segments,
-                               "visual_bible": vb.get("source_hash"), "policy": policy})
+                               "visual_bible": vb.get("source_hash"), "policy": policy,
+                               "style": identity.visual_style()})
     existing = load_json(path) or {}
     if not force and existing.get("source_hash") == source_hash:
         return existing
@@ -205,7 +211,7 @@ face_visibility (none | partial | full) and reuse_of ("" or the shot_id of an EA
 showing the same image again is dramatically right, e.g. a motif returning).
 Mix wides, mediums, close-ups, inserts of objects, hands, silhouettes and over-the-shoulder shots;
 avoid two consecutive shots with the same framing. {policy_rule}
-No text, signs or screens with legible writing in any frame."""
+{identity.image_prompt_rules()}"""
     context = f"""VISUAL BIBLE: {compact_json({key: vb.get(key) for key in ("characters", "locations")})}
 SEGMENTS: {compact_json([{"shot_id": s["shot_id"], "scene_id": s["scene_id"],
                          "seconds": round(s["end"] - s["start"], 1), "narration": s["text"],
@@ -228,7 +234,9 @@ SEGMENTS: {compact_json([{"shot_id": s["shot_id"], "scene_id": s["scene_id"],
             "reuse_of": shot.get("reuse_of") or "", "seed": vbible.seed_for("shot", segment["shot_id"]),
             "seed_offset": 0,
         }
-        entry["prompt"] = compose_shot(entry, vb, output, assume_references=True)["prompt"]
+        composed = compose_shot(entry, vb, output, assume_references=True)
+        entry["prompt"] = composed["prompt"]
+        entry["reference_slots"] = composed["slots"]
         planned.append(entry)
     result = {
         "version": SHOT_LIST_VERSION, "source_hash": source_hash, "policy": policy,
@@ -251,37 +259,45 @@ def _noun(descriptor: str) -> str:
 
 
 def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = False) -> dict:
-    """Template kind, final prompt, reference image paths and seed for one shot.
+    """Template kind, final prompt, reference image paths, slot plan and seed for one shot.
 
-    Reference slots, in order: characters in the shot with approved portraits
-    (all of them if <= 3, otherwise the two most important), then the
-    approved location reference if a slot remains; never more than 4.
+    Reference slots in ReferenceMultiLatent (max 4), in order: characters in
+    the shot with approved portraits (at most 2, the most important first),
+    then the approved location reference (at most 1, not for inserts/hands),
+    then one approved style anchor when a slot is still free. Each is named by
+    its ordinal in the prompt.
     """
-    style = vb.get("global_style", {}).get("style_suffix", "")
+    from agents import identity, style_refs
+
+    style = identity.style_suffix()
+    noun = identity.image_noun()
     framing = FRAMING.get(shot.get("shot_type"), "")
     characters = list(shot.get("characters") or [])
-    if len(characters) > 3:
-        characters_for_refs = characters[:2]
-    else:
-        characters_for_refs = characters
     use_faces = shot.get("face_visibility") != "none" or shot.get("shot_type") in {"hands", "silhouette"}
-    references, ref_names, described = [], {}, []
+    references, slots, ref_names = [], [], {}
     for cid in characters:
-        entry = vbible.character(vb, cid) or {}
+        if len(ref_names) >= 2 or not use_faces:
+            break
         path = vbible.approved_reference(vb, "character", cid, output_dir)
-        if cid in characters_for_refs and use_faces and (path or assume_references) \
-                and len(references) < 4:
+        if path or assume_references:
             references.append(path or f"character_refs/{cid}.png")
+            slots.append({"slot": len(references) - 1, "kind": "character", "id": cid})
+            entry = vbible.character(vb, cid) or {}
             ref_names[cid] = f"the {_noun(entry.get('descriptor', ''))} from the " \
                              f"{ORDINALS[len(references) - 1]} image"
-        else:
-            described.append(cid)
     location = vbible.location(vb, shot.get("location")) or {}
     location_text = location.get("descriptor", "")
     location_ref = vbible.approved_reference(vb, "location", location.get("location_id", ""), output_dir)
     if location_ref and len(references) < 4 and shot.get("shot_type") not in {"insert", "hands"}:
         references.append(location_ref)
+        slots.append({"slot": len(references) - 1, "kind": "location", "id": location.get("location_id")})
         location_text = f"in the room from the {ORDINALS[len(references) - 1]} image"
+    anchors = style_refs.approved_paths()
+    style_text = ""
+    if anchors and len(references) < 4:
+        references.append(anchors[0])
+        slots.append({"slot": len(references) - 1, "kind": "style", "id": Path(anchors[0]).stem})
+        style_text = f"Rendered in the drawing style of the {ORDINALS[len(references) - 1]} image."
 
     subjects = []
     for cid in characters:
@@ -292,23 +308,32 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
             entry = vbible.character(vb, cid) or {}
             subjects.append(f"{entry.get('descriptor', cid)}, wearing {outfit}" if outfit
                             else entry.get("descriptor", cid))
+    article = "an" if noun[0] in "aeiou" else "a"
     if references:
-        lead = "Create a photograph of " + "; and ".join(subjects) if subjects else "Create a photograph"
-        prompt = f"{lead}. {shot['action']}. Setting: {location_text}. {framing}. {style}"
+        lead = f"Create {article} {noun} of " + "; and ".join(subjects) if subjects else f"Create {article} {noun}"
+        prompt = f"{lead}. {shot['action']}. Setting: {location_text}. {framing}. {style_text} {style}"
         kind = "ref"
     else:
         people = f" Featuring {'; and '.join(subjects)}." if subjects else ""
-        prompt = f"{shot['action']}.{people} Setting: {location_text}. {framing}. {style}"
+        prompt = f"{article.capitalize()} {noun}: {shot['action']}.{people} Setting: {location_text}. {framing}. {style}"
         kind = "t2i"
     prompt = re.sub(r"\s+", " ", re.sub(r"\.\s*\.", ".", prompt)).strip()
-    return {"kind": kind, "prompt": prompt, "references": references,
+    return {"kind": kind, "prompt": prompt, "references": references, "slots": slots,
             "seed": int(shot.get("seed", 0)) + 7919 * int(shot.get("seed_offset", 0))}
 
 
 def resolve_image(shots: list[dict], shot: dict) -> str | None:
-    """Image path for a shot, following reuse_of."""
+    """Image path for a shot, following reuse_of; a held shot (generation failed in
+    illustration mode) shows the previous shot's image for longer."""
     by_id = {item["shot_id"]: item for item in shots}
     current, hops = shot, 0
-    while current and current.get("reuse_of") and hops < 10:
-        current, hops = by_id.get(current["reuse_of"]), hops + 1
+    while current and hops < 10:
+        if current.get("reuse_of"):
+            current = by_id.get(current["reuse_of"])
+        elif current.get("hold_previous") and not current.get("image_path"):
+            index = next((i for i, item in enumerate(shots) if item["shot_id"] == current["shot_id"]), 0)
+            current = shots[index - 1] if index > 0 else None
+        else:
+            break
+        hops += 1
     return (current or {}).get("image_path")

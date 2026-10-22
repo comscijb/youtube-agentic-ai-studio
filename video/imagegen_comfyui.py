@@ -23,6 +23,7 @@ import requests
 from PIL import Image
 
 import config
+from agents import identity
 from video import imagegen_templates as templates
 
 RETRY_SEED_OFFSET = 1_000_003
@@ -192,6 +193,7 @@ class ImageGenerator:
             "references": [file_hash(path) for path in job.references],
             "latent": job.latent_source or getattr(config, "IMAGEGEN_LATENT_SOURCE", "reference"),
             "upsampler": bool(getattr(config, "IMAGEGEN_PROMPT_UPSAMPLER", False)),
+            "style": identity.style_hash(),
         }
         return hashlib.sha256(json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest()
 
@@ -238,6 +240,7 @@ class ImageGenerator:
         _, _, mapping = templates.load_templates()
         return {
             "provider": "comfyui", "synthetic": True, "job_id": job.job_id, "kind": job.kind,
+            "visual_style": identity.visual_style(), "style_hash": identity.style_hash(),
             "model": templates.model_names(graph, mapping),
             "workflow_hash": templates.graph_hash(graph), "prompt": job.prompt, "seed": seed,
             "size": list(job.size), "final_size": list(job.final_size),
@@ -247,10 +250,11 @@ class ImageGenerator:
             "local_path": str(target), "cache_key": key,
         }
 
-    def generate_with_retry(self, job: ImageJob, fallback: Callable[[ImageJob], dict | None] | None = None) -> dict:
-        """Original seed, then one new seed, then the fallback (e.g. stock)."""
+    def generate_with_retry(self, job: ImageJob, fallback: Callable[[ImageJob], dict | None] | None = None,
+                            new_seeds: int = 1) -> dict:
+        """Original seed, then ``new_seeds`` new seeds, then the fallback (e.g. stock)."""
         errors = []
-        for seed in (job.seed, job.seed + RETRY_SEED_OFFSET):
+        for seed in [job.seed + RETRY_SEED_OFFSET * attempt for attempt in range(new_seeds + 1)]:
             try:
                 record = self.generate(job, seed)
                 if errors:

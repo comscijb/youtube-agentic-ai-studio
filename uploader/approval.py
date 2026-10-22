@@ -39,6 +39,13 @@ SYNTHETIC_ITEM = {
         "YouTube's altered/synthetic content disclosure (containsSyntheticMedia) and I reviewed it."
     ),
 }
+ILLUSTRATION_ITEM = {
+    "synthetic_media_disclosed": (
+        "Reviewer decision on AI-generated images: they are clearly non-photorealistic "
+        "illustration, so the realistic altered/synthetic disclosure is NOT set by default. "
+        "Tick to confirm; choose 'set disclosure' instead if any image could pass as real."
+    ),
+}
 BLOCKED_STATUSES = {"structurally_invalid", "revision_required"}
 _MIN_REASON_CHARS = 10
 
@@ -81,9 +88,18 @@ def contains_synthetic_media(run_dir) -> bool:
         item.get("synthetic") for item in manifest.get("generated_assets", []))
 
 
+def realistic_synthetic_media(run_dir) -> bool:
+    """Generated images in a photographic style (assets predating the style field count as such)."""
+    manifest = load_json(Path(run_dir) / "asset_manifest.json") or {}
+    return any(item.get("synthetic") and item.get("visual_style", "cinematic_photo") != "dark_illustration"
+               for item in manifest.get("generated_assets", []))
+
+
 def checklist_for(run_dir) -> dict:
-    """The base checklist, plus the synthetic-media item when generated images are used."""
-    return {**CHECKLIST, **(SYNTHETIC_ITEM if contains_synthetic_media(run_dir) else {})}
+    """The base checklist, plus the synthetic-media decision when generated images are used."""
+    if not contains_synthetic_media(run_dir):
+        return dict(CHECKLIST)
+    return {**CHECKLIST, **(SYNTHETIC_ITEM if realistic_synthetic_media(run_dir) else ILLUSTRATION_ITEM)}
 
 
 def narrative_status(run_dir) -> str:
@@ -136,6 +152,7 @@ def review_summary(run_dir, *, title: str, **artifacts) -> dict:
         "license_flags": license_flags(run_dir),
         "checklist": checklist_for(run_dir),
         "synthetic_media": contains_synthetic_media(run_dir),
+        "synthetic_disclosure_default": realistic_synthetic_media(run_dir),
         "approval_valid": not current,
         "approval_problems": current,
     }
@@ -143,8 +160,14 @@ def review_summary(run_dir, *, title: str, **artifacts) -> dict:
 
 def approve(run_dir, *, checklist: dict, video_path, title, description, tags=None,
             thumbnail_path=None, notes: str = "", title_override_reason: str = "",
-            status_override_reason: str = "", reviewer: str = "") -> dict:
-    """Validate the checklist and write the approval bound to the current artifacts."""
+            status_override_reason: str = "", reviewer: str = "",
+            synthetic_disclosure: bool | None = None) -> dict:
+    """Validate the checklist and write the approval bound to the current artifacts.
+
+    ``synthetic_disclosure`` is the reviewer's decision on YouTube's realistic
+    altered/synthetic content flag; by default it is set only for photographic
+    generated images (illustration is treated as clearly non-realistic).
+    """
     problems = []
     required = checklist_for(run_dir)
     missing = [key for key in required if checklist.get(key) is not True]
@@ -170,6 +193,9 @@ def approve(run_dir, *, checklist: dict, video_path, title, description, tags=No
         "reviewer": reviewer,
         "checklist": {key: True for key in required},
         "synthetic_media": contains_synthetic_media(run_dir),
+        "synthetic_disclosure": bool(realistic_synthetic_media(run_dir)
+                                     if synthetic_disclosure is None else synthetic_disclosure)
+                                if contains_synthetic_media(run_dir) else False,
         "notes": str(notes or "").strip(),
         "narrative_status": status,
         "status_override_reason": status_reason if status in BLOCKED_STATUSES | {"missing"} else "",

@@ -22,6 +22,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 import config
+from agents import identity
 from agents import visual_bible as vbible
 from agents.narrative import load_json
 from video import shot_generation as gen
@@ -31,10 +32,10 @@ MODES = (("t2i", "t2i", ""), ("ref_reference", "ref", "reference"), ("ref_empty_
 PROMPTS = (
     "the man from the first image sits alone at a long dark dining table, candlelight, looking down",
     "the man from the first image stands by a tall window at night, city lights behind him, half in shadow",
-    "close-up of the man from the first image adjusting his cuff link, shallow depth of field",
+    "close-up of the man from the first image adjusting his cuff link",
 )
-STYLE = "cinematic still, low-key lighting, muted palette, 35 mm film grain, shallow depth of field, no text, no watermark"
-REFERENCE_PROMPT = ("Photograph portrait, chest-up, front view, of a 37-year-old man with a lean face, "
+STYLE = identity.style_suffix()
+REFERENCE_PROMPT = (f"An {identity.image_noun()} portrait, chest-up, front view, of a 37-year-old man with a lean face, "
                     "short dark hair and a charcoal suit. Neutral-to-dark backdrop. " + STYLE)
 
 
@@ -104,7 +105,7 @@ def main(argv=None) -> int:
         rows = [[] for _ in PROMPTS]
         for index, prompt in enumerate(PROMPTS):
             for name, kind, latent in MODES:
-                text = (f"Create a photograph of {prompt}. {STYLE}" if kind == "ref"
+                text = (f"Create an {identity.image_noun()} of {prompt}. {STYLE}" if kind == "ref"
                         else f"{prompt.replace('the man from the first image', 'a lean 37-year-old man in a charcoal suit')}. {STYLE}")
                 job = ImageJob(job_id=f"calibration_{name}_{index}", prompt=text, seed=run + index,
                                output_path=str(output / "imagegen_calibration" / f"{name}_{index}.jpg"),

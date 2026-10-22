@@ -186,7 +186,7 @@ def upload_run(run_dir: str, *, video_path: str, title: str, description: str, t
     published and bans its topic.
     """
     from uploader import publications
-    from uploader.approval import contains_synthetic_media, require_approval
+    from uploader.approval import realistic_synthetic_media, require_approval
 
     approval = require_approval(
         run_dir, video_path=video_path, title=title, description=description, tags=tags,
@@ -195,7 +195,8 @@ def upload_run(run_dir: str, *, video_path: str, title: str, description: str, t
     video_id = upload_video(
         video_path, title=title, description=description, tags=tags, privacy=privacy,
         publish_at=publish_at, thumbnail_path=thumbnail_path, progress=progress,
-        service=service, contains_synthetic_media=contains_synthetic_media(run_dir),
+        service=service,
+        contains_synthetic_media=approval.get("synthetic_disclosure", realistic_synthetic_media(run_dir)),
     )
     return publications.record_upload(
         video_id, run_dir, title=title, video_path=video_path,

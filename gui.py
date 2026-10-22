@@ -695,6 +695,7 @@ def _imagegen_run(target, *args):
 
 @app.route("/api/imagegen/status")
 def imagegen_status():
+    from agents import identity, style_refs
     from agents import visual_bible as vbible
     from video import shot_generation as shotgen
     from video.imagegen_comfyui import ComfyClient
@@ -711,7 +712,8 @@ def imagegen_status():
                 "kind": kind, "id": ident,
                 "approved": bool(vbible.approved_reference(vb, kind, ident, output)),
                 "approved_path": (vb.get("references") or {}).get(vbible.reference_key(kind, ident), {}).get("path"),
-                "candidates": candidates.get(vbible.reference_key(kind, ident), []),
+                "candidates": [item for item in candidates.get(vbible.reference_key(kind, ident), [])
+                               if item.get("style_hash") == identity.style_hash()],
             })
     shots = shot_list.get("shots", [])
     done = [shot for shot in shots if not shot.get("reuse_of") and shot.get("image_path")
@@ -725,6 +727,10 @@ def imagegen_status():
         "missing_approvals": shotgen.missing_approvals(vb, shot_list, output) if vb and shot_list else [],
         "unique_shots": shot_list.get("unique_shots", 0), "done": len(done),
         "eta_seconds": estimate,
+        "style": {"name": identity.visual_style(), "variant": identity.style_variant(),
+                  "hash": identity.style_hash(),
+                  "boards": [path.name for path in sorted(style_refs.candidates_dir().glob("board_*.jpg"))],
+                  "approved": [entry["number"] for entry in style_refs.approved()]},
         "shots": [{key: shot.get(key) for key in ("shot_id", "scene_id", "start", "end", "shot_type",
                                                    "characters", "face_visibility", "reuse_of",
                                                    "action", "prompt", "image_path", "provider")}
@@ -739,6 +745,32 @@ def imagegen_file():
     if output not in target.parents or not target.is_file() or target.suffix.lower() not in {".jpg", ".png"}:
         abort(404)
     return send_file(str(target))
+
+
+@app.route("/imagegen/style_file")
+def imagegen_style_file():
+    from agents import style_refs
+    root = style_refs.candidates_dir().resolve()
+    target = (root / request.args.get("name", "")).resolve()
+    if target.parent != root or not target.is_file() or target.suffix.lower() != ".jpg":
+        abort(404)
+    return send_file(str(target))
+
+
+@app.route("/api/imagegen/style/candidates", methods=["POST"])
+def imagegen_style_candidates():
+    from scripts import generate_style_refs
+    return _imagegen_run(lambda: generate_style_refs.main(["--output-dir", config.OUTPUT_DIR]))
+
+
+@app.route("/api/imagegen/style/approve", methods=["POST"])
+def imagegen_style_approve():
+    from agents import style_refs
+    try:
+        style_refs.approve(int((request.get_json(force=True) or {}).get("number", 0)))
+    except (FileNotFoundError, TypeError, ValueError) as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    return jsonify({"ok": True})
 
 
 @app.route("/api/imagegen/candidates", methods=["POST"])
@@ -768,6 +800,7 @@ def imagegen_approve():
 
 
 def _update_shot(shot_id: str, change) -> dict | None:
+    """Apply ``change`` to one shot and invalidate only its image (and the rendered video)."""
     path = Path(config.OUTPUT_DIR, "shot_list.json")
     shot_list = load_json(path) or {}
     shot = next((item for item in shot_list.get("shots", []) if item["shot_id"] == shot_id), None)
@@ -792,9 +825,13 @@ def imagegen_regenerate_shot(shot_id):
 
 @app.route("/api/imagegen/shot/<shot_id>/prompt", methods=["POST"])
 def imagegen_edit_shot(shot_id):
+    from agents import identity
     action = str((request.get_json(force=True) or {}).get("action", "")).strip()
     if not action:
         return jsonify({"ok": False, "error": "The shot action must not be empty"}), 400
+    banned = identity.forbidden_terms(action)
+    if banned:
+        return jsonify({"ok": False, "error": "The visual style excludes: " + ", ".join(banned)}), 400
     if not _update_shot(shot_id, lambda shot: shot.update(action=action)):
         return jsonify({"ok": False, "error": "Unknown shot"}), 404
     return jsonify({"ok": True})
@@ -855,6 +892,7 @@ def approve_upload():
             notes=body.get("notes", ""),
             title_override_reason=body.get("title_override_reason", ""),
             status_override_reason=body.get("status_override_reason", ""),
+            synthetic_disclosure=body.get("synthetic_disclosure"),
             **meta,
         )
     except UploadNotApproved as exc:

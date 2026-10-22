@@ -391,6 +391,18 @@ fallback for environment/object shots. Requirements: ComfyUI Desktop on `http://
 with the models named in `workflows/flux3_klein_edit_api.json` (UNET
 `flux3-image-klein-int8-convrot`, text encoder `qwen3vl_4b_int8_convrot`, VAE `flux2-vae`).
 
+- **Visual identity.** `VISUAL_STYLE = "dark_illustration"` (default; `cinematic_photo` is the
+  legacy option): ink, scratchboard hatching and charcoal/gouache washes, cosmic dread carried by
+  scale, fog and light only (no creatures), in the brand palette read from `config.COLORS`. The
+  spec lives in `agents/identity.py` (versioned); its hash is part of every image cache key and of
+  every approved reference, so a style change never reuses old images. Choose the variant with
+  `python -m scripts.calibrate_style` (`VISUAL_STYLE_VARIANT`: `engraving`, `charcoal_gouache`,
+  `hybrid`), then approve 1–2 of our own style boards (`python -m scripts.generate_style_refs`)
+  as channel-wide style anchors. Reference slots per shot: characters (≤ 2) → location (≤ 1) →
+  style anchor (≤ 1). In this style stock is never used for shots: a failed shot gets two new
+  seeds, then the previous shot is held longer. The video overlay is lighter
+  (`ILLUSTRATION_OVERLAY_OPACITY`), and the synthetic-content disclosure is a reviewer decision
+  that defaults to "not realistic".
 - **Templates.** `workflows/flux3_klein_t2i_api.json` and `flux3_klein_ref_api.json` are derived
   from the exported edit workflow (layout and upsampler removed; up to 4 references through
   `ReferenceMultiLatent`). Every graph is validated against ComfyUI's `/object_info` before it is

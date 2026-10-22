@@ -9,12 +9,14 @@ from unittest.mock import patch
 from PIL import Image
 
 import config
+from agents import identity
 from agents import visual_bible as vbible
 from agents.narrative import atomic_write_json, load_json
 from tests.test_shot_generation import SHOTS
 from tests.test_shot_planning import VISUAL_BIBLE
 from video import shot_generation as gen
 from video.imagegen_comfyui import ComfyClient
+from tests.style_isolation import setUpModule, tearDownModule  # noqa: F401
 
 
 class GuiImagegenTests(unittest.TestCase):
@@ -33,7 +35,8 @@ class GuiImagegenTests(unittest.TestCase):
         (self.output / "character_refs" / "candidates").mkdir(parents=True)
         Image.new("RGB", (64, 64)).save(self.output / "character_refs" / "candidates" / "julian_vance_1.jpg")
         atomic_write_json(self.output / gen.CANDIDATES_FILE, {"character:julian_vance": [
-            {"number": 1, "path": "character_refs/candidates/julian_vance_1.jpg", "seed": 5, "prompt": "p"}]})
+            {"number": 1, "path": "character_refs/candidates/julian_vance_1.jpg", "seed": 5, "prompt": "p",
+             "style_hash": identity.style_hash()}]})
         (self.output / "final_video.mp4").write_bytes(b"old video")
         self.patches = [patch.object(config, "OUTPUT_DIR", str(self.output)),
                         patch.object(ComfyClient, "available", return_value=False),

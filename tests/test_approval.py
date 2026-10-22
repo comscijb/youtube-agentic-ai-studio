@@ -12,6 +12,7 @@ from agents.narrative import atomic_write_json, load_json, validate_story_brief
 from tests.test_narrative import story_brief
 from tests.test_publications import FakeService
 from uploader import approval, publications, youtube
+from tests.style_isolation import setUpModule, tearDownModule  # noqa: F401
 
 CHECKLIST = {key: True for key in approval.CHECKLIST}
 GOOD_TITLE = "He Waited Twenty Years to Say It"

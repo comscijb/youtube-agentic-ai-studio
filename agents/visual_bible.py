@@ -3,9 +3,8 @@
 One Gemini call (contract first, JSON mode, validated, cached by source hash)
 turns the Character Bible, outline and screenplay into ``visual_bible.json``:
 
-* ``global_style`` — a style suffix appended to every image prompt (cinematic,
-  low-key, the brand palette, 35 mm grain, shallow depth of field, no text) and
-  a negative prompt;
+* ``global_style`` — recorded from ``agents/identity.py`` (the single source of
+  the visual style); prompts always use the live identity style, not this copy;
 * ``characters`` — one immutable visual descriptor each (apparent age matching
   the bible, ethnicity as stated or chosen once, build, face, hair, features)
   and the wardrobe per scene, consistent with the screenplay;
@@ -20,6 +19,7 @@ live under ``references`` and survive regeneration while their ids still exist.
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
 
 import config
@@ -38,23 +38,19 @@ def seed_for(kind: str, identifier: str) -> int:
     return int(digest[:8], 16) & 0x7FFFFFFF
 
 
-def _hex(rgb) -> str:
-    return "#" + "".join(f"{int(channel):02x}" for channel in rgb)
-
-
 def _scene_ids(outline: dict) -> list[str]:
     return [scene["scene_id"] for scene in outline.get("scenes", []) if scene.get("scene_id")]
 
 
 def validate_visual_bible(value: dict, bible: dict, outline: dict) -> dict:
+    from agents import identity
     if not isinstance(value, dict):
         raise NarrativeValidationError("visual bible must be an object")
-    style = value.get("global_style")
-    if not isinstance(style, dict) or not str(style.get("style_suffix", "")).strip():
-        raise NarrativeValidationError("visual bible requires global_style.style_suffix")
-    if "no text" not in str(style["style_suffix"]).lower():
-        raise NarrativeValidationError("global_style.style_suffix must include 'no text'")
-    style.setdefault("negative_prompt", "")
+    descriptions = json.dumps([value.get("characters"), value.get("locations"),
+                               value.get("thumbnail_shot")], ensure_ascii=False)
+    banned = identity.forbidden_terms(descriptions)
+    if banned:
+        raise NarrativeValidationError(f"visual bible mentions excluded subjects: {banned}")
     known_characters = {character["character_id"] for character in bible.get("characters", [])}
     scenes = set(_scene_ids(outline))
     characters = value.get("characters")
@@ -106,32 +102,29 @@ def build_visual_bible(script: dict, brief: dict, bible: dict, outline: dict, ou
                        force: bool = False) -> dict:
     output = Path(output_dir)
     path = output / FILE_NAME
+    from agents import identity
     source_hash = stable_hash({
-        "version": VISUAL_BIBLE_VERSION, "bible": bible.get("characters"),
+        "version": VISUAL_BIBLE_VERSION, "style": identity.visual_style(),
+        "bible": bible.get("characters"),
         "outline": [(scene.get("scene_id"), scene.get("setting")) for scene in outline.get("scenes", [])],
         "narration": [scene.get("narration") for scene in script.get("sections", [])],
     })
     existing = load_json(path) or {}
     if not force and existing.get("source_hash") == source_hash:
         return existing
-    colors = getattr(config, "COLORS", {})
-    palette = ", ".join(f"{name} {_hex(rgb)}" for name, rgb in colors.items()
-                        if name in {"background", "primary", "accent", "highlight", "light"})
-    contract = f"""You are the production designer of Private Gravity, an anthology of dark, cinematic
+    contract = f"""You are the production designer of Private Gravity, an anthology of dark
 psychological fiction. From the CHARACTER BIBLE, OUTLINE and SCREENPLAY supplied after this
-contract, write the episode's VISUAL BIBLE used to prompt a photographic image model.
+contract, write the episode's VISUAL BIBLE used to prompt the image model. The drawing style itself
+is fixed elsewhere; describe only people, clothes, places and the thumbnail moment.
 
 Return ONLY JSON:
-{{"global_style": {{"style_suffix": "...", "negative_prompt": "..."}},
-  "characters": [{{"character_id": "...", "descriptor": "...",
+{{"characters": [{{"character_id": "...", "descriptor": "...",
                    "wardrobe": [{{"scene_ids": ["s01"], "outfit": "..."}}]}}],
   "locations": [{{"location_id": "...", "name": "...", "descriptor": "...", "scene_ids": ["s01"]}}],
   "thumbnail_shot": {{"description": "...", "characters": ["character_id"], "location_id": "..."}}}}
 
 Rules:
-- style_suffix: one reusable phrase for every image: cinematic still, low-key lighting, muted
-  palette matching the brand colors ({palette}), 35 mm film grain, shallow depth of field,
-  photorealistic, no text, no watermark. negative_prompt lists what must never appear.
+- {identity.image_prompt_rules()}
 - Every Character Bible character gets ONE immutable descriptor: apparent age consistent with
   the bible's age, ethnicity as stated in the bible or chosen once, build, face shape, hair,
   distinguishing features. Never contradict the bible.
@@ -140,7 +133,7 @@ Rules:
   no cardigan when the screenplay says she wears an ivory silk shirt). Cover every scene in which
   the character appears.
 - locations: every recurring set gets one descriptor reused in every shot set there (materials,
-  light, objects). Every outline scene_id must belong to a location.
+  light, scale, objects). Every outline scene_id must belong to a location.
 - thumbnail_shot: the strongest emotional image of the episode, a human focal point (a partial
   face is fine), with negative space on the left for a short line of text."""
     context = f"""CHARACTER BIBLE: {compact_json(bible)}
@@ -153,6 +146,9 @@ SCREENPLAY: {compact_json([{"scene_id": scene.get("outline_scene_id"), "narratio
         generator=generate, context=context, stage="visual_bible",
         temperature_key="character_bible", run_dir=str(output),
     )
+    value["global_style"] = {"style": identity.visual_style(), "variant": identity.style_variant(),
+                             "style_hash": identity.style_hash(), "style_suffix": identity.style_suffix(),
+                             "exclusions": list(identity.negative_terms())}
     for character in value["characters"]:
         character["seed"] = seed_for("character", character["character_id"])
     for location in value["locations"]:
@@ -199,9 +195,16 @@ def reference_key(kind: str, identifier: str) -> str:
 
 
 def approved_reference(vb: dict, kind: str, identifier: str, output_dir) -> str | None:
-    """Path of the approved reference image, if it exists on disk."""
+    """Path of the approved reference image for the CURRENT style, if it exists on disk.
+
+    References are style-specific: an approval made under another style (or a
+    legacy photographic one without a style hash) is not returned.
+    """
+    from agents import identity
     entry = (vb.get("references") or {}).get(reference_key(kind, identifier))
     if not entry:
+        return None
+    if entry.get("style_hash", identity.style_hash("cinematic_photo")) != identity.style_hash():
         return None
     path = Path(output_dir) / entry["path"]
     return str(path) if path.is_file() else None
@@ -209,8 +212,10 @@ def approved_reference(vb: dict, kind: str, identifier: str, output_dir) -> str 
 
 def record_approval(vb: dict, kind: str, identifier: str, relative_path: str, *, seed: int,
                     prompt: str, output_dir) -> dict:
+    from agents import identity
     vb.setdefault("references", {})[reference_key(kind, identifier)] = {
         "path": relative_path, "seed": seed, "prompt": prompt,
+        "style": identity.visual_style(), "style_hash": identity.style_hash(),
     }
     atomic_write_json(Path(output_dir) / FILE_NAME, vb)
     return vb

@@ -60,6 +60,7 @@ def approve():
             notes=body.get("notes", ""),
             title_override_reason=body.get("title_override_reason", ""),
             status_override_reason=body.get("status_override_reason", ""),
+            synthetic_disclosure=body.get("synthetic_disclosure"),
             **_state["upload"],
         )
     except UploadNotApproved as exc:

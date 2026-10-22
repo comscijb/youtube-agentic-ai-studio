@@ -438,9 +438,17 @@ def shot_motion(shot_type: str, index: int) -> tuple:
     return 1.0, 1.06, ((1, 0) if index % 2 == 0 else (0, 1))
 
 
+def overlay_base() -> float:
+    """Illustrations are already low-key: a much lighter overlay than photos."""
+    from agents import identity
+    if identity.is_illustration():
+        return float(getattr(config, "ILLUSTRATION_OVERLAY_OPACITY", 0.12))
+    return float(getattr(config, "CINEMATIC_OVERLAY_OPACITY", 0.38))
+
+
 def adaptive_opacity(luminance: float, base: float | None = None) -> float:
     """Darken bright images more, low-key (generated) images less."""
-    base = getattr(config, "CINEMATIC_OVERLAY_OPACITY", 0.38) if base is None else base
+    base = overlay_base() if base is None else base
     return round(max(0.08, min(base, base * luminance / 110.0)), 3)
 
 

@@ -9,8 +9,10 @@ from unittest.mock import patch
 
 import config
 from agents import shot_list as shots_module
+from agents import identity
 from agents import visual_bible as vbible
 from agents.narrative import NarrativeValidationError, atomic_write_json
+from tests.style_isolation import setUpModule, tearDownModule  # noqa: F401
 
 BIBLE = {"characters": [
     {"character_id": "julian_vance", "name": "Julian Vance", "age": "37", "role": "protagonist"},
@@ -59,7 +61,9 @@ class VisualBibleTests(unittest.TestCase):
         prompt = call.call_args.args[0]
         self.assertIn("immutable descriptor", prompt)
         self.assertIn("ivory silk shirt", prompt)              # screenplay is in the context
-        self.assertIn("#0c1218", prompt)                       # brand palette
+        self.assertIn("NO creatures", prompt)                  # identity image rules
+        self.assertNotIn("35 mm", prompt)
+        self.assertEqual(first["global_style"]["style_hash"], identity.style_hash())
         self.assertEqual(first, again)
         julian = vbible.character(first, "julian_vance")
         self.assertEqual(julian["seed"], vbible.seed_for("character", "julian_vance"))
@@ -73,9 +77,9 @@ class VisualBibleTests(unittest.TestCase):
         bad_scene = json.loads(json.dumps(VISUAL_BIBLE))
         bad_scene["characters"][0]["wardrobe"][0]["scene_ids"] = ["s09"]
         cases.append((bad_scene, "unknown: ['s09']"))
-        no_text = json.loads(json.dumps(VISUAL_BIBLE))
-        no_text["global_style"]["style_suffix"] = "cinematic"
-        cases.append((no_text, "no text"))
+        creature = json.loads(json.dumps(VISUAL_BIBLE))
+        creature["locations"][0]["descriptor"] += ", tentacles in the fog"
+        cases.append((creature, "excluded subjects: ['tentacles']"))
         uncovered = json.loads(json.dumps(VISUAL_BIBLE))
         uncovered["locations"][0]["scene_ids"] = ["s01"]
         cases.append((uncovered, "no location covers scenes: s02"))
@@ -193,9 +197,10 @@ class ShotListTests(unittest.TestCase):
         for field in ("start", "end", "narration_excerpt", "shot_type", "characters", "location",
                       "prompt", "face_visibility", "reuse_of"):
             self.assertIn(field, shot)
-        self.assertTrue(shot["prompt"].startswith("Create a photograph of the man from the first image"))
+        self.assertTrue(shot["prompt"].startswith("Create an illustration of the man from the first image"))
         self.assertIn("charcoal tailored suit", shot["prompt"])
-        self.assertIn("no text", shot["prompt"])
+        self.assertIn("without lettering", shot["prompt"])
+        self.assertEqual(shot["reference_slots"][0], {"slot": 0, "kind": "character", "id": "julian_vance"})
         self.assertEqual(result["shots"][-1]["end"], 40.0)
         self.assertEqual(result["unique_shots"], len(result["shots"]))
         _, again = self.build(lambda *a, **k: payload)
@@ -243,7 +248,8 @@ class ComposeTests(unittest.TestCase):
                                      ("location", "loft", "location_refs/loft.png")):
                 Path(temp, rel).parent.mkdir(exist_ok=True)
                 Path(temp, rel).write_bytes(b"png")
-                vb.setdefault("references", {})[f"{kind}:{ident}"] = {"path": rel, "seed": 1, "prompt": ""}
+                vb.setdefault("references", {})[f"{kind}:{ident}"] = {
+                    "path": rel, "seed": 1, "prompt": "", "style_hash": identity.style_hash()}
             composed = shots_module.compose_shot(self.shot(), vb, temp)
         self.assertEqual(composed["kind"], "ref")
         self.assertEqual([Path(p).name for p in composed["references"]],

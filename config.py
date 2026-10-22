@@ -184,6 +184,15 @@ GEMINI_STAGE_TEMPERATURES = {
 # ─────────────────────────────────────────
 #  Local image generation (ComfyUI + FLUX 3 Image Klein)
 # ─────────────────────────────────────────
+# Visual identity (agents/identity.py): "dark_illustration" (default) or the legacy
+# "cinematic_photo". The variant is chosen after python -m scripts.calibrate_style:
+# "engraving" | "charcoal_gouache" | "hybrid".
+VISUAL_STYLE         = os.getenv("VISUAL_STYLE", "dark_illustration")
+VISUAL_STYLE_VARIANT = os.getenv("VISUAL_STYLE_VARIANT", "hybrid")
+# Channel-level style anchors approved after python -m scripts.generate_style_refs.
+STYLE_REFS_DIR       = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "style_refs")
+# Illustrations are already low-key: much lighter darkening overlay than photos.
+ILLUSTRATION_OVERLAY_OPACITY = 0.12
 IMAGEGEN_ENABLED          = os.getenv("IMAGEGEN_ENABLED", "true").lower() in ("1", "true", "yes", "on")
 IMAGEGEN_COMFYUI_URL      = os.getenv("IMAGEGEN_COMFYUI_URL", "http://127.0.0.1:8188")
 IMAGEGEN_SIZE             = (1360, 752)   # ~1 MP native 16:9, Lanczos-upscaled to the video size

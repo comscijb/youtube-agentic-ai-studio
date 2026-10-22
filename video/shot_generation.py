@@ -28,6 +28,7 @@ from typing import Callable
 from PIL import Image
 
 import config
+from agents import identity
 from agents import shot_list as shots_module
 from agents import visual_bible as vbible
 from agents.narrative import atomic_write_json, load_json
@@ -77,25 +78,59 @@ def ensure_shot_list(output_dir, force: bool = False) -> dict:
 
 # ── References ─────────────────────────────────────────────────────────────
 
+def _article(noun: str) -> str:
+    return "an" if noun[0] in "aeiou" else "a"
+
+
 def portrait_prompt(vb: dict, character_id: str, view: str) -> str:
     entry = vbible.character(vb, character_id) or {}
     outfit = (entry.get("wardrobe") or [{}])[0].get("outfit", "")
-    style = vb.get("global_style", {}).get("style_suffix", "")
-    return (f"Photograph portrait, chest-up, {view}, of {entry.get('descriptor', character_id)}"
-            f"{', wearing ' + outfit if outfit else ''}. Neutral-to-dark backdrop, soft low-key "
-            f"light, calm expression, looking near the camera. {style}")
+    noun = identity.image_noun()
+    return (f"{_article(noun).capitalize()} {noun} portrait, chest-up, {view}, of "
+            f"{entry.get('descriptor', character_id)}{', wearing ' + outfit if outfit else ''}. "
+            f"Dark backdrop, a single low light source, calm expression, looking near the viewer. "
+            f"{identity.style_suffix()}")
 
 
 def location_prompt(vb: dict, location_id: str) -> str:
     entry = vbible.location(vb, location_id) or {}
-    style = vb.get("global_style", {}).get("style_suffix", "")
-    return f"Establishing wide shot of {entry.get('descriptor', location_id)}, empty, no people. {style}"
+    noun = identity.image_noun()
+    return (f"{_article(noun).capitalize()} {noun}: establishing wide view of "
+            f"{entry.get('descriptor', location_id)}, empty, no people. {identity.style_suffix()}")
+
+
+def archive_stale_references(output) -> Path | None:
+    """Move reference images made under another style to character_refs/archive/<stamp>/."""
+    output = Path(output)
+    record = load_json(output / CANDIDATES_FILE) or {}
+    current = identity.style_hash()
+    stale = {key: [item for item in items if item.get("style_hash") != current]
+             for key, items in record.items()}
+    if not any(stale.values()) and not any((output / folder).glob("*.png")
+                                           for folder in ("character_refs", "location_refs")):
+        return None
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    archive = output / "character_refs" / "archive" / stamp
+    moved = 0
+    for folder in ("character_refs", "location_refs"):
+        for path in list((output / folder).glob("*.png")) + list((output / folder / "candidates").glob("*.jpg")):
+            target = archive / folder / path.relative_to(output / folder)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(path), str(target))
+            moved += 1
+    record = {key: [item for item in items if item.get("style_hash") == current]
+              for key, items in record.items()}
+    atomic_write_json(output / CANDIDATES_FILE, record)
+    return archive if moved else None
 
 
 def generate_reference_candidates(vb: dict, output_dir, generator: ImageGenerator, *,
                                   characters: list[str] | None = None, locations: bool = True,
                                   progress: Callable[[str], None] = print) -> dict:
     output = Path(output_dir)
+    archived = archive_stale_references(output)
+    if archived:
+        progress(f"   → Previous references archived in {archived} (they belong to another style)")
     record = load_json(output / CANDIDATES_FILE) or {}
     wanted = characters or [item["character_id"] for item in vb.get("characters", [])]
     jobs = []
@@ -122,7 +157,8 @@ def generate_reference_candidates(vb: dict, output_dir, generator: ImageGenerato
         entries = record.setdefault(vbible.reference_key(kind, ident), [])
         entries[:] = [item for item in entries if item["number"] != number]
         entries.append({"number": number, "path": str(Path(job.output_path).relative_to(output)),
-                        "seed": result["seed"], "prompt": job.prompt})
+                        "seed": result["seed"], "prompt": job.prompt,
+                        "style_hash": identity.style_hash()})
         atomic_write_json(output / CANDIDATES_FILE, record)
     return record
 
@@ -130,7 +166,8 @@ def generate_reference_candidates(vb: dict, output_dir, generator: ImageGenerato
 def approve_reference(vb: dict, kind: str, ident: str, number: int, output_dir) -> dict:
     output = Path(output_dir)
     candidates = (load_json(output / CANDIDATES_FILE) or {}).get(vbible.reference_key(kind, ident), [])
-    chosen = next((item for item in candidates if item["number"] == int(number)), None)
+    chosen = next((item for item in candidates if item["number"] == int(number)
+                   and item.get("style_hash") == identity.style_hash()), None)
     if not chosen or not (output / chosen["path"]).is_file():
         raise FileNotFoundError(f"no candidate #{number} for {kind} {ident}; generate candidates first")
     folder = "character_refs" if kind == "character" else "location_refs"
@@ -174,6 +211,8 @@ def estimate_gpu_seconds(shot_list: dict, output_dir=None) -> float | None:
 
 def _done(shot: dict, output_dir) -> bool:
     path = shot.get("image_path")
+    if shot.get("hold_previous"):
+        return True
     return bool(path) and (Path(path).is_file() or (output_dir and (Path(output_dir) / path).is_file()))
 
 
@@ -233,7 +272,7 @@ def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None =
     per = seconds_per_image("ref") or seconds_per_image("t2i")
     every = max(1, int(getattr(config, "IMAGEGEN_FREE_MEMORY_EVERY", 10)))
     started = clock()
-    summary = {"generated": 0, "cached": 0, "fallback": 0, "failed": [], "total": len(queue)}
+    summary = {"generated": 0, "cached": 0, "fallback": 0, "failed": [], "held": [], "total": len(queue)}
     for index, shot in enumerate(queue, 1):
         composed = shots_module.compose_shot(shot, vb, output)
         job = ImageJob(job_id=shot["shot_id"], prompt=composed["prompt"], seed=composed["seed"],
@@ -243,15 +282,32 @@ def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None =
         progress(f"   → Shot {index}/{len(queue)} {shot['shot_id']} ({composed['kind']}, "
                  f"{len(composed['references'])} refs)"
                  + (f" — ETA {remaining / 60:.0f} min" if remaining else ""))
+        illustration = identity.is_illustration()
         try:
-            record = generator.generate_with_retry(job, fallback=stock_fallback(output, vb, shot))
+            # Stock photos cannot stand in for illustrations: in that style a failed
+            # shot gets two new seeds and then holds the previous shot longer.
+            record = generator.generate_with_retry(
+                job, fallback=None if illustration else stock_fallback(output, vb, shot),
+                new_seeds=2 if illustration else 1)
         except ComfyUnavailable:
             raise
         except GenerationFailed as exc:
-            summary["failed"].append(shot["shot_id"])
-            progress(f"   ⚠ {shot['shot_id']}: {exc}")
+            if illustration and index > 0:
+                shot["hold_previous"] = True
+                shot["generated_at"] = _now()
+                summary["held"].append(shot["shot_id"])
+                _record_provenance(output, [{"job_id": shot["shot_id"], "provider": "none",
+                                             "fallback": "hold_previous", "synthetic": False,
+                                             "generation_errors": [str(exc)]}])
+                atomic_write_json(output / shots_module.FILE_NAME, shot_list)
+                progress(f"   ⚠ {shot['shot_id']}: generation failed; holding the previous shot longer")
+            else:
+                summary["failed"].append(shot["shot_id"])
+                progress(f"   ⚠ {shot['shot_id']}: {exc}")
             continue
         shot["prompt"] = composed["prompt"]
+        shot["reference_slots"] = composed["slots"]
+        shot.pop("hold_previous", None)
         shot["image_path"] = str(Path(job.output_path).relative_to(output))
         shot["provider"] = record.get("provider", "comfyui")
         shot["generated_at"] = _now()
@@ -269,8 +325,12 @@ def generate_thumbnail_image(output_dir, generator: ImageGenerator) -> str:
     output = Path(output_dir)
     vb = load_json(output / vbible.FILE_NAME) or {}
     thumb = vb.get("thumbnail_shot") or {}
+    # The protagonist (first visual-bible character) anchors the thumbnail.
+    protagonist = [vb["characters"][0]["character_id"]] if vb.get("characters") else []
+    characters = list(thumb.get("characters") or [])
+    characters = protagonist + [cid for cid in characters if cid not in protagonist]
     shot = {"shot_id": "thumbnail", "scene_id": "", "shot_type": "medium",
-            "characters": thumb.get("characters") or [], "location": thumb.get("location_id"),
+            "characters": characters, "location": thumb.get("location_id"),
             "action": f"{thumb.get('description', '')}, strong emotional focal point on the right, "
                       "dark negative space on the left", "face_visibility": "partial",
             "seed": thumb.get("seed", vbible.seed_for("thumbnail", "episode")), "seed_offset": 0}
@@ -278,6 +338,6 @@ def generate_thumbnail_image(output_dir, generator: ImageGenerator) -> str:
     job = ImageJob(job_id="thumbnail", prompt=composed["prompt"], seed=composed["seed"],
                    output_path=str(output / "thumbnail_bg.jpg"), kind=composed["kind"],
                    references=composed["references"], size=native_size(), final_size=(1280, 720))
-    record = generator.generate_with_retry(job)
+    record = generator.generate_with_retry(job, new_seeds=2 if identity.is_illustration() else 1)
     _record_provenance(output, [record])
     return job.output_path

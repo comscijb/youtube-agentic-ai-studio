@@ -474,7 +474,10 @@ input[type=range]{width:100%;accent-color:var(--primary)}
               <span id="ig-comfy" style="font-size:11px"></span>
             </div>
             <div id="ig-status" style="font-size:11px;color:var(--muted);margin-bottom:6px"></div>
+            <div id="ig-style" style="font-size:11px;margin-bottom:6px"></div>
+            <div id="ig-style-boards" style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:8px"></div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+              <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="igPost('/api/imagegen/style/candidates')">Generate style boards</button>
               <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="igPost('/api/imagegen/candidates')">Generate reference candidates</button>
               <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="igPost('/api/imagegen/generate', {limit: 5})">Generate 5 shots</button>
               <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="igPost('/api/imagegen/generate', {})">Generate all shots</button>
@@ -541,6 +544,9 @@ input[type=range]{width:100%;accent-color:var(--primary)}
               <div class="field-label" style="margin-bottom:2px">Narrative status override reason</div>
               <input type="text" id="gate-status-reason" placeholder="Why upload despite the narrative status?" oninput="updateGateButtons()">
             </div>
+            <label id="gate-disclosure-wrap" style="display:none;font-size:12px;margin-top:6px;gap:6px;align-items:center">
+              <input type="checkbox" id="gate-disclosure"> Set YouTube's altered/synthetic content disclosure
+            </label>
             <textarea id="gate-notes" rows="2" style="font-size:12px;margin-top:6px" placeholder="Optional reviewer notes"></textarea>
             <button class="btn btn-ghost" id="gate-approve-btn" style="margin-top:6px;font-size:12px" onclick="approveUpload()" disabled>✔ Record approval</button>
             <div id="gate-msg" style="font-size:11px;margin-top:4px"></div>
@@ -1115,6 +1121,28 @@ function loadImagegen() {
     document.getElementById('ig-status').textContent =
       `${d.done}/${d.unique_shots} unique shots${eta}${waiting}` + (d.busy ? ` · working: ${d.message}` : (d.message ? ` · ${d.message}` : ''));
 
+    const style = d.style || {boards: [], approved: []};
+    document.getElementById('ig-style').textContent =
+      `Style: ${style.name} / ${style.variant} · anchors approved: ${style.approved.length ? style.approved.map(n => '#' + n).join(', ') : 'none (approve 1–2 boards)'}`;
+    const boards = document.getElementById('ig-style-boards');
+    boards.innerHTML = '';
+    style.boards.forEach(name => {
+      const number = parseInt(name.replace(/[^0-9]/g, ''), 10);
+      const cell = document.createElement('div');
+      const img = document.createElement('img');
+      img.src = '/imagegen/style_file?name=' + encodeURIComponent(name) + '&t=' + Date.now();
+      img.style.cssText = 'width:100%;border-radius:4px;display:block;outline:' +
+        (style.approved.includes(number) ? '2px solid var(--green)' : 'none');
+      cell.appendChild(img);
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-ghost';
+      btn.style.cssText = 'font-size:10px;padding:2px 6px;width:100%;margin-top:2px';
+      btn.textContent = style.approved.includes(number) ? `✓ #${number}` : `Approve #${number}`;
+      btn.onclick = () => igPost('/api/imagegen/style/approve', {number});
+      cell.appendChild(btn);
+      boards.appendChild(cell);
+    });
+
     const refs = document.getElementById('ig-refs');
     refs.innerHTML = '';
     d.references.forEach(ref => {
@@ -1380,6 +1408,8 @@ function loadReviewGate() {
       list.appendChild(flags);
     }
     document.getElementById('gate-title-reason-wrap').style.display = d.title_passes ? 'none' : '';
+    document.getElementById('gate-disclosure-wrap').style.display = d.synthetic_media ? 'flex' : 'none';
+    document.getElementById('gate-disclosure').checked = !!d.synthetic_disclosure_default;
     document.getElementById('gate-status-reason-wrap').style.display = d.status_override_required ? '' : 'none';
     updateGateButtons();
   });
@@ -1411,6 +1441,7 @@ function approveUpload() {
       notes: document.getElementById('gate-notes').value,
       title_override_reason: document.getElementById('gate-title-reason').value,
       status_override_reason: document.getElementById('gate-status-reason').value,
+      synthetic_disclosure: document.getElementById('gate-disclosure').checked,
     })
   }).then(r=>r.json()).then(d => {
     msg.style.color = d.ok ? 'var(--green,#4caf50)' : 'var(--red,#e05252)';
