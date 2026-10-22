@@ -1,0 +1,201 @@
+{
+  "1": {
+    "inputs": {
+      "unet_name": "flux3-image-klein-int8-convrot.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Carregar Modelo de Difusão"
+    }
+  },
+  "2": {
+    "inputs": {
+      "clip_name": "qwen3vl_4b_int8_convrot.safetensors",
+      "type": "flux3",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Carregar CLIP"
+    }
+  },
+  "3": {
+    "inputs": {
+      "vae_name": "flux2-vae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Carregar VAE"
+    }
+  },
+  "4": {
+    "inputs": {
+      "text": "",
+      "clip": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Positive Prompt"
+    }
+  },
+  "32": {
+    "class_type": "ConditioningZeroOut",
+    "inputs": {
+      "conditioning": [
+        "4",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Negative (zeroed)"
+    }
+  },
+  "44": {
+    "inputs": {
+      "width": 1360,
+      "height": 752,
+      "batch_size": 1
+    },
+    "class_type": "EmptyFlux2LatentImage",
+    "_meta": {
+      "title": "Empty Flux 2 Latent"
+    }
+  },
+  "7": {
+    "inputs": {
+      "seed": 0,
+      "steps": 16,
+      "cfg": 1,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1,
+      "model": [
+        "1",
+        0
+      ],
+      "positive": [
+        "17",
+        0
+      ],
+      "negative": [
+        "17",
+        1
+      ],
+      "latent_image": [
+        "17",
+        2
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "8": {
+    "inputs": {
+      "samples": [
+        "7",
+        0
+      ],
+      "vae": [
+        "3",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decodificar"
+    }
+  },
+  "9": {
+    "inputs": {
+      "filename_prefix": "private_gravity",
+      "images": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Salvar Imagem"
+    }
+  },
+  "11": {
+    "inputs": {
+      "image": "reference_0.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Reference 0"
+    }
+  },
+  "12": {
+    "inputs": {
+      "image": "reference_1.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Reference 1"
+    }
+  },
+  "13": {
+    "inputs": {
+      "image": "reference_2.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Reference 2"
+    }
+  },
+  "14": {
+    "inputs": {
+      "image": "reference_3.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Reference 3"
+    }
+  },
+  "17": {
+    "inputs": {
+      "resolution": "resize",
+      "resolution.megapixels": 1,
+      "positive": [
+        "4",
+        0
+      ],
+      "negative": [
+        "32",
+        0
+      ],
+      "vae": [
+        "3",
+        0
+      ],
+      "images.image0": [
+        "11",
+        0
+      ],
+      "images.image1": [
+        "12",
+        0
+      ],
+      "images.image2": [
+        "13",
+        0
+      ],
+      "images.image3": [
+        "14",
+        0
+      ]
+    },
+    "class_type": "ReferenceMultiLatent",
+    "_meta": {
+      "title": "Definir latente múltiplo de referência"
+    }
+  }
+}

@@ -175,6 +175,25 @@ GEMINI_STAGE_TEMPERATURES = {
 }
 
 # ─────────────────────────────────────────
+#  Local image generation (ComfyUI + FLUX 3 Image Klein)
+# ─────────────────────────────────────────
+IMAGEGEN_ENABLED          = os.getenv("IMAGEGEN_ENABLED", "true").lower() in ("1", "true", "yes", "on")
+IMAGEGEN_COMFYUI_URL      = os.getenv("IMAGEGEN_COMFYUI_URL", "http://127.0.0.1:8188")
+IMAGEGEN_SIZE             = (1360, 752)   # ~1 MP native 16:9, Lanczos-upscaled to the video size
+IMAGEGEN_STEPS            = None          # None keeps the template's 16 steps
+IMAGEGEN_LATENT_SOURCE    = os.getenv("IMAGEGEN_LATENT_SOURCE", "reference")  # or "empty_16x9"
+IMAGEGEN_PROMPT_UPSAMPLER = False         # the 9B upsampler is costly on 8 GB VRAM; Gemini writes the prompts
+IMAGEGEN_TIMEOUT_SECONDS  = 900
+IMAGEGEN_MAX_UNIQUE_SHOTS = int(os.getenv("IMAGEGEN_MAX_UNIQUE_SHOTS", "50"))   # ~1 min each on Klein
+IMAGEGEN_SHOT_MIN_SECONDS = 6.0
+IMAGEGEN_SHOT_MAX_SECONDS = 12.0
+# "reference": approved character portraits drive identity, faces may be visible.
+# "limited_faces": mostly none/partial faces, at most IMAGEGEN_MAX_FULL_FACE_SHOTS hero shots.
+IMAGEGEN_IDENTITY_POLICY  = os.getenv("IMAGEGEN_IDENTITY_POLICY", "reference")
+IMAGEGEN_MAX_FULL_FACE_SHOTS = 6
+IMAGEGEN_FREE_MEMORY_EVERY   = 10         # call ComfyUI /free between batches of shots
+
+# ─────────────────────────────────────────
 #  Video Dimensions
 # ─────────────────────────────────────────
 VIDEO_WIDTH  = 1920
