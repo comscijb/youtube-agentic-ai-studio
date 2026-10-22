@@ -435,6 +435,14 @@ class StockManager:
             "rejected_candidates": self.rejections,
         }
         path = self.output_path / "asset_manifest.json"
+        # Music and generated-image provenance are written by other stages; keep them.
+        try:
+            previous = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+        except (OSError, ValueError):
+            previous = {}
+        for key in ("music", "generated_assets", "synthetic_media"):
+            if key in previous:
+                manifest[key] = previous[key]
         path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
 
     def _search(self, provider: StockProvider, query: str, orientation: str) -> list[StockAsset]:
