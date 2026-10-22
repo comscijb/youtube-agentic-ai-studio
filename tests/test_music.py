@@ -74,6 +74,20 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual(orison["moods"], ["dark", "tension"])
         self.assertEqual(orison["license"], "YouTube Audio Library")
 
+    def test_tracks_wrapper_with_filename_mood_and_url_keys(self):
+        with tempfile.TemporaryDirectory() as temp:
+            library = make_library(Path(temp), metadata=False)
+            (library / "tracks.json").write_text(json.dumps({"tracks": [
+                {"filename": "Bright Day - Someone - Pop - Happy.mp3", "mood": "Somber",
+                 "license": "No Copyright, no attribution required",
+                 "url": "youtube studio audio library"}]}), encoding="utf-8")
+            tracks = {track["file"]: track for track in music.library_tracks(str(library))}
+        bright = tracks["Bright Day - Someone - Pop - Happy.mp3"]
+        self.assertEqual(bright["moods"], ["somber"])
+        self.assertEqual(bright["license"], "No Copyright, no attribution required")
+        self.assertEqual(bright["source_url"], "youtube studio audio library")
+        self.assertIn("dark", music.mood_terms(*bright["moods"]))
+
     def test_missing_library_returns_no_tracks(self):
         self.assertEqual(music.library_tracks("does/not/exist"), [])
         self.assertIsNone(music.choose_track([], {}))

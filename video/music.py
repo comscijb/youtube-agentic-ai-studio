@@ -30,6 +30,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import unicodedata
 from pathlib import Path
 
 import config
@@ -81,7 +82,7 @@ def _stem(word: str) -> str:
 # Episode vocabulary and library mood labels (including the Portuguese labels
 # used in the library's file names) mapped onto a few canonical moods.
 MOOD_SYNONYMS = {
-    "dark": {"dark", "sombrio", "sombria", "dread", "unease", "menace", "ominous", "sinister",
+    "dark": {"dark", "sombrio", "sombria", "somber", "sombre", "dread", "unease", "menace", "ominous", "sinister",
              "envy", "obsession", "paranoia", "fear", "control", "cold", "claustrophobia",
              "claustrophobic", "chilling", "hollow", "suffocating", "isolation"},
     "melancholy": {"melancholy", "melancholic", "melancolico", "melancolica", "sad", "sadness",
@@ -124,21 +125,27 @@ def library_tracks(library_dir: str) -> list[dict]:
     if meta_path.is_file():
         try:
             entries = json.loads(meta_path.read_text(encoding="utf-8"))
+            # Accept a bare list or {"tracks": [...]}, and "file"/"filename" keys.
+            if isinstance(entries, dict):
+                entries = entries.get("tracks", [])
             for entry in entries if isinstance(entries, list) else []:
-                if isinstance(entry, dict) and entry.get("file"):
-                    metadata[str(entry["file"])] = entry
+                name = entry.get("file") or entry.get("filename") if isinstance(entry, dict) else None
+                if name:
+                    metadata[unicodedata.normalize("NFC", str(name))] = entry
         except (OSError, ValueError) as exc:
             print(f"   ⚠ Could not read {meta_path}: {exc.__class__.__name__}")
     tracks = []
     for path in sorted(root.iterdir()):
         if path.suffix.lower() in SUPPORTED_EXTENSIONS and path.is_file():
-            entry = metadata.get(path.name, {})
+            entry = metadata.get(unicodedata.normalize("NFC", path.name), {})
+            moods = entry.get("moods", entry.get("mood", []))
+            moods = [moods] if isinstance(moods, str) else list(moods or [])
             tracks.append({
                 "file": path.name, "path": str(path),
-                "moods": [str(mood).lower() for mood in entry.get("moods", [])]
-                         or filename_moods(path.name),
-                "license": entry.get("license", ""), "source_url": entry.get("source_url", ""),
-                "attribution": entry.get("attribution", ""),
+                "moods": [str(mood).lower() for mood in moods] or filename_moods(path.name),
+                "license": str(entry.get("license", "") or ""),
+                "source_url": str(entry.get("source_url", entry.get("url", "")) or ""),
+                "attribution": str(entry.get("attribution", "") or ""),
             })
     return tracks
 
