@@ -48,6 +48,8 @@ _state = {
         "script":    "pending",
         "images":    "pending",
         "narration": "pending",
+        "visual_bible": "pending",
+        "shots":     "pending",
         "video":     "pending",
     },
     "video_path":   None,
@@ -63,6 +65,8 @@ _state = {
     "error":        None,
     "upload_pct":   0,
     "uploading":    False,
+    "imagegen_busy": False,
+    "imagegen_message": "",
 }
 
 
@@ -319,6 +323,35 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
             _log("Audio ready")
 
         _check_stop("music")
+
+        # ── Visual bible + generated shots (ComfyUI, optional) ─
+        if "visual_bible" in steps or "shots" in steps:
+            from video import shot_generation as shotgen
+            from video.imagegen_comfyui import ComfyUnavailable, ImageGenerator
+            if "visual_bible" in steps:
+                _stage("visual_bible", "running")
+                shotgen.ensure_visual_bible(config.OUTPUT_DIR)
+                _stage("visual_bible", "done")
+            if "shots" in steps:
+                _stage("shots", "running")
+                shotgen.ensure_shot_list(config.OUTPUT_DIR)
+                try:
+                    generator = ImageGenerator(config.OUTPUT_DIR)
+                    summary = shotgen.generate_shots(config.OUTPUT_DIR, generator, progress=_imagegen_progress)
+                    if not summary["failed"]:
+                        shotgen.generate_thumbnail_image(config.OUTPUT_DIR, generator)
+                except shotgen.ApprovalRequired as exc:
+                    _log(str(exc), "warn")
+                    _stage("shots", "pending")
+                    _complete_partial("shot planning (approve the character references in Review & Edit)")
+                    return
+                except ComfyUnavailable as exc:
+                    _log(str(exc), "error")
+                    _stage("shots", "error")
+                    _complete_partial("shot planning (ComfyUI is not running)")
+                    return
+                _stage("shots", "done")
+            _check_stop("shots")
 
         # ── Thumbnail ─────────────────────────────────────────
         _log("Generating thumbnail…")
@@ -628,6 +661,153 @@ def regen_thumbnail():
         return jsonify({"ok": True, "ts": int(time.time())})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)})
+
+
+# ── Image generation (ComfyUI) ───────────────────────────────────────────────
+
+def _imagegen_progress(message: str):
+    _state["imagegen_message"] = message.strip()
+    _log(message.strip())
+
+
+def _imagegen_run(target, *args):
+    """Run one image-generation action in the background (one at a time)."""
+    if _state.get("imagegen_busy") or _state.get("running"):
+        return jsonify({"ok": False, "error": "Another generation is already running"}), 409
+
+    def work():
+        _state["imagegen_busy"] = True
+        try:
+            target(*args)
+            _state["imagegen_message"] = "Done"
+        except Exception as exc:
+            _state["imagegen_message"] = f"Error: {exc}"
+            _log(f"Image generation: {exc}", "error")
+        finally:
+            _state["imagegen_busy"] = False
+
+    threading.Thread(target=work, daemon=True).start()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/imagegen/status")
+def imagegen_status():
+    from agents import visual_bible as vbible
+    from video import shot_generation as shotgen
+    from video.imagegen_comfyui import ComfyClient
+    output = Path(config.OUTPUT_DIR)
+    vb = load_json(output / vbible.FILE_NAME) or {}
+    shot_list = load_json(output / "shot_list.json") or {}
+    candidates = load_json(output / shotgen.CANDIDATES_FILE) or {}
+    references = []
+    for kind, items in (("character", vb.get("characters", [])),
+                        ("location", vbible.recurring_locations(vb))):
+        for item in items:
+            ident = item[f"{kind}_id"]
+            references.append({
+                "kind": kind, "id": ident,
+                "approved": bool(vbible.approved_reference(vb, kind, ident, output)),
+                "approved_path": (vb.get("references") or {}).get(vbible.reference_key(kind, ident), {}).get("path"),
+                "candidates": candidates.get(vbible.reference_key(kind, ident), []),
+            })
+    shots = shot_list.get("shots", [])
+    done = [shot for shot in shots if not shot.get("reuse_of") and shot.get("image_path")
+            and (output / shot["image_path"]).is_file()]
+    estimate = shotgen.estimate_gpu_seconds(shot_list, output) if shot_list else None
+    return jsonify({
+        "comfyui": ComfyClient(timeout=3).available(),
+        "visual_bible": bool(vb), "shot_list": bool(shot_list),
+        "busy": _state.get("imagegen_busy", False), "message": _state.get("imagegen_message", ""),
+        "references": references,
+        "missing_approvals": shotgen.missing_approvals(vb, shot_list, output) if vb and shot_list else [],
+        "unique_shots": shot_list.get("unique_shots", 0), "done": len(done),
+        "eta_seconds": estimate,
+        "shots": [{key: shot.get(key) for key in ("shot_id", "scene_id", "start", "end", "shot_type",
+                                                   "characters", "face_visibility", "reuse_of",
+                                                   "action", "prompt", "image_path", "provider")}
+                  for shot in shots],
+    })
+
+
+@app.route("/imagegen/file")
+def imagegen_file():
+    output = Path(config.OUTPUT_DIR).resolve()
+    target = (output / request.args.get("path", "")).resolve()
+    if output not in target.parents or not target.is_file() or target.suffix.lower() not in {".jpg", ".png"}:
+        abort(404)
+    return send_file(str(target))
+
+
+@app.route("/api/imagegen/candidates", methods=["POST"])
+def imagegen_candidates():
+    from video import shot_generation as shotgen
+    from video.imagegen_comfyui import ImageGenerator
+
+    def run():
+        vb = shotgen.ensure_visual_bible(config.OUTPUT_DIR)
+        shotgen.generate_reference_candidates(vb, config.OUTPUT_DIR, ImageGenerator(config.OUTPUT_DIR),
+                                              progress=_imagegen_progress)
+    return _imagegen_run(run)
+
+
+@app.route("/api/imagegen/approve", methods=["POST"])
+def imagegen_approve():
+    from agents import visual_bible as vbible
+    from video import shot_generation as shotgen
+    body = request.get_json(force=True) or {}
+    vb = load_json(Path(config.OUTPUT_DIR, vbible.FILE_NAME))
+    try:
+        shotgen.approve_reference(vb, str(body.get("kind")), str(body.get("id")),
+                                  int(body.get("number", 0)), config.OUTPUT_DIR)
+    except (FileNotFoundError, TypeError, ValueError, KeyError) as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    return jsonify({"ok": True})
+
+
+def _update_shot(shot_id: str, change) -> dict | None:
+    path = Path(config.OUTPUT_DIR, "shot_list.json")
+    shot_list = load_json(path) or {}
+    shot = next((item for item in shot_list.get("shots", []) if item["shot_id"] == shot_id), None)
+    if shot is None:
+        return None
+    change(shot)
+    shot.pop("image_path", None)          # invalidate only this shot
+    atomic_write_json(path, shot_list)
+    Path(config.OUTPUT_DIR, "final_video.mp4").unlink(missing_ok=True)
+    return shot
+
+
+@app.route("/api/imagegen/shot/<shot_id>/regenerate", methods=["POST"])
+def imagegen_regenerate_shot(shot_id):
+    from video import shot_generation as shotgen
+    from video.imagegen_comfyui import ImageGenerator
+    if not _update_shot(shot_id, lambda shot: shot.update(seed_offset=int(shot.get("seed_offset", 0)) + 1)):
+        return jsonify({"ok": False, "error": "Unknown shot"}), 404
+    return _imagegen_run(lambda: shotgen.generate_shots(
+        config.OUTPUT_DIR, ImageGenerator(config.OUTPUT_DIR), only=shot_id, progress=_imagegen_progress))
+
+
+@app.route("/api/imagegen/shot/<shot_id>/prompt", methods=["POST"])
+def imagegen_edit_shot(shot_id):
+    action = str((request.get_json(force=True) or {}).get("action", "")).strip()
+    if not action:
+        return jsonify({"ok": False, "error": "The shot action must not be empty"}), 400
+    if not _update_shot(shot_id, lambda shot: shot.update(action=action)):
+        return jsonify({"ok": False, "error": "Unknown shot"}), 404
+    return jsonify({"ok": True})
+
+
+@app.route("/api/imagegen/generate", methods=["POST"])
+def imagegen_generate():
+    from video import shot_generation as shotgen
+    from video.imagegen_comfyui import ImageGenerator
+    body = request.get_json(force=True) or {}
+
+    def run():
+        shotgen.ensure_shot_list(config.OUTPUT_DIR)
+        shotgen.generate_shots(config.OUTPUT_DIR, ImageGenerator(config.OUTPUT_DIR),
+                               limit=body.get("limit"), progress=_imagegen_progress)
+    return _imagegen_run(run)
 
 
 # ── YouTube upload ────────────────────────────────────────────────────────────

@@ -242,8 +242,16 @@ input[type=range]{width:100%;accent-color:var(--primary)}
       <div class="stage-icon">4</div>
       <div class="stage-name">Narration</div>
     </div>
-    <div class="stage pending" id="stage-video">
+    <div class="stage pending" id="stage-visual_bible">
       <div class="stage-icon">5</div>
+      <div class="stage-name">Visual bible</div>
+    </div>
+    <div class="stage pending" id="stage-shots">
+      <div class="stage-icon">6</div>
+      <div class="stage-name">Shots</div>
+    </div>
+    <div class="stage pending" id="stage-video">
+      <div class="stage-icon">7</div>
       <div class="stage-name">Video</div>
     </div>
 
@@ -360,6 +368,8 @@ input[type=range]{width:100%;accent-color:var(--primary)}
               <label class="step-check"><input type="checkbox" id="step-images" checked> 🖼 Images</label>
               <label class="step-check"><input type="checkbox" id="step-narration" checked> 🎙 Narration</label>
               <label class="step-check"><input type="checkbox" id="step-music" checked> 🎵 Music <span style="font-size:10px;opacity:0.6">(library)</span></label>
+              <label class="step-check"><input type="checkbox" id="step-visual_bible"> 🧭 Visual bible</label>
+              <label class="step-check"><input type="checkbox" id="step-shots"> 🎨 Shots <span style="font-size:10px;opacity:0.6">(ComfyUI)</span></label>
               <label class="step-check"><input type="checkbox" id="step-video" checked> 🎞 Render Video</label>
             </div>
             <div class="help-text" style="margin-top:8px">Uncheck steps to skip and reuse previous output. Useful after rejecting a video to just re-render a different section.</div>
@@ -456,6 +466,21 @@ input[type=range]{width:100%;accent-color:var(--primary)}
               <div class="no-thumb">No thumbnail yet</div>
             </div>
             <div class="help-text" style="margin-top:6px">Thumbnail is auto-generated from your title + stock image. Edit the title on the right and click ↻ Regenerate to update it.</div>
+          </div>
+
+          <div id="imagegen-panel">
+            <div class="flex-row" style="margin-bottom:6px">
+              <div class="field-label" style="margin:0">Generated images (ComfyUI)</div>
+              <span id="ig-comfy" style="font-size:11px"></span>
+            </div>
+            <div id="ig-status" style="font-size:11px;color:var(--muted);margin-bottom:6px"></div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+              <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="igPost('/api/imagegen/candidates')">Generate reference candidates</button>
+              <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="igPost('/api/imagegen/generate', {limit: 5})">Generate 5 shots</button>
+              <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="igPost('/api/imagegen/generate', {})">Generate all shots</button>
+            </div>
+            <div id="ig-refs"></div>
+            <div id="ig-shots" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-top:8px"></div>
           </div>
 
           <div id="video-info" style="display:none">
@@ -909,6 +934,8 @@ function startGeneration() {
   if (document.getElementById('step-images').checked)    steps.push('images');
   if (document.getElementById('step-narration').checked) steps.push('narration');
   if (document.getElementById('step-music').checked)     steps.push('music');
+  if (document.getElementById('step-visual_bible').checked) steps.push('visual_bible');
+  if (document.getElementById('step-shots').checked)     steps.push('shots');
   if (document.getElementById('step-video').checked)     steps.push('video');
 
   // Build topic payload from whichever mode is active
@@ -1057,7 +1084,104 @@ setInterval(checkYtStatus, 10000);
 let _currentTags = [];
 let _dirty = false;
 
+// ── Generated images (ComfyUI) ────────────────────────────
+let _igTimer = null;
+function igPost(url, body) {
+  fetch(url, {method: 'POST', headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify(body || {})})
+    .then(r => r.json()).then(d => { if (!d.ok) alert(d.error || 'Error'); loadImagegen(); });
+}
+
+function igImg(path, title) {
+  const img = document.createElement('img');
+  img.src = '/imagegen/file?path=' + encodeURIComponent(path) + '&t=' + Date.now();
+  img.title = title || '';
+  img.style.cssText = 'width:100%;border-radius:4px;display:block';
+  return img;
+}
+
+function igTime(seconds) {
+  const s = Math.round(seconds || 0);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function loadImagegen() {
+  fetch('/api/imagegen/status').then(r => r.json()).then(d => {
+    document.getElementById('ig-comfy').innerHTML = d.comfyui
+      ? '<span style="color:var(--green)">● ComfyUI running</span>'
+      : '<span style="color:var(--red)">● ComfyUI not running</span>';
+    const eta = d.eta_seconds ? ` · pending GPU time ≈ ${Math.round(d.eta_seconds / 60)} min` : '';
+    const waiting = d.missing_approvals.length ? ` · approve: ${d.missing_approvals.join(', ')}` : '';
+    document.getElementById('ig-status').textContent =
+      `${d.done}/${d.unique_shots} unique shots${eta}${waiting}` + (d.busy ? ` · working: ${d.message}` : (d.message ? ` · ${d.message}` : ''));
+
+    const refs = document.getElementById('ig-refs');
+    refs.innerHTML = '';
+    d.references.forEach(ref => {
+      const block = document.createElement('div');
+      block.style.cssText = 'margin-bottom:8px';
+      const label = document.createElement('div');
+      label.style.cssText = 'font-size:11px;margin-bottom:4px;color:' + (ref.approved ? 'var(--green)' : 'var(--dim)');
+      label.textContent = `${ref.kind} · ${ref.id} ${ref.approved ? '✓ approved' : '— choose one'}`;
+      block.appendChild(label);
+      const row = document.createElement('div');
+      row.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:4px';
+      ref.candidates.forEach(c => {
+        const cell = document.createElement('div');
+        cell.appendChild(igImg(c.path, c.prompt));
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-ghost';
+        btn.style.cssText = 'font-size:10px;padding:2px 6px;width:100%;margin-top:2px';
+        btn.textContent = `Approve #${c.number}`;
+        btn.onclick = () => igPost('/api/imagegen/approve', {kind: ref.kind, id: ref.id, number: c.number});
+        cell.appendChild(btn);
+        row.appendChild(cell);
+      });
+      block.appendChild(row);
+      refs.appendChild(block);
+    });
+
+    const grid = document.getElementById('ig-shots');
+    grid.innerHTML = '';
+    d.shots.forEach(shot => {
+      const cell = document.createElement('div');
+      cell.style.cssText = 'font-size:10px;color:var(--muted)';
+      if (shot.image_path) cell.appendChild(igImg(shot.image_path, shot.prompt));
+      else {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'aspect-ratio:16/9;background:var(--surface2);border-radius:4px;display:flex;align-items:center;justify-content:center';
+        empty.textContent = shot.reuse_of ? `reuses ${shot.reuse_of}` : 'pending';
+        cell.appendChild(empty);
+      }
+      const meta = document.createElement('div');
+      meta.textContent = `${shot.shot_id} · ${igTime(shot.start)}–${igTime(shot.end)} · ${shot.shot_type}`;
+      cell.appendChild(meta);
+      if (!shot.reuse_of) {
+        const regen = document.createElement('button');
+        regen.className = 'btn btn-ghost';
+        regen.style.cssText = 'font-size:10px;padding:2px 6px;margin-right:4px';
+        regen.textContent = '↻ new seed';
+        regen.onclick = () => igPost(`/api/imagegen/shot/${shot.shot_id}/regenerate`);
+        const edit = document.createElement('button');
+        edit.className = 'btn btn-ghost';
+        edit.style.cssText = 'font-size:10px;padding:2px 6px';
+        edit.textContent = '✎ edit';
+        edit.onclick = () => {
+          const action = prompt('What should this shot show?', shot.action || '');
+          if (action) igPost(`/api/imagegen/shot/${shot.shot_id}/prompt`, {action});
+        };
+        cell.appendChild(regen);
+        cell.appendChild(edit);
+      }
+      grid.appendChild(cell);
+    });
+    clearTimeout(_igTimer);
+    if (d.busy) _igTimer = setTimeout(loadImagegen, 4000);
+  });
+}
+
 function loadReviewData() {
+  loadImagegen();
   // Video
   fetch('/api/status').then(r=>r.json()).then(d => {
     const vw = document.getElementById('video-wrap');
