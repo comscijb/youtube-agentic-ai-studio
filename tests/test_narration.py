@@ -265,7 +265,8 @@ class CalibrationTests(unittest.TestCase):
 
     def test_repository_seed_matches_the_first_render(self):
         seed = json.loads(Path("data/voice_calibration.json").read_text(encoding="utf-8"))
-        self.assertEqual(seed["voices"]["en-US-AndrewNeural|-5%"]["wpm"], 151.6)
+        # Seeded with 151.6 wpm; every narration run updates it with the latest measurement.
+        self.assertTrue(140 <= seed["voices"]["en-US-AndrewNeural|-5%"]["wpm"] <= 170)
 
     def test_outline_targets_follow_calibrated_wpm(self):
         from agents import scriptwriter
