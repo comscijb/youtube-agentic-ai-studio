@@ -224,7 +224,10 @@ FULL_BLEED = ("single full-bleed illustration filling the entire frame edge to e
               "hatching reaching every border")
 # Words that ask for page layouts; rejected in shot descriptions (not in the suffix,
 # which itself says "every border").
-LAYOUT_TERMS = ("panel", "panels", "comic page", "storyboard", "border", "torn paper",
+# Only phrases that mean a page layout: bare "panel"/"border" are legitimate architecture and light.
+LAYOUT_TERMS = ("comic panel", "comic panels", "multiple panels", "panel layout", "split panel",
+                "split panels", "split-screen", "grid of images", "triptych", "diptych", "comic page",
+                "storyboard", "white border", "decorative border", "border around", "torn paper",
                 "paper edge", "frame around")
 CROWD_RULE = ("When a shot contains more than one person who is not a named character, give each a "
               "clearly different age, build, posture and clothing; prefer a few distant, indistinct "
@@ -247,7 +250,8 @@ def image_prompt_rules(style: str | None = None) -> str:
             "suggest a presence only through shadow, fog, scale and wrong geometry. Never mention or "
             "imply: " + ", ".join(DARK_ILLUSTRATION["exclusions"]) + ". Never include text, signs or "
             "screens with legible writing. Each image is ONE single full-frame picture: never request "
-            "pages, panels, frames, borders, vignettes, paper edges or multiple views. " + CROWD_RULE)
+            "comic panels, page layouts, borders around the image, paper edges or multiple views. "
+            + CROWD_RULE)
 
 
 def forbidden_terms(text: str, style: str | None = None) -> list[str]:

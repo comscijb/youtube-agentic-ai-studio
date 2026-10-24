@@ -401,10 +401,12 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   `--variants engraving` re-renders only that column), then approve 1–2 of our own style boards
   (`python -m scripts.generate_style_refs`) as channel-wide style anchors.
 - **Full-bleed frames, no pages.** Every style suffix asks for a single full-bleed illustration
-  filling the frame edge to edge; Gemini is told never to request pages, panels, frames, borders,
-  vignettes, paper edges or multiple views, and shot prompts containing `panel`, `comic page`,
-  `storyboard`, `border`, `torn paper`, `paper edge` or `frame around` are rejected (also in the
-  GUI editor). Every generated image is checked (`video/image_checks.py`): light, flat paper
+  filling the frame edge to edge; Gemini is told never to request comic panels, page layouts,
+  borders around the image, paper edges or multiple views, and shot prompts containing page-layout
+  phrases (`comic panel(s)`, `multiple panels`, `split-screen`, `triptych`, `comic page`,
+  `storyboard`, `border around`, `torn paper`, `frame around`, … — see `identity.LAYOUT_TERMS`)
+  are rejected (also in the GUI editor). Plain "panel" or "border" (wall panels, the border of
+  the light) stay allowed. Every generated image is checked (`video/image_checks.py`): light, flat paper
   margins on ≥ 3 edges or a uniform strip along a full edge count as a border, light gutters
   crossing the frame count as a comic page. Such an image gets up to `IMAGEGEN_CHECK_RETRIES` (2)
   new seeds; a border that persists is cropped to the largest border-free 16:9 area and upscaled.

@@ -109,15 +109,14 @@ class PanelDetectionTests(unittest.TestCase):
 
     @unittest.skipUnless((CALIBRATION / "engraving_1.jpg").exists(), "no calibration images")
     def test_real_calibration_images(self):
-        expected = {0: True, 1: True, 2: False, 3: False, 5: False}      # bordered?
+        # The files are re-rendered by the user, so only assert what holds for any render:
+        # character shots and thumbnails (full-bleed in every run so far) are never flagged.
         for variant in ("engraving", "charcoal_gouache", "hybrid"):
-            for index, bordered in expected.items():
+            for index in (2, 3, 5):
                 with self.subTest(variant=variant, index=index), \
                         Image.open(CALIBRATION / f"{variant}_{index}.jpg") as image:
-                    self.assertEqual(image_checks.detect_border(image)["bordered"], bordered)
-            with Image.open(CALIBRATION / f"{variant}_4.jpg") as insert:
-                if variant != "hybrid":                                  # the comic pages
-                    self.assertTrue(image_checks.detect_panels(insert)["panels"])
+                    report = image_checks.inspect(image)
+                    self.assertFalse(report["bordered"] or report["panels"])
 
 
 class SequenceComfy(FakeComfy):
@@ -194,13 +193,19 @@ class PromptRuleTests(unittest.TestCase):
 
     def test_gemini_rules_and_layout_check(self):
         rules = identity.image_prompt_rules("dark_illustration")
-        self.assertIn("never request pages, panels, frames, borders, vignettes, paper edges or multiple views", rules)
+        self.assertIn("never request comic panels, page layouts, borders around the image, paper edges "
+                      "or multiple views", rules)
         self.assertIn("clearly different age, build, posture and clothing", rules)
         self.assertEqual(identity.layout_terms("A comic page of three panels with a torn paper edge"),
-                         ["panels", "comic page", "torn paper", "paper edge"])
+                         ["comic page", "torn paper", "paper edge"])
         self.assertEqual(identity.layout_terms("A storyboard frame around the bottle"),
                          ["storyboard", "frame around"])
-        self.assertEqual(identity.layout_terms("He waits at the edge of the table"), [])
+        self.assertEqual(identity.layout_terms("a comic page with three panels"), ["comic page"])
+        self.assertEqual(identity.layout_terms("split-screen of two rooms"), ["split-screen"])
+        self.assertEqual(identity.layout_terms("A triptych of comic panels"), ["comic panels", "triptych"])
+        for legitimate in ("He waits at the edge of the table", "towering dark wall panels",
+                           "high charcoal panels", "a wood-panelled study", "at the border of the light"):
+            self.assertEqual(identity.layout_terms(legitimate), [], legitimate)
 
     def test_shot_validation_rejects_layouts_and_too_few_wides(self):
         segments = [{"shot_id": f"s01_0{i}"} for i in range(1, 6)]
