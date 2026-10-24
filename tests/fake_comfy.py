@@ -60,12 +60,18 @@ class Response:
 
 
 class FakeComfy:
-    """Requests-compatible session. ``fail_runs`` makes the next N runs error."""
+    """Requests-compatible session. ``fail_runs`` makes the next N runs error.
 
-    def __init__(self, fail_runs=0, object_info=None, image=None, offline=False):
+    Without ``image`` each run returns an image of the size the graph asked for
+    (the empty latent's width/height), or the next entry of ``sizes`` when given,
+    the way a reference latent makes ComfyUI follow the first reference's size.
+    """
+
+    def __init__(self, fail_runs=0, object_info=None, image=None, offline=False, sizes=None):
         self.fail_runs = fail_runs
         self.object_info = object_info or OBJECT_INFO
-        self.image = image or png_bytes()
+        self.image = image
+        self.sizes = list(sizes or [])
         self.offline = offline
         self.uploads = []
         self.prompts = []
@@ -101,7 +107,12 @@ class FakeComfy:
                                              {"filename": f"{prompt_id}.png", "subfolder": "",
                                               "type": "output"}]}}}})
         if path == "/view":
-            return Response(content=self.image)
+            if self.image is not None:
+                return Response(content=self.image)
+            if self.sizes:
+                return Response(content=png_bytes(tuple(self.sizes.pop(0))))
+            latent = (self.prompts[-1].get("44") or {}).get("inputs", {}) if self.prompts else {}
+            return Response(content=png_bytes((latent.get("width", 1360), latent.get("height", 752))))
         if path == "/free":
             self.freed += 1
             return Response({})

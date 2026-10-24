@@ -409,9 +409,16 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   the light) stay allowed. Every generated image is checked (`video/image_checks.py`): light, flat paper
   margins on ≥ 3 edges or a uniform strip along a full edge count as a border, light gutters
   crossing the frame count as a comic page. Such an image gets up to `IMAGEGEN_CHECK_RETRIES` (2)
-  new seeds; a border that persists is cropped to the largest border-free 16:9 area and upscaled.
-  The outcome (`accepted`, `regenerated`, `cropped`, …) is stored as `image_checks` in the
-  manifest. Disable with `IMAGEGEN_IMAGE_CHECKS = False`.
+  new seeds; a border that persists is cropped to the largest border-free 16:9 area and upscaled,
+  but only when that cuts at most 6 % per side (deeper margins fail the attempt and the shot is
+  regenerated). The outcome (`accepted`, `regenerated`, `cropped`, …) is stored as
+  `image_checks` in the manifest. Disable with `IMAGEGEN_IMAGE_CHECKS = False`.
+- **Always 16:9.** The frame comes from the sampler latent only: `IMAGEGEN_LATENT_SOURCE =
+  "empty_16x9"` (default; `reference` makes the output follow the first reference's size and is
+  kept for edit-like uses). Character and location references keep their own sizes. An output
+  more than 2 % off the requested ratio is never center-cropped: it is rendered once more from an
+  empty 16:9 latent, and fails with a clear message if it is still wrong. The latent source is
+  part of the image cache key.
 - **Dread and crowds.** The `engraving` suffix asks for deep black negative space, one small warm
   light source and figures small within towering architecture; at least `IMAGEGEN_MIN_WIDE_SHARE`
   (40 %) of shots must be wide or establishing, and close-ups sit on a dark background with one

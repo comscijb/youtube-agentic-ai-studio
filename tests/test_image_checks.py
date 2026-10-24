@@ -160,7 +160,7 @@ class GeneratorCheckTests(unittest.TestCase):
         self.assertEqual(again["image_checks"]["action"], "regenerated")   # from the cache sidecar
 
     def test_persistent_margins_are_cropped_after_two_retries(self):
-        framed = with_paper_margins(dark_scene())
+        framed = with_paper_margins(dark_scene(), depth=0.035)      # crop stays under 6 % per side
         record, _, fake, size = self.run_job([framed, framed, framed])
         self.assertEqual(len(fake.prompts), 3)
         self.assertEqual(record["image_checks"]["action"], "cropped")
