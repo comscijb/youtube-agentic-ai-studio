@@ -15,19 +15,21 @@ import sys
 from pathlib import Path
 
 import config
+from studio import projects
 from video import shot_generation as gen
 from video.imagegen_comfyui import ComfyUnavailable, ImageGenerator
 
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Generate shot images with ComfyUI.")
-    parser.add_argument("--output-dir", default=config.OUTPUT_DIR)
+    parser.add_argument("--output-dir", default=None, help="explicit folder (overrides the project)")
+    projects.add_argument(parser)
     parser.add_argument("--limit", type=int, help="generate at most N pending shots")
     parser.add_argument("--only", help="scene id (s04) or shot id (s04_02)")
     parser.add_argument("--rebuild-shot-list", action="store_true")
     parser.add_argument("--no-thumbnail", action="store_true")
     args = parser.parse_args(argv)
-    output = Path(args.output_dir)
+    output = projects.cli_output(args)
     shot_list = gen.ensure_shot_list(output, force=args.rebuild_shot_list)
     estimate = gen.estimate_gpu_seconds(shot_list, output)
     print(f"Shot list: {len(shot_list['shots'])} shots, {shot_list['unique_shots']} unique"

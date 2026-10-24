@@ -23,6 +23,7 @@ from video.creator       import create_video
 from review.app          import start_review_server
 from uploader.youtube    import build_upload_description, upload_to_youtube
 from agents.narrative import atomic_write_json
+from studio import projects
 from uploader.publications import sync_publications_safely
 
 
@@ -32,11 +33,21 @@ def banner(text: str):
     print("─" * 62)
 
 
-def run(resume: bool = False):
+def run(resume: bool = False, project: str | None = None):
     """Full pipeline. With ``resume`` the saved story brief is reused and the
     script stage continues from its checkpoints (bible, outline and any scene
-    batches, expansions or reviews finished before a failure)."""
+    batches, expansions or reviews finished before a failure).
+
+    A fresh run creates a new project (named after the Story Brief title);
+    ``--resume`` continues the active/most recent one, ``--project`` a given one."""
     gemini_client.clear_call_records()
+    if project or resume:
+        projects.activate(projects.resolve(project))
+    else:
+        projects.activate(projects.create(video_type="normal",
+                                          target_duration=getattr(config, "TARGET_DURATION_MINUTES", 15)))
+        projects.set_active(Path(config.OUTPUT_DIR).name)
+    print(f"  Project folder: {config.OUTPUT_DIR}")
     try:
         _run(resume)
     finally:
@@ -65,6 +76,9 @@ def _run(resume: bool):
     print(f"      Title : {research['video_title']}")
     print(f"      Hook  : {research.get('hook_question', '')[:90]}")
     atomic_write_json(f"{config.OUTPUT_DIR}/research.json", research)
+    if projects.is_project(config.OUTPUT_DIR):
+        projects.activate(projects.retitle(config.OUTPUT_DIR, research["video_title"]))
+        projects.touch(config.OUTPUT_DIR)
 
     # ── 2. Script ─────────────────────────────────────────────
     banner("2 / 6  ·  Character bible → outline → screenplay  [Gemini]")
@@ -140,4 +154,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Private Gravity pipeline")
     parser.add_argument("--resume", action="store_true",
                         help="reuse the saved story brief and continue the script stage from its checkpoints")
-    run(resume=parser.parse_args().resume)
+    projects.add_argument(parser)
+    arguments = parser.parse_args()
+    run(resume=arguments.resume, project=arguments.project)

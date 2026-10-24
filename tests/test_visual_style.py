@@ -161,7 +161,7 @@ class StyleAnchorTests(StyleTestCase):
         with patch.object(generate_style_refs, "ImageGenerator", lambda output: generator(output, fake)):
             with redirect_stdout(io.StringIO()):
                 code = generate_style_refs.main(["--output-dir", str(self.output)])
-                approve = generate_style_refs.main(["--approve", "4"])
+                approve = generate_style_refs.main(["--output-dir", str(self.output), "--approve", "4"])
         self.assertEqual((code, approve), (0, 0))
         self.assertEqual(len(fake.prompts), 6)
         prompt = fake.prompts[0]["4"]["inputs"]["text"]

@@ -20,6 +20,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 import config
+from studio import projects
 from agents import identity
 from agents import visual_bible as vbible
 from agents.narrative import load_json
@@ -73,7 +74,8 @@ def contact_sheet(grid: list[list[str]], rows: list[str], columns: list[str], de
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Compare the dark-illustration style variants.")
-    parser.add_argument("--output-dir", default=config.OUTPUT_DIR)
+    parser.add_argument("--output-dir", default=None, help="explicit folder (overrides the project)")
+    projects.add_argument(parser)
     parser.add_argument("--variants", default=",".join(VARIANTS),
                         help="comma-separated subset, e.g. --variants engraving")
     args = parser.parse_args(argv)
@@ -81,7 +83,7 @@ def main(argv=None) -> int:
     unknown = [name for name in variants if name not in VARIANTS]
     if unknown or not variants:
         parser.error(f"unknown variants {unknown}; choose from {', '.join(VARIANTS)}")
-    output = Path(args.output_dir)
+    output = projects.cli_output(args)
     vb = load_json(output / vbible.FILE_NAME) or {}
     items = prompts(vb)
     generator = ImageGenerator(output)

@@ -326,5 +326,8 @@ LOUDNESS_TRUE_PEAK   = -1.0
 # ─────────────────────────────────────────
 #  Paths  (do not change unless you know what you're doing)
 # ─────────────────────────────────────────
+# The active project (projects/<slug>/) replaces these at runtime (studio/projects.py);
+# "output" stays the legacy folder used when no project exists.
 OUTPUT_DIR   = "output"
 IMAGES_DIR   = "output/images"
+PROJECTS_DIR = "projects"

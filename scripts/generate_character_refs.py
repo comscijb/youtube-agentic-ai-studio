@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 import config
+from studio import projects
 from agents import visual_bible as vbible
 from agents.narrative import load_json
 from video import shot_generation as gen
@@ -37,14 +38,15 @@ def status(output: Path) -> int:
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Character/location reference candidates.")
-    parser.add_argument("--output-dir", default=config.OUTPUT_DIR)
+    parser.add_argument("--output-dir", default=None, help="explicit folder (overrides the project)")
+    projects.add_argument(parser)
     parser.add_argument("--approve", metavar="KIND:ID:N",
                         help="approve candidate N, e.g. character:julian_vance:2 or location:loft:1")
     parser.add_argument("--only", help="character_id to (re)generate")
     parser.add_argument("--no-locations", action="store_true")
     parser.add_argument("--status", action="store_true")
     args = parser.parse_args(argv)
-    output = Path(args.output_dir)
+    output = projects.cli_output(args)
     if args.status:
         return status(output)
     if args.approve:

@@ -13,6 +13,7 @@ import argparse
 import sys
 
 import config
+from studio import projects
 from agents import identity, style_refs
 from video import shot_generation as gen
 from video.imagegen_comfyui import ComfyUnavailable, ImageGenerator, ImageJob
@@ -30,10 +31,12 @@ def status() -> int:
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Style anchors (character-free style boards).")
-    parser.add_argument("--output-dir", default=config.OUTPUT_DIR)
+    parser.add_argument("--output-dir", default=None, help="explicit folder (overrides the project)")
+    projects.add_argument(parser)
     parser.add_argument("--approve", type=int, metavar="N")
     parser.add_argument("--status", action="store_true")
     args = parser.parse_args(argv)
+    args.output_dir = str(projects.cli_output(args))
     if args.status:
         return status()
     if args.approve:

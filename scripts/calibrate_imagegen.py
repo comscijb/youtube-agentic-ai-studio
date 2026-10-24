@@ -22,6 +22,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 import config
+from studio import projects
 from agents import identity
 from agents import visual_bible as vbible
 from agents.narrative import load_json
@@ -94,9 +95,10 @@ def contact_sheet(rows: list[list[str]], labels: list[str], destination: Path) -
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Calibrate FLUX 3 Klein generation on this machine.")
-    parser.add_argument("--output-dir", default=config.OUTPUT_DIR)
+    parser.add_argument("--output-dir", default=None, help="explicit folder (overrides the project)")
+    projects.add_argument(parser)
     args = parser.parse_args(argv)
-    output = Path(args.output_dir)
+    output = projects.cli_output(args)
     generator = ImageGenerator(output)
     run = int(time.time())          # fresh seeds: calibration must not hit the cache
     try:

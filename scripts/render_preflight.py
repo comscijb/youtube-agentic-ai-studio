@@ -22,6 +22,7 @@ import sys
 from pathlib import Path
 
 import config
+from studio import projects
 from agents import voice_calibration
 
 PASS, WARN, FAIL = "PASS", "WARN", "FAIL"
@@ -303,12 +304,14 @@ def run(script_path: Path, *, long_image_seconds: float = DEFAULT_LONG_IMAGE_SEC
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Offline render-readiness check.")
-    parser.add_argument("--script", default=str(Path(config.OUTPUT_DIR) / "script.json"))
+    parser.add_argument("--script", default=None, help="explicit script.json (overrides the project)")
+    projects.add_argument(parser)
     parser.add_argument("--long-image-seconds", type=float, default=DEFAULT_LONG_IMAGE_SECONDS)
     parser.add_argument("--live", action="store_true",
                         help="Also synthesise one short sentence with Edge TTS (network).")
     args = parser.parse_args(argv)
-    return run(Path(args.script), long_image_seconds=args.long_image_seconds, live=args.live)
+    script = Path(args.script) if args.script and not args.project else projects.cli_output(args, "") / "script.json"
+    return run(script, long_image_seconds=args.long_image_seconds, live=args.live)
 
 
 if __name__ == "__main__":

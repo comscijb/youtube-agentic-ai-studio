@@ -216,20 +216,34 @@ def validate_shots(value: dict, segments: list[dict], vb: dict, outline: dict, p
     return shots
 
 
-def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bool = False) -> dict:
-    output = Path(output_dir)
-    path = output / FILE_NAME
+def _segments_and_hash(script: dict, vb: dict, output: Path) -> tuple[list[dict], str, str]:
+    """(segments, source hash, identity policy): what the shot list depends on."""
     timeline = load_json(output / "scene_timeline.json")
     if not timeline:
         raise FileNotFoundError("scene_timeline.json is missing: run the narration step first")
-    from video.timeline import parse_srt
-    cues = parse_srt(output / "narration.srt")
-    policy = str(getattr(config, "IMAGEGEN_IDENTITY_POLICY", "reference"))
-    segments = plan_segments(script, timeline, cues)
     from agents import identity
+    from video.timeline import parse_srt
+    policy = str(getattr(config, "IMAGEGEN_IDENTITY_POLICY", "reference"))
+    segments = plan_segments(script, timeline, parse_srt(output / "narration.srt"))
     source_hash = stable_hash({"version": SHOT_LIST_VERSION, "segments": segments,
                                "visual_bible": vb.get("source_hash"), "policy": policy,
                                "style": identity.visual_style()})
+    return segments, source_hash, policy
+
+
+def expected_source_hash(script: dict, vb: dict, output_dir) -> str | None:
+    """Source hash a fresh shot list would have now (None when narration is missing)."""
+    try:
+        return _segments_and_hash(script, vb, Path(output_dir))[1]
+    except (FileNotFoundError, OSError, KeyError, ValueError):
+        return None
+
+
+def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bool = False) -> dict:
+    output = Path(output_dir)
+    path = output / FILE_NAME
+    segments, source_hash, policy = _segments_and_hash(script, vb, output)
+    from agents import identity
     existing = load_json(path) or {}
     if not force and existing.get("source_hash") == source_hash:
         return existing

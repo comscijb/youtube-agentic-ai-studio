@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 import config
+from studio import projects
 from agents import gemini_client
 from agents.narrative import (
     atomic_write_json,
@@ -52,11 +53,12 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Live editorial re-review of output/.")
     parser.add_argument("--confirm-live", action="store_true",
                         help="Required acknowledgement that this performs one live Gemini call.")
-    parser.add_argument("--output-dir", default=config.OUTPUT_DIR)
+    parser.add_argument("--output-dir", default=None, help="explicit folder (overrides the project)")
+    projects.add_argument(parser)
     args = parser.parse_args(argv)
     if not args.confirm_live:
         parser.error("--confirm-live is required; no API call was made")
-    output = Path(args.output_dir)
+    output = projects.cli_output(args)
     gemini_client.clear_call_records()
     try:
         review = rereview(output)

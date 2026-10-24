@@ -19,6 +19,7 @@ from agents.narrative import (
     title_passes, validate_title,
 )
 from agents import voice_calibration
+from studio import projects
 from video.timeline import load_timeline
 
 from flask import Flask, Response, jsonify, request, send_file, abort
@@ -88,6 +89,11 @@ def _log(msg, level="info"):
 def _stage(name, status):
     _state["stages"][name] = status
     _log_queue.put(("stage", f"{name}:{status}"))
+    if status == "done":
+        try:
+            projects.touch(config.OUTPUT_DIR)       # keeps project.json's stage status current
+        except (OSError, ValueError) as exc:
+            _log(f"Could not update project.json: {exc}", "warn")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -208,6 +214,8 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
                 "video_path": None, "thumb_path": None,
             })
             atomic_write_json(f"{config.OUTPUT_DIR}/research.json", research)
+            if projects.is_project(config.OUTPUT_DIR):     # a new project gets its title-based name
+                projects.activate(projects.retitle(config.OUTPUT_DIR, research["video_title"]))
             _stage("research", "done")
             _log(f"Topic: {research['video_title']}")
         else:
@@ -322,6 +330,10 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
 
         # ── Music  (optional, non-blocking) ───────────────────
         final_audio_path = _state["audio_path"]
+        existing_mix = os.path.join(config.OUTPUT_DIR, "narration_mixed.mp3")
+        if "music" not in steps and "narration" not in steps and os.path.exists(existing_mix) \
+                and os.path.getmtime(existing_mix) >= os.path.getmtime(final_audio_path):
+            final_audio_path = existing_mix          # a later stage reuses the current music mix
         if "music" in steps:
             _log("Preparing final audio (music, ducking, -14 LUFS loudness)…")
             mixed_path = os.path.join(config.OUTPUT_DIR, "narration_mixed.mp3")
@@ -489,6 +501,158 @@ def run_pipeline():
               target_duration, narrative_review), daemon=True)
     t.start()
     return jsonify({"ok": True})
+
+
+# ── Projects ──────────────────────────────────────────────────────────────────
+
+_STAGE_FOR_SIDEBAR = {"research": "story_brief", "script": "script", "narration": "narration",
+                      "visual_bible": "visual_bible", "shots": "shots", "video": "video"}
+
+
+def _reload_state_from_disk():
+    """Point the GUI state at the artifacts of the current folder (project or legacy output/)."""
+    out = Path(config.OUTPUT_DIR)
+    research = load_json(out / "research.json") or load_json(out / "story_brief.json")
+    script = load_json(out / "script.json")
+    video = next((str(out / name) for name in ("final_short.mp4", "final_video.mp4") if (out / name).is_file()), None)
+    statuses = {item["stage"]: item["status"] for item in projects.stage_status(out)}
+    info = projects.load(out)
+    _state.update({
+        "research": research, "script": script,
+        "character_bible": load_json(out / "character_bible.json"),
+        "story_outline": load_json(out / "story_outline.json"),
+        "narrative_review": load_json(out / "narrative_review.json"),
+        "audio_path": str(out / "narration.mp3") if (out / "narration.mp3").is_file() else None,
+        "video_path": video, "thumb_path": str(out / "thumbnail.jpg") if (out / "thumbnail.jpg").is_file() else None,
+        "image_map": {}, "yt_url": None, "error": None,
+        "video_type": info.get("video_type") or (script or {}).get("video_type") or "normal",
+    })
+    _state["description"] = _build_description(script, research, _state["video_type"]) if script and research else ""
+    for name, stage in _STAGE_FOR_SIDEBAR.items():
+        _state["stages"][name] = "done" if statuses.get(stage) == "done" else "pending"
+    _state["stages"]["images"] = _state["stages"]["shots"]
+
+
+def _current_summary() -> dict:
+    out = Path(config.OUTPUT_DIR)
+    if projects.is_project(out):
+        return {"project": True, **projects.summary(out)}
+    statuses = projects.stage_status(out)
+    return {"project": False, "slug": None, "title": "output/ (legacy folder)", "stages": statuses,
+            "next_step": projects.next_step(statuses), "thumbnail": None}
+
+
+@app.route("/api/projects")
+def list_projects():
+    legacy = Path(projects.LEGACY_DIR)
+    return jsonify({
+        "projects": [projects.summary(path) for path in projects.all_paths()],
+        "active": projects.active_slug(),
+        "current": Path(config.OUTPUT_DIR).name if projects.is_project(config.OUTPUT_DIR) else None,
+        "legacy_unmigrated": (legacy / "script.json").is_file() or (legacy / "story_brief.json").is_file(),
+    })
+
+
+@app.route("/projects/<slug>/thumbnail")
+def project_thumbnail(slug):
+    try:
+        path = projects.path_for(slug)
+    except projects.ProjectNotFound:
+        abort(404)
+    for name in ("thumbnail.jpg", "thumbnail_bg.jpg"):
+        if (path / name).is_file():
+            return send_file(str(path / name), mimetype="image/jpeg")
+    abort(404)
+
+
+@app.route("/api/projects/current")
+def current_project():
+    return jsonify(_current_summary())
+
+
+@app.route("/api/projects/open", methods=["POST"])
+def open_project():
+    if _state["running"] or _state.get("imagegen_busy"):
+        return jsonify({"ok": False, "error": "Wait for the running step to finish"}), 409
+    slug = str((request.get_json(force=True) or {}).get("slug", ""))
+    try:
+        path = projects.path_for(slug)
+    except projects.ProjectNotFound as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 404
+    projects.activate(path)
+    projects.set_active(slug)
+    _reload_state_from_disk()
+    return jsonify({"ok": True, **_current_summary()})
+
+
+@app.route("/api/projects/new", methods=["POST"])
+def new_project():
+    if _state["running"] or _state.get("imagegen_busy"):
+        return jsonify({"ok": False, "error": "Wait for the running step to finish"}), 409
+    body = request.get_json(force=True) or {}
+    video_type = body.get("video_type", "normal") if body.get("video_type") in ("normal", "shorts") else "normal"
+    try:
+        target = float(body.get("target_duration", 15))
+    except (TypeError, ValueError):
+        target = 15.0
+    path = projects.create(str(body.get("title", "")), video_type=video_type, target_duration=target)
+    projects.activate(path)
+    projects.set_active(path.name)
+    _reload_state_from_disk()
+    return jsonify({"ok": True, **_current_summary()})
+
+
+@app.route("/api/projects/stage/<stage>", methods=["POST"])
+def project_stage(stage):
+    """Run / re-run / skip one stage of the current project, respecting existing artifacts."""
+    if stage not in projects.STAGE_KEYS:
+        return jsonify({"ok": False, "error": f"Unknown stage {stage}"}), 404
+    body = request.get_json(force=True) or {}
+    action = body.get("action", "run")
+    out = Path(config.OUTPUT_DIR)
+    if action == "skip":
+        if not projects.is_project(out):
+            return jsonify({"ok": False, "error": "Skipping is recorded per project; open a project first"}), 400
+        data = projects.load(out)
+        data["skipped"] = sorted(set(data.get("skipped") or []) | {stage})
+        projects.save(out, data)
+        projects.touch(out)
+        return jsonify({"ok": True, **_current_summary()})
+    if action not in ("run", "rerun"):
+        return jsonify({"ok": False, "error": "action must be run, rerun or skip"}), 400
+    if _state["running"] or _state.get("imagegen_busy"):
+        return jsonify({"ok": False, "error": "Another step is already running"}), 409
+    statuses = projects.stage_status(out)
+    upstream = projects.blocking_upstream(statuses, stage)
+    if upstream and not body.get("confirm") and not body.get("rerun_upstream"):
+        return jsonify({"ok": False, "needs_confirmation": True, "upstream": upstream,
+                        "error": "Upstream stages need work first: "
+                                 + ", ".join(f"{item['label']} ({item['status']})" for item in upstream)}), 409
+    if projects.is_project(out):
+        data = projects.load(out)
+        if stage in (data.get("skipped") or []):
+            data["skipped"] = [item for item in data["skipped"] if item != stage]
+            projects.save(out, data)
+    if stage == "references":
+        return imagegen_candidates()
+    if stage == "publish":
+        return jsonify({"ok": False, "error": "Publish from the Review & Edit tab (approval gate)"}), 400
+    steps = []
+    if body.get("rerun_upstream"):
+        for item in upstream:
+            steps += [step for step in projects.steps_for(item["stage"]) if step not in steps]
+    steps += [step for step in projects.steps_for(stage) if step not in steps]
+    info = projects.load(out)
+    video_type = info.get("video_type") or _state.get("video_type") or "normal"
+    target = float(info.get("target_duration_minutes") or 15)
+    for name in steps:
+        if name in _state["stages"]:
+            _state["stages"][name] = "pending"
+    _state["video_type"] = video_type
+    _stop_event.clear()
+    threading.Thread(target=_run_pipeline, args=(steps, "", video_type, "", "auto", target, True),
+                     daemon=True).start()
+    return jsonify({"ok": True, "steps": steps})
 
 
 @app.route("/api/stop", methods=["POST"])
@@ -1223,6 +1387,10 @@ if __name__ == "__main__":
     port = 7070
     print(f"\n🎬  YouTube AI Agent Studio")
     print(f"   Opening at  http://localhost:{port}\n")
+    # Continue where the user left off: the active (or most recent) project, else legacy output/.
+    projects.activate(projects.resolve())
+    _reload_state_from_disk()
+    print(f"   Project folder: {config.OUTPUT_DIR}\n")
     threading.Timer(1.4, lambda: webbrowser.open(f"http://localhost:{port}")).start()
     # Sync publication states now and every PUBLICATION_SYNC_INTERVAL_MINUTES.
     from uploader.publications import start_background_sync

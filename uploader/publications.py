@@ -81,6 +81,7 @@ def build_record(video_id: str, run_dir, *, title: str = "", video_path: str | N
         "video_id": video_id,
         "url": f"https://www.youtube.com/watch?v={video_id}",
         "run_dir": str(run),
+        "project": (load_json(run / "project.json") or {}).get("slug"),
         "uploaded_at": _now(),
         "scheduled_publish_at": scheduled_publish_at,
         "title": title or script.get("title") or brief.get("video_title", ""),
@@ -114,7 +115,9 @@ def record_upload(video_id: str, run_dir, *, path=None, **kwargs) -> dict:
         record = build_record(video_id, run_dir, **kwargs)
         ledger["publications"].append(record)
         save_ledger(ledger, path)
-        return record
+    from studio import projects
+    projects.touch(run_dir, published_video_id=video_id)
+    return record
 
 
 def banned_entry(record: dict) -> dict:

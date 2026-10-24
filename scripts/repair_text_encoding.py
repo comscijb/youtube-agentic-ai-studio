@@ -15,6 +15,7 @@ import sys
 from pathlib import Path
 
 import config
+from studio import projects
 from agents.narrative import atomic_write_json, has_mojibake, repair_mojibake
 
 
@@ -45,11 +46,13 @@ def _excerpt(before: str, after: str) -> tuple[str, str]:
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Repair mojibake in output/*.json.")
-    parser.add_argument("--dir", default=config.OUTPUT_DIR)
+    parser.add_argument("--dir", default=None, help="explicit folder (overrides the project)")
+    projects.add_argument(parser)
     parser.add_argument("--apply", action="store_true", help="Write the repairs (default: dry run)")
     args = parser.parse_args(argv)
     total = 0
-    for path in sorted(Path(args.dir).glob("*.json")):
+    folder = projects.cli_output(args, "dir")
+    for path in sorted(folder.glob("*.json")):
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError) as exc:

@@ -98,17 +98,23 @@ def validate_visual_bible(value: dict, bible: dict, outline: dict) -> dict:
     return value
 
 
-def build_visual_bible(script: dict, brief: dict, bible: dict, outline: dict, output_dir,
-                       force: bool = False) -> dict:
-    output = Path(output_dir)
-    path = output / FILE_NAME
+def source_hash_for(script: dict, bible: dict, outline: dict) -> str:
+    """What the visual bible depends on (also used to report a stale one)."""
     from agents import identity
-    source_hash = stable_hash({
+    return stable_hash({
         "version": VISUAL_BIBLE_VERSION, "style": identity.visual_style(),
         "bible": bible.get("characters"),
         "outline": [(scene.get("scene_id"), scene.get("setting")) for scene in outline.get("scenes", [])],
         "narration": [scene.get("narration") for scene in script.get("sections", [])],
     })
+
+
+def build_visual_bible(script: dict, brief: dict, bible: dict, outline: dict, output_dir,
+                       force: bool = False) -> dict:
+    output = Path(output_dir)
+    path = output / FILE_NAME
+    from agents import identity
+    source_hash = source_hash_for(script, bible, outline)
     existing = load_json(path) or {}
     if not force and existing.get("source_hash") == source_hash:
         return existing

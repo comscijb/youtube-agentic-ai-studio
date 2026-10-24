@@ -82,6 +82,33 @@ python pipeline.py
 
 ---
 
+## Projects: continue work in progress
+
+Every episode lives in its own folder, `projects/<date>-<title-slug>/` (for example
+`2026-10-23-the-man-who-needed-everyone-to-envy-him`), with the same artifact names the old
+single `output/` folder used, plus `project.json` (title, created/updated, video type, target
+duration, stage status, published video id). Channel-wide assets stay outside: `assets/style_refs`,
+`music library`, `data/`. Character and location references are per project.
+
+- **Move the old `output/`:** `python -m scripts.migrate_output_to_project --dry-run`, then without
+  `--dry-run`. It moves everything except `benchmarks/`, archives and the channel-wide calibration
+  renders, rewrites JSON paths, tags the publication ledger, makes the project active and leaves
+  `output/MIGRATED.txt`; nothing is deleted.
+- **Active project:** `--project <slug>` on every script (`generate_shots`, `generate_character_refs`,
+  `generate_style_refs`, `calibrate_*`, `rereview_output`, `render_preflight`,
+  `repair_text_encoding`, `register_publication`, `pipeline.py`), the GUI selection, else the
+  project last opened, else the most recently updated one. `--output-dir` still points a script at
+  any folder, and with no project at all the legacy `output/` is used.
+- **Stage status** comes from the artifacts and their `source_hash` chain: `done`, `stale` (an
+  upstream artifact changed), `partial` (e.g. shots 5/50), `missing` or `skipped`, with the next
+  recommended step. `python -m scripts.project list | show <slug> | open <slug>`.
+- **GUI:** the home screen offers **Novo projeto** (the usual flow; the folder is renamed after
+  the Story Brief title) and **Continuar projeto** (title, date, thumbnail, stage badges, next
+  step). The **Project** tab runs, re-runs or skips each stage, reuses existing artifacts and
+  checkpoints, never forces the Story Brief, and warns when an upstream stage is stale or missing
+  (re-run it first, or run anyway). Approvals open inside the project; uploads record the
+  project slug in the ledger.
+
 ## 🏗️ How It Works
 
 The pipeline runs 6 sequential phases:
