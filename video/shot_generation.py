@@ -275,6 +275,12 @@ def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None =
     summary = {"generated": 0, "cached": 0, "fallback": 0, "failed": [], "held": [], "total": len(queue)}
     for index, shot in enumerate(queue, 1):
         composed = shots_module.compose_shot(shot, vb, output)
+        problems = shots_module.prompt_problems(shot, composed["prompt"])
+        if problems:
+            summary["failed"].append(shot["shot_id"])
+            progress(f"   ⚠ {shot['shot_id']}: {'; '.join(problems)} — fix the visual bible or the shot "
+                     "action, then run again")
+            continue
         job = ImageJob(job_id=shot["shot_id"], prompt=composed["prompt"], seed=composed["seed"],
                        output_path=str(output / "images" / "shots" / f"{shot['shot_id']}.jpg"),
                        kind=composed["kind"], references=composed["references"], size=native_size())
@@ -329,10 +335,13 @@ def generate_thumbnail_image(output_dir, generator: ImageGenerator) -> str:
     protagonist = [vb["characters"][0]["character_id"]] if vb.get("characters") else []
     characters = list(thumb.get("characters") or [])
     characters = protagonist + [cid for cid in characters if cid not in protagonist]
+    settings = {shot.get("location"): shot.get("setting_condition")
+                for shot in (load_json(output / shots_module.FILE_NAME) or {}).get("shots", [])}
     shot = {"shot_id": "thumbnail", "scene_id": "", "shot_type": "medium",
             "characters": characters, "location": thumb.get("location_id"),
             "action": f"{thumb.get('description', '')}, strong emotional focal point on the right, "
                       "dark negative space on the left", "face_visibility": "partial",
+            "others_present": False, "setting_condition": settings.get(thumb.get("location_id")) or "",
             "seed": thumb.get("seed", vbible.seed_for("thumbnail", "episode")), "seed_offset": 0}
     composed = shots_module.compose_shot(shot, vb, output)
     job = ImageJob(job_id="thumbnail", prompt=composed["prompt"], seed=composed["seed"],

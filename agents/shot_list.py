@@ -13,6 +13,11 @@ Built after narration because it needs real timings:
    visibility and an optional re-use of an earlier shot.
 5. Prompts and reference slots are composed in code from the visual bible
    (``compose_shot``), so identity text is never left to the model.
+
+Version 2 (Phase 3.3) adds, per shot, each visible character's grooming and
+expression at that moment and whether unnamed people are present, and per
+location the condition the story gives it; injury, decay and tears words the
+narration does not contain are rejected.
 """
 from __future__ import annotations
 
@@ -26,7 +31,7 @@ from agents.gemini_client import generate
 from agents.narrative import NarrativeValidationError, atomic_write_json, load_json, stable_hash
 from agents.structured import compact_json
 
-SHOT_LIST_VERSION = 1
+SHOT_LIST_VERSION = 2   # the shot-prompt version: bumping it re-plans and regenerates shots
 FILE_NAME = "shot_list.json"
 SHOT_TYPES = ("wide", "establishing", "medium", "close_up", "insert", "over_the_shoulder",
               "silhouette", "hands")
@@ -140,11 +145,37 @@ def validate_shots(value: dict, segments: list[dict], vb: dict, outline: dict, p
         raise NarrativeValidationError(f"shot list must return exactly these shot_ids in order: {ids}")
     characters = {item["character_id"] for item in vb.get("characters", [])}
     locations = {item["location_id"] for item in vb.get("locations", [])}
+    excerpts = {segment["shot_id"]: segment.get("text", "") for segment in segments}
     seen = set()
     problems = []
     from agents import identity
+    settings = value.get("settings")
+    if not isinstance(settings, dict):
+        settings = {}
+        problems.append("settings must map every location_id used to its condition")
+    used = {shot.get("location_id") for shot in shots if isinstance(shot, dict)}
+    for lid in sorted(lid for lid in used if lid in locations):
+        condition = str(settings.get(lid) or "").strip()
+        if not condition:
+            problems.append(f"settings.{lid}: describe the condition the story gives this place")
+        unsupported = identity.unsupported_terms(condition, " ".join(excerpts.values()))
+        if unsupported:
+            problems.append(f"settings.{lid}: the narration never mentions {unsupported}")
     for shot in shots:
         sid = shot["shot_id"]
+        appearance = shot.get("appearance") if isinstance(shot.get("appearance"), dict) else {}
+        missing = [cid for cid in shot.get("characters") or [] if not str(appearance.get(cid, "")).strip()]
+        if missing:
+            problems.append(f"{sid}: appearance needs grooming and expression for {missing}")
+        if not isinstance(shot.get("others_present"), bool):
+            problems.append(f"{sid}: others_present must be true or false")
+        elif not shot["others_present"] and _has_unnamed_people(shot.get("action", "")):
+            problems.append(f"{sid}: the action shows unnamed people but others_present is false")
+        visible = " ".join([str(shot.get("action", ""))] + [str(text) for text in appearance.values()])
+        unsupported = identity.unsupported_terms(visible, excerpts.get(sid, ""))
+        if unsupported:
+            problems.append(f"{sid}: the narration at this moment never mentions {unsupported}; "
+                            "no injuries, decay or tears it does not state")
         banned = identity.forbidden_terms(shot.get("action", ""))
         if banned:
             problems.append(f"{sid}: the action mentions excluded subjects {banned}")
@@ -180,6 +211,8 @@ def validate_shots(value: dict, segments: list[dict], vb: dict, outline: dict, p
         problems.append(f"at least 40% of shots must not show a full face; got {len(shots) - full}/{len(shots)}")
     if problems:
         raise NarrativeValidationError("shot list problems: " + "; ".join(problems[:20]))
+    for shot in shots:
+        shot["setting_condition"] = str(settings.get(shot.get("location_id")) or "").strip()
     return shots
 
 
@@ -201,6 +234,8 @@ def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bo
     if not force and existing.get("source_hash") == source_hash:
         return existing
     scene_cast = {scene["scene_id"]: scene.get("characters_present", []) for scene in outline.get("scenes", [])}
+    scene_info = {scene["scene_id"]: {"setting": scene.get("setting", ""), "summary": scene.get("summary", "")}
+                  for scene in outline.get("scenes", [])}
     policy_rule = (
         "Faces may be visible; between 40% and 60% of shots must NOT show a full face "
         "(hands, silhouettes, over-the-shoulder, objects, wides)."
@@ -210,11 +245,20 @@ def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bo
     )
     contract = f"""You are the director of photography of Private Gravity, a dark cinematic anthology.
 For every narration SEGMENT supplied after this contract, design one still image that shows what is
-being said at that moment. Return ONLY JSON {{"shots": [...]}} with one object per segment, same
-order, keys: shot_id (unchanged), shot_type ({", ".join(SHOT_TYPES)}), characters (character_ids
-visible in the frame, from the scene cast), location_id (from the visual bible), action (what is
-visible: pose, gesture, objects, light and composition in one concrete sentence; no camera
-jargon beyond the framing; never describe faces or clothes, the visual bible supplies them),
+being said at that moment. Return ONLY JSON {{"settings": {{...}}, "shots": [...]}}.
+settings maps every location_id you use to one sentence on its condition as the story gives it
+(an expensive minimal loft: "immaculate and expensive: polished surfaces, precise objects,
+pristine walls"); never decay, grime, stains, rust or ruin unless the narration states them.
+shots has one object per segment, same order, keys: shot_id (unchanged), shot_type
+({", ".join(SHOT_TYPES)}), characters (character_ids visible in the frame, from the scene cast),
+location_id (from the visual bible), action (what is visible: pose, gesture, objects, light and
+composition in one concrete sentence; no camera jargon beyond the framing; never describe faces
+or clothes, the visual bible supplies them), appearance (an object mapping every character in
+the shot to their grooming and expression at this exact moment, following the narration: a
+composed character is "poised, hair neatly pinned, composed expression"; tears, dishevelment,
+dirt or marks only where the narration has them), others_present (true only when the narration
+or the scene's chronology places unnamed people — guests, staff, a crowd — in the room at this
+moment; before the guests arrive it is false and the named characters are alone),
 face_visibility (none | partial | full) and reuse_of ("" or the shot_id of an EARLIER shot when
 showing the same image again is dramatically right, e.g. a motif returning).
 Mix wides, mediums, close-ups, inserts of objects, hands, silhouettes and over-the-shoulder shots;
@@ -226,6 +270,8 @@ dark background with a single light source. {policy_rule}
 SEGMENTS: {compact_json([{"shot_id": s["shot_id"], "scene_id": s["scene_id"],
                          "seconds": round(s["end"] - s["start"], 1), "narration": s["text"],
                          "scene_cast": scene_cast.get(s["scene_id"], []),
+                         "scene_setting": scene_info.get(s["scene_id"], {}).get("setting", ""),
+                         "scene_summary": scene_info.get(s["scene_id"], {}).get("summary", ""),
                          "default_location": (vbible.location_for_scene(vb, s["scene_id"]) or {}).get("location_id")}
                         for s in segments])}"""
     shots = structured.generate_json(
@@ -241,6 +287,9 @@ SEGMENTS: {compact_json([{"shot_id": s["shot_id"], "scene_id": s["scene_id"],
             "narration_excerpt": segment["text"], "shot_type": shot["shot_type"],
             "characters": list(shot.get("characters") or []), "location": shot["location_id"],
             "action": shot["action"], "face_visibility": shot["face_visibility"],
+            "appearance": {cid: str(text) for cid, text in (shot.get("appearance") or {}).items()
+                           if cid in (shot.get("characters") or [])},
+            "others_present": shot["others_present"], "setting_condition": shot.get("setting_condition", ""),
             "reuse_of": shot.get("reuse_of") or "", "seed": vbible.seed_for("shot", segment["shot_id"]),
             "seed_offset": 0,
         }
@@ -302,6 +351,8 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
         references.append(location_ref)
         slots.append({"slot": len(references) - 1, "kind": "location", "id": location.get("location_id")})
         location_text = f"in the room from the {ORDINALS[len(references) - 1]} image"
+    if shot.get("setting_condition"):
+        location_text = f"{location_text}, {shot['setting_condition']}"
     anchors = style_refs.approved_paths()
     style_text = ""
     if anchors and len(references) < 4:
@@ -310,16 +361,15 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
         style_text = f"Rendered in the drawing style of the {ORDINALS[len(references) - 1]} image."
 
     subjects = []
+    appearance = shot.get("appearance") or {}
     for cid in characters:
         outfit = vbible.wardrobe(vb, cid, shot.get("scene_id", ""))
-        if cid in ref_names:
-            subjects.append(f"{ref_names[cid]}, wearing {outfit}" if outfit else ref_names[cid])
-        else:
-            entry = vbible.character(vb, cid) or {}
-            subjects.append(f"{entry.get('descriptor', cid)}, wearing {outfit}" if outfit
-                            else entry.get("descriptor", cid))
+        name = ref_names.get(cid) or (vbible.character(vb, cid) or {}).get("descriptor", cid)
+        details = [f"wearing {outfit}" if outfit else "",
+                   vbible.grooming(vb, cid, shot.get("scene_id", "")), str(appearance.get(cid) or "")]
+        subjects.append(", ".join([name] + [text.strip() for text in details if text.strip()]))
     article = "an" if noun[0] in "aeiou" else "a"
-    crowd = CROWD_HINT if _has_unnamed_people(shot.get("action", "")) else ""
+    crowd = _company(shot, len(characters))
     if references:
         lead = f"Create {article} {noun} of " + "; and ".join(subjects) if subjects else f"Create {article} {noun}"
         prompt = f"{lead}. {shot['action']}. {crowd} Setting: {location_text}. {framing}. {style_text} {style}"
@@ -341,6 +391,32 @@ _GROUP_WORDS = {"guests", "men", "women", "people", "figures", "crowd", "others"
 
 def _has_unnamed_people(action: str) -> bool:
     return bool(set(re.findall(r"[a-z]+", str(action or "").lower())) & _GROUP_WORDS)
+
+
+def alone_hint(count: int) -> str:
+    """Positive wording for 'nobody else is here' (the negative prompt is zeroed)."""
+    if count <= 0:
+        return "The room is empty and still."
+    if count == 1:
+        return "Alone in the room."
+    if count == 2:
+        return "The two of them alone in the room."
+    return f"Only these {count} people in the room."
+
+
+def _company(shot: dict, count: int) -> str:
+    """Crowd or solitude sentence; shot lists before version 2 have no others_present."""
+    others = shot.get("others_present")
+    if others is True or (others is None and _has_unnamed_people(shot.get("action", ""))):
+        return CROWD_HINT
+    return alone_hint(count) if others is False else ""
+
+
+def prompt_problems(shot: dict, prompt: str) -> list[str]:
+    """Composed-prompt checks before generation: injuries, decay or tears the narration lacks."""
+    from agents import identity
+    unsupported = identity.unsupported_terms(prompt, shot.get("narration_excerpt", ""))
+    return [f"the prompt mentions {unsupported} but the narration at this moment does not"] if unsupported else []
 
 
 def resolve_image(shots: list[dict], shot: dict) -> str | None:

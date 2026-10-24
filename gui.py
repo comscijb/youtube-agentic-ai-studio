@@ -832,6 +832,12 @@ def imagegen_edit_shot(shot_id):
     banned = identity.forbidden_terms(action) + identity.layout_terms(action)
     if banned:
         return jsonify({"ok": False, "error": "The visual style excludes: " + ", ".join(banned)}), 400
+    shots = (load_json(Path(config.OUTPUT_DIR, "shot_list.json")) or {}).get("shots", [])
+    excerpt = next((item.get("narration_excerpt", "") for item in shots if item["shot_id"] == shot_id), "")
+    unsupported = identity.unsupported_terms(action, excerpt)
+    if unsupported:
+        return jsonify({"ok": False, "error": "The narration at this moment never mentions: "
+                        + ", ".join(unsupported)}), 400
     if not _update_shot(shot_id, lambda shot: shot.update(action=action)):
         return jsonify({"ok": False, "error": "Unknown shot"}), 404
     return jsonify({"ok": True})

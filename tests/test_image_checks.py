@@ -211,12 +211,14 @@ class PromptRuleTests(unittest.TestCase):
         segments = [{"shot_id": f"s01_0{i}"} for i in range(1, 6)]
         shots = [{"shot_id": s["shot_id"], "shot_type": "wide" if i < 2 else "medium",
                   "characters": ["julian_vance"], "location_id": "loft", "action": "He waits",
-                  "face_visibility": "partial", "reuse_of": ""} for i, s in enumerate(segments)]
-        shots_module.validate_shots({"shots": shots}, segments, VISUAL_BIBLE, {}, "reference")
+                  "face_visibility": "partial", "reuse_of": "", "others_present": False,
+                  "appearance": {"julian_vance": "composed"}} for i, s in enumerate(segments)]
+        settings = {"loft": "immaculate"}
+        shots_module.validate_shots({"settings": settings, "shots": shots}, segments, VISUAL_BIBLE, {}, "reference")
         shots[0]["action"] = "A storyboard of him waiting"
         shots[1]["shot_type"] = "medium"
         with self.assertRaises(Exception) as caught:
-            shots_module.validate_shots({"shots": shots}, segments, VISUAL_BIBLE, {}, "reference")
+            shots_module.validate_shots({"settings": settings, "shots": shots}, segments, VISUAL_BIBLE, {}, "reference")
         self.assertIn("page layout", str(caught.exception))
         self.assertIn("wide/establishing", str(caught.exception))
 

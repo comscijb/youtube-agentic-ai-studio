@@ -119,7 +119,7 @@ is fixed elsewhere; describe only people, clothes, places and the thumbnail mome
 
 Return ONLY JSON:
 {{"characters": [{{"character_id": "...", "descriptor": "...",
-                   "wardrobe": [{{"scene_ids": ["s01"], "outfit": "..."}}]}}],
+                   "wardrobe": [{{"scene_ids": ["s01"], "outfit": "...", "grooming": "..."}}]}}],
   "locations": [{{"location_id": "...", "name": "...", "descriptor": "...", "scene_ids": ["s01"]}}],
   "thumbnail_shot": {{"description": "...", "characters": ["character_id"], "location_id": "..."}}}}
 
@@ -131,9 +131,15 @@ Rules:
 - wardrobe: what each character wears in each scene, exactly consistent with the screenplay
   (if the screenplay names a garment, use it; never invent garments the text contradicts, e.g.
   no cardigan when the screenplay says she wears an ivory silk shirt). Cover every scene in which
-  the character appears.
+  the character appears. grooming: hair, make-up and bearing in those scenes, following the
+  character's state in the narration (composed people are poised and well groomed); never marks,
+  dirt, injuries or tears the screenplay does not state.
+- The immutable descriptor is physical only (age, build, face, hair, features): no mood words
+  such as weary or tearful, which belong to single moments.
 - locations: every recurring set gets one descriptor reused in every shot set there (materials,
-  light, scale, objects). Every outline scene_id must belong to a location.
+  light, scale, objects), keeping the social status the story gives it (an expensive minimal loft
+  is immaculate: polished surfaces, precise objects, pristine walls; never raw, grimy, stained,
+  rusted or ruined unless the screenplay says so). Every outline scene_id must belong to a location.
 - thumbnail_shot: the strongest emotional image of the episode, a human focal point (a partial
   face is fine), with negative space on the left for a short line of text."""
     context = f"""CHARACTER BIBLE: {compact_json(bible)}
@@ -176,6 +182,15 @@ def wardrobe(vb: dict, character_id: str, scene_id: str) -> str:
         if scene_id in item.get("scene_ids", []):
             return item["outfit"]
     return entry.get("wardrobe", [{}])[0].get("outfit", "") if entry.get("wardrobe") else ""
+
+
+def grooming(vb: dict, character_id: str, scene_id: str) -> str:
+    """Optional per-scene grooming (visual bibles before Phase 3.3 have none)."""
+    entry = character(vb, character_id) or {}
+    for item in entry.get("wardrobe", []):
+        if scene_id in item.get("scene_ids", []):
+            return str(item.get("grooming") or "")
+    return ""
 
 
 def location(vb: dict, location_id: str) -> dict | None:

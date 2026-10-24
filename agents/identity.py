@@ -186,14 +186,22 @@ def is_illustration() -> bool:
     return visual_style() == "dark_illustration"
 
 
-def palette_text() -> str:
+# Examples of the rare crimson accent. Phase 3.3 dropped "a wound" (it drew
+# injuries nobody wrote); the style hash still hashes the 3.2.1 wording so the
+# approved references and style anchors stay valid — this is prompt wording,
+# not a change of drawing style.
+CRIMSON_EXAMPLES = "wine, a ring, a scarf, a candle reflection"
+_HASHED_CRIMSON_EXAMPLES = "wine, a wound, a ring"
+
+
+def palette_text(crimson_examples: str = CRIMSON_EXAMPLES) -> str:
     """Palette rule built from config.COLORS (hex values are never hard-coded here)."""
     base = ", ".join(f"{name} {_color(key)} ({role})" for key, name, role in _PALETTE_ROLES)
     accents = " or ".join(f"{name} {_color(key)}" for key, name in _ACCENT_ROLES)
     key, name = _PUNCTUATION
     return (f"near-monochrome duotone palette: {base}; a single warm accent per image, {accents}, "
             f"only on the light source or the story's focal object; {name} {_color(key)} only for "
-            "rare emotional punctuation (wine, a wound, a ring)")
+            f"rare emotional punctuation ({crimson_examples})")
 
 
 def negative_terms(style: str | None = None) -> tuple:
@@ -201,7 +209,8 @@ def negative_terms(style: str | None = None) -> tuple:
     return (DARK_ILLUSTRATION if style == "dark_illustration" else CINEMATIC_PHOTO)["exclusions"]
 
 
-def style_suffix(style: str | None = None, variant: str | None = None) -> str:
+def style_suffix(style: str | None = None, variant: str | None = None, *,
+                 crimson_examples: str = CRIMSON_EXAMPLES) -> str:
     """Appended to every image prompt.
 
     The FLUX graphs zero out the negative conditioning (cfg 1), so naming the
@@ -215,7 +224,7 @@ def style_suffix(style: str | None = None, variant: str | None = None) -> str:
     variant = variant or style_variant()
     spec = DARK_ILLUSTRATION
     return (f"{FULL_BLEED}. {spec['medium']}; {STYLE_VARIANTS[variant]}. {spec['atmosphere']}. "
-            f"{spec['people']}. {palette_text()}. Clean image without lettering or watermark.")
+            f"{spec['people']}. {palette_text(crimson_examples)}. Clean image without lettering or watermark.")
 
 
 # Every illustration is one picture covering the whole 16:9 frame (no paper
@@ -232,6 +241,41 @@ LAYOUT_TERMS = ("comic panel", "comic panels", "multiple panels", "panel layout"
 CROWD_RULE = ("When a shot contains more than one person who is not a named character, give each a "
               "clearly different age, build, posture and clothing; prefer a few distant, indistinct "
               "figures in shadow over several detailed ones.")
+
+
+# Dread comes from light, shadow, scale and stillness — never from decay, dirt,
+# damage, injury or tears the screenplay does not state (Phase 3.3).
+ART_DIRECTION_RULE = (
+    "Dread comes only from light, shadow, scale and stillness — never from decay, dirt, damage or "
+    "injury unless the screenplay states it. Settings keep the social status the story gives them "
+    "(an expensive, minimal home stays immaculate: polished surfaces, precise objects, pristine "
+    "walls). No blood, wounds, scratches, bruises or injuries unless the narration states them. "
+    "Wardrobe, grooming and expression follow the scene's moment: a composed character looks "
+    "poised and well groomed, with tears only where the text has them. Only people the narration "
+    "places in the scene at that moment appear; when it places nobody else there, the named "
+    "characters are alone."
+)
+# Word families that need the narration's support; "full-bleed", "stainless",
+# "scratchboard", "crystal" and "rustic" deliberately do not match.
+UNSUPPORTED_FAMILIES = {
+    "injury": r"\b(?:blood\w*|bleed(?:s|ing)|wound(?:s|ed)?|scratch(?:es|ed)?|bruis\w*|injur\w*|gash\w*|cut on)\b",
+    "decay": r"\b(?:grim(?:e|y)|decay\w*|rot|rott\w*|stain(?:s|ed|ing)?|rust(?:y|ed|ing)?|crumbl\w*|"
+             r"peeling|dilapidated|derelict|ruin\w*|dirty|filth\w*|squalid|neglected|mou?ldy|mildew\w*)\b",
+    "tears": r"\b(?:tears|tearful|tear-stained|cry(?:ing)?|cries|cried|weep\w*|wept|sob\w*)\b",
+}
+
+
+def unsupported_terms(text: str, narration: str) -> list[str]:
+    """Injury, decay and tears words in ``text`` whose family the narration never mentions."""
+    import re
+    lowered, source = str(text or "").lower(), str(narration or "").lower()
+    found = []
+    for pattern in UNSUPPORTED_FAMILIES.values():
+        if re.search(pattern, source):
+            continue
+        found += [match.group(0) for match in re.finditer(pattern, lowered)
+                  if match.group(0) not in found]
+    return found
 
 
 def layout_terms(text: str) -> list[str]:
@@ -251,7 +295,7 @@ def image_prompt_rules(style: str | None = None) -> str:
             "imply: " + ", ".join(DARK_ILLUSTRATION["exclusions"]) + ". Never include text, signs or "
             "screens with legible writing. Each image is ONE single full-frame picture: never request "
             "comic panels, page layouts, borders around the image, paper edges or multiple views. "
-            + CROWD_RULE)
+            + CROWD_RULE + " " + ART_DIRECTION_RULE)
 
 
 def forbidden_terms(text: str, style: str | None = None) -> list[str]:
@@ -272,5 +316,5 @@ def style_hash(style: str | None = None, variant: str | None = None) -> str:
     import hashlib
     style = style or visual_style()
     payload = f"{STYLE_VERSION}|{style}|{variant or style_variant() if style == 'dark_illustration' else ''}|" \
-              f"{style_suffix(style, variant)}"
+              f"{style_suffix(style, variant, crimson_examples=_HASHED_CRIMSON_EXAMPLES)}"
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]

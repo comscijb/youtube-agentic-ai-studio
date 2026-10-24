@@ -413,6 +413,18 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   but only when that cuts at most 6 % per side (deeper margins fail the attempt and the shot is
   regenerated). The outcome (`accepted`, `regenerated`, `cropped`, …) is stored as
   `image_checks` in the manifest. Disable with `IMAGEGEN_IMAGE_CHECKS = False`.
+- **Art direction.** Dread comes from light, shadow, scale and stillness — never from decay,
+  dirt, damage or injury the screenplay does not state; settings keep the status the story gives
+  them (an expensive loft stays immaculate). The shot planner (shot list version 2) returns, per
+  location, the condition the story gives it; per shot, each visible character's grooming and
+  expression at that moment (added to the prompt after the scene's wardrobe) and
+  `others_present` — only when the narration or the scene's chronology places unnamed people in
+  the room; otherwise the prompt says the characters are alone. Injury, decay and tears words
+  (`blood`, `wound`, `scratch`, `bruise`, `injur*`, `cut on`, `grimy`, `stained`, `tearful`, …)
+  are rejected in shot actions, GUI edits and composed prompts unless the shot's
+  `narration_excerpt` has the same family. The crimson accent examples are wine, a ring, a scarf
+  or a candle reflection; this wording change keeps the style hash, so approved references stay
+  valid.
 - **Always 16:9.** The frame comes from the sampler latent only: `IMAGEGEN_LATENT_SOURCE =
   "empty_16x9"` (default; `reference` makes the output follow the first reference's size and is
   kept for edit-like uses). Character and location references keep their own sizes. An output

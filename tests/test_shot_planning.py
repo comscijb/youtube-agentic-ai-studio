@@ -157,8 +157,11 @@ def planned_shots(segments, full=1):
         shots.append({"shot_id": segment["shot_id"], "shot_type": "medium" if index % 2 else "wide",
                       "characters": ["julian_vance"], "location_id": "loft",
                       "action": "He straightens a linen napkin", "face_visibility":
-                          "full" if index < full else "partial", "reuse_of": ""})
-    return {"shots": shots}
+                          "full" if index < full else "partial", "reuse_of": "",
+                      "appearance": {"julian_vance": "neatly groomed, composed expression"},
+                      "others_present": False})
+    return {"settings": {"loft": "immaculate and expensive: polished surfaces, pristine walls"},
+            "shots": shots}
 
 
 class ShotListTests(unittest.TestCase):
