@@ -1,39 +1,18 @@
 {
   "date": "2026-10-22",
-  "style_version": 1,
+  "style_version": 2,
   "variants": {
     "engraving": {
-      "seconds_per_image": 14.5,
+      "seconds_per_image": 18.5,
       "samples": [
-        14.5,
-        14.2,
-        14.2,
-        14.3,
-        14.3,
-        15.3
-      ]
-    },
-    "charcoal_gouache": {
-      "seconds_per_image": 14.4,
-      "samples": [
-        15.2,
-        14.3,
-        14.2,
-        14.2,
-        14.2,
-        14.3
-      ]
-    },
-    "hybrid": {
-      "seconds_per_image": 14.2,
-      "samples": [
-        14.3,
-        14.2,
-        14.2,
-        14.3,
-        14.3,
-        14.2
-      ]
+        27.2,
+        16.5,
+        16.3,
+        17.3,
+        16.5,
+        17.2
+      ],
+      "seed_base": 4242
     }
   }
 }
