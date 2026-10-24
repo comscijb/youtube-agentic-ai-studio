@@ -284,16 +284,24 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
             return
 
         # ── Images ────────────────────────────────────────────
-        if "images" in steps:
+        # "Images" means generated shots (visual bible → shot list → ComfyUI, after
+        # narration); stock is only downloaded when opted in for cinematic_photo.
+        from agents import identity
+        from video.stock import enabled as stock_enabled
+        stock_images = stock_enabled() and not identity.is_illustration()
+        if "images" in steps and stock_images:
             _stage("images", "running")
             image_map = download_images(script, config.OUTPUT_DIR)
             _state["image_map"] = image_map
             _stage("images", "done")
         else:
+            if "images" in steps:
+                steps = list(steps) + [step for step in ("visual_bible", "shots") if step not in steps]
+                _log("Images = generated shots: visual bible → shot list → ComfyUI, after narration")
             _state["image_map"] = load_existing_images(script, config.OUTPUT_DIR)
 
         _check_stop("images")
-        if not any(step in steps for step in ("narration", "music", "video")):
+        if not any(step in steps for step in ("narration", "music", "video", "visual_bible", "shots")):
             _complete_partial("Stock Assets")
             return
 
@@ -353,6 +361,8 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
                     _complete_partial("shot planning (ComfyUI is not running)")
                     return
                 _stage("shots", "done")
+                if "images" in steps:
+                    _stage("images", "done")
             _check_stop("shots")
 
         # ── Thumbnail ─────────────────────────────────────────
@@ -1027,6 +1037,7 @@ def get_settings():
         "gemini_configured":  _key_configured(config.GEMINI_API_KEY),
         "gemini_key_source":  getattr(config, "GEMINI_API_KEY_SOURCE", "unknown"),
         "pixabay_configured": _key_configured(config.PIXABAY_API_KEY),
+        "stock_enabled":      bool(getattr(config, "STOCK_ENABLED", False)),
         "stock_provider":     getattr(config, "STOCK_PROVIDER", "auto"),
         "stock_fallback":     getattr(config, "STOCK_FALLBACK_PROVIDER", "openverse"),
         "stock_cache":        getattr(config, "STOCK_CACHE_ENABLED", True),
@@ -1105,6 +1116,7 @@ def save_settings():
 
     # Update live config object
     m = {
+        "stock_enabled": "STOCK_ENABLED",
         "stock_provider": "STOCK_PROVIDER",
         "stock_fallback": "STOCK_FALLBACK_PROVIDER",
         "stock_cache": "STOCK_CACHE_ENABLED",
@@ -1133,7 +1145,7 @@ def save_settings():
                 val = float(val)
             if attr == "MUSIC_ENABLED":
                 val = bool(val)
-            if attr in ("STOCK_CACHE_ENABLED", "STOCK_LICENSE_LOG_ENABLED"):
+            if attr in ("STOCK_ENABLED", "STOCK_CACHE_ENABLED", "STOCK_LICENSE_LOG_ENABLED"):
                 val = bool(val)
             if attr == "STOCK_PROVIDER" and val not in ("auto", "pixabay", "openverse"):
                 return jsonify({"ok": False, "error": "Invalid stock provider"}), 400
@@ -1142,6 +1154,8 @@ def save_settings():
             setattr(config, attr, val)
 
     stock_env = {}
+    if "stock_enabled" in body:
+        stock_env["STOCK_ENABLED"] = str(bool(config.STOCK_ENABLED)).lower()
     if "stock_provider" in body:
         stock_env["STOCK_PROVIDER"] = str(config.STOCK_PROVIDER)
     if "stock_fallback" in body:

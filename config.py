@@ -47,6 +47,8 @@ GEMINI_API_KEY_SOURCE = (
 
 # Stock providers. "auto" tries the approved local library, Pixabay when a
 # key is configured, then the credential-free Openverse fallback.
+# Off by default: no Pixabay/Openverse request is ever made unless this is true.
+STOCK_ENABLED             = os.getenv("STOCK_ENABLED", "false").lower() in ("1", "true", "yes", "on")
 STOCK_PROVIDER            = os.getenv("STOCK_PROVIDER", "auto").lower()
 STOCK_FALLBACK_PROVIDER   = os.getenv("STOCK_FALLBACK_PROVIDER", "openverse").lower()
 STOCK_CACHE_ENABLED       = os.getenv("STOCK_CACHE_ENABLED", "true").lower() in ("1", "true", "yes", "on")

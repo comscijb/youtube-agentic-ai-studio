@@ -121,7 +121,8 @@ class PreflightTests(unittest.TestCase):
             track.unlink()
         with patch.object(config, "VOICE_ID", "en-US-GuyNeural"), \
              patch.object(config, "FONT_PATHS", {"bold": ["missing.ttf"]}), \
-             patch.object(config, "PIXABAY_API_KEY", ""):
+             patch.object(config, "PIXABAY_API_KEY", ""), \
+             patch.object(config, "STOCK_ENABLED", True):
             _, text = self.run_preflight()
         statuses = self.statuses(text)
         for name in ("music", "voice", "fonts", "stock"):

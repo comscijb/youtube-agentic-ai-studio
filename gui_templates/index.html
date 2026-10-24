@@ -365,7 +365,7 @@ input[type=range]{width:100%;accent-color:var(--primary)}
             <div class="steps-grid">
               <label class="step-check"><input type="checkbox" id="step-research" checked> 💡 Story Brief</label>
               <label class="step-check"><input type="checkbox" id="step-script" checked> ✍️ Bible + Outline + Scenes</label>
-              <label class="step-check"><input type="checkbox" id="step-images" checked> 🖼 Images</label>
+              <label class="step-check"><input type="checkbox" id="step-images" checked> 🖼 Images <span style="font-size:10px;opacity:0.6">(generated shots)</span></label>
               <label class="step-check"><input type="checkbox" id="step-narration" checked> 🎙 Narration</label>
               <label class="step-check"><input type="checkbox" id="step-music" checked> 🎵 Music <span style="font-size:10px;opacity:0.6">(library)</span></label>
               <label class="step-check"><input type="checkbox" id="step-visual_bible"> 🧭 Visual bible</label>
@@ -624,6 +624,8 @@ input[type=range]{width:100%;accent-color:var(--primary)}
               <summary class="field-label" style="cursor:pointer">Story Development Artifacts</summary>
               <pre id="story-artifacts" style="white-space:pre-wrap;max-height:420px;overflow:auto;font-size:10px;color:var(--muted);margin-top:8px"></pre>
             </details>
+            <label class="check-row"><input type="checkbox" id="s-stock-enabled"> Usar banco de imagens (Pixabay/Openverse) como fallback</label>
+            <div class="help-text">Off by default: the Images step generates the shots with ComfyUI. When on, stock is used only in the cinematic photo style, or as a last resort for environment/object shots after generation retries, and every stock asset is recorded in the manifest.</div>
             <div class="settings-field">
               <div class="field-label">Pixabay API Key</div>
               <input type="password" id="s-pixabay" autocomplete="new-password" placeholder="Leave blank to keep current key">
@@ -1512,6 +1514,7 @@ function loadSettings() {
     document.getElementById('s-pixabay').value      = '';
     document.getElementById('s-gemini-status').textContent = d.gemini_configured ? '✓ Configured via '+(d.gemini_key_source || 'unknown source') : 'Not configured';
     document.getElementById('s-pixabay-status').textContent = d.pixabay_configured ? '✓ Configured' : 'Not configured — auto mode will use Openverse';
+    document.getElementById('s-stock-enabled').checked = d.stock_enabled === true;
     document.getElementById('s-stock-provider').value = d.stock_provider || 'auto';
     document.getElementById('s-stock-fallback').value = d.stock_fallback || 'openverse';
     document.getElementById('s-stock-cache').checked = d.stock_cache !== false;
@@ -1653,6 +1656,7 @@ function saveSettings() {
     body: JSON.stringify({
       gemini_key:   document.getElementById('s-gemini').value,
       pixabay_key:  document.getElementById('s-pixabay').value,
+      stock_enabled: document.getElementById('s-stock-enabled').checked,
       stock_provider: document.getElementById('s-stock-provider').value,
       stock_fallback: document.getElementById('s-stock-fallback').value,
       stock_cache: document.getElementById('s-stock-cache').checked,

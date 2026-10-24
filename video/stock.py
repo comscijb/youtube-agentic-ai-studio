@@ -303,6 +303,8 @@ class StockManager:
         }
 
     def provider_order(self) -> list[str]:
+        if not enabled():
+            return []                 # STOCK_ENABLED is false: never query Pixabay/Openverse
         selected = self.provider_name.strip().lower()
         fallback = self.fallback_name.strip().lower()
         if selected == "openverse":
@@ -559,9 +561,17 @@ class StockManager:
         return None
 
 
+def enabled() -> bool:
+    """Stock imagery is opt-in (``STOCK_ENABLED``); off by default."""
+    return bool(getattr(config, "STOCK_ENABLED", False))
+
+
 def download_images(script: dict, output_dir: str) -> dict:
     """Download normalized local JPEGs while preserving renderer contracts."""
-    names = tuple(str(character.get("name", "")) for character in script.get("characters", [])
+    if not enabled():
+        print("   -> Stock imagery is disabled (STOCK_ENABLED=false); no Pixabay/Openverse request is made")
+        return {section["id"]: None for section in script.get("sections", [])}
+    names =tuple(str(character.get("name", "")) for character in script.get("characters", [])
                   if isinstance(character, dict) and character.get("name"))
     manager = StockManager(output_dir, character_names=names)
     is_shorts = script.get("video_type") == "shorts"

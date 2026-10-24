@@ -141,6 +141,9 @@ def environment_checks(output_dir: Path) -> list[tuple[str, str, str]]:
                    f"{voice} is in the word-timing list" if voice in synced
                    else f"{voice} is not in the word-timing list {list(synced)}; "
                         "captions may fall back to sentence timing"))
+    if not getattr(config, "STOCK_ENABLED", False):
+        checks.append(("stock keys", PASS, "stock imagery disabled (STOCK_ENABLED=false); no keys needed"))
+        return checks
     pixabay = str(getattr(config, "PIXABAY_API_KEY", "") or "").strip()
     has_pixabay = bool(pixabay) and not pixabay.upper().startswith("YOUR_")
     provider = str(getattr(config, "STOCK_PROVIDER", "auto"))

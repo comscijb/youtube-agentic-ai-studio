@@ -14,6 +14,18 @@ from tests.test_stock import FakeResponse, FakeSession, image_bytes
 from video import stock_scoring as scoring
 from video.stock import StockManager
 
+
+# Phase 3.3: stock is opt-in (STOCK_ENABLED=false by default); these tests cover it when enabled.
+_stock_switch = patch.object(config, "STOCK_ENABLED", True)
+
+
+def setUpModule():
+    _stock_switch.start()
+
+
+def tearDownModule():
+    _stock_switch.stop()
+
 NAMES = ("Julian Thorne", "Elena Vasquez", "Marcus Croft")
 
 

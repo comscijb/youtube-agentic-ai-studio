@@ -141,6 +141,7 @@ class ShotTests(GenerationTestCase):
             return run
 
         with patch.object(gen, "stock_fallback", fake_fallback), \
+                patch.object(config, "STOCK_ENABLED", True), \
                 patch.object(config, "VISUAL_STYLE", "cinematic_photo"):
             # Stock is only a fallback for the legacy photographic style.
             self.approve_all()

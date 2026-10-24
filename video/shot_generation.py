@@ -230,6 +230,14 @@ def _record_provenance(output: Path, records: list[dict]) -> None:
     path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
+def stock_allowed(shot: dict) -> bool:
+    """Stock is opt-in (``STOCK_ENABLED``); then it serves any shot in
+    ``cinematic_photo`` mode and, in the illustration style, only environment
+    and object shots without characters, as a last resort after the new seeds."""
+    from video import stock
+    return stock.enabled() and not (identity.is_illustration() and shot.get("characters"))
+
+
 def stock_fallback(output_dir, vb: dict, shot: dict) -> Callable[[ImageJob], dict | None]:
     """Fallback for a failed shot: stock objects/environments only (3.0-E rules)."""
     def fallback(job: ImageJob) -> dict | None:
@@ -290,10 +298,10 @@ def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None =
                  + (f" — ETA {remaining / 60:.0f} min" if remaining else ""))
         illustration = identity.is_illustration()
         try:
-            # Stock photos cannot stand in for illustrations: in that style a failed
-            # shot gets two new seeds and then holds the previous shot longer.
+            # In the illustration style a failed shot gets two new seeds, then (only with
+            # STOCK_ENABLED, environment/object shots only) stock, then holds the previous shot.
             record = generator.generate_with_retry(
-                job, fallback=None if illustration else stock_fallback(output, vb, shot),
+                job, fallback=stock_fallback(output, vb, shot) if stock_allowed(shot) else None,
                 new_seeds=2 if illustration else 1)
         except ComfyUnavailable:
             raise

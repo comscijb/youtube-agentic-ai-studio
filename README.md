@@ -97,7 +97,7 @@ YouTube ◄── Approval ◄── Packaging ◄── Video ◄── Exact s
 | 1 · Story brief | `agents/researcher.py` | Scores multiple premises or preserves an exact override, then writes schema v2 |
 | 2 · Narrative build | `agents/scriptwriter.py` | Creates/reuses the character bible and outline, then writes bounded scene batches |
 | 3 · Narration | `video/narrator.py` | Renders each scene separately and writes a cumulative exact timeline and global SRT |
-| 4 · Images | `video/stock.py` | Acquires validated JPEGs from local assets, Pixabay, then Openverse |
+| 4 · Images | `video/shot_generation.py` | Generated shots: visual bible → shot list → ComfyUI (stock only when `STOCK_ENABLED`) |
 | 5 · Video | `video/creator.py` | Uses the exact audio timeline; fiction mode removes documentary cards, bullets, lower thirds, and progress UI |
 | 6 · Review | `review/app.py` | Spins up a local dashboard — you watch and approve before anything is published |
 | 7 · Upload | `uploader/youtube.py` | Publishes to YouTube with full SEO metadata on your approval |
@@ -377,7 +377,11 @@ sentence to confirm Edge TTS audio and word timings.
   metadata the mood is read from "Title - Artist - Genre - Mood" file names. The track is chosen
   by mood, looped with crossfades, ducked under the narration, and the final mix is normalised to
   −14 LUFS / −1 dBTP. Attribution is added to the YouTube description.
-- **Stock (fallback provider).** Short 3–5-word queries, a tag-relevance threshold
+- **Stock (opt-in fallback, `STOCK_ENABLED = False` by default).** When disabled no Pixabay or
+  Openverse request is ever made, in any style, and preflight needs no stock keys; the GUI
+  Settings checkbox "Usar banco de imagens (Pixabay/Openverse) como fallback" turns it on. Then
+  stock is used only in `cinematic_photo` mode or as a last resort for environment/object shots
+  after generation retries, and is recorded in the manifest. Short 3–5-word queries, a tag-relevance threshold
   (`STOCK_MIN_RELEVANCE`), dark-palette tone filtering, text/signage rejection, and no
   identifiable people in shots about a specific character. Scores and rejection reasons are in
   `asset_manifest.json`.
@@ -386,8 +390,8 @@ sentence to confirm Edge TTS audio and word timings.
 
 ## Local image generation (ComfyUI + FLUX 3 Image Klein)
 
-Generated images replace stock for an episode once every shot has an image; stock remains the
-fallback for environment/object shots. Requirements: ComfyUI Desktop on `http://127.0.0.1:8188`
+The GUI "Images" step is shot generation (visual bible → shot list → ComfyUI, after narration).
+Stock is off unless `STOCK_ENABLED` is set. Requirements: ComfyUI Desktop on `http://127.0.0.1:8188`
 with the models named in `workflows/flux3_klein_edit_api.json` (UNET
 `flux3-image-klein-int8-convrot`, text encoder `qwen3vl_4b_int8_convrot`, VAE `flux2-vae`).
 
@@ -437,8 +441,8 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   light. Unnamed groups are rendered as a few distant, indistinct guests in shadow, each of a
   different age, build, posture and clothing — never clones.
 - **Shot references.** Reference slots per shot: characters (≤ 2) → location (≤ 1) →
-  style anchor (≤ 1). In this style stock is never used for shots: a failed shot gets two new
-  seeds, then the previous shot is held longer. The video overlay is lighter
+  style anchor (≤ 1). A failed shot gets two new seeds, then (only with `STOCK_ENABLED`, and only
+  for shots without characters) stock, then the previous shot is held longer. The video overlay is lighter
   (`ILLUSTRATION_OVERLAY_OPACITY`), and the synthetic-content disclosure is a reviewer decision
   that defaults to "not realistic".
 - **Templates.** `workflows/flux3_klein_t2i_api.json` and `flux3_klein_ref_api.json` are derived
