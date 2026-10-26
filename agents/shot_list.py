@@ -138,6 +138,45 @@ def plan_segments(script: dict, timeline: dict, cues: list[tuple]) -> list[dict]
 
 # ── Planning with Gemini ────────────────────────────────────────────────────
 
+# Fields the code owns: Gemini never returns them (they come from the narration timeline).
+SKELETON_FIELDS = ("shot_id", "scene_id", "section_id", "start", "end", "seconds", "n",
+                   "narration", "narration_excerpt")
+
+
+def _reuse_id(reuse, index: int, segments: list[dict]):
+    """Map Gemini's reuse_of (the 1-based number of an earlier shot) to that shot's id."""
+    if reuse in (None, "", 0, "0", False):
+        return ""
+    earlier = [segment["shot_id"] for segment in segments[:index]]
+    if isinstance(reuse, str) and reuse in earlier:
+        return reuse
+    try:
+        number = int(str(reuse).lstrip("#"))
+    except ValueError:
+        return str(reuse)
+    return earlier[number - 1] if 1 <= number <= len(earlier) else f"#{number}"
+
+
+def attach_skeleton(value: dict, segments: list[dict]) -> dict:
+    """Zip Gemini's ordered shot contents onto the code-built skeleton (ids, timings).
+
+    Raises NarrativeValidationError when the number of shots does not match.
+    """
+    shots = value.get("shots") if isinstance(value, dict) else None
+    if not isinstance(shots, list) or len(shots) != len(segments) \
+            or not all(isinstance(shot, dict) for shot in shots):
+        got = len(shots) if isinstance(shots, list) else "no list"
+        raise NarrativeValidationError(f"return exactly {len(segments)} shot objects, one per segment "
+                                       f"in order (got {got})")
+    attached = []
+    for index, (segment, shot) in enumerate(zip(segments, shots)):
+        content = {key: item for key, item in shot.items() if key not in SKELETON_FIELDS}
+        content["shot_id"] = segment["shot_id"]
+        content["reuse_of"] = _reuse_id(shot.get("reuse_of"), index, segments)
+        attached.append(content)
+    return {**value, "shots": attached}
+
+
 def shot_issues(value: dict, segments: list[dict], vb: dict) -> tuple[dict[str, list[str]], list[str]]:
     """Blocking problems: ({shot_id: [problems]}, [whole-document problems]).
 
@@ -146,10 +185,11 @@ def shot_issues(value: dict, segments: list[dict], vb: dict) -> tuple[dict[str, 
     narration does not state. Composition targets are warnings (``shot_warnings``).
     """
     from agents import identity
-    shots = value.get("shots") if isinstance(value, dict) else None
-    ids = [segment["shot_id"] for segment in segments]
-    if not isinstance(shots, list) or [shot.get("shot_id") for shot in shots if isinstance(shot, dict)] != ids:
-        return {}, [f"shot list must return exactly these shot_ids in order: {ids}"]
+    try:
+        value = attach_skeleton(value, segments)
+    except NarrativeValidationError as exc:
+        return {}, [str(exc)]
+    shots = value["shots"]
     characters = {item["character_id"] for item in vb.get("characters", [])}
     locations = {item["location_id"] for item in vb.get("locations", [])}
     excerpts = {segment["shot_id"]: segment.get("text", "") for segment in segments}
@@ -237,7 +277,7 @@ def validate_shots(value: dict, segments: list[dict], vb: dict, outline: dict, p
         problems = general + [f"{sid}: {problem}" for sid, items in by_shot.items() for problem in items]
         raise NarrativeValidationError("shot list problems: " + "; ".join(problems[:20]))
     settings = value.get("settings") or {}
-    shots = value["shots"]
+    shots = attach_skeleton(value, segments)["shots"]
     for shot in shots:
         shot["setting_condition"] = str(settings.get(shot.get("location_id")) or "").strip()
     return shots
@@ -290,7 +330,8 @@ being said at that moment. Return ONLY JSON {{"settings": {{...}}, "shots": [...
 settings maps every location_id you use to one sentence on its condition as the story gives it
 (an expensive minimal loft: "immaculate and expensive: polished surfaces, precise objects,
 pristine walls"); never decay, grime, stains, rust or ruin unless the narration states them.
-shots has one object per segment, same order, keys: shot_id (unchanged), shot_type
+shots has exactly one object per segment, in segment order (the code assigns shot ids and
+timings by position; never return ids or times), keys: shot_type
 ({", ".join(SHOT_TYPES)}), characters (character_ids visible in the frame, from the scene cast),
 location_id (from the visual bible), action (what is visible: pose, gesture, objects, light and
 composition in one concrete sentence; no camera jargon beyond the framing; never describe faces
@@ -300,8 +341,8 @@ composed character is "poised, hair neatly pinned, composed expression"; tears, 
 dirt or marks only where the narration has them), others_present (true only when the narration
 or the scene's chronology places unnamed people — guests, staff, a crowd — in the room at this
 moment; before the guests arrive it is false and the named characters are alone),
-face_visibility (none | partial | full) and reuse_of ("" or the shot_id of an EARLIER shot when
-showing the same image again is dramatically right, e.g. a motif returning).
+face_visibility (none | partial | full) and reuse_of (0, or the segment number n of an EARLIER
+shot when showing the same image again is dramatically right, e.g. a motif returning).
 Mix wides, mediums, close-ups, inserts of objects, hands, silhouettes and over-the-shoulder shots;
 avoid two consecutive shots with the same framing. Aim for about {getattr(config, "IMAGEGEN_MIN_WIDE_SHARE", 0.3):.0%}
 of shots wide or establishing, with figures small inside vast, towering spaces, where the narration
@@ -310,18 +351,25 @@ When a shot shows only the listed characters, describing them as "two figures" i
 beyond them (guests, staff, a crowd) requires others_present true. {policy_rule}
 {identity.image_prompt_rules()}"""
     context = f"""VISUAL BIBLE: {compact_json({key: vb.get(key) for key in ("characters", "locations")})}
-SEGMENTS: {compact_json([{"shot_id": s["shot_id"], "scene_id": s["scene_id"],
+SEGMENTS: {compact_json([{"n": number, "scene_id": s["scene_id"],
                          "seconds": round(s["end"] - s["start"], 1), "narration": s["text"],
                          "scene_cast": scene_cast.get(s["scene_id"], []),
                          "scene_setting": scene_info.get(s["scene_id"], {}).get("setting", ""),
                          "scene_summary": scene_info.get(s["scene_id"], {}).get("summary", ""),
                          "default_location": (vbible.location_for_scene(vb, s["scene_id"]) or {}).get("location_id")}
-                        for s in segments])}"""
+                        for number, s in enumerate(segments, 1)])}"""
+    positions = {segment["shot_id"]: index for index, segment in enumerate(segments)}
+
     def failing_shots(data: dict) -> dict:
-        # Repair only the shots that break a blocking rule; a whole-document
-        # problem (ids, settings) returns {} and gets the full repair instead.
+        # Repair only the shots that break a blocking rule, matched by position
+        # (Gemini returns no ids); a whole-document problem (count, settings)
+        # returns {} and gets the full repair instead.
         by_shot, general = shot_issues(data, segments, vb)
-        return {} if general else by_shot
+        if general:
+            return {}
+        raw = data["shots"]
+        return {structured._scene_key(raw[positions[sid]], positions[sid] + 1, "shot_id"): problems
+                for sid, problems in by_shot.items()}
 
     shots = structured.generate_json(
         contract, "shot list", lambda data: validate_shots(data, segments, vb, outline, policy),
