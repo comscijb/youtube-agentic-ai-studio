@@ -129,19 +129,19 @@ class ComposeTests(unittest.TestCase):
 class PipelineTests(unittest.TestCase):
     def test_contract_and_version_bump_replan_old_shot_lists(self):
         self.assertEqual(shots_module.SHOT_LIST_VERSION, 2)
-        from tests.test_shot_planning import OUTLINE, SCRIPT, ShotListTests, planned_shots
+        from tests.test_shot_planning import OUTLINE, SCRIPT, ShotListTests, planned_shots, scene_responder
         case = ShotListTests("test_budget_is_applied_before_planning")
         case.setUp()
         try:
             atomic_write_json(case.root / shots_module.FILE_NAME, {"version": 1, "source_hash": "old", "shots": []})
-            payload = json.dumps(planned_shots(case.segments()))
-            with patch.object(shots_module, "generate", side_effect=lambda *a, **k: payload) as call, \
+            respond = scene_responder(planned_shots(case.segments()))
+            with patch.object(shots_module, "generate", side_effect=respond) as call, \
                     redirect_stdout(io.StringIO()):
                 result = shots_module.build_shot_list(SCRIPT, OUTLINE, VISUAL_BIBLE, case.root)
             prompt = call.call_args.args[0]
         finally:
             case.tearDown()
-        for phrase in ("others_present", "appearance", "settings maps every location_id", "scene_setting"):
+        for phrase in ("others_present", "appearance", "settings maps every location_id", "SCENE NARRATION"):
             self.assertIn(phrase, prompt)
         shot = result["shots"][0]
         self.assertEqual(result["version"], 2)

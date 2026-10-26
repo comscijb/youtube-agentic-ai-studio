@@ -13,7 +13,8 @@ from unittest.mock import patch
 from agents import shot_list as shots_module
 from agents.narrative import NarrativeValidationError, atomic_write_json, load_json
 from tests.style_isolation import setUpModule, tearDownModule  # noqa: F401
-from tests.test_shot_planning import OUTLINE, SCRIPT, VISUAL_BIBLE, ShotListTests, planned_shots
+from tests.test_shot_planning import OUTLINE, SCRIPT, VISUAL_BIBLE, planned_shots, scene_responder
+from tests import test_shot_planning as planning  # not imported by name: it would run twice
 
 JULIAN_ELENA = ["julian_vance", "elena_vance"]
 JULIAN_MARCUS = ["julian_vance", "marcus_croft"]
@@ -69,70 +70,26 @@ class AdvisoryRuleTests(unittest.TestCase):
         self.assertEqual(result.stdout.strip(), "0.25")
 
     def test_few_wides_and_many_faces_are_warnings_in_the_report(self):
-        case = ShotListTests("test_budget_is_applied_before_planning")
+        case = planning.ShotListTests("test_budget_is_applied_before_planning")
         case.setUp()
         try:
             segments = case.segments()
             plan = planned_shots(segments, full=len(segments))
             for shot in plan["shots"]:
                 shot["shot_type"] = "medium"
-            payload = json.dumps(plan)
-            with patch.object(shots_module, "generate", side_effect=lambda *a, **k: payload) as call, \
+            with patch.object(shots_module, "generate", side_effect=scene_responder(plan)) as call, \
                     redirect_stdout(io.StringIO()) as out:
                 result = shots_module.build_shot_list(SCRIPT, OUTLINE, VISUAL_BIBLE, case.root)
             saved = load_json(case.root / shots_module.FILE_NAME)
         finally:
             case.tearDown()
-        self.assertEqual(call.call_count, 1)                                   # no repair for targets
+        self.assertEqual(call.call_count, 2)                     # one per scene; no repair for targets
         self.assertEqual(len(result["warnings"]), 2)
         self.assertIn("wide/establishing shots: 0/", saved["warnings"][0])
         self.assertIn("a target, not a failure", out.getvalue())
         prompt = call.call_args.args[0]
         self.assertIn("a target, not a quota", prompt)
         self.assertIn("Aim for about 30%", prompt)
-
-
-class TargetedRepairTests(unittest.TestCase):
-    def setUp(self):
-        self.case = ShotListTests("test_budget_is_applied_before_planning")
-        self.case.setUp()
-        self.segments = self.case.segments()
-
-    def tearDown(self):
-        self.case.tearDown()
-
-    def build(self, responses):
-        responses = iter(responses)
-        with patch.object(shots_module, "generate", side_effect=lambda *a, **k: next(responses)) as call, \
-                redirect_stdout(io.StringIO()):
-            result = shots_module.build_shot_list(SCRIPT, OUTLINE, VISUAL_BIBLE, self.case.root)
-        return result, call
-
-    def test_only_failing_shots_are_resent_and_merged_by_shot_id(self):
-        plan = planned_shots(self.segments)
-        bad_id = plan["shots"][2]["shot_id"]
-        plan["shots"][2]["action"] = "two guests watch from the doorway"
-        fixed = dict(plan["shots"][2], action="He watches the doorway, alone")
-        result, call = self.build([json.dumps(plan), json.dumps({"shots": [fixed]})])
-        self.assertEqual(call.call_count, 2)
-        repair = call.call_args_list[1].args[0]
-        self.assertIn("Repair ONLY the invalid shots", repair)
-        self.assertIn(f"- shot {bad_id}: the action shows people beyond", repair)
-        invalid, neighbours = repair.split("INVALID SHOTS TO CORRECT:", 1)[1].split("NEIGHBOUR SHOTS (read-only):")
-        self.assertIn("two guests", invalid)
-        self.assertEqual(invalid.count('"shot_id"'), 1)
-        self.assertLessEqual(neighbours.count('"shot_id"'), 2)
-        self.assertEqual(call.call_args_list[1].kwargs["stage"], "shot_list-repair")
-        shots = {shot["shot_id"]: shot for shot in result["shots"]}
-        self.assertEqual(shots[bad_id]["action"], "He watches the doorway, alone")
-        self.assertEqual(shots[plan["shots"][0]["shot_id"]]["action"], "He straightens a linen napkin")
-
-    def test_a_whole_document_problem_still_gets_the_full_repair(self):
-        plan = planned_shots(self.segments)
-        broken = dict(plan, settings=None)
-        result, call = self.build([json.dumps(broken), json.dumps(plan)])
-        self.assertIn("Return the COMPLETE corrected JSON object only", call.call_args_list[1].args[0])
-        self.assertEqual(len(result["shots"]), len(self.segments))
 
 
 if __name__ == "__main__":

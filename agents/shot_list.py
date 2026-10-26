@@ -28,7 +28,7 @@ import config
 from agents import structured
 from agents import visual_bible as vbible
 from agents.gemini_client import generate
-from agents.narrative import NarrativeValidationError, atomic_write_json, load_json, stable_hash
+from agents.narrative import NarrativeValidationError, atomic_write_json, extract_json, load_json, stable_hash
 from agents.structured import compact_json
 
 SHOT_LIST_VERSION = 2   # the shot-prompt version: bumping it re-plans and regenerates shots
@@ -306,27 +306,23 @@ def expected_source_hash(script: dict, vb: dict, output_dir) -> str | None:
         return None
 
 
-def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bool = False) -> dict:
-    output = Path(output_dir)
-    path = output / FILE_NAME
-    segments, source_hash, policy = _segments_and_hash(script, vb, output)
+SCENE_REPAIRS = 2          # per scene; a scene that still fails keeps its best attempt, flagged
+CHECKPOINT_DIR = Path(".checkpoints") / "shot_list"
+
+
+def _scene_contract(policy: str) -> str:
     from agents import identity
-    existing = load_json(path) or {}
-    if not force and existing.get("source_hash") == source_hash:
-        return existing
-    scene_cast = {scene["scene_id"]: scene.get("characters_present", []) for scene in outline.get("scenes", [])}
-    scene_info = {scene["scene_id"]: {"setting": scene.get("setting", ""), "summary": scene.get("summary", "")}
-                  for scene in outline.get("scenes", [])}
     policy_rule = (
         "Faces may be visible; aim for 40% to 60% of shots WITHOUT a full face "
         "(hands, silhouettes, over-the-shoulder, objects, wides) — a target, not a quota."
         if policy != "limited_faces" else
         f"Identity retention is weak: use face_visibility none or partial, with at most "
-        f"{getattr(config, 'IMAGEGEN_MAX_FULL_FACE_SHOTS', 6)} full-face hero shots."
+        f"{getattr(config, 'IMAGEGEN_MAX_FULL_FACE_SHOTS', 6)} full-face hero shots in the episode."
     )
-    contract = f"""You are the director of photography of Private Gravity, a dark cinematic anthology.
-For every narration SEGMENT supplied after this contract, design one still image that shows what is
-being said at that moment. Return ONLY JSON {{"settings": {{...}}, "shots": [...]}}.
+    return f"""You are the director of photography of Private Gravity, a dark cinematic anthology.
+You plan ONE SCENE at a time. For every narration SEGMENT of the scene supplied after this
+contract, design one still image that shows what is being said at that moment.
+Return ONLY JSON {{"settings": {{...}}, "shots": [...]}}.
 settings maps every location_id you use to one sentence on its condition as the story gives it
 (an expensive minimal loft: "immaculate and expensive: polished surfaces, precise objects,
 pristine walls"); never decay, grime, stains, rust or ruin unless the narration states them.
@@ -342,60 +338,177 @@ dirt or marks only where the narration has them), others_present (true only when
 or the scene's chronology places unnamed people — guests, staff, a crowd — in the room at this
 moment; before the guests arrive it is false and the named characters are alone),
 face_visibility (none | partial | full) and reuse_of (0, or the segment number n of an EARLIER
-shot when showing the same image again is dramatically right, e.g. a motif returning).
+shot of this scene when showing the same image again is dramatically right).
 Mix wides, mediums, close-ups, inserts of objects, hands, silhouettes and over-the-shoulder shots;
-avoid two consecutive shots with the same framing. Aim for about {getattr(config, "IMAGEGEN_MIN_WIDE_SHARE", 0.3):.0%}
+avoid two consecutive shots with the same framing, also across the scene boundary (the previous
+scene's last shot is given). Aim for about {getattr(config, "IMAGEGEN_MIN_WIDE_SHARE", 0.3):.0%}
 of shots wide or establishing, with figures small inside vast, towering spaces, where the narration
 allows it (a target, not a quota); close-ups keep a dark background with a single light source.
 When a shot shows only the listed characters, describing them as "two figures" is fine; any person
 beyond them (guests, staff, a crowd) requires others_present true. {policy_rule}
 {identity.image_prompt_rules()}"""
-    context = f"""VISUAL BIBLE: {compact_json({key: vb.get(key) for key in ("characters", "locations")})}
-SEGMENTS: {compact_json([{"n": number, "scene_id": s["scene_id"],
-                         "seconds": round(s["end"] - s["start"], 1), "narration": s["text"],
-                         "scene_cast": scene_cast.get(s["scene_id"], []),
-                         "scene_setting": scene_info.get(s["scene_id"], {}).get("setting", ""),
-                         "scene_summary": scene_info.get(s["scene_id"], {}).get("summary", ""),
-                         "default_location": (vbible.location_for_scene(vb, s["scene_id"]) or {}).get("location_id")}
-                        for number, s in enumerate(segments, 1)])}"""
-    positions = {segment["shot_id"]: index for index, segment in enumerate(segments)}
 
-    def failing_shots(data: dict) -> dict:
-        # Repair only the shots that break a blocking rule, matched by position
-        # (Gemini returns no ids); a whole-document problem (count, settings)
-        # returns {} and gets the full repair instead.
-        by_shot, general = shot_issues(data, segments, vb)
-        if general:
-            return {}
-        raw = data["shots"]
-        return {structured._scene_key(raw[positions[sid]], positions[sid] + 1, "shot_id"): problems
-                for sid, problems in by_shot.items()}
 
-    shots = structured.generate_json(
-        contract, "shot list", lambda data: validate_shots(data, segments, vb, outline, policy),
-        generator=generate, context=context, stage="shot_list",
-        temperature_key="outline", run_dir=str(output),
-        scene_scope=structured.SceneScope(issues=failing_shots, list_key="shots", id_key="shot_id",
-                                          prefer=True, item="shot"),
-    )
-    planned = []
-    for segment, shot in zip(segments, shots):
-        entry = {
-            "shot_id": segment["shot_id"], "scene_id": segment["scene_id"],
-            "section_id": segment["section_id"], "start": segment["start"], "end": segment["end"],
-            "narration_excerpt": segment["text"], "shot_type": shot["shot_type"],
-            "characters": list(shot.get("characters") or []), "location": shot["location_id"],
-            "action": shot["action"], "face_visibility": shot["face_visibility"],
-            "appearance": {cid: str(text) for cid, text in (shot.get("appearance") or {}).items()
-                           if cid in (shot.get("characters") or [])},
-            "others_present": shot["others_present"], "setting_condition": shot.get("setting_condition", ""),
-            "reuse_of": shot.get("reuse_of") or "", "seed": vbible.seed_for("shot", segment["shot_id"]),
-            "seed_offset": 0,
-        }
-        composed = compose_shot(entry, vb, output, assume_references=True)
-        entry["prompt"] = composed["prompt"]
-        entry["reference_slots"] = composed["slots"]
-        planned.append(entry)
+def _scene_context(scene_id: str, scene_segments: list[dict], vb: dict, outline: dict) -> str:
+    scene = next((item for item in outline.get("scenes", []) if item.get("scene_id") == scene_id), {})
+    return f"""VISUAL BIBLE: {compact_json({key: vb.get(key) for key in ("characters", "locations")})}
+SCENE_ID: {scene_id}
+SCENE: {compact_json({"setting": scene.get("setting", ""), "summary": scene.get("summary", ""),
+                      "cast": scene.get("characters_present", []),
+                      "default_location": (vbible.location_for_scene(vb, scene_id) or {}).get("location_id")})}
+SCENE NARRATION: {" ".join(segment["text"] for segment in scene_segments)}
+SEGMENTS ({len(scene_segments)}; return exactly {len(scene_segments)} shots): {compact_json(
+        [{"n": number, "seconds": round(segment["end"] - segment["start"], 1), "narration": segment["text"]}
+         for number, segment in enumerate(scene_segments, 1)])}"""
+
+
+def _continuity(previous: dict | None) -> str:
+    if not previous:
+        return "PREVIOUS SCENE'S LAST SHOT: none (this is the first scene)"
+    return "PREVIOUS SCENE'S LAST SHOT (read-only continuity): " + compact_json(
+        {key: previous.get(key) for key in ("shot_type", "characters", "location_id", "action")})
+
+
+def _problems(value, scene_segments: list[dict], vb: dict) -> tuple[dict[int, list[str]], list[str]]:
+    """Blocking problems of one scene: ({position: [problems]}, [whole-scene problems])."""
+    by_shot, general = shot_issues(value, scene_segments, vb)
+    index = {segment["shot_id"]: position for position, segment in enumerate(scene_segments)}
+    return {index[sid]: problems for sid, problems in by_shot.items()}, general
+
+
+def _shot_repair_prompt(contract: str, context: str, shots: list, issues: dict[int, list[str]]) -> str:
+    targets = sorted(issues)
+    neighbours = sorted({near for index in targets for near in (index - 1, index + 1)
+                         if 0 <= near < len(shots) and near not in targets})
+    diagnostics = "\n".join(f"- shot n={index + 1}: {'; '.join(issues[index])}" for index in targets)
+    return structured.compose_prompt(contract, context) + f"""
+
+REPAIR: some shots of this scene broke a rule. Return exactly {{"shots": [...]}} with one complete
+corrected object per shot listed below, in the same order ({len(targets)} objects). Do not return
+the neighbour shots; they are read-only context.
+PROBLEMS:
+{diagnostics}
+SHOTS TO CORRECT: {compact_json([{"n": index + 1, **shots[index]} for index in targets])}
+NEIGHBOUR SHOTS (read-only): {compact_json([{"n": index + 1, **shots[index]} for index in neighbours])}"""
+
+
+def _scene_repair_prompt(contract: str, context: str, raw_value, general: list[str]) -> str:
+    return structured.compose_prompt(contract, context) + f"""
+
+REPAIR: the previous answer for this scene was not usable: {'; '.join(general)}.
+Return the COMPLETE corrected JSON for the scene, {{"settings": {{...}}, "shots": [...]}}.
+PREVIOUS ANSWER: {compact_json(raw_value) if raw_value is not None else "(unparseable)"}"""
+
+
+def _fit_count(value, scene_segments: list[dict]) -> dict:
+    """Best effort when the count never matched: trim extras, pad with empty (flagged) shots."""
+    shots = [shot for shot in (value or {}).get("shots", []) if isinstance(shot, dict)][:len(scene_segments)]
+    shots += [{"action": "", "characters": [], "others_present": False}
+              for _ in range(len(scene_segments) - len(shots))]
+    settings = (value or {}).get("settings")
+    return {"settings": settings if isinstance(settings, dict) else {}, "shots": shots}
+
+
+def plan_scene(scene_id: str, scene_segments: list[dict], vb: dict, outline: dict, policy: str,
+               previous: dict | None, *, run_dir, generator=None) -> dict:
+    """Plan one scene: one call, up to SCENE_REPAIRS repairs, never raises on content.
+
+    Returns {"settings", "shots" (attached to the skeleton), "flags" {shot_id: [problems]},
+    "calls"}; flags are blocking problems left after the repairs.
+    """
+    generator = generator or generate
+    contract = _scene_contract(policy)
+    context = _scene_context(scene_id, scene_segments, vb, outline) + "\n" + _continuity(previous)
+    job = structured._Job(generator, f"shot list {scene_id}", f"shot_list-{scene_id}", "outline", run_dir)
+    best, best_score, value, calls, pending_targets = None, None, None, 0, []
+    prompt = structured.compose_prompt(contract, context)
+    for attempt in range(SCENE_REPAIRS + 1):
+        calls += 1
+        stage = job.stage if attempt == 0 else f"{job.stage}-repair"
+        raw = job.call(prompt, stage, "outline" if attempt == 0 else "repair")
+        try:
+            returned = extract_json(raw, f"shot list {scene_id}")
+        except NarrativeValidationError as exc:
+            job.dump("parse-failure", exc, raw, stage=stage)
+            prompt = _scene_repair_prompt(contract, context, None, [str(exc)])
+            continue
+        shots_back = returned.get("shots") if isinstance(returned, dict) else None
+        if value is not None and pending_targets and isinstance(shots_back, list) \
+                and len(shots_back) == len(pending_targets) != len(scene_segments):
+            merged = list(value["shots"])            # a shot-scoped repair: merge by position
+            for index, shot in zip(pending_targets, shots_back):
+                if isinstance(shot, dict):
+                    merged[index] = {key: item for key, item in shot.items() if key != "n"}
+            settings_back = returned.get("settings")
+            returned = {**value, "shots": merged,
+                        **({"settings": settings_back} if isinstance(settings_back, dict) else {})}
+        value = returned
+        issues, general = _problems(value, scene_segments, vb)
+        score = (1 if general else 0, sum(len(items) for items in issues.values()))
+        if best_score is None or score < best_score:
+            best, best_score = value, score
+        if not issues and not general:
+            break
+        job.dump("validation-failure", "; ".join(general + [f"n={i + 1}: {'; '.join(p)}"
+                                                            for i, p in sorted(issues.items())]), raw, stage=stage)
+        pending_targets = sorted(issues) if not general else []
+        prompt = (_shot_repair_prompt(contract, context, value["shots"], issues) if pending_targets
+                  else _scene_repair_prompt(contract, context, value, general))
+    best = best if best is not None else {"settings": {}, "shots": []}
+    issues, general = _problems(best, scene_segments, vb)
+    if general:
+        best = _fit_count(best, scene_segments)
+        issues, general = _problems(best, scene_segments, vb)
+    attached = attach_skeleton(best, scene_segments)
+    flags = {scene_segments[index]["shot_id"]: problems for index, problems in issues.items()}
+    settings = best.get("settings") if isinstance(best.get("settings"), dict) else {}
+    return {"settings": settings, "shots": attached["shots"], "flags": flags, "calls": calls,
+            "general": general}
+
+
+def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bool = False) -> dict:
+    """Plan the shot list scene by scene (one Gemini call each, checkpointed).
+
+    The skeleton (ids, timings, excerpts) comes from the narration timeline; each
+    scene is validated and repaired on its own; a scene that still breaks a
+    blocking rule keeps its best attempt with those shots flagged, never
+    aborting the others. A rerun reuses every completed scene's checkpoint
+    (``.checkpoints/shot_list/<scene>.json``) and redoes missing or flagged ones.
+    """
+    output = Path(output_dir)
+    path = output / FILE_NAME
+    segments, source_hash, policy = _segments_and_hash(script, vb, output)
+    existing = load_json(path) or {}
+    if not force and existing.get("source_hash") == source_hash:
+        return existing
+    scene_ids = list(dict.fromkeys(segment["scene_id"] for segment in segments))
+    contract = _scene_contract(policy)
+    previous, settings, planned, flags, calls, reused = None, {}, [], {}, 0, []
+    for scene_id in scene_ids:
+        scene_segments = [segment for segment in segments if segment["scene_id"] == scene_id]
+        key = stable_hash({"version": SHOT_LIST_VERSION, "contract": contract,
+                           "context": _scene_context(scene_id, scene_segments, vb, outline)})
+        checkpoint = output / CHECKPOINT_DIR / f"{scene_id}.json"
+        saved = load_json(checkpoint) or {}
+        if saved.get("key") == key and not saved.get("flags"):
+            result = saved
+            reused.append(scene_id)
+        else:
+            print(f"   -> Shot list {scene_id}: {len(scene_segments)} shots")
+            result = plan_scene(scene_id, scene_segments, vb, outline, policy, previous, run_dir=str(output))
+            calls += result["calls"]
+            atomic_write_json(checkpoint, {"key": key, **result})
+            if result["flags"]:
+                print(f"   ⚠ {scene_id}: {len(result['flags'])} shot(s) still break a rule after "
+                      f"{SCENE_REPAIRS} repairs; they are flagged and skipped until edited")
+        for lid, condition in (result.get("settings") or {}).items():
+            settings.setdefault(lid, str(condition or "").strip())
+        flags.update(result.get("flags") or {})
+        for segment, shot in zip(scene_segments, result["shots"]):
+            planned.append(_entry(segment, shot, settings, vb, output, flags.get(segment["shot_id"])))
+        previous = result["shots"][-1] if result["shots"] else previous
+    if reused:
+        print(f"   -> Reused checkpoints for {', '.join(reused)}")
     warnings = shot_warnings(planned, policy)
     for warning in warnings:
         print(f"   ⚠ shot list: {warning} (a target, not a failure)")
@@ -403,10 +516,32 @@ SEGMENTS: {compact_json([{"n": number, "scene_id": s["scene_id"],
         "version": SHOT_LIST_VERSION, "source_hash": source_hash, "policy": policy,
         "budget": int(getattr(config, "IMAGEGEN_MAX_UNIQUE_SHOTS", 50)),
         "unique_shots": sum(1 for shot in planned if not shot["reuse_of"]),
-        "warnings": warnings, "shots": planned,
+        "warnings": warnings, "flagged": sorted(flags), "gemini_calls": calls, "shots": planned,
     }
     atomic_write_json(path, result)
     return result
+
+
+def _entry(segment: dict, shot: dict, settings: dict, vb: dict, output: Path, flags: list | None) -> dict:
+    cast = [cid for cid in (shot.get("characters") or []) if isinstance(cid, str)]
+    entry = {
+        "shot_id": segment["shot_id"], "scene_id": segment["scene_id"],
+        "section_id": segment["section_id"], "start": segment["start"], "end": segment["end"],
+        "narration_excerpt": segment["text"], "shot_type": shot.get("shot_type") or "medium",
+        "characters": cast, "location": shot.get("location_id") or "",
+        "action": str(shot.get("action") or ""), "face_visibility": shot.get("face_visibility") or "partial",
+        "appearance": {cid: str(text) for cid, text in (shot.get("appearance") or {}).items() if cid in cast},
+        "others_present": shot.get("others_present") if isinstance(shot.get("others_present"), bool) else False,
+        "setting_condition": settings.get(shot.get("location_id"), ""),
+        "reuse_of": shot.get("reuse_of") or "", "seed": vbible.seed_for("shot", segment["shot_id"]),
+        "seed_offset": 0,
+    }
+    if flags:
+        entry["flags"] = list(flags)
+    composed = compose_shot(entry, vb, output, assume_references=True)
+    entry["prompt"] = composed["prompt"]
+    entry["reference_slots"] = composed["slots"]
+    return entry
 
 
 # ── Prompt composition ──────────────────────────────────────────────────────

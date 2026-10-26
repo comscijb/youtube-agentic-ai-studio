@@ -151,6 +151,25 @@ class SegmentationTests(unittest.TestCase):
                                timeline["total_duration"], places=2)
 
 
+def scene_responder(plan, edit=None):
+    """Fake Gemini for the per-scene shot list: answers each call with that scene's shots.
+
+    ``edit(scene_id, call_number, value)`` may change the answer (e.g. to break a shot).
+    """
+    import re
+    calls = {}
+
+    def respond(prompt, **kwargs):
+        scene = re.search(r"SCENE_ID: (\S+)", prompt).group(1)
+        calls[scene] = calls.get(scene, 0) + 1
+        shots = [dict(shot) for shot in plan["shots"] if shot["shot_id"].startswith(scene + "_")]
+        value = {"settings": plan.get("settings"), "shots": shots}
+        if edit:
+            value = edit(scene, calls[scene], value, prompt)
+        return json.dumps(value)
+    return respond
+
+
 def planned_shots(segments, full=1):
     shots = []
     for index, segment in enumerate(segments):
@@ -194,8 +213,10 @@ class ShotListTests(unittest.TestCase):
             parse_srt(self.root / "narration.srt"))
 
     def test_shot_list_fields_prompts_and_cache(self):
-        payload = json.dumps(planned_shots(self.segments()))
-        result, call = self.build(lambda *a, **k: payload)
+        respond = scene_responder(planned_shots(self.segments()))
+        result, call = self.build(respond)
+        self.assertEqual(call.call_count, 2)                     # one call per scene, no repairs
+        self.assertEqual(result["flagged"], [])
         shot = result["shots"][0]
         for field in ("start", "end", "narration_excerpt", "shot_type", "characters", "location",
                       "prompt", "face_visibility", "reuse_of"):
@@ -206,7 +227,7 @@ class ShotListTests(unittest.TestCase):
         self.assertEqual(shot["reference_slots"][0], {"slot": 0, "kind": "character", "id": "julian_vance"})
         self.assertEqual(result["shots"][-1]["end"], 40.0)
         self.assertEqual(result["unique_shots"], len(result["shots"]))
-        _, again = self.build(lambda *a, **k: payload)
+        _, again = self.build(respond)
         again.assert_not_called()
 
     def test_validation_enforces_face_mix_reuse_and_ids(self):

@@ -456,11 +456,16 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   `narration_excerpt` has the same family. "Two figures" with two listed characters is the cast
   itself; only more figures than characters, or `guests`, `crowd`, `strangers`, `waiter`, `staff`,
   `onlookers`, `passers-by`, `others`, need `others_present`.
-- **Blocking vs advisory shot rules.** Ids, structure, excluded content, page layouts, unstated
-  injuries/decay/tears and unnamed people block: the planner repairs only the failing shots
-  (sent with their neighbours as read-only context and merged back by `shot_id`; a whole-list
-  problem such as missing settings gets the full repair), and the stage fails if that repair
-  fails. The share of wide/establishing shots (`IMAGEGEN_MIN_WIDE_SHARE`, 0.3, from `.env`) and of
+- **Shot list per scene.** The code owns the skeleton (shot ids, timings and narration excerpts
+  from the narration timeline); Gemini returns only the ordered shot contents, one call per scene,
+  with the scene's narration, its numbered segments and the previous scene's last shot for
+  continuity. Each scene gets up to two repairs (only the failing shots plus neighbours, merged by
+  position; a wrong shot count re-asks that scene). A scene that still fails keeps its best
+  attempt with those shots **flagged** and never aborts the others. Completed scenes are
+  checkpointed in `.checkpoints/shot_list/<scene>.json`, so a rerun (also with
+  `--rebuild-shot-list`) only redoes missing or flagged scenes; delete that folder to re-plan all.
+- **Blocking vs advisory shot rules.** Blocking problems are repaired and, if they remain,
+  flagged. The share of wide/establishing shots (`IMAGEGEN_MIN_WIDE_SHARE`, 0.3, from `.env`) and of
   shots without a full face are targets given to Gemini and reported as `warnings` in
   `shot_list.json`, never a failure. The crimson accent examples are wine, a ring, a scarf
   or a candle reflection; this wording change keeps the style hash, so approved references stay
