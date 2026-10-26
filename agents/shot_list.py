@@ -364,7 +364,9 @@ scene's last shot is given). Aim for about {getattr(config, "IMAGEGEN_MIN_WIDE_S
 of shots wide or establishing, with figures small inside vast, towering spaces, where the narration
 allows it (a target, not a quota); close-ups keep a dark background with a single light source.
 When a shot shows only the listed characters, describing them as "two figures" is fine; any person
-beyond them (guests, staff, a crowd) requires others_present true. {policy_rule}
+beyond them (guests, staff, a crowd) requires others_present true. An over_the_shoulder shot lists
+first the character whose shoulder we see and then the character facing the camera; both are listed
+characters, never a third person. {policy_rule}
 {identity.image_prompt_rules()}"""
 
 
@@ -667,6 +669,8 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
         subjects.append(", ".join([name] + [text.strip() for text in details if text.strip()]))
     article = "an" if noun[0] in "aeiou" else "a"
     crowd = _company(shot, len(characters))
+    if shot.get("shot_type") == "over_the_shoulder" and characters:
+        framing = over_the_shoulder(characters, vb, ref_names)
     if references:
         lead = f"Create {article} {noun} of " + "; and ".join(subjects) if subjects else f"Create {article} {noun}"
         prompt = f"{lead}. {shot['action']}. {crowd} Setting: {location_text}. {framing}. {style_text} {style}"
@@ -723,6 +727,17 @@ def unnamed_people(action: str, cast_size: int) -> list[str]:
         if count > cast_size:
             found.append(match.group(0))
     return list(dict.fromkeys(found))
+
+
+def over_the_shoulder(characters: list[str], vb: dict, ref_names: dict) -> str:
+    """Name whose shoulder it is (the first listed character) and who faces the camera,
+    so the model never invents a third person seen from behind."""
+    def name(cid):
+        return ref_names.get(cid) or f"the {_noun((vbible.character(vb, cid) or {}).get('descriptor', ''))}"
+    if len(characters) == 1:
+        return f"over-the-shoulder shot from behind {name(characters[0])}, the only person in the frame"
+    return (f"over-the-shoulder shot from behind {name(characters[0])}, looking past that shoulder at "
+            f"{name(characters[1])}, who faces the camera")
 
 
 def alone_hint(count: int) -> str:

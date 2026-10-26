@@ -227,6 +227,23 @@ def style_suffix(style: str | None = None, variant: str | None = None, *,
             f"{spec['people']}. {palette_text(crimson_examples)}. Clean image without lettering or watermark.")
 
 
+def sheet_style_suffix(style: str | None = None, variant: str | None = None) -> str:
+    """Drawing technique only, for neutral character reference sheets (Phase 3.3.2).
+
+    No environment or atmosphere clauses (rooms, architecture, smoke, fog,
+    negative space): the reference must carry identity, not a pose or a setting.
+    Derived from the same spec, so it never changes the style hash.
+    """
+    style = style or visual_style()
+    if style == "cinematic_photo":
+        return "studio portrait photograph, soft even light, muted palette, 35 mm film grain, photorealistic"
+    variant = variant or style_variant()
+    medium = DARK_ILLUSTRATION["medium"].replace(", painterly smoke and fog", "")
+    technique = STYLE_VARIANTS[variant].split(";")[0]
+    return (f"{FULL_BLEED}. {medium}; {technique}. Stylised but consistent face with gaunt planes. "
+            f"{palette_text()}. Clean image without lettering or watermark.")
+
+
 # Every illustration is one picture covering the whole 16:9 frame (no paper
 # margins, no comic pages); phrased positively because the negative is zeroed.
 FULL_BLEED = ("single full-bleed illustration filling the entire frame edge to edge, ink and "

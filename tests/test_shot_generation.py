@@ -70,8 +70,9 @@ class ReferenceTests(GenerationTestCase):
         self.assertEqual(len(self.fake.prompts), 3 * 4 + 2)
         portrait = self.fake.prompts[0]
         self.assertEqual((portrait["44"]["inputs"]["width"], portrait["44"]["inputs"]["height"]), (1024, 1024))
-        self.assertIn("chest-up, front view", portrait["4"]["inputs"]["text"])
-        self.assertIn("charcoal tailored suit", portrait["4"]["inputs"]["text"])
+        self.assertIn("head and shoulders", portrait["4"]["inputs"]["text"])
+        self.assertIn("facing the viewer", portrait["4"]["inputs"]["text"])
+        self.assertNotIn("charcoal tailored suit", portrait["4"]["inputs"]["text"])   # identity only
         seeds = [graph["7"]["inputs"]["seed"] for graph in self.fake.prompts[:4]]
         base = vbible.seed_for("character", "julian_vance")
         self.assertEqual(seeds, [base + 1, base + 2, base + 3, base + 4])     # deterministic

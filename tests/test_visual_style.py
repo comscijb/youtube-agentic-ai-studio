@@ -103,7 +103,8 @@ class SlotPlanTests(StyleTestCase):
             rel = f"{kind}_refs/{ident}.png"
             (self.output / rel).parent.mkdir(exist_ok=True)
             Image.new("RGB", (32, 32)).save(self.output / rel)
-            refs[f"{kind}:{ident}"] = {"path": rel, "seed": 1, "prompt": "", "style_hash": identity.style_hash()}
+            refs[f"{kind}:{ident}"] = {"path": rel, "seed": 1, "prompt": "", "style_hash": identity.style_hash(),
+                                       "sheet_version": vbible.CHARACTER_SHEET_VERSION}
         vb["references"] = refs
         return vb
 
@@ -211,7 +212,8 @@ class GenerationInStyleTests(StyleTestCase):
         record = load_json(self.output / gen.CANDIDATES_FILE)["character:julian_vance"]
         self.assertEqual(len(record), 4)
         self.assertTrue(all(item["style_hash"] == identity.style_hash() for item in record))
-        self.assertIn("An illustration portrait, chest-up", fake.prompts[0]["4"]["inputs"]["text"])
+        self.assertIn("An illustration character reference sheet: head and shoulders",
+                      fake.prompts[0]["4"]["inputs"]["text"])
 
     def approve_all(self, fake):
         quiet(gen.generate_reference_candidates, self.vb(), self.output, generator(self.output, fake))

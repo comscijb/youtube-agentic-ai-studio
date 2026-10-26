@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from pathlib import Path
 
 import config
@@ -28,8 +29,21 @@ from agents.gemini_client import generate
 from agents.narrative import NarrativeValidationError, atomic_write_json, load_json, stable_hash
 from agents.structured import compact_json
 
-VISUAL_BIBLE_VERSION = 1
+VISUAL_BIBLE_VERSION = 2   # 2: identity-only descriptors, clothing-only outfits (Phase 3.3.2)
 FILE_NAME = "visual_bible.json"
+# Character reference sheets: bump when the portrait prompt changes; approvals of an older
+# sheet version are not returned, so every character must be re-approved (locations stay valid).
+CHARACTER_SHEET_VERSION = 2   # 2: neutral head-and-shoulders sheets, plain backdrop and top
+
+# Moods, states and grooming disorder belong to single moments (shot appearance), never to the
+# immutable descriptor; dirt, marks and body states never belong to an outfit.
+_DESCRIPTOR_STATES = re.compile(
+    r"\b(?:weary|tired|exhausted|sad|sorrowful|tearful|teary|anxious|worried|nervous|haunted|"
+    r"dishevell?ed|messy|unkempt|tousled|escaping wisps|stray wisps|bruised|bloodied|bloody|"
+    r"wounded|injured|scarred|dirty|grimy)\b")
+_OUTFIT_BODY = re.compile(
+    r"\b(?:soil|dirt|dirty|stains?|stained|blood\w*|marks?|bruis\w*|scratch\w*|wounds?|skin|"
+    r"hands?|knuckles?|fingers?|fingertips?|traces? of|smudge\w*)\b")
 
 
 def seed_for(kind: str, identifier: str) -> int:
@@ -42,7 +56,32 @@ def _scene_ids(outline: dict) -> list[str]:
     return [scene["scene_id"] for scene in outline.get("scenes", []) if scene.get("scene_id")]
 
 
-def validate_visual_bible(value: dict, bible: dict, outline: dict) -> dict:
+def identity_problems(value: dict, narration: str = "") -> list[str]:
+    """Mood/state words in descriptors and body/dirt words in outfits (Phase 3.3.2).
+
+    A scar is allowed in a descriptor only when the screenplay establishes one.
+    """
+    problems = []
+    permanent_scar = bool(re.search(r"\bscar(?:s|red)?\b", str(narration or "").lower()))
+    for character in value.get("characters") or []:
+        if not isinstance(character, dict):
+            continue
+        cid = character.get("character_id")
+        states = [word for word in dict.fromkeys(_DESCRIPTOR_STATES.findall(
+            str(character.get("descriptor", "")).lower())) if not (permanent_scar and word == "scarred")]
+        if states:
+            problems.append(f"character {cid}: the descriptor is physical identity only; remove {states} "
+                            "(moods, states and grooming belong to single shots)")
+        for item in character.get("wardrobe") or []:
+            body = list(dict.fromkeys(_OUTFIT_BODY.findall(str((item or {}).get("outfit", "")).lower())))
+            if body:
+                problems.append(f"character {cid}: outfit for {item.get('scene_ids')} is clothing and "
+                                f"accessories only; remove {body} (story details belong to the shot "
+                                "whose narration has them)")
+    return problems
+
+
+def validate_visual_bible(value: dict, bible: dict, outline: dict, narration: str = "") -> dict:
     from agents import identity
     if not isinstance(value, dict):
         raise NarrativeValidationError("visual bible must be an object")
@@ -74,6 +113,9 @@ def validate_visual_bible(value: dict, bible: dict, outline: dict) -> dict:
                     f"character {cid}: wardrobe entries need an outfit and known scene_ids; "
                     f"unknown: {unknown}")
         described.add(cid)
+    problems = identity_problems(value, narration)
+    if problems:
+        raise NarrativeValidationError("visual bible: " + "; ".join(problems))
     missing = sorted(known_characters - described)
     if missing:
         raise NarrativeValidationError(f"visual bible is missing characters: {', '.join(missing)}")
@@ -115,6 +157,7 @@ def build_visual_bible(script: dict, brief: dict, bible: dict, outline: dict, ou
     path = output / FILE_NAME
     from agents import identity
     source_hash = source_hash_for(script, bible, outline)
+    narration = " ".join(str(scene.get("narration", "")) for scene in script.get("sections", []))
     existing = load_json(path) or {}
     if not force and existing.get("source_hash") == source_hash:
         return existing
@@ -131,17 +174,20 @@ Return ONLY JSON:
 
 Rules:
 - {identity.image_prompt_rules()}
-- Every Character Bible character gets ONE immutable descriptor: apparent age consistent with
-  the bible's age, ethnicity as stated in the bible or chosen once, build, face shape, hair,
-  distinguishing features. Never contradict the bible.
-- wardrobe: what each character wears in each scene, exactly consistent with the screenplay
-  (if the screenplay names a garment, use it; never invent garments the text contradicts, e.g.
-  no cardigan when the screenplay says she wears an ivory silk shirt). Cover every scene in which
-  the character appears. grooming: hair, make-up and bearing in those scenes, following the
+- Every Character Bible character gets ONE immutable descriptor = physical identity only:
+  apparent age consistent with the bible's age, ethnicity as stated in the bible or chosen once,
+  build, face shape, eye colour, hair colour, length and default style, distinguishing features.
+  Never contradict the bible. NO emotions, moods or states (weary, tired, sad, tearful, anxious),
+  no grooming disorder (dishevelled, messy, escaping wisps), no injuries, dirt or story details;
+  a scar only when the screenplay establishes a permanent one. Those belong to single shots.
+- wardrobe[].outfit: clothing and accessories only, exactly consistent with the screenplay for
+  each scene (if the screenplay names a garment, use it; never invent garments the text
+  contradicts, e.g. no cardigan when the screenplay says she wears an ivory silk shirt). Cover
+  every scene in which the character appears. NO skin, hands, dirt, stains, marks or body states
+  in an outfit: a story detail such as soil on her fingers while repotting belongs only to the
+  shot whose narration has it. grooming: hair, make-up and bearing in those scenes, following the
   character's state in the narration (composed people are poised and well groomed); never marks,
   dirt, injuries or tears the screenplay does not state.
-- The immutable descriptor is physical only (age, build, face, hair, features): no mood words
-  such as weary or tearful, which belong to single moments.
 - locations: every recurring set gets one descriptor reused in every shot set there (materials,
   light, scale, objects), keeping the social status the story gives it (an expensive minimal loft
   is immaculate: polished surfaces, precise objects, pristine walls; never raw, grimy, stained,
@@ -154,7 +200,7 @@ OUTLINE: {compact_json([{key: scene.get(key) for key in ("scene_id", "title", "s
 SCREENPLAY: {compact_json([{"scene_id": scene.get("outline_scene_id"), "narration": scene.get("narration")}
                            for scene in script.get("sections", [])])}"""
     value = structured.generate_json(
-        contract, "visual bible", lambda data: validate_visual_bible(data, bible, outline),
+        contract, "visual bible", lambda data: validate_visual_bible(data, bible, outline, narration),
         generator=generate, context=context, stage="visual_bible",
         temperature_key="character_bible", run_dir=str(output),
     )
@@ -227,6 +273,8 @@ def approved_reference(vb: dict, kind: str, identifier: str, output_dir) -> str 
         return None
     if entry.get("style_hash", identity.style_hash("cinematic_photo")) != identity.style_hash():
         return None
+    if kind == "character" and entry.get("sheet_version", 1) != CHARACTER_SHEET_VERSION:
+        return None          # an older character sheet: re-approve a neutral one
     path = Path(output_dir) / entry["path"]
     return str(path) if path.is_file() else None
 
@@ -237,6 +285,7 @@ def record_approval(vb: dict, kind: str, identifier: str, relative_path: str, *,
     vb.setdefault("references", {})[reference_key(kind, identifier)] = {
         "path": relative_path, "seed": seed, "prompt": prompt,
         "style": identity.visual_style(), "style_hash": identity.style_hash(),
+        **({"sheet_version": CHARACTER_SHEET_VERSION} if kind == "character" else {}),
     }
     atomic_write_json(Path(output_dir) / FILE_NAME, vb)
     return vb

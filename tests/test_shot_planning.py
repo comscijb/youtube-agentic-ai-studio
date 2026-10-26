@@ -273,7 +273,8 @@ class ComposeTests(unittest.TestCase):
                 Path(temp, rel).parent.mkdir(exist_ok=True)
                 Path(temp, rel).write_bytes(b"png")
                 vb.setdefault("references", {})[f"{kind}:{ident}"] = {
-                    "path": rel, "seed": 1, "prompt": "", "style_hash": identity.style_hash()}
+                    "path": rel, "seed": 1, "prompt": "", "style_hash": identity.style_hash(),
+                    "sheet_version": vbible.CHARACTER_SHEET_VERSION}
             composed = shots_module.compose_shot(self.shot(), vb, temp)
         self.assertEqual(composed["kind"], "ref")
         self.assertEqual([Path(p).name for p in composed["references"]],

@@ -37,7 +37,8 @@ from video.imagegen_comfyui import ComfyUnavailable, GenerationFailed, ImageGene
 PORTRAIT_SIZE = (1024, 1024)
 CANDIDATES_FILE = "reference_candidates.json"
 CALIBRATION_FILE = Path(__file__).resolve().parent.parent / "data" / "imagegen_calibration.json"
-PORTRAIT_VIEWS = ("front view", "three-quarter view", "front view", "three-quarter view")
+PORTRAIT_VIEWS = ("facing the viewer", "in a three-quarter view", "facing the viewer",
+                  "in a three-quarter view")
 
 
 class ApprovalRequired(RuntimeError):
@@ -83,13 +84,19 @@ def _article(noun: str) -> str:
 
 
 def portrait_prompt(vb: dict, character_id: str, view: str) -> str:
+    """A neutral character sheet: identity only, never a scene's pose, clothes or setting.
+
+    Head and shoulders on a plain flat dark-grey backdrop, a simple plain dark top
+    (not the scene wardrobe), neutral relaxed expression, even soft key light,
+    and the drawing technique without environment clauses (sheet_style_suffix).
+    """
     entry = vbible.character(vb, character_id) or {}
-    outfit = (entry.get("wardrobe") or [{}])[0].get("outfit", "")
     noun = identity.image_noun()
-    return (f"{_article(noun).capitalize()} {noun} portrait, chest-up, {view}, of "
-            f"{entry.get('descriptor', character_id)}{', wearing ' + outfit if outfit else ''}. "
-            f"Dark backdrop, a single low light source, calm expression, looking near the viewer. "
-            f"{identity.style_suffix()}")
+    return (f"{_article(noun).capitalize()} {noun} character reference sheet: head and shoulders of "
+            f"{entry.get('descriptor', character_id)}, {view}, wearing a simple plain dark top. "
+            "Neutral relaxed expression, standing still, centred. Plain flat dark-grey backdrop, "
+            "uniform and empty; even soft key light on the face. "
+            f"{identity.sheet_style_suffix()}")
 
 
 def location_prompt(vb: dict, location_id: str) -> str:
@@ -99,38 +106,50 @@ def location_prompt(vb: dict, location_id: str) -> str:
             f"{entry.get('descriptor', location_id)}, empty, no people. {identity.style_suffix()}")
 
 
-def archive_stale_references(output) -> Path | None:
-    """Move reference images made under another style to character_refs/archive/<stamp>/."""
+def candidate_is_current(key: str, item: dict) -> bool:
+    """A candidate made under the current style and, for characters, the current sheet version."""
+    if item.get("style_hash") != identity.style_hash():
+        return False
+    return not key.startswith("character:") or item.get("sheet_version", 1) == vbible.CHARACTER_SHEET_VERSION
+
+
+def archive_stale_references(output, vb: dict | None = None) -> Path | None:
+    """Move only stale references to character_refs/archive/<stamp>/.
+
+    Stale = made under another style, or a character sheet of an older version
+    (candidates and approved images). Current candidates and approvals — e.g.
+    location references after a character-sheet change — stay where they are.
+    """
     output = Path(output)
     record = load_json(output / CANDIDATES_FILE) or {}
-    current = identity.style_hash()
-    stale = {key: [item for item in items if item.get("style_hash") != current]
-             for key, items in record.items()}
-    if not any(stale.values()) and not any((output / folder).glob("*.png")
-                                           for folder in ("character_refs", "location_refs")):
+    stale = [output / item["path"] for key, items in record.items() for item in items
+             if not candidate_is_current(key, item) and item.get("path")]
+    if vb is not None:
+        for kind, folder in (("character", "character_refs"), ("location", "location_refs")):
+            for path in (output / folder).glob("*.png"):        # approved images without a current approval
+                if not vbible.approved_reference(vb, kind, path.stem, output):
+                    stale.append(path)
+    stale = [path for path in dict.fromkeys(stale) if path.is_file()]
+    current = {key: [item for item in items if candidate_is_current(key, item)] for key, items in record.items()}
+    if current != record:
+        atomic_write_json(output / CANDIDATES_FILE, current)
+    if not stale:
         return None
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    archive = output / "character_refs" / "archive" / stamp
-    moved = 0
-    for folder in ("character_refs", "location_refs"):
-        for path in list((output / folder).glob("*.png")) + list((output / folder / "candidates").glob("*.jpg")):
-            target = archive / folder / path.relative_to(output / folder)
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.move(str(path), str(target))
-            moved += 1
-    record = {key: [item for item in items if item.get("style_hash") == current]
-              for key, items in record.items()}
-    atomic_write_json(output / CANDIDATES_FILE, record)
-    return archive if moved else None
+    archive = output / "character_refs" / "archive" / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    for path in stale:
+        target = archive / path.relative_to(output)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(path), str(target))
+    return archive
 
 
 def generate_reference_candidates(vb: dict, output_dir, generator: ImageGenerator, *,
                                   characters: list[str] | None = None, locations: bool = True,
                                   progress: Callable[[str], None] = print) -> dict:
     output = Path(output_dir)
-    archived = archive_stale_references(output)
+    archived = archive_stale_references(output, vb)
     if archived:
-        progress(f"   → Previous references archived in {archived} (they belong to another style)")
+        progress(f"   → Stale references archived in {archived} (another style or an older character sheet)")
     record = load_json(output / CANDIDATES_FILE) or {}
     wanted = characters or [item["character_id"] for item in vb.get("characters", [])]
     jobs = []
@@ -145,6 +164,8 @@ def generate_reference_candidates(vb: dict, output_dir, generator: ImageGenerato
     if locations:
         for location in vbible.recurring_locations(vb):
             lid = location["location_id"]
+            if vbible.approved_reference(vb, "location", lid, output):
+                continue                     # still valid: no new candidates needed
             for number in (1, 2):
                 jobs.append(("location", lid, number, ImageJob(
                     job_id=f"loc_{lid}_{number}", prompt=location_prompt(vb, lid),
@@ -158,7 +179,8 @@ def generate_reference_candidates(vb: dict, output_dir, generator: ImageGenerato
         entries[:] = [item for item in entries if item["number"] != number]
         entries.append({"number": number, "path": str(Path(job.output_path).relative_to(output)),
                         "seed": result["seed"], "prompt": job.prompt,
-                        "style_hash": identity.style_hash()})
+                        "style_hash": identity.style_hash(),
+                        **({"sheet_version": vbible.CHARACTER_SHEET_VERSION} if kind == "character" else {})})
         atomic_write_json(output / CANDIDATES_FILE, record)
     return record
 
@@ -167,7 +189,7 @@ def approve_reference(vb: dict, kind: str, ident: str, number: int, output_dir) 
     output = Path(output_dir)
     candidates = (load_json(output / CANDIDATES_FILE) or {}).get(vbible.reference_key(kind, ident), [])
     chosen = next((item for item in candidates if item["number"] == int(number)
-                   and item.get("style_hash") == identity.style_hash()), None)
+                   and candidate_is_current(vbible.reference_key(kind, ident), item)), None)
     if not chosen or not (output / chosen["path"]).is_file():
         raise FileNotFoundError(f"no candidate #{number} for {kind} {ident}; generate candidates first")
     folder = "character_refs" if kind == "character" else "location_refs"

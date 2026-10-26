@@ -284,7 +284,7 @@ def stage_status(path) -> list[dict]:
     if not vb:
         result.append(_entry("visual_bible", "missing"))
     elif script and bible and vb.get("source_hash") != vbible.source_hash_for(script, bible, outline):
-        result.append(_entry("visual_bible", "stale", "the script or Character Bible changed"))
+        result.append(_entry("visual_bible", "stale", "the script, Character Bible or visual-bible rules changed"))
     else:
         result.append(_entry("visual_bible", "done", f"{len(vb.get('characters', []))} characters, "
                                                      f"{len(vb.get('locations', []))} locations"))

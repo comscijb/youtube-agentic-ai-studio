@@ -36,7 +36,7 @@ class GuiImagegenTests(unittest.TestCase):
         Image.new("RGB", (64, 64)).save(self.output / "character_refs" / "candidates" / "julian_vance_1.jpg")
         atomic_write_json(self.output / gen.CANDIDATES_FILE, {"character:julian_vance": [
             {"number": 1, "path": "character_refs/candidates/julian_vance_1.jpg", "seed": 5, "prompt": "p",
-             "style_hash": identity.style_hash()}]})
+             "style_hash": identity.style_hash(), "sheet_version": vbible.CHARACTER_SHEET_VERSION}]})
         (self.output / "final_video.mp4").write_bytes(b"old video")
         self.patches = [patch.object(config, "OUTPUT_DIR", str(self.output)),
                         patch.object(ComfyClient, "available", return_value=False),

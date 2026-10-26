@@ -499,7 +499,18 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   queued; if a node or model is missing you are asked to export that variant from ComfyUI.
 - **Visual bible** (`visual_bible.json`, one Gemini call): style suffix in the brand palette, an
   immutable descriptor and per-scene wardrobe for each character, reusable location descriptors,
-  a thumbnail shot, and fixed seeds.
+  a thumbnail shot, and fixed seeds. The descriptor is physical identity only (no moods, states,
+  grooming disorder, injuries or dirt; a scar only when the screenplay has one) and an outfit is
+  clothing and accessories only (no skin, hands, dirt, stains or marks); the validator rejects
+  both, so story details such as soil on her fingers live only in the shot whose narration has them.
+- **Neutral character sheets.** Reference portraits are head-and-shoulders sheets (facing the
+  viewer and three-quarter) on a plain flat dark-grey backdrop, in a simple plain dark top, with a
+  neutral expression, even light and the drawing technique without environment clauses: the
+  reference carries identity, while every shot prompt states the scene's outfit, grooming and
+  expression. Approvals record `CHARACTER_SHEET_VERSION`; an older sheet must be re-approved.
+  Only stale references (another style, an older sheet) are archived — valid location references
+  stay, and get no new candidates. Over-the-shoulder shots name whose shoulder it is and who faces
+  the camera; every shot without other people says the characters are alone.
 - **Shot list** (`shot_list.json`, after narration, one Gemini call): cuts on sentence boundaries,
   6–12 s per shot, at most `IMAGEGEN_MAX_UNIQUE_SHOTS` (50) unique images, a mix of framings with
   40–60% of shots without a full face. Prompts and reference slots are composed in code: approved

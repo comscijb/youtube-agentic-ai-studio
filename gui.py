@@ -890,7 +890,7 @@ def imagegen_status():
                 "approved": bool(vbible.approved_reference(vb, kind, ident, output)),
                 "approved_path": (vb.get("references") or {}).get(vbible.reference_key(kind, ident), {}).get("path"),
                 "candidates": [item for item in candidates.get(vbible.reference_key(kind, ident), [])
-                               if item.get("style_hash") == identity.style_hash()],
+                               if shotgen.candidate_is_current(vbible.reference_key(kind, ident), item)],
             })
     shots = shot_list.get("shots", [])
     done = [shot for shot in shots if not shot.get("reuse_of") and shot.get("image_path")
