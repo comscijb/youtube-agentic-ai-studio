@@ -259,9 +259,12 @@ ART_DIRECTION_RULE = (
 # "scratchboard", "crystal" and "rustic" deliberately do not match.
 UNSUPPORTED_FAMILIES = {
     "injury": r"\b(?:blood\w*|bleed(?:s|ing)|wound(?:s|ed)?|scratch(?:es|ed)?|bruis\w*|injur\w*|gash\w*|cut on)\b",
-    "decay": r"\b(?:grim(?:e|y)|decay\w*|rot|rott\w*|stain(?:s|ed|ing)?|rust(?:y|ed|ing)?|crumbl\w*|"
+    "decay": r"\b(?:grim(?:e|y)|decay\w*|rot|rott\w*|(?<!tear-)stain(?:s|ed|ing)?|rust(?:y|ed|ing)?|crumbl\w*|"
              r"peeling|dilapidated|derelict|ruin\w*|dirty|filth\w*|squalid|neglected|mou?ldy|mildew\w*)\b",
-    "tears": r"\b(?:tears|tearful|tear-stained|cry(?:ing)?|cries|cried|weep\w*|wept|sob\w*)\b",
+    # Broad on purpose: "her face blotched and wet", "she choked out" are crying too.
+    "tears": r"\b(?:tear-stained|tearful|teary|tears?(?!-free)|cry(?:ing)?|cries|cried|weep\w*|wept|sob\w*|"
+             r"choked|choking|blotched|wet\s+(?:face|cheeks|eyes|lashes)|"
+             r"(?:face|cheeks|eyes)\s+(?:\w+\s+){0,3}wet)\b",
 }
 
 

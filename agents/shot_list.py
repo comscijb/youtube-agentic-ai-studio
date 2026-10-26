@@ -178,37 +178,23 @@ def attach_skeleton(value: dict, segments: list[dict]) -> dict:
 
 
 def shot_issues(value: dict, segments: list[dict], vb: dict) -> tuple[dict[str, list[str]], list[str]]:
-    """Blocking problems: ({shot_id: [problems]}, [whole-document problems]).
+    """Blocking problems: ({shot_id: [problems]}, [whole-scene problems]).
 
-    These trigger the repair and, if it fails, fail the stage: ids, structure,
-    excluded content, page layouts, injuries/decay/tears and unnamed people the
-    narration does not state. Composition targets are warnings (``shot_warnings``).
+    Only what makes a shot unusable blocks (repair, then flag): excluded
+    subjects, page-layout phrases, empty or invalid fields and a wrong shot
+    count. Content doubts (unstated injuries/decay/tears, unnamed people) are
+    advisory (``shot_advice``) and composition targets are ``shot_warnings``.
     """
     from agents import identity
     try:
         value = attach_skeleton(value, segments)
     except NarrativeValidationError as exc:
         return {}, [str(exc)]
-    shots = value["shots"]
     characters = {item["character_id"] for item in vb.get("characters", [])}
     locations = {item["location_id"] for item in vb.get("locations", [])}
-    excerpts = {segment["shot_id"]: segment.get("text", "") for segment in segments}
     by_shot: dict[str, list[str]] = {}
-    general: list[str] = []
-    settings = value.get("settings")
-    if not isinstance(settings, dict):
-        settings = {}
-        general.append("settings must map every location_id used to its condition")
-    used = {shot.get("location_id") for shot in shots}
-    for lid in sorted(lid for lid in used if lid in locations):
-        condition = str(settings.get(lid) or "").strip()
-        if not condition:
-            general.append(f"settings.{lid}: describe the condition the story gives this place")
-        unsupported = identity.unsupported_terms(condition, " ".join(excerpts.values()))
-        if unsupported:
-            general.append(f"settings.{lid}: the narration never mentions {unsupported}")
     seen = set()
-    for shot in shots:
+    for shot in value["shots"]:
         sid = shot["shot_id"]
         problems = by_shot.setdefault(sid, [])
         cast = shot.get("characters") if isinstance(shot.get("characters", []), list) else []
@@ -218,16 +204,6 @@ def shot_issues(value: dict, segments: list[dict], vb: dict) -> tuple[dict[str, 
             problems.append(f"appearance needs grooming and expression for {missing}")
         if not isinstance(shot.get("others_present"), bool):
             problems.append("others_present must be true or false")
-        elif not shot["others_present"]:
-            strangers = unnamed_people(shot.get("action", ""), len(cast))
-            if strangers:
-                problems.append(f"the action shows people beyond the {len(cast)} listed character(s) "
-                                f"({', '.join(strangers)}) but others_present is false")
-        visible = " ".join([str(shot.get("action", ""))] + [str(text) for text in appearance.values()])
-        unsupported = identity.unsupported_terms(visible, excerpts.get(sid, ""))
-        if unsupported:
-            problems.append(f"the narration at this moment never mentions {unsupported}; "
-                            "no injuries, decay or tears it does not state")
         banned = identity.forbidden_terms(shot.get("action", ""))
         if banned:
             problems.append(f"the action mentions excluded subjects {banned}")
@@ -249,7 +225,50 @@ def shot_issues(value: dict, segments: list[dict], vb: dict) -> tuple[dict[str, 
         if reuse and reuse not in seen:
             problems.append("reuse_of must name an earlier shot")
         seen.add(sid)
-    return {sid: problems for sid, problems in by_shot.items() if problems}, general
+    return {sid: problems for sid, problems in by_shot.items() if problems}, []
+
+
+def advice_for(shot: dict, scene_narration: str) -> list[str]:
+    """Advisory notes for one shot (never blocking): unstated injuries/decay/tears
+    compared with the whole scene's narration, and people beyond the listed cast."""
+    from agents import identity
+    notes = []
+    cast = [cid for cid in (shot.get("characters") or []) if isinstance(cid, str)]
+    appearance = shot.get("appearance") if isinstance(shot.get("appearance"), dict) else {}
+    visible = " ".join([str(shot.get("action", ""))] + [str(text) for text in appearance.values()])
+    unsupported = identity.unsupported_terms(visible, scene_narration)
+    if unsupported:
+        notes.append(f"the scene's narration never mentions {', '.join(unsupported)}")
+    if shot.get("others_present") is False:
+        strangers = unnamed_people(shot.get("action", ""), len(cast))
+        if strangers:
+            notes.append(f"people beyond the {len(cast)} listed character(s) ({', '.join(strangers)}) "
+                         "while others_present is false; the prompt keeps them alone")
+    return notes
+
+
+def shot_advice(value: dict, segments: list[dict]) -> tuple[dict[str, list[str]], list[str]]:
+    """Advisory notes: ({shot_id: [notes]}, [setting notes]) — shown, never blocking."""
+    from agents import identity
+    shots = attach_skeleton(value, segments)["shots"]
+    scene_of = {segment["shot_id"]: segment.get("scene_id") or segment["shot_id"].rsplit("_", 1)[0]
+                for segment in segments}
+    narration = {}
+    for segment in segments:
+        scene = scene_of[segment["shot_id"]]
+        narration[scene] = f"{narration.get(scene, '')} {segment.get('text', '')}"
+    notes = {shot["shot_id"]: advice_for(shot, narration[scene_of[shot["shot_id"]]]) for shot in shots}
+    general = []
+    settings = value.get("settings") if isinstance(value.get("settings"), dict) else {}
+    everything = " ".join(narration.values())
+    for lid in sorted({shot.get("location_id") for shot in shots if shot.get("location_id")}):
+        condition = str(settings.get(lid) or "").strip()
+        if not condition:
+            general.append(f"settings.{lid}: no condition given for this place")
+        elif identity.unsupported_terms(condition, everything):
+            general.append(f"settings.{lid}: the narration never mentions "
+                           f"{', '.join(identity.unsupported_terms(condition, everything))}")
+    return {sid: items for sid, items in notes.items() if items}, general
 
 
 def shot_warnings(shots: list[dict], policy: str) -> list[str]:
@@ -462,8 +481,10 @@ def plan_scene(scene_id: str, scene_segments: list[dict], vb: dict, outline: dic
     attached = attach_skeleton(best, scene_segments)
     flags = {scene_segments[index]["shot_id"]: problems for index, problems in issues.items()}
     settings = best.get("settings") if isinstance(best.get("settings"), dict) else {}
-    return {"settings": settings, "shots": attached["shots"], "flags": flags, "calls": calls,
-            "general": general}
+    narration = " ".join(segment["text"] for segment in scene_segments)
+    advice = {shot["shot_id"]: notes for shot in attached["shots"] if (notes := advice_for(shot, narration))}
+    return {"settings": settings, "shots": attached["shots"], "flags": flags, "advice": advice,
+            "calls": calls, "general": general}
 
 
 def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bool = False) -> dict:
@@ -483,7 +504,7 @@ def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bo
         return existing
     scene_ids = list(dict.fromkeys(segment["scene_id"] for segment in segments))
     contract = _scene_contract(policy)
-    previous, settings, planned, flags, calls, reused = None, {}, [], {}, 0, []
+    previous, settings, planned, flags, advice, calls, reused = None, {}, [], {}, {}, 0, []
     for scene_id in scene_ids:
         scene_segments = [segment for segment in segments if segment["scene_id"] == scene_id]
         key = stable_hash({"version": SHOT_LIST_VERSION, "contract": contract,
@@ -504,14 +525,19 @@ def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bo
         for lid, condition in (result.get("settings") or {}).items():
             settings.setdefault(lid, str(condition or "").strip())
         flags.update(result.get("flags") or {})
+        advice.update(result.get("advice") or {})
         for segment, shot in zip(scene_segments, result["shots"]):
-            planned.append(_entry(segment, shot, settings, vb, output, flags.get(segment["shot_id"])))
+            planned.append(_entry(segment, shot, settings, vb, output, flags.get(segment["shot_id"]),
+                                  advice.get(segment["shot_id"])))
         previous = result["shots"][-1] if result["shots"] else previous
     if reused:
         print(f"   -> Reused checkpoints for {', '.join(reused)}")
-    warnings = shot_warnings(planned, policy)
+    warnings = shot_warnings(planned, policy) + _setting_notes(settings, planned, segments)
     for warning in warnings:
         print(f"   ⚠ shot list: {warning} (a target, not a failure)")
+    if advice:
+        print(f"   ⚠ {len(advice)} shot(s) have advisory notes (shown on the shot cards; they are "
+              "generated anyway)")
     result = {
         "version": SHOT_LIST_VERSION, "source_hash": source_hash, "policy": policy,
         "budget": int(getattr(config, "IMAGEGEN_MAX_UNIQUE_SHOTS", 50)),
@@ -519,10 +545,41 @@ def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bo
         "warnings": warnings, "flagged": sorted(flags), "gemini_calls": calls, "shots": planned,
     }
     atomic_write_json(path, result)
+    write_report(output, result)
     return result
 
 
-def _entry(segment: dict, shot: dict, settings: dict, vb: dict, output: Path, flags: list | None) -> dict:
+REPORT_FILE = "shot_list_report.json"
+
+
+def write_report(output, shot_list: dict) -> dict:
+    """shot_list_report.json: list-level warnings, flagged (blocking) and advisory notes per shot."""
+    shots = shot_list.get("shots", [])
+    report = {
+        "version": shot_list.get("version"), "warnings": shot_list.get("warnings", []),
+        "flagged": {shot["shot_id"]: shot["flags"] for shot in shots if shot.get("flags")},
+        "advisory": {shot["shot_id"]: shot["warnings"] for shot in shots if shot.get("warnings")},
+    }
+    atomic_write_json(Path(output) / REPORT_FILE, report)
+    return report
+
+
+def _setting_notes(settings: dict, planned: list[dict], segments: list[dict]) -> list[str]:
+    from agents import identity
+    narration = " ".join(segment["text"] for segment in segments)
+    notes = []
+    for lid in sorted({shot["location"] for shot in planned if shot.get("location")}):
+        condition = settings.get(lid, "")
+        unsupported = identity.unsupported_terms(condition, narration) if condition else []
+        if not condition:
+            notes.append(f"settings.{lid}: no condition given for this place")
+        elif unsupported:
+            notes.append(f"settings.{lid}: the narration never mentions {', '.join(unsupported)}")
+    return notes
+
+
+def _entry(segment: dict, shot: dict, settings: dict, vb: dict, output: Path, flags: list | None,
+           notes: list | None = None) -> dict:
     cast = [cid for cid in (shot.get("characters") or []) if isinstance(cid, str)]
     entry = {
         "shot_id": segment["shot_id"], "scene_id": segment["scene_id"],
@@ -538,6 +595,8 @@ def _entry(segment: dict, shot: dict, settings: dict, vb: dict, output: Path, fl
     }
     if flags:
         entry["flags"] = list(flags)
+    if notes:
+        entry["warnings"] = list(notes)
     composed = compose_shot(entry, vb, output, assume_references=True)
     entry["prompt"] = composed["prompt"]
     entry["reference_slots"] = composed["slots"]
@@ -623,10 +682,14 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
 
 CROWD_HINT = ("Any other people are few, distant and indistinct in shadow, each clearly different in "
               "age, build, posture and clothing.")
-# Words that always mean people beyond the named cast.
+# Explicit people terms: always people beyond the named cast.
 _UNNAMED_TERMS = re.compile(
     r"\b(?:guests?|crowds?|strangers?|waiters?|waitress(?:es)?|staff|onlookers?|passers-?by|passerby|"
-    r"bystanders?|partygoers?|servants?|others|people in the background)\b")
+    r"people in the background)\b")
+# "Silhouettes"/"shapes" of these are scenery, not people ("faint urban silhouettes").
+_SCENERY = re.compile(r"\b(?:urban|city|cities|skyline|skyscrapers?|buildings?|towers?|rooftops?|trees?|"
+                      r"forest|furniture|chairs?|tables?|architecture|architectural|columns?|pillars?|"
+                      r"spires?|cranes?|hills?|mountains?)\b")
 # Generic words that may just be the listed characters ("Two figures stand…").
 _GENERIC_PEOPLE = r"(?:figures|people|persons|men|women|silhouettes|shapes)"
 _COUNTS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
@@ -639,27 +702,26 @@ _OF_THEM = re.compile(r"\b(?:the\s+)?(\w+)\s+of\s+them\b")
 def unnamed_people(action: str, cast_size: int) -> list[str]:
     """Phrases in ``action`` that put more people in the frame than the ``cast_size`` named characters.
 
-    "Two figures stand…" with two listed characters is the cast itself; "two
-    guests", "a crowd" or "three figures" with two characters are not.
+    Only explicit people terms ("two guests", "a crowd") or a stated number of
+    people/figures larger than the cast count; "Two figures stand…" with two
+    listed characters is the cast itself, and silhouettes of a skyline,
+    buildings, trees or furniture are scenery.
     """
     text = str(action or "").lower()
     found = [match.group(0) for match in _UNNAMED_TERMS.finditer(text)]
-    counted = set()
     for match in _COUNTED.finditer(text):
         word = match.group(1)
         count = int(word) if word.isdigit() else _COUNTS[word]
-        counted.add(match.start())
+        phrase = match.group(0)
+        if phrase.endswith(("silhouettes", "shapes")) and _SCENERY.search(text[match.start():match.end() + 40]):
+            continue
         if count > cast_size:
-            found.append(match.group(0))
+            found.append(phrase)
     for match in _OF_THEM.finditer(text):
         word = match.group(1)
         count = int(word) if word.isdigit() else _COUNTS.get(word, 0)
         if count > cast_size:
             found.append(match.group(0))
-    if cast_size < 2:          # an uncounted plural is already more people than one character
-        for match in re.finditer(r"\b" + _GENERIC_PEOPLE + r"\b", text):
-            if not any(start <= match.start() < start + 40 for start in counted):
-                found.append(match.group(0))
     return list(dict.fromkeys(found))
 
 
@@ -682,11 +744,21 @@ def _company(shot: dict, count: int) -> str:
     return alone_hint(count) if others is False else ""
 
 
-def prompt_problems(shot: dict, prompt: str) -> list[str]:
-    """Composed-prompt checks before generation: injuries, decay or tears the narration lacks."""
+def prompt_advice(prompt: str, scene_narration: str) -> list[str]:
+    """Advisory check of a composed prompt (never blocks): injuries, decay or tears the
+    scene's narration lacks, e.g. coming from a visual-bible wardrobe line."""
     from agents import identity
-    unsupported = identity.unsupported_terms(prompt, shot.get("narration_excerpt", ""))
-    return [f"the prompt mentions {unsupported} but the narration at this moment does not"] if unsupported else []
+    unsupported = identity.unsupported_terms(prompt, scene_narration)
+    return [f"the prompt mentions {', '.join(unsupported)}, which the scene's narration does not"] \
+        if unsupported else []
+
+
+def scene_narration(shots: list[dict]) -> dict[str, str]:
+    """Whole narration per scene, rebuilt from the shots' excerpts."""
+    text: dict[str, str] = {}
+    for shot in shots:
+        text[shot.get("scene_id", "")] = f"{text.get(shot.get('scene_id', ''), '')} {shot.get('narration_excerpt', '')}"
+    return text
 
 
 def resolve_image(shots: list[dict], shot: dict) -> str | None:

@@ -47,19 +47,27 @@ class UnnamedPeopleTests(unittest.TestCase):
         self.assertEqual(len(shots_module.validate_shots(value, segments, VISUAL_BIBLE, OUTLINE, "reference")), 5)
         self.assertEqual(shots_module.unnamed_people("the two of them alone at the table", 2), [])
 
-    def test_guests_crowds_and_extra_figures_are_unnamed(self):
+    def test_guests_crowds_and_extra_figures_are_advice_not_rejections(self):
         for action, cast in (("two guests watch from the doorway", JULIAN_ELENA),
                              ("a crowd fills the gallery", JULIAN_ELENA),
                              ("Three figures stand at the table", JULIAN_ELENA),
-                             ("A waiter pours wine beside them", JULIAN_ELENA),
-                             ("Figures linger behind him", ["julian_vance"])):
+                             ("A waiter pours wine beside them", JULIAN_ELENA)):
             with self.subTest(action=action):
                 value, segments = document([("s01_01", cast, action)])
-                with self.assertRaises(NarrativeValidationError) as caught:
-                    shots_module.validate_shots(value, segments, VISUAL_BIBLE, OUTLINE, "reference")
-                self.assertIn("others_present is false", str(caught.exception))
+                shots_module.validate_shots(value, segments, VISUAL_BIBLE, OUTLINE, "reference")   # never blocks
+                notes, _ = shots_module.shot_advice(value, segments)
+                self.assertIn("while others_present is false", notes["s01_01"][0])
                 allowed, segments = document([("s01_01", cast, action)], others_present=True)
-                shots_module.validate_shots(allowed, segments, VISUAL_BIBLE, OUTLINE, "reference")
+                self.assertEqual(shots_module.shot_advice(allowed, segments)[0], {})
+
+    def test_scenery_silhouettes_and_uncounted_plurals_are_not_people(self):
+        for action, size in (("Julian stands before faint urban silhouettes of the skyline", 1),
+                             ("Two silhouettes of towers beyond the glass", 1),
+                             ("Figures linger behind him", 1)):
+            with self.subTest(action=action):
+                self.assertEqual(shots_module.unnamed_people(action, size), [])
+        self.assertEqual(shots_module.unnamed_people("three silhouettes wait at the door", 2),
+                         ["three silhouettes"])
 
 
 class AdvisoryRuleTests(unittest.TestCase):

@@ -74,21 +74,34 @@ class PlannerRuleTests(unittest.TestCase):
         shots = validate(plan())
         self.assertEqual(shots[0]["setting_condition"], "immaculate and expensive: polished surfaces, pristine walls")
 
-    def test_rejections(self):
+    def test_missing_fields_block(self):
         cases = {
-            "never mentions ['scratches']": plan({(1, "action"): "She sits with scratches on her arms"}),
-            "never mentions ['tearful']": plan({(1, "appearance"): {"elena_vance": "dishevelled and tearful"}}),
-            "others_present is false": plan({(0, "action"): "Men in suits wait behind him"}),
             "appearance needs grooming": plan({(0, "appearance"): {}}),
             "others_present must be true or false": plan({(0, "others_present"): None}),
-            "settings.loft: the narration never mentions ['grimy']":
-                plan({(None, "settings"): {"loft": "a grimy warehouse"}}),
-            "settings must map": plan({(None, "settings"): None}),
         }
         for expected, value in cases.items():
             with self.subTest(expected=expected), self.assertRaises(NarrativeValidationError) as caught:
                 validate(value)
             self.assertIn(expected, str(caught.exception))
+
+    def test_content_doubts_are_advice_not_rejections(self):
+        # Phase 3.3.1-C: unstated injuries/decay/tears, extra people and setting doubts never block.
+        cases = {
+            "never mentions scratches": plan({(1, "action"): "She sits with scratches on her arms"}),
+            "never mentions tearful": plan({(1, "appearance"): {"elena_vance": "dishevelled and tearful"}}),
+            "people beyond the 1 listed character(s) (strangers)":
+                plan({(0, "action"): "Two strangers wait behind him"}),
+        }
+        for expected, value in cases.items():
+            with self.subTest(expected=expected):
+                self.assertEqual(len(validate(value)), 2)
+                notes, _ = shots_module.shot_advice(value, SEGMENTS)
+                self.assertIn(expected, " ".join(sum(notes.values(), [])))
+        for settings, expected in (({"loft": "a grimy warehouse"}, "never mentions grimy"),
+                                   (None, "no condition given")):
+            value = plan({(None, "settings"): settings})
+            self.assertEqual(len(validate(value)), 2)
+            self.assertIn(expected, shots_module.shot_advice(value, SEGMENTS)[1][0])
 
     def test_guests_are_allowed_when_present(self):
         value = plan({(0, "action"): "A few guests wait in the far shadows", (0, "others_present"): True})
@@ -149,7 +162,7 @@ class PipelineTests(unittest.TestCase):
         self.assertIn("neatly groomed", shot["prompt"])
         self.assertIn("pristine walls", shot["prompt"])
 
-    def test_generation_refuses_a_prompt_with_unstated_injuries(self):
+    def test_unstated_injuries_in_a_prompt_are_reported_but_generated(self):
         vb = json.loads(json.dumps(VISUAL_BIBLE))
         vb["characters"][0]["wardrobe"][0]["outfit"] = "a charcoal suit, bloody scratches on his knuckles"
         shot = {"shot_id": "s01_01", "scene_id": "s01", "section_id": 1, "start": 0, "end": 8,
@@ -159,17 +172,19 @@ class PipelineTests(unittest.TestCase):
         hands = dict(shot, shot_id="s01_02", shot_type="hands", characters=["julian_vance"],
                      face_visibility="none", appearance={"julian_vance": "composed"})
         fake = FakeComfy()
+        notes = []
         with tempfile.TemporaryDirectory() as temp, redirect_stdout(io.StringIO()):
             atomic_write_json(Path(temp, vbible.FILE_NAME), vb)
             atomic_write_json(Path(temp, shots_module.FILE_NAME), {"version": 2, "shots": [shot, hands]})
             with patch.object(gen, "missing_approvals", return_value=[]):
                 summary = gen.generate_shots(temp, ImageGenerator(temp, ComfyClient(
-                    "http://127.0.0.1:8188", session=fake, sleep=lambda _: None)))
+                    "http://127.0.0.1:8188", session=fake, sleep=lambda _: None)), progress=notes.append)
             saved = load_json(Path(temp, shots_module.FILE_NAME))["shots"]
-        self.assertEqual(summary["generated"], 1)
-        self.assertEqual(summary["failed"], ["s01_02"])
-        self.assertEqual(len(fake.prompts), 1)
-        self.assertNotIn("image_path", saved[1])
+        self.assertEqual(summary["generated"], 2)                # Phase 3.3.1-C: advisory, never blocking
+        self.assertEqual(summary["failed"], [])
+        self.assertIn("image_path", saved[1])
+        self.assertTrue(any("s01_02" in note and "bloody, scratches" in note and "advisory" in note
+                            for note in notes))
 
     def test_gui_rejects_unstated_injuries(self):
         import gui

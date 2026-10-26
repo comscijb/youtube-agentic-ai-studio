@@ -272,6 +272,7 @@ def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None =
             + " (python -m scripts.generate_character_refs, then approve one per character in the GUI "
               "or with --approve character:<id>:<n>). No shot is generated before approval.")
     shots = shot_list["shots"]
+    narration = shots_module.scene_narration(shots)
     queue = [shot for shot in shots if not shot.get("reuse_of")
              and (not only or shot["scene_id"] == only or shot["shot_id"] == only)
              and not _done(shot, output)]
@@ -283,12 +284,8 @@ def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None =
     summary = {"generated": 0, "cached": 0, "fallback": 0, "failed": [], "held": [], "total": len(queue)}
     for index, shot in enumerate(queue, 1):
         composed = shots_module.compose_shot(shot, vb, output)
-        problems = shots_module.prompt_problems(shot, composed["prompt"])
-        if problems:
-            summary["failed"].append(shot["shot_id"])
-            progress(f"   ⚠ {shot['shot_id']}: {'; '.join(problems)} — fix the visual bible or the shot "
-                     "action, then run again")
-            continue
+        for note in shots_module.prompt_advice(composed["prompt"], narration.get(shot.get("scene_id", ""), "")):
+            progress(f"   ⚠ {shot['shot_id']}: {note} (advisory; generating anyway)")
         job = ImageJob(job_id=shot["shot_id"], prompt=composed["prompt"], seed=composed["seed"],
                        output_path=str(output / "images" / "shots" / f"{shot['shot_id']}.jpg"),
                        kind=composed["kind"], references=composed["references"], size=native_size())

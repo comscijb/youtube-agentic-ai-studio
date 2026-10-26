@@ -452,10 +452,11 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   `others_present` — only when the narration or the scene's chronology places unnamed people in
   the room; otherwise the prompt says the characters are alone. Injury, decay and tears words
   (`blood`, `wound`, `scratch`, `bruise`, `injur*`, `cut on`, `grimy`, `stained`, `tearful`, …)
-  are rejected in shot actions, GUI edits and composed prompts unless the shot's
-  `narration_excerpt` has the same family. "Two figures" with two listed characters is the cast
-  itself; only more figures than characters, or `guests`, `crowd`, `strangers`, `waiter`, `staff`,
-  `onlookers`, `passers-by`, `others`, need `others_present`.
+  are reported as advisory notes when the whole scene's narration has nothing of the same family
+  (tears also cover `cry*`, `sob*`, `wept`, a wet face, `choked`, `blotched`). "Two figures" with
+  two listed characters is the cast itself; only `guests`, `crowd`, `strangers`, `waiter`, `staff`,
+  `onlookers`, `passers-by`, `people in the background`, or a stated number above the cast count
+  as other people, and silhouettes of a skyline, buildings, trees or furniture are scenery.
 - **Shot list per scene.** The code owns the skeleton (shot ids, timings and narration excerpts
   from the narration timeline); Gemini returns only the ordered shot contents, one call per scene,
   with the scene's narration, its numbered segments and the previous scene's last shot for
@@ -464,8 +465,12 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   attempt with those shots **flagged** and never aborts the others. Completed scenes are
   checkpointed in `.checkpoints/shot_list/<scene>.json`, so a rerun (also with
   `--rebuild-shot-list`) only redoes missing or flagged scenes; delete that folder to re-plan all.
-- **Blocking vs advisory shot rules.** Blocking problems are repaired and, if they remain,
-  flagged. The share of wide/establishing shots (`IMAGEGEN_MIN_WIDE_SHARE`, 0.3, from `.env`) and of
+- **Blocking vs advisory shot rules.** Only what makes a shot unusable blocks: excluded subjects
+  (creatures, tentacles, gore…), page-layout phrases, empty or invalid fields and a wrong shot
+  count. Those are repaired and, if they remain, the shot is flagged and skipped until edited.
+  Content doubts (unstated injuries/decay/tears, unnamed people, setting conditions) never block:
+  they appear as `warnings` on the shot card and in `shot_list_report.json`, and the prompt still
+  carries the positive hints (alone in the room, composed). The share of wide/establishing shots (`IMAGEGEN_MIN_WIDE_SHARE`, 0.3, from `.env`) and of
   shots without a full face are targets given to Gemini and reported as `warnings` in
   `shot_list.json`, never a failure. The crimson accent examples are wine, a ring, a scarf
   or a candle reflection; this wording change keeps the style hash, so approved references stay
