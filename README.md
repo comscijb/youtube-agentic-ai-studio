@@ -470,7 +470,10 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   count. Those are repaired and, if they remain, the shot is flagged and skipped until edited.
   Content doubts (unstated injuries/decay/tears, unnamed people, setting conditions) never block:
   they appear as `warnings` on the shot card and in `shot_list_report.json`, and the prompt still
-  carries the positive hints (alone in the room, composed). The share of wide/establishing shots (`IMAGEGEN_MIN_WIDE_SHARE`, 0.3, from `.env`) and of
+  carries the positive hints (alone in the room, composed). In the GUI each shot card shows its
+  flags (⛔) and warnings (⚠); editing a shot re-validates it, clearing its flag (a blocking edit
+  is refused) and recomputing its warnings. `generate_shots` prints a warnings summary, generates
+  every unflagged shot and lists the flagged ones at the end. The share of wide/establishing shots (`IMAGEGEN_MIN_WIDE_SHARE`, 0.3, from `.env`) and of
   shots without a full face are targets given to Gemini and reported as `warnings` in
   `shot_list.json`, never a failure. The crimson accent examples are wine, a ring, a scarf
   or a candle reflection; this wording change keeps the style hash, so approved references stay

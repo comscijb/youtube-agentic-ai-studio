@@ -164,6 +164,11 @@ def _build_description(script, research, video_type: str = "normal", output_dir=
 #  PIPELINE RUNNER  (runs in background thread)
 # ══════════════════════════════════════════════════════════════════════════════
 
+# Steps after the script; a run of only ["shots"] or ["visual_bible"] must reach them
+# instead of stopping at the Story Brief / Narrative Development early exits.
+_MEDIA_STEPS = ("images", "narration", "music", "visual_bible", "shots", "video")
+
+
 def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "normal",
                   focus_angle: str = "", narrative_type: str = "auto",
                   target_duration: float = 15, narrative_review: bool = True):
@@ -227,7 +232,7 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
         _check_stop("research")
         research = _state["research"]
         if not research: raise ValueError("No research data — run Research step first.")
-        if not any(step in steps for step in ("script", "images", "narration", "music", "video")):
+        if not any(step in steps for step in ("script",) + _MEDIA_STEPS):
             _complete_partial("Story Brief")
             return
 
@@ -271,9 +276,7 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
                 f"major={len(review.get('major_issues', []))}."
             )
         unresolved = review.get("status") in ("structurally_invalid", "revision_required")
-        downstream_requested = any(
-            step in steps for step in ("images", "narration", "music", "video")
-        )
+        downstream_requested = any(step in steps for step in _MEDIA_STEPS)
         # Generating a newly invalid script and rendering it in the same automatic run is unsafe.
         # A later media-only run is an explicit operator override and remains available.
         if "script" in steps and unresolved and downstream_requested:
@@ -286,7 +289,7 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
             _state["description"] = _build_description(script, research, video_type=video_type)
             _complete_partial("Narrative QA gate")
             return
-        if not any(step in steps for step in ("images", "narration", "music", "video")):
+        if not any(step in steps for step in _MEDIA_STEPS):
             _state["description"] = _build_description(script, research, video_type=video_type)
             _complete_partial("Narrative Development")
             return
@@ -907,7 +910,8 @@ def imagegen_status():
                   "approved": [entry["number"] for entry in style_refs.approved()]},
         "shots": [{key: shot.get(key) for key in ("shot_id", "scene_id", "start", "end", "shot_type",
                                                    "characters", "face_visibility", "reuse_of",
-                                                   "action", "prompt", "image_path", "provider")}
+                                                   "action", "prompt", "image_path", "provider",
+                                                   "flags", "warnings")}
                   for shot in shots],
     })
 
@@ -1003,18 +1007,31 @@ def imagegen_edit_shot(shot_id):
     action = str((request.get_json(force=True) or {}).get("action", "")).strip()
     if not action:
         return jsonify({"ok": False, "error": "The shot action must not be empty"}), 400
+    from agents import shot_list as shots_module
     banned = identity.forbidden_terms(action) + identity.layout_terms(action)
-    if banned:
+    if banned:       # blocking: the shot stays as it was (and flagged, if it was)
         return jsonify({"ok": False, "error": "The visual style excludes: " + ", ".join(banned)}), 400
-    shots = (load_json(Path(config.OUTPUT_DIR, "shot_list.json")) or {}).get("shots", [])
-    excerpt = next((item.get("narration_excerpt", "") for item in shots if item["shot_id"] == shot_id), "")
-    unsupported = identity.unsupported_terms(action, excerpt)
-    if unsupported:
-        return jsonify({"ok": False, "error": "The narration at this moment never mentions: "
-                        + ", ".join(unsupported)}), 400
-    if not _update_shot(shot_id, lambda shot: shot.update(action=action)):
+    path = Path(config.OUTPUT_DIR, "shot_list.json")
+    narration = shots_module.scene_narration((load_json(path) or {}).get("shots", []))
+
+    def revalidate(shot):
+        # Re-validated: the edit cleared the blocking problem; advisory notes are recomputed.
+        shot["action"] = action
+        shot.pop("flags", None)
+        notes = shots_module.advice_for(shot, narration.get(shot.get("scene_id", ""), ""))
+        if notes:
+            shot["warnings"] = notes
+        else:
+            shot.pop("warnings", None)
+
+    shot = _update_shot(shot_id, revalidate)
+    if not shot:
         return jsonify({"ok": False, "error": "Unknown shot"}), 404
-    return jsonify({"ok": True})
+    shot_list = load_json(path) or {}
+    shot_list["flagged"] = [item["shot_id"] for item in shot_list.get("shots", []) if item.get("flags")]
+    atomic_write_json(path, shot_list)
+    shots_module.write_report(config.OUTPUT_DIR, shot_list)
+    return jsonify({"ok": True, "warnings": shot.get("warnings", [])})
 
 
 @app.route("/api/imagegen/generate", methods=["POST"])

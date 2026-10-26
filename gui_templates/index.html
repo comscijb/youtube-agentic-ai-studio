@@ -1252,6 +1252,19 @@ function loadImagegen() {
       const meta = document.createElement('div');
       meta.textContent = `${shot.shot_id} · ${igTime(shot.start)}–${igTime(shot.end)} · ${shot.shot_type}`;
       cell.appendChild(meta);
+      // Flags block generation until the shot is edited; warnings are advisory.
+      (shot.flags || []).forEach(text => {
+        const flag = document.createElement('div');
+        flag.style.cssText = 'color:var(--red);margin:2px 0';
+        flag.textContent = '⛔ ' + text + ' — edit to fix (skipped until then)';
+        cell.appendChild(flag);
+      });
+      (shot.warnings || []).forEach(text => {
+        const warning = document.createElement('div');
+        warning.style.cssText = 'color:var(--amber);margin:2px 0';
+        warning.textContent = '⚠ ' + text;
+        cell.appendChild(warning);
+      });
       if (!shot.reuse_of) {
         const regen = document.createElement('button');
         regen.className = 'btn btn-ghost';

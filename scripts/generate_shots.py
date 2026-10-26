@@ -53,6 +53,9 @@ def main(argv=None) -> int:
           f"in {summary['seconds'] / 60:.1f} min.")
     if summary["failed"]:
         print("Failed shots: " + ", ".join(summary["failed"]) + " (re-run to retry)")
+    if summary.get("flagged"):
+        print("Flagged shots (skipped until edited in the GUI, or re-planned with --rebuild-shot-list): "
+              + ", ".join(summary["flagged"]))
     return 0 if not summary["failed"] else 1
 
 

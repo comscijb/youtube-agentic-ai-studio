@@ -186,17 +186,18 @@ class PipelineTests(unittest.TestCase):
         self.assertTrue(any("s01_02" in note and "bloody, scratches" in note and "advisory" in note
                             for note in notes))
 
-    def test_gui_rejects_unstated_injuries(self):
+    def test_gui_reports_unstated_injuries_as_warnings(self):
         import gui
         with tempfile.TemporaryDirectory() as temp, patch.object(config, "OUTPUT_DIR", temp):
             atomic_write_json(Path(temp, "shot_list.json"), {"shots": [
-                {"shot_id": "s01_01", "action": "x", "narration_excerpt": "She sat at the counter."}]})
+                {"shot_id": "s01_01", "scene_id": "s01", "action": "x", "characters": [],
+                 "narration_excerpt": "She sat at the counter."}]})
             client = gui.app.test_client()
-            bad = client.post("/api/imagegen/shot/s01_01/prompt", json={"action": "Blood on her sleeve"})
+            doubt = client.post("/api/imagegen/shot/s01_01/prompt", json={"action": "Blood on her sleeve"})
             good = client.post("/api/imagegen/shot/s01_01/prompt", json={"action": "She sits, composed"})
-        self.assertEqual(bad.status_code, 400)
-        self.assertIn("blood", bad.get_json()["error"].lower())
-        self.assertEqual(good.status_code, 200)
+        self.assertEqual(doubt.status_code, 200)                 # Phase 3.3.1: advisory, saved anyway
+        self.assertIn("blood", doubt.get_json()["warnings"][0].lower())
+        self.assertEqual(good.get_json()["warnings"], [])
 
 
 if __name__ == "__main__":

@@ -273,15 +273,24 @@ def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None =
               "or with --approve character:<id>:<n>). No shot is generated before approval.")
     shots = shot_list["shots"]
     narration = shots_module.scene_narration(shots)
-    queue = [shot for shot in shots if not shot.get("reuse_of")
-             and (not only or shot["scene_id"] == only or shot["shot_id"] == only)
-             and not _done(shot, output)]
+    pending = [shot for shot in shots if not shot.get("reuse_of")
+               and (not only or shot["scene_id"] == only or shot["shot_id"] == only)
+               and not _done(shot, output)]
+    # Flagged shots broke a blocking rule the planner could not repair: skipped until edited.
+    flagged = [shot["shot_id"] for shot in pending if shot.get("flags")]
+    queue = [shot for shot in pending if not shot.get("flags")]
     if limit:
         queue = queue[:limit]
+    warned = [shot["shot_id"] for shot in queue if shot.get("warnings")]
+    if warned:
+        progress(f"   ⚠ {len(warned)} shot(s) carry advisory notes (generated anyway): {', '.join(warned)}")
+    if flagged:
+        progress(f"   ⛔ {len(flagged)} flagged shot(s) skipped until edited: {', '.join(flagged)}")
     per = seconds_per_image("ref") or seconds_per_image("t2i")
     every = max(1, int(getattr(config, "IMAGEGEN_FREE_MEMORY_EVERY", 10)))
     started = clock()
-    summary = {"generated": 0, "cached": 0, "fallback": 0, "failed": [], "held": [], "total": len(queue)}
+    summary = {"generated": 0, "cached": 0, "fallback": 0, "failed": [], "held": [], "total": len(queue),
+               "flagged": flagged, "warned": warned}
     for index, shot in enumerate(queue, 1):
         composed = shots_module.compose_shot(shot, vb, output)
         for note in shots_module.prompt_advice(composed["prompt"], narration.get(shot.get("scene_id", ""), "")):
