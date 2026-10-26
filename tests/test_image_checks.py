@@ -220,7 +220,8 @@ class PromptRuleTests(unittest.TestCase):
         with self.assertRaises(Exception) as caught:
             shots_module.validate_shots({"settings": settings, "shots": shots}, segments, VISUAL_BIBLE, {}, "reference")
         self.assertIn("page layout", str(caught.exception))
-        self.assertIn("wide/establishing", str(caught.exception))
+        self.assertNotIn("wide/establishing", str(caught.exception))      # a target, not a failure
+        self.assertIn("below the 30% target", shots_module.shot_warnings(shots, "reference")[0])
 
     def test_unnamed_people_get_the_crowd_hint(self):
         shot = {"shot_id": "s06_01", "scene_id": "s02", "shot_type": "wide", "characters": ["julian_vance"],

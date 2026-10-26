@@ -138,79 +138,106 @@ def plan_segments(script: dict, timeline: dict, cues: list[tuple]) -> list[dict]
 
 # ── Planning with Gemini ────────────────────────────────────────────────────
 
-def validate_shots(value: dict, segments: list[dict], vb: dict, outline: dict, policy: str) -> list[dict]:
-    shots = value.get("shots")
+def shot_issues(value: dict, segments: list[dict], vb: dict) -> tuple[dict[str, list[str]], list[str]]:
+    """Blocking problems: ({shot_id: [problems]}, [whole-document problems]).
+
+    These trigger the repair and, if it fails, fail the stage: ids, structure,
+    excluded content, page layouts, injuries/decay/tears and unnamed people the
+    narration does not state. Composition targets are warnings (``shot_warnings``).
+    """
+    from agents import identity
+    shots = value.get("shots") if isinstance(value, dict) else None
     ids = [segment["shot_id"] for segment in segments]
     if not isinstance(shots, list) or [shot.get("shot_id") for shot in shots if isinstance(shot, dict)] != ids:
-        raise NarrativeValidationError(f"shot list must return exactly these shot_ids in order: {ids}")
+        return {}, [f"shot list must return exactly these shot_ids in order: {ids}"]
     characters = {item["character_id"] for item in vb.get("characters", [])}
     locations = {item["location_id"] for item in vb.get("locations", [])}
     excerpts = {segment["shot_id"]: segment.get("text", "") for segment in segments}
-    seen = set()
-    problems = []
-    from agents import identity
+    by_shot: dict[str, list[str]] = {}
+    general: list[str] = []
     settings = value.get("settings")
     if not isinstance(settings, dict):
         settings = {}
-        problems.append("settings must map every location_id used to its condition")
-    used = {shot.get("location_id") for shot in shots if isinstance(shot, dict)}
+        general.append("settings must map every location_id used to its condition")
+    used = {shot.get("location_id") for shot in shots}
     for lid in sorted(lid for lid in used if lid in locations):
         condition = str(settings.get(lid) or "").strip()
         if not condition:
-            problems.append(f"settings.{lid}: describe the condition the story gives this place")
+            general.append(f"settings.{lid}: describe the condition the story gives this place")
         unsupported = identity.unsupported_terms(condition, " ".join(excerpts.values()))
         if unsupported:
-            problems.append(f"settings.{lid}: the narration never mentions {unsupported}")
+            general.append(f"settings.{lid}: the narration never mentions {unsupported}")
+    seen = set()
     for shot in shots:
         sid = shot["shot_id"]
+        problems = by_shot.setdefault(sid, [])
+        cast = shot.get("characters") if isinstance(shot.get("characters", []), list) else []
         appearance = shot.get("appearance") if isinstance(shot.get("appearance"), dict) else {}
-        missing = [cid for cid in shot.get("characters") or [] if not str(appearance.get(cid, "")).strip()]
+        missing = [cid for cid in cast if not str(appearance.get(cid, "")).strip()]
         if missing:
-            problems.append(f"{sid}: appearance needs grooming and expression for {missing}")
+            problems.append(f"appearance needs grooming and expression for {missing}")
         if not isinstance(shot.get("others_present"), bool):
-            problems.append(f"{sid}: others_present must be true or false")
-        elif not shot["others_present"] and _has_unnamed_people(shot.get("action", "")):
-            problems.append(f"{sid}: the action shows unnamed people but others_present is false")
+            problems.append("others_present must be true or false")
+        elif not shot["others_present"]:
+            strangers = unnamed_people(shot.get("action", ""), len(cast))
+            if strangers:
+                problems.append(f"the action shows people beyond the {len(cast)} listed character(s) "
+                                f"({', '.join(strangers)}) but others_present is false")
         visible = " ".join([str(shot.get("action", ""))] + [str(text) for text in appearance.values()])
         unsupported = identity.unsupported_terms(visible, excerpts.get(sid, ""))
         if unsupported:
-            problems.append(f"{sid}: the narration at this moment never mentions {unsupported}; "
+            problems.append(f"the narration at this moment never mentions {unsupported}; "
                             "no injuries, decay or tears it does not state")
         banned = identity.forbidden_terms(shot.get("action", ""))
         if banned:
-            problems.append(f"{sid}: the action mentions excluded subjects {banned}")
+            problems.append(f"the action mentions excluded subjects {banned}")
         layout = identity.layout_terms(shot.get("action", ""))
         if layout:
-            problems.append(f"{sid}: the action asks for a page layout {layout}; describe one single image")
+            problems.append(f"the action asks for a page layout {layout}; describe one single image")
         if shot.get("shot_type") not in SHOT_TYPES:
-            problems.append(f"{sid}: shot_type must be one of {SHOT_TYPES}")
+            problems.append(f"shot_type must be one of {SHOT_TYPES}")
         if shot.get("face_visibility") not in FACE_VISIBILITY:
-            problems.append(f"{sid}: face_visibility must be one of {FACE_VISIBILITY}")
-        unknown = [cid for cid in shot.get("characters") or [] if cid not in characters]
+            problems.append(f"face_visibility must be one of {FACE_VISIBILITY}")
+        unknown = [cid for cid in cast if cid not in characters]
         if unknown or not isinstance(shot.get("characters", []), list):
-            problems.append(f"{sid}: unknown characters {unknown}")
+            problems.append(f"unknown characters {unknown}")
         if shot.get("location_id") not in locations:
-            problems.append(f"{sid}: location_id must be one of {sorted(locations)}")
+            problems.append(f"location_id must be one of {sorted(locations)}")
         if not str(shot.get("action", "")).strip():
-            problems.append(f"{sid}: action is required")
+            problems.append("action is required")
         reuse = shot.get("reuse_of") or ""
         if reuse and reuse not in seen:
-            problems.append(f"{sid}: reuse_of must name an earlier shot")
+            problems.append("reuse_of must name an earlier shot")
         seen.add(sid)
+    return {sid: problems for sid, problems in by_shot.items() if problems}, general
+
+
+def shot_warnings(shots: list[dict], policy: str) -> list[str]:
+    """Composition targets: reported in shot_list.json, never a failure."""
+    warnings = []
+    if not shots:
+        return warnings
     wide = sum(1 for shot in shots if shot.get("shot_type") in {"wide", "establishing"})
-    min_wide = float(getattr(config, "IMAGEGEN_MIN_WIDE_SHARE", 0.4))
-    if shots and wide / len(shots) < min_wide:
-        problems.append(f"at least {min_wide:.0%} of shots must be wide/establishing with small figures; "
-                        f"got {wide}/{len(shots)}")
+    target = float(getattr(config, "IMAGEGEN_MIN_WIDE_SHARE", 0.3))
+    if wide / len(shots) < target:
+        warnings.append(f"wide/establishing shots: {wide}/{len(shots)}, below the {target:.0%} target")
     full = sum(1 for shot in shots if shot.get("face_visibility") == "full")
     if policy == "limited_faces":
         limit = int(getattr(config, "IMAGEGEN_MAX_FULL_FACE_SHOTS", 6))
         if full > limit:
-            problems.append(f"at most {limit} full-face shots under the limited_faces policy; got {full}")
-    elif shots and (len(shots) - full) / len(shots) < 0.35:
-        problems.append(f"at least 40% of shots must not show a full face; got {len(shots) - full}/{len(shots)}")
-    if problems:
+            warnings.append(f"full-face shots: {full}, above the limited_faces target of {limit}")
+    elif (len(shots) - full) / len(shots) < 0.4:
+        warnings.append(f"shots without a full face: {len(shots) - full}/{len(shots)}, below the 40% target")
+    return warnings
+
+
+def validate_shots(value: dict, segments: list[dict], vb: dict, outline: dict, policy: str) -> list[dict]:
+    by_shot, general = shot_issues(value, segments, vb)
+    if by_shot or general:
+        problems = general + [f"{sid}: {problem}" for sid, items in by_shot.items() for problem in items]
         raise NarrativeValidationError("shot list problems: " + "; ".join(problems[:20]))
+    settings = value.get("settings") or {}
+    shots = value["shots"]
     for shot in shots:
         shot["setting_condition"] = str(settings.get(shot.get("location_id")) or "").strip()
     return shots
@@ -251,8 +278,8 @@ def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bo
     scene_info = {scene["scene_id"]: {"setting": scene.get("setting", ""), "summary": scene.get("summary", "")}
                   for scene in outline.get("scenes", [])}
     policy_rule = (
-        "Faces may be visible; between 40% and 60% of shots must NOT show a full face "
-        "(hands, silhouettes, over-the-shoulder, objects, wides)."
+        "Faces may be visible; aim for 40% to 60% of shots WITHOUT a full face "
+        "(hands, silhouettes, over-the-shoulder, objects, wides) — a target, not a quota."
         if policy != "limited_faces" else
         f"Identity retention is weak: use face_visibility none or partial, with at most "
         f"{getattr(config, 'IMAGEGEN_MAX_FULL_FACE_SHOTS', 6)} full-face hero shots."
@@ -276,9 +303,11 @@ moment; before the guests arrive it is false and the named characters are alone)
 face_visibility (none | partial | full) and reuse_of ("" or the shot_id of an EARLIER shot when
 showing the same image again is dramatically right, e.g. a motif returning).
 Mix wides, mediums, close-ups, inserts of objects, hands, silhouettes and over-the-shoulder shots;
-avoid two consecutive shots with the same framing. At least {getattr(config, "IMAGEGEN_MIN_WIDE_SHARE", 0.4):.0%}
-of shots are wide or establishing, with figures small inside vast, towering spaces; close-ups keep a
-dark background with a single light source. {policy_rule}
+avoid two consecutive shots with the same framing. Aim for about {getattr(config, "IMAGEGEN_MIN_WIDE_SHARE", 0.3):.0%}
+of shots wide or establishing, with figures small inside vast, towering spaces, where the narration
+allows it (a target, not a quota); close-ups keep a dark background with a single light source.
+When a shot shows only the listed characters, describing them as "two figures" is fine; any person
+beyond them (guests, staff, a crowd) requires others_present true. {policy_rule}
 {identity.image_prompt_rules()}"""
     context = f"""VISUAL BIBLE: {compact_json({key: vb.get(key) for key in ("characters", "locations")})}
 SEGMENTS: {compact_json([{"shot_id": s["shot_id"], "scene_id": s["scene_id"],
@@ -288,10 +317,18 @@ SEGMENTS: {compact_json([{"shot_id": s["shot_id"], "scene_id": s["scene_id"],
                          "scene_summary": scene_info.get(s["scene_id"], {}).get("summary", ""),
                          "default_location": (vbible.location_for_scene(vb, s["scene_id"]) or {}).get("location_id")}
                         for s in segments])}"""
+    def failing_shots(data: dict) -> dict:
+        # Repair only the shots that break a blocking rule; a whole-document
+        # problem (ids, settings) returns {} and gets the full repair instead.
+        by_shot, general = shot_issues(data, segments, vb)
+        return {} if general else by_shot
+
     shots = structured.generate_json(
         contract, "shot list", lambda data: validate_shots(data, segments, vb, outline, policy),
         generator=generate, context=context, stage="shot_list",
         temperature_key="outline", run_dir=str(output),
+        scene_scope=structured.SceneScope(issues=failing_shots, list_key="shots", id_key="shot_id",
+                                          prefer=True, item="shot"),
     )
     planned = []
     for segment, shot in zip(segments, shots):
@@ -311,10 +348,14 @@ SEGMENTS: {compact_json([{"shot_id": s["shot_id"], "scene_id": s["scene_id"],
         entry["prompt"] = composed["prompt"]
         entry["reference_slots"] = composed["slots"]
         planned.append(entry)
+    warnings = shot_warnings(planned, policy)
+    for warning in warnings:
+        print(f"   ⚠ shot list: {warning} (a target, not a failure)")
     result = {
         "version": SHOT_LIST_VERSION, "source_hash": source_hash, "policy": policy,
         "budget": int(getattr(config, "IMAGEGEN_MAX_UNIQUE_SHOTS", 50)),
-        "unique_shots": sum(1 for shot in planned if not shot["reuse_of"]), "shots": planned,
+        "unique_shots": sum(1 for shot in planned if not shot["reuse_of"]),
+        "warnings": warnings, "shots": planned,
     }
     atomic_write_json(path, result)
     return result
@@ -399,12 +440,44 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
 
 CROWD_HINT = ("Any other people are few, distant and indistinct in shadow, each clearly different in "
               "age, build, posture and clothing.")
-_GROUP_WORDS = {"guests", "men", "women", "people", "figures", "crowd", "others", "strangers",
-                "colleagues", "friends", "couples", "diners", "partygoers", "onlookers"}
+# Words that always mean people beyond the named cast.
+_UNNAMED_TERMS = re.compile(
+    r"\b(?:guests?|crowds?|strangers?|waiters?|waitress(?:es)?|staff|onlookers?|passers-?by|passerby|"
+    r"bystanders?|partygoers?|servants?|others|people in the background)\b")
+# Generic words that may just be the listed characters ("Two figures stand…").
+_GENERIC_PEOPLE = r"(?:figures|people|persons|men|women|silhouettes|shapes)"
+_COUNTS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
+           "nine": 9, "ten": 10, "a few": 3, "several": 3, "many": 5, "dozens of": 24}
+_COUNTED = re.compile(r"\b(\d+|" + "|".join(sorted(_COUNTS, key=len, reverse=True)) + r")\s+(?:[a-z-]+\s+){0,2}?"
+                      + _GENERIC_PEOPLE + r"\b")
+_OF_THEM = re.compile(r"\b(?:the\s+)?(\w+)\s+of\s+them\b")
 
 
-def _has_unnamed_people(action: str) -> bool:
-    return bool(set(re.findall(r"[a-z]+", str(action or "").lower())) & _GROUP_WORDS)
+def unnamed_people(action: str, cast_size: int) -> list[str]:
+    """Phrases in ``action`` that put more people in the frame than the ``cast_size`` named characters.
+
+    "Two figures stand…" with two listed characters is the cast itself; "two
+    guests", "a crowd" or "three figures" with two characters are not.
+    """
+    text = str(action or "").lower()
+    found = [match.group(0) for match in _UNNAMED_TERMS.finditer(text)]
+    counted = set()
+    for match in _COUNTED.finditer(text):
+        word = match.group(1)
+        count = int(word) if word.isdigit() else _COUNTS[word]
+        counted.add(match.start())
+        if count > cast_size:
+            found.append(match.group(0))
+    for match in _OF_THEM.finditer(text):
+        word = match.group(1)
+        count = int(word) if word.isdigit() else _COUNTS.get(word, 0)
+        if count > cast_size:
+            found.append(match.group(0))
+    if cast_size < 2:          # an uncounted plural is already more people than one character
+        for match in re.finditer(r"\b" + _GENERIC_PEOPLE + r"\b", text):
+            if not any(start <= match.start() < start + 40 for start in counted):
+                found.append(match.group(0))
+    return list(dict.fromkeys(found))
 
 
 def alone_hint(count: int) -> str:
@@ -421,7 +494,7 @@ def alone_hint(count: int) -> str:
 def _company(shot: dict, count: int) -> str:
     """Crowd or solitude sentence; shot lists before version 2 have no others_present."""
     others = shot.get("others_present")
-    if others is True or (others is None and _has_unnamed_people(shot.get("action", ""))):
+    if others is True or (others is None and unnamed_people(shot.get("action", ""), count)):
         return CROWD_HINT
     return alone_hint(count) if others is False else ""
 

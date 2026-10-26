@@ -453,7 +453,16 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   the room; otherwise the prompt says the characters are alone. Injury, decay and tears words
   (`blood`, `wound`, `scratch`, `bruise`, `injur*`, `cut on`, `grimy`, `stained`, `tearful`, …)
   are rejected in shot actions, GUI edits and composed prompts unless the shot's
-  `narration_excerpt` has the same family. The crimson accent examples are wine, a ring, a scarf
+  `narration_excerpt` has the same family. "Two figures" with two listed characters is the cast
+  itself; only more figures than characters, or `guests`, `crowd`, `strangers`, `waiter`, `staff`,
+  `onlookers`, `passers-by`, `others`, need `others_present`.
+- **Blocking vs advisory shot rules.** Ids, structure, excluded content, page layouts, unstated
+  injuries/decay/tears and unnamed people block: the planner repairs only the failing shots
+  (sent with their neighbours as read-only context and merged back by `shot_id`; a whole-list
+  problem such as missing settings gets the full repair), and the stage fails if that repair
+  fails. The share of wide/establishing shots (`IMAGEGEN_MIN_WIDE_SHARE`, 0.3, from `.env`) and of
+  shots without a full face are targets given to Gemini and reported as `warnings` in
+  `shot_list.json`, never a failure. The crimson accent examples are wine, a ring, a scarf
   or a candle reflection; this wording change keeps the style hash, so approved references stay
   valid.
 - **Always 16:9.** The frame comes from the sampler latent only: `IMAGEGEN_LATENT_SOURCE =
@@ -463,9 +472,8 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   empty 16:9 latent, and fails with a clear message if it is still wrong. The latent source is
   part of the image cache key.
 - **Dread and crowds.** The `engraving` suffix asks for deep black negative space, one small warm
-  light source and figures small within towering architecture; at least `IMAGEGEN_MIN_WIDE_SHARE`
-  (40 %) of shots must be wide or establishing, and close-ups sit on a dark background with one
-  light. Unnamed groups are rendered as a few distant, indistinct guests in shadow, each of a
+  light source and figures small within towering architecture; close-ups sit on a dark background
+  with one light. Unnamed groups are rendered as a few distant, indistinct guests in shadow, each of a
   different age, build, posture and clothing — never clones.
 - **Shot references.** Reference slots per shot: characters (≤ 2) → location (≤ 1) →
   style anchor (≤ 1). A failed shot gets two new seeds, then (only with `STOCK_ENABLED`, and only

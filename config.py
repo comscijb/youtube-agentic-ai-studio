@@ -214,8 +214,9 @@ IMAGEGEN_FREE_MEMORY_EVERY   = 10         # call ComfyUI /free between batches o
 # flawed images are regenerated with new seeds, then margins are cropped away.
 IMAGEGEN_IMAGE_CHECKS        = True
 IMAGEGEN_CHECK_RETRIES       = 2
-# At least this share of shots must be wide/establishing with small figures.
-IMAGEGEN_MIN_WIDE_SHARE      = 0.4
+# Target share of wide/establishing shots with small figures: guidance for the
+# shot planner and a warning in shot_list.json, never a failure.
+IMAGEGEN_MIN_WIDE_SHARE      = float(os.getenv("IMAGEGEN_MIN_WIDE_SHARE", "0.3"))   # target only: a warning, never a failure
 
 # ─────────────────────────────────────────
 #  Video Dimensions

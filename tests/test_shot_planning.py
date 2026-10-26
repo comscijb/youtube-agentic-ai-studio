@@ -212,9 +212,8 @@ class ShotListTests(unittest.TestCase):
     def test_validation_enforces_face_mix_reuse_and_ids(self):
         segments = self.segments()
         all_full = planned_shots(segments, full=len(segments))
-        with self.assertRaises(NarrativeValidationError) as caught:
-            shots_module.validate_shots(all_full, segments, VISUAL_BIBLE, OUTLINE, "reference")
-        self.assertIn("must not show a full face", str(caught.exception))
+        shots = shots_module.validate_shots(all_full, segments, VISUAL_BIBLE, OUTLINE, "reference")
+        self.assertIn("below the 40% target", " ".join(shots_module.shot_warnings(shots, "reference")))
         bad = planned_shots(segments)
         bad["shots"][0]["reuse_of"] = bad["shots"][1]["shot_id"]
         bad["shots"][1]["location_id"] = "beach"
@@ -224,8 +223,9 @@ class ShotListTests(unittest.TestCase):
         self.assertIn("location_id", str(caught.exception))
         limited = planned_shots(segments, full=3)
         with patch.object(config, "IMAGEGEN_MAX_FULL_FACE_SHOTS", 2):
-            with self.assertRaises(NarrativeValidationError):
-                shots_module.validate_shots(limited, segments, VISUAL_BIBLE, OUTLINE, "limited_faces")
+            shots = shots_module.validate_shots(limited, segments, VISUAL_BIBLE, OUTLINE, "limited_faces")
+            self.assertIn("above the limited_faces target of 2",
+                          " ".join(shots_module.shot_warnings(shots, "limited_faces")))
 
     def test_budget_is_applied_before_planning(self):
         with patch.object(config, "IMAGEGEN_MAX_UNIQUE_SHOTS", 2):
