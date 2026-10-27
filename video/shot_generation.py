@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import shutil
 import time
+from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
@@ -34,6 +35,7 @@ from agents import visual_bible as vbible
 from agents.narrative import atomic_write_json, load_json
 from video import visual_qa
 from video.imagegen_comfyui import ComfyUnavailable, GenerationFailed, ImageGenerator, ImageJob
+from video.qa import fixes
 
 PORTRAIT_SIZE = (1024, 1024)
 CANDIDATES_FILE = "reference_candidates.json"
@@ -291,9 +293,30 @@ def stock_fallback(output_dir, vb: dict, shot: dict) -> Callable[[ImageJob], dic
     return fallback
 
 
+def shot_job(shot: dict, vb: dict, output: Path, seed_offset: int = 0) -> tuple[ImageJob, dict]:
+    composed = shots_module.compose_shot(shot, vb, output)
+    job = ImageJob(job_id=shot["shot_id"], prompt=composed["prompt"], seed=composed["seed"] + seed_offset,
+                   output_path=str(output / "images" / "shots" / f"{shot['shot_id']}.jpg"),
+                   kind=composed["kind"], references=composed["references"], size=native_size())
+    return job, composed
+
+
+def _in_scope(shot: dict, only: str | None) -> bool:
+    return not only or shot["scene_id"] == only or shot["shot_id"] == only
+
+
 def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None = None,
                    only: str | None = None, progress: Callable[[str], None] = print,
-                   clock: Callable[[], float] = time.monotonic) -> dict:
+                   clock: Callable[[], float] = time.monotonic, qa=None, fix_only: bool = False) -> dict:
+    """Phase-batched so Klein and the QA VLM never share the 8 GB of VRAM (Phase 3.5-E):
+
+    1. generate every pending shot (Klein loaded), layer-1 QA inline on the CPU;
+    2. free ComfyUI's models, the local VLM answers the batch's questions, unload it;
+    3. Klein again: region edits / new seeds for the shots that failed;
+    4. repeat 2-3 for the fixed shots only (``IMAGEGEN_QA_ROUNDS``).
+
+    ``fix_only`` skips step 1 and works on shots whose stored QA failed (or was never run).
+    Everything is checkpointed in shot_list.json, so an interrupted run resumes."""
     output = Path(output_dir)
     vb = load_json(output / vbible.FILE_NAME)
     shot_list = load_json(output / shots_module.FILE_NAME)
@@ -307,9 +330,8 @@ def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None =
               "or with --approve character:<id>:<n>). No shot is generated before approval.")
     shots = shot_list["shots"]
     narration = shots_module.scene_narration(shots)
-    pending = [shot for shot in shots if not shot.get("reuse_of")
-               and (not only or shot["scene_id"] == only or shot["shot_id"] == only)
-               and not _done(shot, output)]
+    pending = [shot for shot in shots if not shot.get("reuse_of") and _in_scope(shot, only)
+               and not _done(shot, output)] if not fix_only else []
     # Flagged shots broke a blocking rule the planner could not repair: skipped until edited.
     flagged = [shot["shot_id"] for shot in pending if shot.get("flags")]
     queue = [shot for shot in pending if not shot.get("flags")]
@@ -324,14 +346,29 @@ def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None =
     every = max(1, int(getattr(config, "IMAGEGEN_FREE_MEMORY_EVERY", 10)))
     started = clock()
     summary = {"generated": 0, "cached": 0, "fallback": 0, "failed": [], "held": [], "total": len(queue),
-               "flagged": flagged, "warned": warned, "qa_failed": []}
+               "flagged": flagged, "warned": warned, "qa_failed": [], "qa_flagged": [], "qa_edits": 0,
+               "qa_regenerations": 0}
+    use_qa = visual_qa.enabled()
+    if use_qa and qa is None:
+        from video.qa.layered import LayeredQA
+        qa = LayeredQA(comfy=generator.client, progress=progress)
+    items, pendings = {}, {}
+
+    def expected(shot):
+        return visual_qa.expected_for(shot, vb, narration.get(shot.get("scene_id", ""), ""))
+
+    def track(shot):
+        items[shot["shot_id"]] = {"item": shot, "image": output / shot["image_path"], "expected": expected(shot),
+                                  "factory": lambda offset, shot=shot: shot_job(shot, vb, output, offset)[0]}
+        return items[shot["shot_id"]]
+
+    if queue:
+        progress(f"   Phase 1/3 — generating {len(queue)} shot(s)"
+                 + (f", ~{len(queue) * per / 60:.0f} min" if per else "") + (" + layer-1 QA (CPU)" if use_qa else ""))
     for index, shot in enumerate(queue, 1):
-        composed = shots_module.compose_shot(shot, vb, output)
+        job, composed = shot_job(shot, vb, output)
         for note in shots_module.prompt_advice(composed["prompt"], narration.get(shot.get("scene_id", ""), "")):
             progress(f"   ⚠ {shot['shot_id']}: {note} (advisory; generating anyway)")
-        job = ImageJob(job_id=shot["shot_id"], prompt=composed["prompt"], seed=composed["seed"],
-                       output_path=str(output / "images" / "shots" / f"{shot['shot_id']}.jpg"),
-                       kind=composed["kind"], references=composed["references"], size=native_size())
         remaining = (len(queue) - index + 1) * per if per else None
         progress(f"   → Shot {index}/{len(queue)} {shot['shot_id']} ({composed['kind']}, "
                  f"{len(composed['references'])} refs)"
@@ -359,73 +396,97 @@ def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None =
                 summary["failed"].append(shot["shot_id"])
                 progress(f"   ⚠ {shot['shot_id']}: {exc}")
             continue
-        if not record.get("fallback_from") and visual_qa.enabled():
-            expected = visual_qa.expected_for(shot, vb, narration.get(shot.get("scene_id", ""), ""))
-            record, result = qa_and_retry(generator, job, record, expected, progress)
-            shot["qa"] = {"status": result["status"], "notes": visual_qa.qa_note(result)}
-            if result["status"] == "fail":
-                summary["qa_failed"].append(shot["shot_id"])
         shot["prompt"] = composed["prompt"]
         shot["reference_slots"] = composed["slots"]
         shot.pop("hold_previous", None)
         shot["image_path"] = str(Path(job.output_path).relative_to(output))
         shot["provider"] = record.get("provider", "comfyui")
         shot["generated_at"] = _now()
+        shot.pop("qa", None)                              # a new image starts a new QA budget
         key = "fallback" if record.get("fallback_from") else ("cached" if record.get("cache_hit") else "generated")
         summary[key] += 1
         _record_provenance(output, [record])
         atomic_write_json(output / shots_module.FILE_NAME, shot_list)
+        if use_qa and not record.get("fallback_from"):
+            entry = track(shot)
+            pendings[shot["shot_id"]] = qa.prepare(entry["image"], entry["expected"])     # layer 1, CPU
         if index % every == 0:
             generator.client.free_memory()
+    if use_qa:
+        for shot in shots:                                # resume: unchecked or failed shots in scope
+            if shot.get("reuse_of") or not _in_scope(shot, only) or shot["shot_id"] in items:
+                continue
+            if shot.get("image_path") and (output / shot["image_path"]).is_file() and shot.get("provider") != "stock" \
+                    and (fixes.needs_qa(shot) or fixes.needs_fix(shot)):
+                track(shot)
+        save = lambda: atomic_write_json(output / shots_module.FILE_NAME, shot_list)
+        outcome = qa_rounds(generator, output, vb, list(items.values()), qa, save, progress=progress,
+                            pendings=pendings, per=per)
+        summary.update(outcome)
     summary["seconds"] = round(clock() - started, 1)
     return summary
 
 
-QA_SEED_OFFSET = 3_000_017
+def qa_rounds(generator: ImageGenerator, output: Path, vb: dict, items: list[dict], qa, save: Callable[[], None],
+              *, progress: Callable[[str], None] = print, pendings: dict | None = None,
+              per: float | None = None, rounds: int | None = None) -> dict:
+    """QA → fix rounds over ``items`` ({"item", "image", "expected", "factory"}); the VLM and Klein
+    alternate, never loaded together. Returns the QA part of the summary."""
+    rounds = int(rounds if rounds is not None else getattr(config, "IMAGEGEN_QA_ROUNDS", 2))
+    pendings = dict(pendings or {})
+    outcome = {"qa_failed": [], "qa_flagged": [], "qa_edits": 0, "qa_regenerations": 0, "qa_checked": 0}
+    check = [entry for entry in items if fixes.needs_qa(entry["item"])]
+    fix = [entry for entry in items if not fixes.needs_qa(entry["item"]) and fixes.needs_fix(entry["item"])]
+    for round_number in range(rounds + 1):
+        if check:
+            for entry in check:                           # layer 1 for anything not prepared inline
+                shot_id = entry["item"]["shot_id"]
+                if shot_id not in pendings:
+                    budget = (entry["item"].get("qa") or {}).get("edits", 0)
+                    pendings[shot_id] = qa.prepare(entry["image"], entry["expected"], budget)
+                else:
+                    pendings[shot_id]["edits_done"] = (entry["item"].get("qa") or {}).get("edits", 0)
+            batch = [pendings[entry["item"]["shot_id"]] for entry in check]
+            questions = sum(len(pending["questions"]) for pending in batch)
+            progress(f"   Phase 2/3 — QA round {round_number + 1}: {len(check)} shot(s), {questions} VLM "
+                     f"question(s) (~{questions * 1.5 / 60:.1f} min; Klein unloaded first)")
+            qa.answer(batch)
+            for entry, pending in zip(check, batch):
+                result = qa.finish(pending)
+                fixes.record_result(entry["item"], result)
+                update_provenance(output, entry["item"]["shot_id"], visual_qa=result,
+                                  qa_actions=entry["item"]["qa"].get("actions", []))
+                if result["status"] == "fail":
+                    progress(f"   ⛔ {entry['item']['shot_id']} → {result['verdict']}: {result['verdict_reason']}")
+                outcome["qa_checked"] += 1
+            pendings = {}
+            save()
+            fix = [entry for entry in check if fixes.needs_fix(entry["item"])] + \
+                  [entry for entry in fix if entry not in check]
+        if not fix or round_number >= rounds:
+            break
+        progress(f"   Phase 3/3 — fixing {len(fix)} shot(s) with Klein"
+                 + (f" (~{len(fix) * per / 60:.0f} min)" if per else ""))
+        check = []
+        for entry in fix:
+            action = fixes.apply(generator, output, entry["item"], vb, image_path=entry["image"],
+                                 job_factory=entry["factory"], progress=progress)
+            if action["action"] in ("edit", "regenerate"):
+                outcome["qa_edits" if action["action"] == "edit" else "qa_regenerations"] += 1
+                check.append(entry)
+            update_provenance(output, entry["item"]["shot_id"], qa_actions=entry["item"]["qa"].get("actions", []))
+            save()
+        fix = []
+    for entry in items:
+        qa_state = entry["item"].get("qa") or {}
+        if qa_state.get("flagged"):
+            outcome["qa_flagged"].append(entry["item"]["shot_id"])
+        elif qa_state.get("status") == "fail":
+            outcome["qa_failed"].append(entry["item"]["shot_id"])
+    return outcome
 
 
-def qa_and_retry(generator: ImageGenerator, job: ImageJob, record: dict, expected: dict,
-                 progress: Callable[[str], None] = print) -> tuple[dict, dict]:
-    """Visual QA of a generated image; on a blocking failure, up to IMAGEGEN_QA_RETRIES new
-    seeds. The best attempt is kept at ``job.output_path`` and returned (record, QA result)."""
-    result = visual_qa.review(job.output_path, expected)
-    if result["status"] == "skipped":
-        progress(f"   ⚠ {job.job_id}: {result['warning']}")
-        record["visual_qa"] = result
-        return record, result
-    attempts = [{"seed": record.get("seed"), "status": result["status"], "blocking": result["blocking"]}]
-    best_record, best_result = record, result
-    keep = visual_qa.path_with_suffix(job.output_path, ".qa-best")
-    shutil.copy2(job.output_path, keep)
-    retries = int(getattr(config, "IMAGEGEN_QA_RETRIES", 2))
-    try:
-        for attempt in range(1, retries + 1):
-            if best_result["status"] != "fail":
-                break
-            progress(f"   ⚠ {job.job_id}: visual QA failed ({'; '.join(best_result['blocking'])}); "
-                     f"new seed {attempt}/{retries}")
-            try:
-                candidate = generator.generate(job, job.seed + QA_SEED_OFFSET * attempt)
-            except (GenerationFailed, OSError, ValueError) as exc:
-                attempts.append({"seed": job.seed + QA_SEED_OFFSET * attempt, "status": "error",
-                                 "error": str(exc)[:200]})
-                continue
-            checked = visual_qa.review(job.output_path, expected)
-            attempts.append({"seed": candidate.get("seed"), "status": checked["status"],
-                             "blocking": checked["blocking"]})
-            if checked["status"] == "skipped":
-                break
-            if visual_qa.better(checked, best_result):
-                best_record, best_result = candidate, checked
-                shutil.copy2(job.output_path, keep)
-    finally:
-        shutil.move(str(keep), job.output_path)          # the best attempt is the shot
-    if best_result["status"] == "fail":
-        progress(f"   ⛔ {job.job_id}: visual QA still fails after {retries} new seed(s); best attempt kept "
-                 f"and flagged ({'; '.join(best_result['blocking'])})")
-    best_result = {**best_result, "attempts": attempts}
-    best_record["visual_qa"] = best_result
-    return best_record, best_result
+QA_SEED_OFFSET = fixes.QA_SEED_OFFSET
 
 
 # The figure must dominate the thumbnail (the evidence one left the whole left half empty).
@@ -450,8 +511,11 @@ def thumbnail_shot(vb: dict, brief: dict, shot_list: dict | None = None) -> dict
             "seed": thumb.get("seed", vbible.seed_for("thumbnail", "episode")), "seed_offset": 0}
 
 
+THUMBNAIL_QA_FILE = "thumbnail_qa.json"
+
+
 def generate_thumbnail_image(output_dir, generator: ImageGenerator,
-                             progress: Callable[[str], None] = print) -> str:
+                             progress: Callable[[str], None] = print, qa=None) -> str:
     output = Path(output_dir)
     vb = load_json(output / vbible.FILE_NAME) or {}
     brief = load_json(output / "story_brief.json") or load_json(output / "research.json") or {}
@@ -464,8 +528,14 @@ def generate_thumbnail_image(output_dir, generator: ImageGenerator,
                    output_path=str(output / "thumbnail_bg.jpg"), kind=composed["kind"],
                    references=composed["references"], size=native_size(), final_size=(1280, 720))
     record = generator.generate_with_retry(job, new_seeds=2 if identity.is_illustration() else 1)
-    if visual_qa.enabled():
-        expected = visual_qa.expected_for(shot, vb, str(brief.get("thumbnail_concept") or ""))
-        record, _ = qa_and_retry(generator, job, record, expected, progress)
     _record_provenance(output, [record])
+    if visual_qa.enabled():                           # same QA → fix path as the shots
+        from video.qa.layered import LayeredQA
+        holder = {"shot_id": "thumbnail", "qa": {}}
+        factory = lambda offset: replace(job, seed=job.seed + offset)
+        entry = {"item": holder, "image": Path(job.output_path), "factory": factory,
+                 "expected": visual_qa.expected_for(shot, vb, str(brief.get("thumbnail_concept") or ""))}
+        save = lambda: atomic_write_json(output / THUMBNAIL_QA_FILE, holder)
+        qa_rounds(generator, output, vb, [entry], qa or LayeredQA(comfy=generator.client, progress=progress),
+                  save, progress=progress)
     return job.output_path

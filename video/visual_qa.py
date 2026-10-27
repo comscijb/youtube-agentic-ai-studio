@@ -10,9 +10,10 @@ into blocking and advisory findings:
 * advisory — unexpected extra people beyond the count, borders/panels,
   legibility notes.
 
-``shot_generation`` regenerates a shot that fails a blocking check with new
-seeds (``IMAGEGEN_QA_RETRIES``), keeps the best attempt and flags it. When Gemini
-is unavailable the QA is skipped with a warning and never blocks generation.
+Since Phase 3.5 the generation pipeline uses the local-first layered QA
+(``video/qa/``); this module still provides ``enabled()`` and ``expected_for``
+(what a shot should show), and the whole-image Gemini checklist kept for
+reference. When Gemini is unavailable ``review`` is skipped with a warning.
 """
 from __future__ import annotations
 

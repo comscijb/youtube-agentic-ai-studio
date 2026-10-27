@@ -24,16 +24,8 @@ from agents.narrative import atomic_write_json, load_json
 from studio import projects
 from video import shot_generation as gen
 from video import visual_qa
-from video.qa import base
+from video.qa import fixes
 from video.qa.layered import LayeredQA, configured_layers
-
-
-def shot_qa(result: dict, previous: dict | None = None) -> dict:
-    """What the shot keeps for the GUI (the full result goes to the manifest)."""
-    previous = previous or {}
-    return {"status": result["status"], "verdict": result["verdict"], "reason": result["verdict_reason"],
-            "issues": result["issues"], "people_count": result.get("people_count"), "layers": result["layers"],
-            "notes": base.notes(result), "edits": previous.get("edits", 0), "history": previous.get("history", [])}
 
 
 def run(output, *, only: str | None = None, layers: list[str] | None = None, qa: LayeredQA | None = None,
@@ -63,7 +55,7 @@ def run(output, *, only: str | None = None, layers: list[str] | None = None, qa:
     qa.answer(pendings)
     for shot, pending in zip(selected, pendings):
         result = qa.finish(pending)
-        shot["qa"] = shot_qa(result, shot.get("qa"))
+        fixes.record_result(shot, result)
         gen.update_provenance(output, shot["shot_id"], visual_qa=result)
         summary["checked"] += 1
         if result["status"] == "pass":

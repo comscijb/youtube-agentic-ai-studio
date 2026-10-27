@@ -17,7 +17,7 @@ from agents.narrative import atomic_write_json, load_json
 from tests.fake_comfy import FakeComfy
 from tests.style_isolation import setUpModule, tearDownModule  # noqa: F401
 from tests.test_shot_planning import VISUAL_BIBLE
-from tests.test_visual_qa import NO_GLASSES, PASS, responder
+from tests.test_region_edit import INFO
 from video import shot_generation as gen
 from video.imagegen_comfyui import ComfyClient, ImageGenerator
 
@@ -68,18 +68,26 @@ class ThumbnailTests(unittest.TestCase):
             gen.generate_thumbnail_image(self.output, self.generator())
         self.assertEqual(self.fake.prompts, [])
 
-    def test_visual_qa_runs_on_the_thumbnail(self):
+    def test_thumbnail_goes_through_the_same_qa_and_edit_path(self):
+        from tests.test_qa_pipeline import Detector, GlassesVLM
+        from video.qa.layered import LayeredQA
         self.approve()
-        with patch.object(config, "IMAGEGEN_VISUAL_QA", True), \
-                patch("agents.gemini_client.generate", side_effect=responder(NO_GLASSES, PASS)), \
-                redirect_stdout(io.StringIO()):
-            path = gen.generate_thumbnail_image(self.output, self.generator(), progress=lambda _: None)
-        self.assertEqual(len(self.fake.prompts), 2)              # regenerated once for the missing glasses
+        self.fake.object_info = INFO
+        log = []
+        client = ComfyClient("http://127.0.0.1:8188", session=self.fake, sleep=lambda _: None)
+        qa = LayeredQA(["deterministic", "local_vlm"], detector=Detector(), vlm=GlassesVLM(log, ["no", "yes"]),
+                       comfy=client, progress=lambda _: None)
+        with patch.object(config, "IMAGEGEN_VISUAL_QA", True), patch.object(config, "IMAGEGEN_IMAGE_CHECKS", False),                 redirect_stdout(io.StringIO()):
+            path = gen.generate_thumbnail_image(self.output, ImageGenerator(self.output, client),
+                                                progress=lambda _: None, qa=qa)
+        self.assertEqual(len(self.fake.prompts), 2)              # generated, then one region edit for the glasses
+        self.assertEqual(self.fake.prompts[1]["33"]["class_type"], "CreateBoundingBoxes")
+        self.assertEqual(log, ["vlm", "unload vlm", "vlm", "unload vlm"])
         with Image.open(path) as image:
             self.assertEqual(image.size, (1280, 720))
-        record = next(item for item in load_json(self.output / "asset_manifest.json")["generated_assets"]
-                      if item["job_id"] == "thumbnail")
-        self.assertEqual(record["visual_qa"]["status"], "pass")
+        saved = load_json(self.output / gen.THUMBNAIL_QA_FILE)["qa"]
+        self.assertEqual((saved["verdict"], saved["edits"]), ("pass", 1))
+        self.assertTrue((self.output / "images/shots/history/thumbnail_v1.jpg").is_file())
 
 
 if __name__ == "__main__":

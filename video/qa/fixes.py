@@ -42,6 +42,26 @@ def state(item: dict) -> dict:
     return qa
 
 
+def record_result(item: dict, result: dict) -> dict:
+    """Store a QA result on the shot, keeping its edit/regeneration budget, history and actions."""
+    qa = state(item)
+    qa.update(version=result.get("version"), status=result["status"], verdict=result["verdict"],
+              reason=result.get("verdict_reason", ""), issues=result.get("issues", []),
+              people_count=result.get("people_count"), layers=result.get("layers", []),
+              warnings=result.get("warnings", []), notes=base.notes(result), checked_at=_now())
+    return qa
+
+
+def needs_qa(item: dict) -> bool:
+    qa = item.get("qa") or {}
+    return qa.get("version") != base.QA_VERSION or qa.get("verdict") == "recheck"
+
+
+def needs_fix(item: dict) -> bool:
+    qa = item.get("qa") or {}
+    return qa.get("status") == "fail" and qa.get("verdict") in ("edit", "regenerate") and not qa.get("flagged")
+
+
 def save_version(output, item: dict, image_path: Path) -> dict:
     """Copy the current image to history/<id>_vN.jpg with the QA verdict it has now."""
     qa = state(item)
