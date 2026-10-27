@@ -38,6 +38,7 @@ from PIL import Image, ImageDraw
 
 import config
 from studio import projects
+from studio.filenames import safe_filename
 from video import imagegen_comfyui as comfy
 from video import imagegen_templates as templates
 from video.qa import base, focused
@@ -546,7 +547,7 @@ def run(output: Path, *, client=None, models: list[str] | None = None, swap: boo
     if not client.available():
         raise comfy.ComfyUnavailable(f"ComfyUI is not reachable at {client.base_url}. Start it and run again.")
     findings = inspect(client.object_info())
-    images = {item["shot_id"]: Path(output) / "images" / "shots" / f"{item['shot_id']}.jpg"
+    images = {item["shot_id"]: Path(output) / "images" / "shots" / f"{safe_filename(item['shot_id'])}.jpg"
               for item in fixture["images"]}
     missing = [shot for shot, path in images.items() if not path.is_file()]
     report = {"version": 1, "mode": mode, "created_at": time.strftime("%Y-%m-%dT%H:%M:%S"), "project": Path(output).name,

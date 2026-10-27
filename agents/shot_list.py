@@ -30,6 +30,7 @@ from agents import visual_bible as vbible
 from agents.gemini_client import generate
 from agents.narrative import NarrativeValidationError, atomic_write_json, extract_json, load_json, stable_hash
 from agents.structured import compact_json
+from studio.filenames import safe_filename
 
 SHOT_LIST_VERSION = 2   # the shot-prompt version: bumping it re-plans and regenerates shots
 FILE_NAME = "shot_list.json"
@@ -512,7 +513,7 @@ def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bo
         scene_segments = [segment for segment in segments if segment["scene_id"] == scene_id]
         key = stable_hash({"version": SHOT_LIST_VERSION, "contract": contract,
                            "context": _scene_context(scene_id, scene_segments, vb, outline)})
-        checkpoint = output / CHECKPOINT_DIR / f"{scene_id}.json"
+        checkpoint = output / CHECKPOINT_DIR / f"{safe_filename(scene_id)}.json"
         saved = load_json(checkpoint) or {}
         if saved.get("key") == key and not saved.get("flags"):
             result = saved
@@ -648,7 +649,7 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
     for cid in characters:
         path = vbible.approved_reference(vb, "character", cid, output_dir)
         if path or assume_references:
-            references.append(path or f"character_refs/{cid}.png")
+            references.append(path or f"character_refs/{safe_filename(cid)}.png")
             slots.append({"slot": len(references) - 1, "kind": "character", "id": cid})
             entry = vbible.character(vb, cid) or {}
             ref_names[cid] = f"the {_noun(entry.get('descriptor', ''))} from the " \

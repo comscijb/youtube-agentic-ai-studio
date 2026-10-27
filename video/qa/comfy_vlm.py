@@ -80,6 +80,7 @@ class ComfyVLM:
         self.calls = 0
         self.seconds = 0.0
         self.texts: dict[str, str] = {}       # the model's raw replies of the last ask(), for the probe report
+        self._saved = 0                       # crops written by the current ask(): q0000.png, q0001.png…
 
     def problems(self) -> list[str]:
         if not self.client.available():
@@ -117,9 +118,12 @@ class ComfyVLM:
         return graph
 
     def _run(self, questions: list[base.Question], folder: Path) -> dict[str, str]:
+        """Crops are saved as q0000.png, q0001.png… by position, never from the qid (layered QA
+        prefixes ids with ``<image>|``, invalid on Windows); position → qid stays in memory."""
         names = []
         for question in questions:
-            path = folder / f"{question.qid.replace(':', '_').replace(' ', '_')[:60]}.png"
+            path = folder / f"q{self._saved:04d}.png"
+            self._saved += 1
             question.image.save(path, "PNG")
             names.append(self.client.upload_image(path))
         graph = self.graph([(name, question.prompt) for name, question in zip(names, questions)])
@@ -136,6 +140,7 @@ class ComfyVLM:
     def ask(self, questions: list[base.Question]) -> dict[str, str]:
         answers = {}
         self.texts = {}
+        self._saved = 0
         try:
             with tempfile.TemporaryDirectory() as folder:
                 for start in range(0, len(questions), BATCH):

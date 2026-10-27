@@ -4,6 +4,7 @@ import json
 import tempfile
 import unittest
 from contextlib import redirect_stdout
+from datetime import datetime
 from pathlib import Path
 
 from PIL import Image
@@ -241,6 +242,8 @@ class RealDetectorCalibrationTests(unittest.TestCase):
             path = PROJECT_SHOTS / f"{item['shot_id']}.jpg"
             if not path.is_file():
                 self.skipTest(f"{path} missing")
+            if datetime.fromtimestamp(path.stat().st_mtime) > datetime.fromisoformat(fixture["frames_older_than"]):
+                self.skipTest(f"{path} was regenerated after the probe; the fixture truth no longer applies")
             issues = det.layer1(detector.detect(path), probe.fixture_expected(item, fixture["characters"]))
             kinds = {i["type"] for i in issues if i["severity"] == "blocking"}
             self.assertEqual("duplicate_person" in kinds, item["truth"]["duplicate_person"], item["shot_id"])

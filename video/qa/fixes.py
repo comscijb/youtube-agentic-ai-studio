@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Callable
 
 import config
+from studio.filenames import safe_filename
 from video.imagegen_comfyui import GenerationFailed, ImageJob
 from video.qa import base, decision, edits
 
@@ -66,7 +67,7 @@ def save_version(output, item: dict, image_path: Path) -> dict:
     """Copy the current image to history/<id>_vN.jpg with the QA verdict it has now."""
     qa = state(item)
     number = len(qa["history"]) + 1
-    relative = HISTORY / f"{item['shot_id']}_v{number}{image_path.suffix or '.jpg'}"
+    relative = HISTORY / f"{safe_filename(item['shot_id'])}_v{number}{image_path.suffix or '.jpg'}"
     target = Path(output) / relative
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(image_path, target)

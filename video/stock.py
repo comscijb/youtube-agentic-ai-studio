@@ -23,6 +23,7 @@ import requests
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 import config
+from studio.filenames import safe_filename
 from video import stock_scoring as scoring
 
 
@@ -630,7 +631,7 @@ def _valid_key(value: str) -> bool:
 
 
 def _safe_id(value: str) -> str:
-    return re.sub(r"[^A-Za-z0-9_.-]", "_", str(value))[:80]
+    return safe_filename(re.sub(r"[^A-Za-z0-9_.-]", "_", str(value)), max_length=80)
 
 
 def _redact_credential_values(value: str) -> str:

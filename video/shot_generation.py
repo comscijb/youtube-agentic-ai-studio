@@ -33,6 +33,7 @@ from agents import identity
 from agents import shot_list as shots_module
 from agents import visual_bible as vbible
 from agents.narrative import atomic_write_json, load_json
+from studio.filenames import safe_filename
 from video import visual_qa
 from video.imagegen_comfyui import ComfyUnavailable, GenerationFailed, ImageGenerator, ImageJob
 from video.qa import fixes
@@ -162,7 +163,7 @@ def generate_reference_candidates(vb: dict, output_dir, generator: ImageGenerato
             jobs.append(("character", cid, number, ImageJob(
                 job_id=f"ref_{cid}_{number}", prompt=portrait_prompt(vb, cid, view),
                 seed=base + number,
-                output_path=str(output / "character_refs" / "candidates" / f"{cid}_{number}.jpg"),
+                output_path=str(output / "character_refs" / "candidates" / f"{safe_filename(cid)}_{number}.jpg"),
                 size=PORTRAIT_SIZE, final_size=PORTRAIT_SIZE)))
     if locations:
         for location in vbible.recurring_locations(vb):
@@ -173,7 +174,7 @@ def generate_reference_candidates(vb: dict, output_dir, generator: ImageGenerato
                 jobs.append(("location", lid, number, ImageJob(
                     job_id=f"loc_{lid}_{number}", prompt=location_prompt(vb, lid),
                     seed=location.get("seed", vbible.seed_for("location", lid)) + number,
-                    output_path=str(output / "location_refs" / "candidates" / f"{lid}_{number}.jpg"),
+                    output_path=str(output / "location_refs" / "candidates" / f"{safe_filename(lid)}_{number}.jpg"),
                     size=native_size())))
     for index, (kind, ident, number, job) in enumerate(jobs, 1):
         progress(f"   → Reference candidate {index}/{len(jobs)}: {kind} {ident} #{number}")
@@ -196,11 +197,11 @@ def approve_reference(vb: dict, kind: str, ident: str, number: int, output_dir) 
     if not chosen or not (output / chosen["path"]).is_file():
         raise FileNotFoundError(f"no candidate #{number} for {kind} {ident}; generate candidates first")
     folder = "character_refs" if kind == "character" else "location_refs"
-    target = output / folder / f"{ident}.png"
+    target = output / folder / f"{safe_filename(ident)}.png"
     target.parent.mkdir(parents=True, exist_ok=True)
     with Image.open(output / chosen["path"]) as image:
         image.convert("RGB").save(target, "PNG")
-    return vbible.record_approval(vb, kind, ident, f"{folder}/{ident}.png", seed=chosen["seed"],
+    return vbible.record_approval(vb, kind, ident, f"{folder}/{target.name}", seed=chosen["seed"],
                                   prompt=chosen["prompt"], output_dir=output)
 
 
@@ -296,7 +297,7 @@ def stock_fallback(output_dir, vb: dict, shot: dict) -> Callable[[ImageJob], dic
 def shot_job(shot: dict, vb: dict, output: Path, seed_offset: int = 0) -> tuple[ImageJob, dict]:
     composed = shots_module.compose_shot(shot, vb, output)
     job = ImageJob(job_id=shot["shot_id"], prompt=composed["prompt"], seed=composed["seed"] + seed_offset,
-                   output_path=str(output / "images" / "shots" / f"{shot['shot_id']}.jpg"),
+                   output_path=str(output / "images" / "shots" / f"{safe_filename(shot['shot_id'])}.jpg"),
                    kind=composed["kind"], references=composed["references"], size=native_size())
     return job, composed
 
