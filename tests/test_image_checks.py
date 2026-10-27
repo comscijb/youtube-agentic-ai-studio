@@ -228,10 +228,10 @@ class PromptRuleTests(unittest.TestCase):
                 "location": "loft", "action": "Julian toasts the guests at the long table",
                 "face_visibility": "partial", "seed": 1, "seed_offset": 0}
         composed = shots_module.compose_shot(shot, VISUAL_BIBLE, "unused", assume_references=True)
-        self.assertIn(shots_module.CROWD_HINT, composed["prompt"])
+        self.assertIn("plus a few distant, indistinct guests in shadow, each clearly different in age",
+                      composed["prompt"])
         alone = dict(shot, action="Julian waits alone")
-        self.assertNotIn(shots_module.CROWD_HINT,
-                         shots_module.compose_shot(alone, VISUAL_BIBLE, "unused")["prompt"])
+        self.assertNotIn("guests in shadow", shots_module.compose_shot(alone, VISUAL_BIBLE, "unused")["prompt"])
 
     def test_gui_rejects_layout_requests(self):
         import gui

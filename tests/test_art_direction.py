@@ -125,18 +125,20 @@ class ComposeTests(unittest.TestCase):
         self.assertIn("the woman from the first image, with dark bob, wearing an ivory silk shirt, light make-up, "
                       "poised, hair neatly pinned, composed expression", prompt)
         self.assertIn("vaulted concrete loft, blackened oak table, smoked decanters, immaculate", prompt)
-        self.assertIn("Alone in the room.", prompt)
-        self.assertNotIn(shots_module.CROWD_HINT, prompt)
+        self.assertIn("Exactly one person in the scene: the woman from the first image.", prompt)
+        self.assertNotIn("guests", prompt)
 
     def test_two_alone_empty_room_and_guests(self):
         two = self.shot(characters=["julian_vance", "elena_vance"])
-        self.assertIn("The two of them alone in the room.",
+        self.assertIn("Exactly two people in the scene: the man with horn-rimmed glasses and the woman "
+                      "with dark bob; nobody else is present.",
                       shots_module.compose_shot(two, VISUAL_BIBLE, "unused")["prompt"])
         empty = self.shot(characters=[], shot_type="insert")
         self.assertIn("The room is empty and still.",
                       shots_module.compose_shot(empty, VISUAL_BIBLE, "unused")["prompt"])
         party = self.shot(others_present=True, action="She watches the guests")
-        self.assertIn(shots_module.CROWD_HINT, shots_module.compose_shot(party, VISUAL_BIBLE, "unused")["prompt"])
+        self.assertIn("plus a few distant, indistinct guests in shadow",
+                      shots_module.compose_shot(party, VISUAL_BIBLE, "unused")["prompt"])
 
 
 class PipelineTests(unittest.TestCase):

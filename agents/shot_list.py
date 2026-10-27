@@ -673,10 +673,11 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
                                    ref_names.get(cid, "")) for cid in characters]
     action = _cap(str(shot.get("action", "")).rstrip("."), ACTION_TEXT_MAX)
     article = "an" if noun[0] in "aeiou" else "a"
-    crowd = _company(shot, len(characters))
-    if background:      # a 4th+ listed character: no reference slot left, kept far and indistinct
-        crowd = (f"{crowd} Further back, {len(background)} more distant, indistinct "
-                 f"figure{'s' if len(background) > 1 else ''} in shadow.").strip()
+    others = shot.get("others_present")
+    if others is None:      # shot lists before version 2 have no others_present
+        others = bool(unnamed_people(shot.get("action", ""), len(characters)))
+    # Explicit headcount; a 4th+ listed character (no slot left) stays far and indistinct.
+    crowd = headcount([short_name(cid, vb, ref_names) for cid in characters], bool(others), len(background))
     if shot.get("shot_type") == "over_the_shoulder" and characters:
         framing = over_the_shoulder(characters, vb, ref_names)
     if references:
@@ -812,15 +813,53 @@ def _setting_text(descriptor: str, condition: str) -> str:
     return _cap(f"{descriptor}, {condition}", SETTING_TEXT_MAX)
 
 
+def short_name(cid: str, vb: dict, ref_names: dict) -> str:
+    """"the man from the first image", or without a reference "the man with horn-rimmed glasses"."""
+    if ref_names.get(cid):
+        return ref_names[cid]
+    noun = _noun((vbible.character(vb, cid) or {}).get("descriptor", ""))
+    markers = vbible.signature_markers(vb, cid)
+    return f"the {noun} with {markers[0]}" if markers else f"the {noun}"
+
+
 def over_the_shoulder(characters: list[str], vb: dict, ref_names: dict) -> str:
-    """Name whose shoulder it is (the first listed character) and who faces the camera,
-    so the model never invents a third person seen from behind."""
-    def name(cid):
-        return ref_names.get(cid) or f"the {_noun((vbible.character(vb, cid) or {}).get('descriptor', ''))}"
+    """Name whose shoulder it is (the first listed character) and who faces the viewer,
+    so the model never invents a third body seen from behind."""
+    first = short_name(characters[0], vb, ref_names)
     if len(characters) == 1:
-        return f"over-the-shoulder shot from behind {name(characters[0])}, the only person in the frame"
-    return (f"over-the-shoulder shot from behind {name(characters[0])}, looking past that shoulder at "
-            f"{name(characters[1])}, who faces the camera")
+        return f"seen over the shoulder of {first}, the only person in the frame"
+    return f"seen over the shoulder of {first}; {short_name(characters[1], vb, ref_names)} faces the viewer"
+
+
+_NUMBER_WORDS = ("no", "one", "two", "three", "four", "five", "six")
+
+
+def headcount(names: list[str], others: bool = False, background: int = 0) -> str:
+    """The exact number and identity of the people in the frame (Phase 3.4-C).
+
+    "Exactly two people in the scene: the man from the first image and the woman
+    from the second image." Unnamed guests are added only when the narration
+    places them (others_present); a 4th+ character stays distant and indistinct.
+    """
+    if not names and not others and not background:
+        return "The room is empty and still."
+    listing = names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1] if names else ""
+    count = len(names)
+    word = _NUMBER_WORDS[count] if count < len(_NUMBER_WORDS) else str(count)
+    sentence = (f"Exactly {word} {'person' if count == 1 else 'people'} in the "
+                f"{'foreground' if background else 'scene'}: {listing}") if names else "In the scene"
+    extras = []
+    if background:
+        extras.append(f"{_NUMBER_WORDS[background] if background < len(_NUMBER_WORDS) else background} more "
+                      f"distant, indistinct figure{'s' if background > 1 else ''} in shadow")
+    if others:
+        extras.append("a few distant, indistinct guests in shadow, each clearly different in age, build, "
+                      "posture and clothing")
+    if extras:
+        sentence += (", plus " if names else ": ") + " and ".join(extras)
+    elif count >= 2:
+        sentence += "; nobody else is present"
+    return sentence + "."
 
 
 def alone_hint(count: int) -> str:
@@ -832,14 +871,6 @@ def alone_hint(count: int) -> str:
     if count == 2:
         return "The two of them alone in the room."
     return f"Only these {count} people in the room."
-
-
-def _company(shot: dict, count: int) -> str:
-    """Crowd or solitude sentence; shot lists before version 2 have no others_present."""
-    others = shot.get("others_present")
-    if others is True or (others is None and unnamed_people(shot.get("action", ""), count)):
-        return CROWD_HINT
-    return alone_hint(count) if others is False else ""
 
 
 def prompt_advice(prompt: str, scene_narration: str) -> list[str]:

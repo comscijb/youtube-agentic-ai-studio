@@ -296,7 +296,9 @@ class ComposeTests(unittest.TestCase):
         self.assertEqual([slot["id"] for slot in composed["slots"]],
                          ["julian_vance", "marcus_croft", "elena_vance"])
         self.assertNotIn("an older woman", composed["prompt"])
-        self.assertIn("1 more distant, indistinct figure in shadow", composed["prompt"])
+        self.assertIn("Exactly three people in the foreground: the man from the first image, the man from the "
+                      "second image and the woman from the third image, plus one more distant, indistinct "
+                      "figure in shadow.", composed["prompt"])
 
     def test_environment_shot_uses_t2i_and_new_seed_offset(self):
         composed = shots_module.compose_shot(

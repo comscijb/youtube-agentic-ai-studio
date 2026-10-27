@@ -518,8 +518,13 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   reference carries identity, while every shot prompt states the scene's outfit, grooming and
   expression. Approvals record `CHARACTER_SHEET_VERSION`; an older sheet must be re-approved.
   Only stale references (another style, an older sheet) are archived — valid location references
-  stay, and get no new candidates. Over-the-shoulder shots name whose shoulder it is and who faces
-  the camera; every shot without other people says the characters are alone.
+  stay, and get no new candidates.
+- **Explicit headcount.** Every prompt states the exact number and identity of the people:
+  "Exactly two people in the scene: the man from the first image and the woman from the second
+  image; nobody else is present." With `others_present` it adds "plus a few distant, indistinct
+  guests in shadow"; a 4th+ character is "one more distant, indistinct figure". Over-the-shoulder
+  shots read "seen over the shoulder of the man from the first image; the woman from the second
+  image faces the viewer" — never a third body.
 - **Shot list** (`shot_list.json`, after narration, one Gemini call): cuts on sentence boundaries,
   6–12 s per shot, at most `IMAGEGEN_MAX_UNIQUE_SHOTS` (50) unique images, a mix of framings with
   40–60% of shots without a full face. Prompts and reference slots are composed in code: approved

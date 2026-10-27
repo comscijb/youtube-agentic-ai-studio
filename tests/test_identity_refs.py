@@ -134,17 +134,22 @@ class ShotWardrobeAndPeopleTests(unittest.TestCase):
                     shot = self.shot("s03", shot_type=shot_type, characters=cast,
                                      appearance={cid: "composed" for cid in cast})
                     prompt = shots_module.compose_shot(shot, vb, "unused", assume_references=True)["prompt"]
-                    self.assertIn(shots_module.alone_hint(len(cast)), prompt)
+                    expected = {0: "The room is empty and still.",
+                                1: "Exactly one person in the scene: the woman from the first image.",
+                                2: "Exactly two people in the scene: the man from the first image and the "
+                                   "woman from the second image; nobody else is present."}[len(cast)]
+                    self.assertIn(expected, prompt)
 
     def test_over_the_shoulder_names_whose_shoulder_and_who_faces_camera(self):
         shot = self.shot("s03", shot_type="over_the_shoulder", characters=["julian_vance", "elena_vance"],
                          appearance={"julian_vance": "tense", "elena_vance": "composed"})
         prompt = shots_module.compose_shot(shot, episode_vb(), "unused", assume_references=True)["prompt"]
-        self.assertIn("over-the-shoulder shot from behind the man from the first image, looking past that "
-                      "shoulder at the woman from the second image, who faces the camera", prompt)
-        self.assertIn("The two of them alone in the room.", prompt)
+        self.assertIn("seen over the shoulder of the man from the first image; the woman from the second "
+                      "image faces the viewer", prompt)
+        self.assertIn("Exactly two people in the scene", prompt)
         alone = shots_module.compose_shot(dict(shot, characters=["julian_vance"]), episode_vb(), "unused")
-        self.assertIn("from behind the man, the only person in the frame", alone["prompt"])
+        self.assertIn("seen over the shoulder of the man with horn-rimmed glasses, the only person in the frame",
+                      alone["prompt"])
 
 
 if __name__ == "__main__":
