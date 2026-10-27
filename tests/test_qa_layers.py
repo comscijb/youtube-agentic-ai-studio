@@ -197,6 +197,20 @@ class QaShotsScriptTests(unittest.TestCase):
         self.assertEqual(saved["issues"][0]["type"], "missing_marker")
         self.assertTrue(saved["notes"][0].startswith("⛔ missing_marker"))
 
+    def test_shots_without_an_image_are_counted_and_explained(self):
+        from scripts import qa_shots
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp)
+            atomic_write_json(output / vbible.FILE_NAME, json.loads(json.dumps(VISUAL_BIBLE)))
+            atomic_write_json(output / "shot_list.json", {"version": 2, "shots": [dict(SHOTS[0])], "unique_shots": 1})
+            (output / "images" / "shots").mkdir(parents=True)
+            Image.new("RGB", (320, 180)).save(output / "images" / "shots" / "s01_01.jpg")   # from an older list
+            printed = io.StringIO()
+            with redirect_stdout(printed), patch.object(qa_shots.projects, "cli_output", return_value=output):
+                qa_shots.main([])
+        self.assertIn("1 shot(s) of shot_list.json have no image yet", printed.getvalue())
+        self.assertIn("python -m scripts.generate_shots", printed.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()

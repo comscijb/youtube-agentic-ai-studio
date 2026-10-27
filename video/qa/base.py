@@ -90,9 +90,21 @@ class VLMBackend(Protocol):
 
 
 def parse_choice(text: str, choices=ANSWERS) -> str | None:
-    """The first word of the answer when it is one of ``choices`` (thinking tags and punctuation ignored)."""
+    """The answer word when it is one of ``choices``.
+
+    qwen3vl through TextGenerate often wraps the word in markup
+    (``<div class="answer" data-ans="no">no</div>``, ``# **Answer: no**``,
+    ``Assistant: no``): a ``data-ans`` value wins, otherwise thinking blocks,
+    tags and labels are dropped and the first of the leading words that is a
+    choice is taken.
+    """
     import re
-    cleaned = re.sub(r"<think>[\s\S]*?</think>", "", str(text or "")).strip().lower()
+    cleaned = re.sub(r"<think>[\s\S]*?</think>", "", str(text or "")).lower()
+    tagged = re.search(r"data-ans\s*=\s*[\"']?([a-z]+)", cleaned)
+    if tagged and tagged.group(1) in choices:
+        return tagged.group(1)
+    cleaned = re.sub(r"<[^>]*>?", " ", cleaned)
+    cleaned = re.sub(r"\b(assistant|answer|final answer)\s*:", " ", cleaned)
     words = re.findall(r"[a-z]+", cleaned)
     for word in words[:3]:
         if word in choices:

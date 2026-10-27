@@ -6,6 +6,10 @@ CLIPLoader type ``flux3``: it does see the image (the prompt upsampler and
 PreviewAny; the questions of one image (up to ``BATCH``) go in a single graph
 so the model loads once. Decoding is greedy, thinking off, ``max_length``
 small; an unparseable answer is asked once more, then counts as ``unclear``.
+The model's built-in system prompt made it answer in HTML (``<div
+class="answer" data-ans="no">``) or open a comment and run out of tokens, so
+a plain one-word system prompt replaces it (a ``PrimitiveString`` node: the
+input only takes a link).
 
 The node inputs come from ``/object_info`` and the user's exported edit
 workflow (node 47), never guessed; the graph is validated before it is queued.
@@ -22,7 +26,9 @@ from video import imagegen_templates as templates
 from video.qa import base
 
 BATCH = 12
-MAX_LENGTH = 16
+MAX_LENGTH = 32
+SYSTEM_PROMPT = ("You are an image inspector. Reply in plain text with exactly one word from the choices "
+                 "the user gives. No markup, no punctuation, no explanation.")
 TEMPERATURE = 0.1
 
 
@@ -52,12 +58,14 @@ def sampling_inputs(modes: list, template: dict) -> dict:
 
 
 def text_generate_inputs(object_info: dict, prompt: str, clip, image, max_length: int,
-                         edit_path=templates.EDIT_TEMPLATE) -> dict:
+                         edit_path=templates.EDIT_TEMPLATE, system_prompt=None) -> dict:
     spec = _spec(object_info, "TextGenerate")
     template = templates.load_edit_template(edit_path).get("47", {}).get("inputs", {})
     inputs = {"prompt": prompt, "clip": clip, "image": image, "max_length": max_length, "thinking": False,
               "use_default_template": True, "mtp": "off",
               **sampling_inputs(_choices(spec.get("sampling_mode")), template)}
+    if system_prompt is not None:
+        inputs["system_prompt"] = system_prompt
     return {key: value for key, value in inputs.items() if key.split(".")[0] in spec}
 
 
@@ -71,6 +79,7 @@ class ComfyVLM:
         self.clip_type = clip_type or getattr(config, "IMAGEGEN_QA_VLM_CLIP_TYPE", "flux3")
         self.calls = 0
         self.seconds = 0.0
+        self.texts: dict[str, str] = {}       # the model's raw replies of the last ask(), for the probe report
 
     def problems(self) -> list[str]:
         if not self.client.available():
@@ -95,11 +104,15 @@ class ComfyVLM:
         if "device" in _spec(info, "CLIPLoader"):
             loader["device"] = "default"
         graph = {"1": {"class_type": "CLIPLoader", "inputs": loader}}
+        system = None
+        if "system_prompt" in _spec(info, "TextGenerate") and "PrimitiveString" in info:
+            graph["2"] = {"class_type": "PrimitiveString", "inputs": {"value": SYSTEM_PROMPT}}
+            system = ["2", 0]
         for index, (image, prompt) in enumerate(items):
             load, generate, preview = (str(10 + 3 * index + offset) for offset in range(3))
             graph[load] = {"class_type": "LoadImage", "inputs": {"image": image}}
             graph[generate] = {"class_type": "TextGenerate", "inputs": text_generate_inputs(
-                info, prompt, ["1", 0], [load, 0], MAX_LENGTH)}
+                info, prompt, ["1", 0], [load, 0], MAX_LENGTH, system_prompt=system)}
             graph[preview] = {"class_type": "PreviewAny", "inputs": {"source": [generate, 0]}}
         return graph
 
@@ -122,6 +135,7 @@ class ComfyVLM:
 
     def ask(self, questions: list[base.Question]) -> dict[str, str]:
         answers = {}
+        self.texts = {}
         try:
             with tempfile.TemporaryDirectory() as folder:
                 for start in range(0, len(questions), BATCH):
@@ -129,6 +143,7 @@ class ComfyVLM:
                     raw = self._run(chunk, Path(folder))
                     retry = []
                     for question in chunk:
+                        self.texts[question.qid] = raw.get(question.qid, "")
                         parsed = base.parse_choice(raw.get(question.qid, ""), question.choices)
                         if parsed is None:
                             retry.append(question)
@@ -137,6 +152,7 @@ class ComfyVLM:
                     if retry:
                         again = self._run(retry, Path(folder))
                         for question in retry:
+                            self.texts[question.qid] += " || retry: " + again.get(question.qid, "")
                             answers[question.qid] = base.parse_choice(again.get(question.qid, ""),
                                                                       question.choices) or "unclear"
         except (comfy.ComfyUnavailable, comfy.GenerationFailed) as exc:

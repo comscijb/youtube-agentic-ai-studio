@@ -49,14 +49,16 @@ def face_markers(character: dict) -> list[str]:
 
 
 def crop(image: Image.Image, box, pad: float = 0.25, max_side: int = CROP_SIDE) -> Image.Image:
+    """The padded box, scaled so its longest side is ``max_side``: small faces are enlarged too
+    (in the probe the 4B model missed glasses on a 194×273 face crop and saw them at 360×448)."""
     width, height = image.size
     x0, y0, x1, y1 = box
     dx, dy = (x1 - x0) * pad, (y1 - y0) * pad
     region = (max(0, int((x0 - dx) * width)), max(0, int((y0 - dy) * height)),
               min(width, int((x1 + dx) * width)), min(height, int((y1 + dy) * height)))
     piece = image.crop(region).convert("RGB")
-    piece.thumbnail((max_side, max_side), Image.LANCZOS)
-    return piece
+    scale = max_side / max(piece.size)
+    return piece.resize((max(1, round(piece.width * scale)), max(1, round(piece.height * scale))), Image.LANCZOS)
 
 
 def side_by_side(first: Image.Image, second: Image.Image, height: int = 256) -> Image.Image:

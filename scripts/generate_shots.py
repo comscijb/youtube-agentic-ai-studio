@@ -43,6 +43,12 @@ def main(argv=None) -> int:
     print(f"Shot list: {len(shot_list['shots'])} shots, {shot_list['unique_shots']} unique"
           + (f"; estimated GPU time for pending shots: {estimate / 60:.0f} min" if estimate else
              "; run python -m scripts.calibrate_imagegen for a time estimate"))
+    pending = [shot["shot_id"] for shot in shot_list["shots"]
+               if not shot.get("reuse_of") and not gen._done(shot, output)]
+    if args.fix_only and len(pending) == len([s for s in shot_list["shots"] if not s.get("reuse_of")]):
+        print("Nothing to fix: no shot of this shot list has an image yet (the list was planned after the "
+              "images on disk). Generate them first: python -m scripts.generate_shots")
+        return 0
     generator = ImageGenerator(output)
     try:
         summary = gen.generate_shots(output, generator, limit=args.limit, only=args.only, fix_only=args.fix_only)

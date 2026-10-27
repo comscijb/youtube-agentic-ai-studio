@@ -446,6 +446,7 @@ def probe_focused(client, sampler, model, fixture, images, progress, *, swap: bo
         issues, count = focused.apply(asked, answers, detection, expected, issues)
         record["results"].append({
             "shot_id": item["shot_id"], "raw": json.dumps(answers), "error": error,
+            "model_texts": dict(getattr(vlm, "texts", {}) or {}),
             "answer": None if error else {"people_count": count, "issues": issues, "verdict": ""},
             "seconds": round(time.monotonic() - started, 2), "layer1_seconds": layer1_seconds,
             "questions": len(asked), "detected_people": len(detection["persons"]), "vram_peak_mb": sampler.peak})

@@ -38,7 +38,10 @@ def run(output, *, only: str | None = None, layers: list[str] | None = None, qa:
     selected = [shot for shot in shots if not shot.get("reuse_of") and shot.get("image_path")
                 and (output / shot["image_path"]).is_file()
                 and (not only or only in (shot["scene_id"], shot["shot_id"]))]
-    summary = {"checked": 0, "passed": 0, "failed": [], "skipped": 0, "edit": [], "regenerate": []}
+    summary = {"checked": 0, "passed": 0, "failed": [], "skipped": 0, "edit": [], "regenerate": [],
+               "without_image": sum(1 for shot in shots if not shot.get("reuse_of") and not (
+                   shot.get("image_path") and (output / shot["image_path"]).is_file())
+                   and (not only or only in (shot["scene_id"], shot["shot_id"])))}
     if not selected:
         return summary
     if qa is None:
@@ -85,6 +88,10 @@ def main(argv=None) -> int:
     print(f"Visual QA: {summary['checked']} checked, {summary['passed']} passed, "
           f"{len(summary['failed'])} failed ({len(summary['edit'])} to edit, "
           f"{len(summary['regenerate'])} to regenerate), {summary['skipped']} skipped.")
+    if summary["without_image"]:
+        print(f"{summary['without_image']} shot(s) of shot_list.json have no image yet, so they were not checked "
+              "(images on disk from an earlier shot list are not linked). Generate them with: "
+              "python -m scripts.generate_shots")
     if summary["failed"]:
         print("Fix them with: python -m scripts.generate_shots --fix-only (or in the GUI)")
     return 0

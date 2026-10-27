@@ -116,6 +116,21 @@ class FocusedQuestionTests(unittest.TestCase):
         self.assertEqual(base.parse_choice("Man", ("man", "woman", "unclear")), "man")
         self.assertIsNone(base.parse_choice("The person appears to wear something"))
 
+    def test_crops_are_scaled_to_the_crop_side_both_ways(self):
+        image = Image.new("RGB", (1360, 768))
+        self.assertEqual(max(focused.crop(image, [0.68, 0.3, 0.73, 0.43]).size), focused.CROP_SIDE)   # small face, enlarged
+        self.assertEqual(max(focused.crop(image, [0.0, 0.0, 1.0, 1.0]).size), focused.CROP_SIDE)     # whole frame, reduced
+
+    def test_parse_choice_reads_the_markup_qwen3vl_wraps_answers_in(self):
+        # Seen in the user's focused probe (ComfyUI history): every one of these became "unclear".
+        self.assertEqual(base.parse_choice('<div class="answer" data-ans="no">no</div>'), "no")
+        self.assertEqual(base.parse_choice('<div class="answer" data-ans="woman">woman</div>',
+                                           ("man", "woman", "unclear")), "woman")
+        self.assertEqual(base.parse_choice("# **Answer: no**\n\nThere is no visible writing"), "no")
+        self.assertEqual(base.parse_choice("Assistant: yes"), "yes")
+        self.assertIsNone(base.parse_choice("<!---"))
+        self.assertIsNone(base.parse_choice("ing the image, the person is not wearing black horn-rimmed glasses"))
+
 
 class VlmComfy(FakeComfy):
     """Answers each TextGenerate with the next reply; records graphs."""
@@ -150,11 +165,25 @@ class ComfyVlmTests(unittest.TestCase):
         generate = [node for node in fake.prompts[0].values() if node["class_type"] == "TextGenerate"][0]
         self.assertEqual((generate["inputs"]["sampling_mode"], generate["inputs"]["thinking"]), ("off", False))
 
+    def test_a_plain_system_prompt_replaces_the_built_in_one(self):
+        info = {**INFO, "PrimitiveString": {"input": {"required": {"value": ["STRING", {}]}}, "output": ["STRING"]},
+                "TextGenerate": {"input": {**INFO["TextGenerate"]["input"], "optional": {
+                    **INFO["TextGenerate"]["input"]["optional"], "system_prompt": ["STRING", {"forceInput": True}]}}}}
+        fake = VlmComfy(['<div class="answer" data-ans="no">no</div>'])
+        fake.object_info = info
+        vlm = ComfyVLM(ComfyClient(session=fake, sleep=lambda _: None), model="qwen3vl_4b_int8_convrot.safetensors")
+        self.assertEqual(vlm.ask(self.questions(1)), {"q0": "no"})
+        graph = fake.prompts[0]
+        self.assertEqual(graph["2"]["class_type"], "PrimitiveString")
+        self.assertEqual(graph["11"]["inputs"]["system_prompt"], ["2", 0])
+        self.assertEqual(graph["11"]["inputs"]["max_length"], 32)
+
     def test_unparseable_answers_are_asked_once_more_then_unclear(self):
         fake = VlmComfy(["it depends", "yes", "still rambling"])
         vlm = ComfyVLM(ComfyClient(session=fake, sleep=lambda _: None))
         self.assertEqual(vlm.ask(self.questions(2)), {"q0": "unclear", "q1": "yes"})
         self.assertEqual(len(fake.prompts), 2)
+        self.assertEqual(vlm.texts, {"q0": "it depends || retry: still rambling", "q1": "yes"})
 
     def test_missing_model_is_reported(self):
         vlm = ComfyVLM(ComfyClient(session=VlmComfy([]), sleep=lambda _: None), model="nope.safetensors")

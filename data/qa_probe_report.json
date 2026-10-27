@@ -1,8 +1,9 @@
 {
   "version": 1,
-  "created_at": "2026-10-27T16:42:46",
+  "mode": "focused",
+  "created_at": "2026-10-27T19:15:47",
   "project": "2026-10-21-the-man-who-needed-everyone-to-envy-him",
-  "fixture_confirmed_by_user": false,
+  "fixture_confirmed_by_user": true,
   "comfyui": "http://127.0.0.1:8188",
   "findings": {
     "text_generate": true,
@@ -76,12 +77,14 @@
   "models": [
     {
       "model": "qwen3vl_4b_int8_convrot.safetensors",
+      "mode": "focused",
       "clip_type": "flux3",
       "attempts": [],
       "results": [
         {
           "shot_id": "s09_04",
-          "raw": "{\"people_count\": 2, \"issues\": [{\"type\": \"duplicate_person\", \"severity\": \"blocking\", \"box\": [0.3, 0.3, 0.6, 0.8], \"target\": \"julian_vance\", \"note\": \"Character appears twice in the frame.\"}], \"verdict\": \"edit\"}",
+          "raw": "{\"marker:0:black horn-rimmed glasses\": \"unclear\", \"injury:0\": \"unclear\", \"text\": \"unclear\"}",
+          "error": "",
           "answer": {
             "people_count": 2,
             "issues": [
@@ -89,402 +92,417 @@
                 "type": "duplicate_person",
                 "severity": "blocking",
                 "box": [
-                  0.3,
-                  0.3,
-                  0.6,
-                  0.8
+                  0.1845,
+                  0.1423,
+                  0.4015,
+                  1.0
                 ],
+                "target": "",
+                "note": "the same face appears twice (similarity 0.44); this is the smaller copy",
+                "source": "deterministic"
+              },
+              {
+                "type": "missing_marker",
+                "severity": "advisory",
+                "box": null,
                 "target": "julian_vance",
-                "note": "Character appears twice in the frame."
+                "note": "black horn-rimmed glasses: unclear on the visible face(s)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "unstated_injury",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "blood, wounds or red marks the narration does not state (unclear)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "text",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "visible writing or a watermark (unclear)",
+                "source": "local_vlm"
               }
             ],
-            "verdict": "edit"
+            "verdict": ""
           },
-          "error": "",
-          "seconds": 6.3,
-          "vram_peak_mb": 6846.0
+          "seconds": 5.9,
+          "layer1_seconds": 0.75,
+          "questions": 3,
+          "detected_people": 2,
+          "vram_peak_mb": 5852.9
         },
         {
           "shot_id": "s03_06",
-          "raw": "# Instruction: Analyze the image for character markers and count people\n\n## Expected: exactly 2 people (Julian Vance and Elena Vance) with specified markers\n\n## Scene: A hallway with three people standing, two men and one woman, all dressed in dark clothing. The woman is in the center, flanked by two men. The background shows a hallway with doors and smoke-like effects.\n\n## Character markers:\n- Julian Vance: 37-year-old man, black horn-rimmed glasses, polished platinum wedding band\n- Elena Vance: 35-year-old woman, chestnut hair in a low knot, bare wrists without jewelry\n\n## Analysis:\n- There are three people visible in the image, not two.\n- The two men do not have the specified markers (no horn-rimmed glasses or platinum wedding band).\n- The woman has chestnut hair in a low knot, but her wrists are not bare (she is wearing a watch or bracelet).\n- No injuries, blood, tears, or marks are visible.\n- No text, watermarks, or style breaks.\n\n## Issues:\n- Extra_person: There are three people visible, but only two are expected.\n- Missing_marker: The two men are missing the specified markers (horn-rimmed glasses and platinum wedding band).\n- Missing_marker: The woman is missing the bare wrists marker (she is wearing a watch or bracelet).\n\n## Verdict: regenerate\n\n```json\n{\n  \"people_count\": 3,\n  \"issues\": [\n    {\n      \"type\": \"extra_person\",\n      \"severity\": \"blocking\",\n      \"box\": [0.0, 0.0, 1.0, 1.0],\n      \"target\": \"\",\n      \"note\": \"Three people visible, but only two are expected.\"\n    },\n    {\n      \"type\": \"missing_marker\",\n      \"severity\": \"blocking\",\n      \"box\": [0.2, 0.3, 0.4, 0.6],\n      \"target\": \"julian_vance\",\n      \"note\": \"No horn-rimmed glasses visible on the man.\"\n    },\n    {\n      \"type\": \"missing_marker\",\n      \"severity\": \"blocking\",\n      \"box\": [0.6, 0.3, 0.8, 0.6],\n      \"target\": \"julian_vance\",\n      \"note\": \"No platinum wedding band visible on the man.\"\n    },\n    {\n      \"type\": \"missing_marker\",\n      \"severity\": \"blocking\",\n      \"box\": [0.",
+          "raw": "{\"gender:0\": \"unclear\", \"marker:0:black horn-rimmed glasses\": \"unclear\", \"gender:2\": \"unclear\", \"marker:2:black horn-rimmed glasses\": \"unclear\", \"injury:0\": \"unclear\", \"injury:2\": \"unclear\", \"text\": \"unclear\", \"same:1:2\": \"unclear\"}",
+          "error": "",
           "answer": {
             "people_count": 3,
+            "issues": [
+              {
+                "type": "duplicate_person",
+                "severity": "blocking",
+                "box": [
+                  0.419,
+                  0.0434,
+                  0.6097,
+                  1.0
+                ],
+                "target": "",
+                "note": "the same face appears twice (similarity 0.68); this is the smaller copy",
+                "source": "deterministic"
+              },
+              {
+                "type": "missing_marker",
+                "severity": "advisory",
+                "box": null,
+                "target": "julian_vance",
+                "note": "black horn-rimmed glasses: unclear on the visible face(s)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "unstated_injury",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "blood, wounds or red marks the narration does not state (unclear)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "unstated_injury",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "blood, wounds or red marks the narration does not state (unclear)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "text",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "visible writing or a watermark (unclear)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "duplicate_person",
+                "severity": "advisory",
+                "box": [
+                  0.419,
+                  0.0434,
+                  0.6097,
+                  1.0
+                ],
+                "target": "",
+                "note": "two faces look like the same person (unclear)",
+                "source": "local_vlm"
+              }
+            ],
+            "verdict": ""
+          },
+          "seconds": 6.94,
+          "layer1_seconds": 0.44,
+          "questions": 8,
+          "detected_people": 3,
+          "vram_peak_mb": 5883.5
+        },
+        {
+          "shot_id": "s01_05",
+          "raw": "{\"text\": \"no\", \"marker:0:black horn-rimmed glasses\": \"unclear\", \"injury:0\": \"unclear\"}",
+          "error": "",
+          "answer": {
+            "people_count": 1,
+            "issues": [
+              {
+                "type": "missing_marker",
+                "severity": "advisory",
+                "box": null,
+                "target": "julian_vance",
+                "note": "black horn-rimmed glasses: unclear on the visible face(s)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "unstated_injury",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "blood, wounds or red marks the narration does not state (unclear)",
+                "source": "local_vlm"
+              }
+            ],
+            "verdict": ""
+          },
+          "seconds": 3.28,
+          "layer1_seconds": 0.41,
+          "questions": 3,
+          "detected_people": 1,
+          "vram_peak_mb": 5882.6
+        },
+        {
+          "shot_id": "s03_05",
+          "raw": "{\"injury:0\": \"unclear\", \"text\": \"unclear\"}",
+          "error": "",
+          "answer": {
+            "people_count": 1,
+            "issues": [
+              {
+                "type": "unstated_injury",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "blood, wounds or red marks the narration does not state (unclear)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "text",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "visible writing or a watermark (unclear)",
+                "source": "local_vlm"
+              }
+            ],
+            "verdict": ""
+          },
+          "seconds": 2.24,
+          "layer1_seconds": 0.4,
+          "questions": 2,
+          "detected_people": 1,
+          "vram_peak_mb": 5855.0
+        },
+        {
+          "shot_id": "s02_04",
+          "raw": "{\"marker:0:black horn-rimmed glasses\": \"unclear\", \"injury:0\": \"unclear\", \"text\": \"unclear\"}",
+          "error": "",
+          "answer": {
+            "people_count": 6,
             "issues": [
               {
                 "type": "extra_person",
                 "severity": "blocking",
                 "box": [
-                  0.0,
-                  0.0,
-                  1.0,
-                  1.0
+                  0.0992,
+                  0.3701,
+                  0.1603,
+                  0.7364
                 ],
                 "target": "",
-                "note": "Three people visible, but only two are expected."
+                "note": "6 people detected, 1 expected",
+                "source": "deterministic"
+              },
+              {
+                "type": "extra_person",
+                "severity": "blocking",
+                "box": [
+                  0.7776,
+                  0.3815,
+                  0.8298,
+                  0.7536
+                ],
+                "target": "",
+                "note": "6 people detected, 1 expected",
+                "source": "deterministic"
+              },
+              {
+                "type": "extra_person",
+                "severity": "blocking",
+                "box": [
+                  0.7313,
+                  0.4262,
+                  0.7705,
+                  0.7188
+                ],
+                "target": "",
+                "note": "6 people detected, 1 expected",
+                "source": "deterministic"
+              },
+              {
+                "type": "extra_person",
+                "severity": "blocking",
+                "box": [
+                  0.2255,
+                  0.4452,
+                  0.2578,
+                  0.6661
+                ],
+                "target": "",
+                "note": "6 people detected, 1 expected",
+                "source": "deterministic"
+              },
+              {
+                "type": "extra_person",
+                "severity": "blocking",
+                "box": [
+                  0.8424,
+                  0.4491,
+                  0.8515,
+                  0.4703
+                ],
+                "target": "",
+                "note": "6 people detected, 1 expected",
+                "source": "deterministic"
               },
               {
                 "type": "missing_marker",
-                "severity": "blocking",
-                "box": [
-                  0.2,
-                  0.3,
-                  0.4,
-                  0.6
-                ],
+                "severity": "advisory",
+                "box": null,
                 "target": "julian_vance",
-                "note": "No horn-rimmed glasses visible on the man."
+                "note": "black horn-rimmed glasses: unclear on the visible face(s)",
+                "source": "local_vlm"
               },
               {
-                "type": "missing_marker",
-                "severity": "blocking",
-                "box": [
-                  0.6,
-                  0.3,
-                  0.8,
-                  0.6
-                ],
-                "target": "julian_vance",
-                "note": "No platinum wedding band visible on the man."
+                "type": "unstated_injury",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "blood, wounds or red marks the narration does not state (unclear)",
+                "source": "local_vlm"
               },
               {
-                "type": "missing_marker",
-                "severity": "blocking",
-                "box": [
-                  0.5,
-                  0.4,
-                  0.7,
-                  0.7
-                ],
-                "target": "elena_vance",
-                "note": "Woman's wrists are not bare; she is wearing a watch or bracelet."
+                "type": "text",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "visible writing or a watermark (unclear)",
+                "source": "local_vlm"
               }
             ],
-            "verdict": "regenerate"
+            "verdict": ""
           },
-          "error": "",
-          "seconds": 8.09,
-          "vram_peak_mb": 7231.8
-        },
-        {
-          "shot_id": "s01_05",
-          "raw": "{\"people_count\": 1, \"issues\": [], \"verdict\": \"pass\"}",
-          "answer": {
-            "people_count": 1,
-            "issues": [],
-            "verdict": "pass"
-          },
-          "error": "",
-          "seconds": 1.02,
-          "vram_peak_mb": 6930.2
-        },
-        {
-          "shot_id": "s03_05",
-          "raw": "",
-          "answer": null,
-          "error": "no JSON object",
-          "seconds": 11.63,
-          "vram_peak_mb": 7081.9
-        },
-        {
-          "shot_id": "s02_04",
-          "raw": "{\"people_count\": 1, \"issues\": [], \"verdict\": \"pass\"}",
-          "answer": {
-            "people_count": 1,
-            "issues": [],
-            "verdict": "pass"
-          },
-          "error": "",
-          "seconds": 1.02,
-          "vram_peak_mb": 6930.2
+          "seconds": 3.31,
+          "layer1_seconds": 0.43,
+          "questions": 3,
+          "detected_people": 6,
+          "vram_peak_mb": 5839.9
         },
         {
           "shot_id": "s01_03",
-          "raw": "{\"people_count\": 1, \"issues\": [], \"verdict\": \"pass\"}",
+          "raw": "{\"injury:0\": \"no\", \"text\": \"unclear\"}",
+          "error": "",
           "answer": {
             "people_count": 1,
-            "issues": [],
-            "verdict": "pass"
+            "issues": [
+              {
+                "type": "text",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "visible writing or a watermark (unclear)",
+                "source": "local_vlm"
+              }
+            ],
+            "verdict": ""
           },
-          "error": "",
-          "seconds": 1.02,
-          "vram_peak_mb": 6930.2
+          "seconds": 2.19,
+          "layer1_seconds": 0.39,
+          "questions": 2,
+          "detected_people": 1,
+          "vram_peak_mb": 5857.2
         },
         {
           "shot_id": "s04_03",
-          "raw": "{\n  \"people_count\": 1,\n  \"issues\": [],\n  \"verdict\": \"pass\"\n}",
+          "raw": "{\"marker:0:black horn-rimmed glasses\": \"unclear\", \"injury:0\": \"unclear\", \"text\": \"unclear\"}",
+          "error": "",
           "answer": {
             "people_count": 1,
-            "issues": [],
-            "verdict": "pass"
+            "issues": [
+              {
+                "type": "missing_marker",
+                "severity": "advisory",
+                "box": null,
+                "target": "julian_vance",
+                "note": "black horn-rimmed glasses: unclear on the visible face(s)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "unstated_injury",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "blood, wounds or red marks the narration does not state (unclear)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "text",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "visible writing or a watermark (unclear)",
+                "source": "local_vlm"
+              }
+            ],
+            "verdict": ""
           },
-          "error": "",
-          "seconds": 1.02,
-          "vram_peak_mb": 6931.4
+          "seconds": 2.85,
+          "layer1_seconds": 0.39,
+          "questions": 3,
+          "detected_people": 1,
+          "vram_peak_mb": 5884.4
         },
         {
           "shot_id": "s08_02",
-          "raw": "{\"people_count\": 1, \"issues\": [], \"verdict\": \"pass\"}",
+          "raw": "{\"injury:0\": \"unclear\", \"text\": \"unclear\"}",
+          "error": "",
           "answer": {
             "people_count": 1,
-            "issues": [],
-            "verdict": "pass"
+            "issues": [
+              {
+                "type": "unstated_injury",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "blood, wounds or red marks the narration does not state (unclear)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "text",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "visible writing or a watermark (unclear)",
+                "source": "local_vlm"
+              }
+            ],
+            "verdict": ""
           },
-          "error": "",
-          "seconds": 1.02,
-          "vram_peak_mb": 6900.7
+          "seconds": 2.23,
+          "layer1_seconds": 0.4,
+          "questions": 2,
+          "detected_people": 1,
+          "vram_peak_mb": 5882.5
         }
       ],
       "swap": {
-        "klein_warmup_s": 6.18,
+        "klein_warmup_s": 3.06,
         "unload_klein_s": 0.0,
-        "qa_load_and_run_s": 31.12,
+        "qa_load_and_run_s": 28.94,
         "unload_qa_s": 0.0,
-        "reload_klein_s": 5.86,
-        "total_swap_s": 36.98
-      },
-      "metrics": {
-        "images": 8,
-        "valid_json_rate": 0.875,
-        "accuracy": {
-          "people_count": 0.75,
-          "duplicate_person": 0.75,
-          "missing_glasses": 0.625,
-          "unstated_mark": 0.875,
-          "extra_person": 0.625,
-          "text": 0.875
-        },
-        "box_iou_mean": 0.019,
-        "box_hits_iou_0_3": 0,
-        "boxes_expected": 12,
-        "seconds_per_image": 3.89,
-        "seconds_first_image": 6.3,
-        "vram_peak_mb": 7231.8
-      }
-    },
-    {
-      "model": "qwen3.5_9b_flux3_prompt_upsampler_w4a8.safetensors",
-      "clip_type": "flux3",
-      "attempts": [],
-      "results": [
-        {
-          "shot_id": "s09_04",
-          "raw": "{\"people_count\": 1, \"issues\": [{\"type\": \"missing\", \"severity\": \"blocking\", \"box\": [545, 390, 850, 1000], \"target\": \"the seated man on the right\", \"note\": \"Remove the seated man on the right, including his chair, leaving the room empty of all other people. Retain the 37-year-old man on the left as the sole person, preserving his exact identity, black horn-rimmed glasses, polished platinum wedding band, clothing, pose, and position.\"}, {\"verdict\": \"edit\", \"box\": [115, 125, 405, 1000], \"target\": \"julian_vance\", \"note\": \"Julian Vance, a 37-year-old man with fair skin, neatly combed dark brown hair, black horn-rimmed glasses, a dark textured sweater, and dark trousers, seated alone at the table with his polished platinum wedding band visible; the room, table, bottles, candles, smoke, walls, and framed botanical prints remain intact but contain no other people.\"}] [{\"id\": \"julian_vance\", \"who\": \"a 37-year-old man\", \"markers\": [\"black horn-rimmed glasses\", \"polished platinum wedding band\"], \"box\": [115, 125, 405, 1000], \"target\": \"Julian Vance, the sole remaining figure, seated upright on the left side of the table with a composed neutral expression, wearing a dark textured sweater and dark trousers.\"}] [{\"id\": \"empty\", \"who\": \"no people\", \"box\": [390, 390, 1000, 1000], \"target\": \"The vacated right side of the room contains only the continuation of the dark corridor, wooden floor, wall panels, and empty chair area, with no human figure.\"}] [{\"id\": \"final\", \"who\": \"the completed single-person scene\", \"box\": [0, 0, 1000, 1000], \"target\": \"A dark monochrome illustrated interior containing exactly one person: Julian Vance seated on the left, with the right-side man and his chair fully absent.\"}] [{\"id\": \"result\", \"who\": \"the final illustrated frame\", \"box\": [0, 0, 1000, 1000], \"target\": \"A single-person version of the original scene, preserving the left man, table, bottles, candles, smoke, walls, and botanical prints while removing the entire right-side person and chair.\"}] [{",
-          "answer": null,
-          "error": "malformed JSON (Expecting ',' delimiter)",
-          "seconds": 87.19,
-          "vram_peak_mb": 7440.1
-        },
-        {
-          "shot_id": "s03_06",
-          "raw": "[{\"people_count\": 2, \"issues\": [{\"type\": \"missing_marker\", \"severity\": \"blocking\", \"box\": [80, 80, 440, 1000], \"target\": \"julian_vance\", \"note\": \"Remove the central man and the woman on the right, leaving exactly two people: Julian Vance on the left and Elena Vance on the right. Julian Vance is a 37-year-old man with the same face, swept-back brown hair, and dark sweater, now wearing black horn-rimmed glasses and a polished platinum wedding band on his left ring finger; Elena Vance is a 35-year-old woman with the same face, now with chestnut hair secured in a low knot and a pale button-front blouse, with bare wrists without jewelry. Render the empty central space as a seamless continuation of the same monochrome illustrated corridor, with no additional person.\"}]}, {\"verdict\": \"edit\", \"people\": [{\"id\": \"julian_vance\", \"position\": [80, 80, 440, 1000], \"render\": \"A 37-year-old man with fair skin, short swept-back brown hair, black horn-rimmed glasses, a dark crew-neck sweater, dark trousers, and a polished platinum wedding band on his left ring finger, standing alone on the left with a neutral expression.\"}, {\"id\": \"elena_vance\", \"position\": [390, 390, 1000, 1000], \"render\": \"A 35-year-old woman with fair skin, chestnut hair gathered into a low knot, a pale button-front blouse, dark high-waisted trousers, and bare wrists without jewelry, standing alone on the right with a neutral expression.\"}]}, [{\"id\": \"elena_vance\", \"position\": [390, 390, 1000, 1000], \"render\": \"Elena Vance, a 35-year-old woman with fair skin and chestnut hair in a low knot, wearing a pale button-front blouse and dark high-waisted trousers, with no jewelry on her wrists.\"}]}, {\"id\": \"background\", \"position\": [0, 0, 1000, 1000], \"render\": \"A monochrome illustrated corridor with dark wood paneling, reflective flooring, and smoky cloud forms in the side openings, redrawn without any additional figures.\"}]}, [{\"id\": \"final_scene\", \"position\": [0, 0, 1000, 1000], \"render\": \"A monochrome illustrated film",
-          "answer": null,
-          "error": "malformed JSON (Extra data)",
-          "seconds": 58.19,
-          "vram_peak_mb": 7407.1
-        },
-        {
-          "shot_id": "s01_05",
-          "raw": "{\"people_count\": 1, \"issues\": [{\"type\": \"missing_marker\", \"severity\": \"advisory\", \"box\": [285, 285, 650, 475], \"target\": \"julian_vance\", \"note\": \"Add black horn-rimmed glasses over the eyes of the 37-year-old man, fitted naturally across the bridge of his nose and temples while leaving his face and identity otherwise unchanged.\"}, {\"verdict\": \"edit\", \"box\": [0, 0, 1000, 1000], \"note\": \"Regenerate the illustrated frame as a single portrait of Julian Vance, the same 37-year-old man, now wearing black horn-rimmed glasses, with his original swept-back brown hair, dark sweater over a collared shirt, neutral expression, and the same dark textured background. Preserve the original monochrome ink-and-wash style and include no other people, injuries, blood, tears, marks, text, or watermarks.\"}] [{\"id\": \"julian_vance\", \"who\": \"a 37-year-old man with fair skin, a long angular face, defined cheekbones, straight nose, dark eyebrows, swept-back brown hair, and a neutral closed-mouth expression, wearing a dark crew-neck sweater over a dark collared shirt.\"}] [{\"id\": \"missing_marker\", \"who\": \"Julian Vance, the 37-year-old man, missing black horn-rimmed glasses on his face.\"}] [{\"id\": \"edit\", \"who\": \"The completed illustrated frame with the missing marker added.\"}] [{\"id\": \"verdict\", \"who\": \"The final status of the regenerated frame.\"}] [{\"id\": \"other\", \"who\": \"No additional people or scene elements.\"}] [{\"id\": \"pass\", \"who\": \"No issue.\"}] [{\"id\": \"issues\", \"who\": \"No issue.\"}] [{\"id\": \"verdict\", \"who\": \"pass\", \"note\": \"Pass after adding the glasses.\"}] [{\"id\": \"final_response\", \"who\": \"No additional text.\", \"note\": [{\"type\": \"final_response\", \"severity\": \"none\", \"box\": [0, 0, 1000, 1000], \"target\": [{\"people_count\": 1, \"issues\": [{\"type\": \"missing_marker\", \"severity\": \"advisory\", \"box\": [285, 285, 650, 475], \"target\": \"julian_vance\", \"note\": \"Add black horn-rimmed glasses over the eyes of the 37-year-old man, fitted naturally across the bridge of his nose and temples while leaving ",
-          "answer": null,
-          "error": "malformed JSON (Expecting ',' delimiter)",
-          "seconds": 40.99,
-          "vram_peak_mb": 7525.2
-        },
-        {
-          "shot_id": "s03_05",
-          "raw": "[{\"people_count\": 1, \"issues\": [], \"verdict\": \"pass\", \"target\": \"elena_vance\", \"note\": \"A single 35-year-old woman, Elena Vance, with chestnut hair gathered into a low knot, bare wrists without jewelry, and a plain collared shirt, shown in the same close three-quarter composition with both hands resting calmly near her chin, her face clean and dry with no tears, blood, wounds, or marks. The dark interior and tall window remain unchanged.\"}] [{\"id\": \"elena_vance\", \"who\": \"a 35-year-old woman, Elena Vance, with chestnut hair in a low knot, bare wrists without jewelry, and a plain collared shirt\", \"markers\": \"chestnut hair in a low knot, bare wrists without jewelry\", \"position\": [35, 35, 650, 1000], \"redrawn\": \"A clean monochrome ink illustration of Elena Vance with a calm, neutral expression, her hands resting near her chin without tears, blood, wounds, or red marks.\"}] [{\"id\": \"issues\", \"type\": \"none\", \"severity\": \"none\", \"box\": null, \"target\": null, \"note\": \"No issues.\"}] [{\"id\": \"regenerate\", \"type\": \"illustration\", \"severity\": \"none\", \"box\": [0, 0, 1000, 1000], \"target\": \"A clean monochrome illustrated film frame containing exactly one person, Elena Vance, with her chestnut hair in a low knot, bare wrists, and a plain collared shirt, posed with both hands resting calmly near her chin; the dark interior and tall window remain intact, with no tears, blood, wounds, red marks, text, or additional figures.\"}] [{\"id\": \"final\", \"type\": \"JSON\", \"severity\": \"none\", \"box\": [0, 0, 1000, 1000], \"target\": [{\"people_count\": 1, \"issues\": [], \"verdict\": \"pass\", \"target\": \"elena_vance\", \"note\": \"A single 35-year-old woman, Elena Vance, with chestnut hair in a low knot and bare wrists without jewelry, drawn in a clean monochrome illustration with a calm, neutral expression and no tears, blood, wounds, or marks.\"}] [{\"id\": \"output\", \"type\": \"JSON\", \"severity\": \"none\", \"box\": [0, 0, 1000, 1000], \"target\": [{\"people_count\": 1, \"issues\": null, \"verdict\": \"pass\", \"target\": \"elena_vance\"",
-          "answer": null,
-          "error": "malformed JSON (Extra data)",
-          "seconds": 40.99,
-          "vram_peak_mb": 7458.3
-        },
-        {
-          "shot_id": "s02_04",
-          "raw": "{\"people_count\": 1, \"issues\": null, \"target\": \"julian_vance\", \"note\": \"Julian Vance, the only person, is a 37-year-old man with short dark hair, black horn-rimmed glasses, and a polished platinum wedding band, redrawn alone in the same central foreground pose wearing the dark sweater and collared shirt. The entire kitchen interior is empty of every other person, with the counters, cabinets, sinks, and smoky background rendered as an unoccupied setting.\"} [{\"id\": \"julian_vance\", \"who\": \"a 37-year-old man\", \"markers\": \"black horn-rimmed glasses, polished platinum wedding band\", \"appearance\": \"A clean monochrome illustrated portrait of a 37-year-old man with short dark hair, a defined angular face, black horn-rimmed glasses, a dark crew-neck sweater over a collared shirt, and dark trousers, standing with both hands resting on the marble counter and his face turned toward the right.\"}] [{\"id\": \"edit\", \"severity\": \"blocking\", \"box\": [0, 0, 1000, 1000], \"target\": \"Remove all background figures and replace them with the same unoccupied kitchen architecture, leaving exactly one person visible.\"}, {\"id\": \"verdict\": \"pass\", \"severity\": \"none\", \"box\": null, \"target\": \"The regenerated frame contains exactly one person and no other figures.\"}] [{\"id\": \"regenerate\", \"severity\": \"blocking\", \"box\": [0, 0, 1000, 1000], \"target\": \"A monochrome illustrated film frame containing exactly one person, Julian Vance, with the kitchen completely empty of all other people.\"}] [{\"id\": \"final\", \"severity\": \"none\", \"box\": null, \"target\": [{\"people_count\": 1, \"issues\": null, \"target\": \"Julian Vance\", \"note\": \"Julian Vance is the sole visible person, retaining his original identity, clothing, pose, and placement while all background figures are absent.\"}] [{\"id\": \"output\", \"severity\": \"none\", \"box\": null, \"target\": [{\"people_count\": 1, \"issues\": null, \"target\": [{\"people_count\": 1, \"issues\": null, \"target\": [{\"people_count\": 1, \"issues\": null, \"target\": [{\"people_count\": 1, \"issues\": null, \"target",
-          "answer": null,
-          "error": "malformed JSON (Extra data)",
-          "seconds": 17.2,
-          "vram_peak_mb": 7582.5
-        },
-        {
-          "shot_id": "s01_03",
-          "raw": "{\"people_count\": 1, \"issues\": [], \"verdict\": \"pass\", \"target\": \"elena_vance\", \"note\": \"Elena Vance, the only visible person, is a 35-year-old woman with chestnut hair gathered in a low knot, bare wrists without jewelry, and an unmarked face, seated at the table in the illustrated scene.\"} [{\"id\": \"elena_vance\", \"who\": \"a 35-year-old woman, with chestnut hair in a low knot, bare wrists without jewelry, and a calm, unmarked face, wearing a loose beige long-sleeved shirt and dark trousers while seated at the table.\"}] [{\"id\": \"issues\": []}] [{\"id\": \"verdict\": \"pass\"}] [{\"id\": \"note\": \"No injuries, blood, tears, marks, text, watermarks, or additional figures are present.\"}] [{\"id\": \"target\": \"No additional text\"}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}] [{\"id\": \"box\": [0, 0, 1000, 1000]}",
-          "answer": null,
-          "error": "malformed JSON (Extra data)",
-          "seconds": 30.38,
-          "vram_peak_mb": 7683.9
-        },
-        {
-          "shot_id": "s04_03",
-          "raw": "{\"people_count\": 1, \"issues\": [], \"verdict\": \"pass\", \"target\": \"julian_vance\", \"note\": \"Julian Vance, the only visible person, is a 37-year-old man with neatly combed dark hair, black horn-rimmed glasses, and a polished platinum wedding band, wearing a dark sweater over a collared shirt while holding a wine bottle in the illustrated interior.\"} [{\"id\": \"julian_vance\", \"who\": \"a 37-year-old man\", \"markers\": [\"black horn-rimmed glasses\", \"polished platinum wedding band\"], \"box\": [226, 20, 747, 1000, \"target\": \"Julian Vance, the sole figure, shown from the chest upward with his face fully visible, wearing a dark charcoal sweater over a black collared shirt and holding a tilted wine bottle with both hands.\"}] [{\"id\": \"empty\", \"who\": \"no additional people\", \"box\": [0, 0, 1000, 1000, \"target\": \"The surrounding room contains no other people, only the illustrated interior, furniture, framed botanical prints, candles, bottles, and smoke.\"}] [{\"id\": \"empty\", \"who\": \"no text or watermark\", \"box\": [0, 0, 1000, 1000, \"target\": \"No lettering, captions, signatures, or watermarks are present.\"}] [{\"id\": \"empty\", \"who\": \"no injuries or damage\", \"box\": [0, 0, 1000, 1000, \"target\": \"The man has no injuries, blood, tears, wounds, or red marks.\"}] [{\"id\": \"empty\", \"who\": \"no style break\", \"box\": [0, 0, 1000, 1000, \"target\": \"The monochrome sepia-toned illustrated style remains consistent across the entire frame.\"}] [{\"id\": \"empty\", \"who\": \"no border issue\", \"box\": [0, 0, 1000, 1000, \"target\": \"The image retains its original rectangular composition without cropping or added borders.\"}] [{\"id\": \"empty\", \"who\": \"no other issue\", \"box\": [0, 0, 1000, 1000, \"target\": \"No additional annotations or problem boxes.\"}] [{\"id\": \"empty\", \"who\": \"no other issue\", \"box\": [0, 0, 1000, 1000, \"target\": \"No additional issue entries.\"}] [{\"id\": \"empty\", \"who\": \"no other issue\", \"box\": [0, 0, 1000, 1000, \"target\": \"No additional issue entries.\"}] [{\"id\": \"empty\", \"who\": \"no other issue\", \"box\": [0, 0, 1000,",
-          "answer": null,
-          "error": "malformed JSON (Extra data)",
-          "seconds": 46.59,
-          "vram_peak_mb": 7463.6
-        },
-        {
-          "shot_id": "s08_02",
-          "raw": "{\"people_count\": 1, \"issues\": [], \"verdict\": \"pass\", \"target\": \"marcus_croft\", \"note\": \"Marcus Croft, the only visible person, is a 40-year-old man with swept-back dark hair streaked with gray, a clean-shaven angular face, a dark velvet blazer, and an open-collar shirt. He wears a vintage gold signet ring and holds a glass decanter with a lit candle while a tumbler of dark red liquid rests before him. No injuries, blood, tears, text, watermarks, borders, or additional figures are present.\"} [{\"id\": \"marcus_croft\", \"who\": \"a 40-year-old man\", \"markers\": [\"vintage gold signet ring\", \"dark velvet blazer\"]}] [{\"id\": \"issues\", \"type\": \"none\", \"severity\": \"none\", \"box\": null, \"target\": null, \"note\": \"No issues.\"}] [{\"id\": \"target\", \"type\": \"illustration\", \"severity\": \"none\", \"box\": [0, 0, 1000, 1000], \"target\": \"A monochrome, finely hatched illustrated film frame featuring Marcus Croft alone against a smoky black background.\"}] [{\"id\": \"verdict\", \"type\": \"none\", \"severity\": \"none\", \"box\": null, \"target\": \"pass\"}] [{\"id\": \"note\", \"type\": \"none\", \"severity\": \"none\", \"box\": null, \"target\": \"Marcus Croft is the sole character; the scene contains no injuries, blood, tears, text, or additional people.\"}] [{\"id\": \"other\", \"type\": \"none\", \"severity\": \"none\", \"box\": null, \"target\": null, \"note\": \"No additional annotations.\"}] [{\"id\": \"final_response\", \"type\": \"json\", \"severity\": \"none\", \"box\": null, \"target\": {\"people_count\": 1, \"issues\": [], \"verdict\": \"pass\", \"target\": \"marcus_croft\", \"note\": \"Marcus Croft, the only visible person, is a 40-year-old man with swept-back dark hair streaked with gray, a clean-shaven angular face, a dark velvet blazer, and a vintage gold signet ring. He holds a glass decanter with a lit candle while a tumbler of dark red liquid rests before him. No injuries, blood, tears, text, watermarks, borders, or additional figures are present.\"}] [{\"id\": \"final_response_2\", \"type\": \"json\", \"severity\": \"none\", \"box\": null, \"target\": {\"people_count\": 1, \"issues\":",
-          "answer": null,
-          "error": "malformed JSON (Extra data)",
-          "seconds": 32.4,
-          "vram_peak_mb": 7328.3
-        }
-      ],
-      "swap": {
-        "klein_warmup_s": 0.52,
-        "unload_klein_s": 0.0,
-        "qa_load_and_run_s": 353.93,
-        "unload_qa_s": 0.0,
-        "reload_klein_s": 11.24,
-        "total_swap_s": 365.17
-      },
-      "metrics": {
-        "images": 8,
-        "valid_json_rate": 0.0,
-        "accuracy": {
-          "people_count": 0.0,
-          "duplicate_person": 0.0,
-          "missing_glasses": 0.0,
-          "unstated_mark": 0.0,
-          "extra_person": 0.0,
-          "text": 0.0
-        },
-        "box_iou_mean": null,
-        "box_hits_iou_0_3": 0,
-        "boxes_expected": 0,
-        "seconds_per_image": 44.24,
-        "seconds_first_image": 87.19,
-        "vram_peak_mb": 7683.9
-      }
-    },
-    {
-      "model": "qwen_3_4b.safetensors",
-      "clip_type": "flux3",
-      "attempts": [],
-      "results": [
-        {
-          "shot_id": "s09_04",
-          "raw": "{\"people_count\": 1, \"issues\": [], \"verdict\": \"pass\"}",
-          "answer": {
-            "people_count": 1,
-            "issues": [],
-            "verdict": "pass"
-          },
-          "error": "",
-          "seconds": 15.38,
-          "vram_peak_mb": 7598.4
-        },
-        {
-          "shot_id": "s03_06",
-          "raw": "{\"people_count\": 2, \"issues\": [], \"verdict\": \"pass\"}",
-          "answer": {
-            "people_count": 2,
-            "issues": [],
-            "verdict": "pass"
-          },
-          "error": "",
-          "seconds": 4.56,
-          "vram_peak_mb": 7625.3
-        },
-        {
-          "shot_id": "s01_05",
-          "raw": "{\"people_count\": 1, \"issues\": [], \"verdict\": \"pass\"}",
-          "answer": {
-            "people_count": 1,
-            "issues": [],
-            "verdict": "pass"
-          },
-          "error": "",
-          "seconds": 4.56,
-          "vram_peak_mb": 7651.1
-        },
-        {
-          "shot_id": "s03_05",
-          "raw": "{\"people_count\": 1, \"issues\": [], \"verdict\": \"pass\"}",
-          "answer": {
-            "people_count": 1,
-            "issues": [],
-            "verdict": "pass"
-          },
-          "error": "",
-          "seconds": 4.71,
-          "vram_peak_mb": 7647.6
-        },
-        {
-          "shot_id": "s02_04",
-          "raw": "{\"people_count\": 1, \"issues\": [], \"verdict\": \"pass\"}",
-          "answer": {
-            "people_count": 1,
-            "issues": [],
-            "verdict": "pass"
-          },
-          "error": "",
-          "seconds": 4.56,
-          "vram_peak_mb": 7640.0
-        },
-        {
-          "shot_id": "s01_03",
-          "raw": "{\"people_count\": 1, \"issues\": [], \"verdict\": \"pass\"}",
-          "answer": {
-            "people_count": 1,
-            "issues": [],
-            "verdict": "pass"
-          },
-          "error": "",
-          "seconds": 4.56,
-          "vram_peak_mb": 7604.9
-        },
-        {
-          "shot_id": "s04_03",
-          "raw": "{\"people_count\": 1, \"issues\": [], \"verdict\": \"pass\"}",
-          "answer": {
-            "people_count": 1,
-            "issues": [],
-            "verdict": "pass"
-          },
-          "error": "",
-          "seconds": 4.56,
-          "vram_peak_mb": 7561.6
-        },
-        {
-          "shot_id": "s08_02",
-          "raw": "{\"people_count\": 1, \"issues\": [], \"verdict\": \"pass\"}",
-          "answer": {
-            "people_count": 1,
-            "issues": [],
-            "verdict": "pass"
-          },
-          "error": "",
-          "seconds": 4.56,
-          "vram_peak_mb": 7604.9
-        }
-      ],
-      "swap": {
-        "klein_warmup_s": 0.52,
-        "unload_klein_s": 0.0,
-        "qa_load_and_run_s": 47.45,
-        "unload_qa_s": 0.0,
-        "reload_klein_s": 12.35,
-        "total_swap_s": 59.8
+        "reload_klein_s": 7.86,
+        "total_swap_s": 36.8
       },
       "metrics": {
         "images": 8,
         "valid_json_rate": 1.0,
         "accuracy": {
-          "people_count": 0.625,
-          "duplicate_person": 0.75,
+          "people_count": 0.875,
+          "duplicate_person": 1.0,
           "missing_glasses": 0.625,
           "unstated_mark": 0.875,
-          "extra_person": 0.875,
+          "extra_person": 1.0,
           "text": 1.0
         },
-        "box_iou_mean": 0.0,
-        "box_hits_iou_0_3": 0,
+        "box_iou_mean": 0.224,
+        "box_hits_iou_0_3": 4,
         "boxes_expected": 13,
-        "seconds_per_image": 5.93,
-        "seconds_first_image": 15.38,
-        "vram_peak_mb": 7651.1
+        "seconds_per_image": 3.62,
+        "seconds_first_image": 5.9,
+        "vram_peak_mb": 5884.4,
+        "detector_person_recall": 1.0,
+        "layer1_seconds_per_image": 0.45,
+        "questions_per_image": 3.2,
+        "ocr": false
       }
     }
   ],
