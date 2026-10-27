@@ -520,6 +520,11 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   the result is stored as `visual_qa` in the manifest. Gemini unavailable → skipped with a warning,
   never blocking. Calls and seconds appear in the Gemini usage line. Re-check existing shots with
   `python -m scripts.qa_shots [--only sNN]` or the GUI button "Revisar planos com QA".
+- **Thumbnail identity.** The thumbnail is composed like a shot: the protagonist's approved sheet
+  as the first reference (it refuses to run without it, so it never shows a generic face), their
+  signature markers, the brief's `thumbnail_concept`, and a figure whose head and shoulders fill at
+  least half the frame height on the right third, with negative space on the left for the text.
+  Visual QA runs on it like on every shot.
 - **Neutral character sheets.** Reference portraits are head-and-shoulders sheets (facing the
   viewer and three-quarter) on a plain flat dark-grey backdrop, in a simple plain dark top, with a
   neutral expression, even light and the drawing technique without environment clauses: the

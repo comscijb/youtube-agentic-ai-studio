@@ -428,26 +428,44 @@ def qa_and_retry(generator: ImageGenerator, job: ImageJob, record: dict, expecte
     return best_record, best_result
 
 
-def generate_thumbnail_image(output_dir, generator: ImageGenerator) -> str:
+# The figure must dominate the thumbnail (the evidence one left the whole left half empty).
+THUMBNAIL_FIGURE = ("the protagonist's head and shoulders fill at least half of the frame height on the right "
+                    "third, face and identity markers clearly visible, lit by one warm light; dark negative "
+                    "space on the left third for the title text")
+
+
+def thumbnail_shot(vb: dict, brief: dict, shot_list: dict | None = None) -> dict:
+    """The thumbnail as a shot: the protagonist (first visual-bible character) + the brief's
+    thumbnail concept + a composition where the figure occupies at least half the height."""
+    thumb = vb.get("thumbnail_shot") or {}
+    protagonist = [vb["characters"][0]["character_id"]] if vb.get("characters") else []
+    characters = protagonist + [cid for cid in thumb.get("characters") or [] if cid not in protagonist]
+    concept = str(brief.get("thumbnail_concept") or thumb.get("description") or "").strip().rstrip(".")
+    settings = {item.get("location"): item.get("setting_condition") for item in (shot_list or {}).get("shots", [])}
+    return {"shot_id": "thumbnail", "scene_id": "", "shot_type": "medium", "characters": characters[:3],
+            "location": thumb.get("location_id"), "action": f"{concept}. {THUMBNAIL_FIGURE}",
+            "face_visibility": "full",
+            "others_present": bool(shots_module.unnamed_people(concept, len(characters[:3]))),
+            "setting_condition": settings.get(thumb.get("location_id")) or "",
+            "seed": thumb.get("seed", vbible.seed_for("thumbnail", "episode")), "seed_offset": 0}
+
+
+def generate_thumbnail_image(output_dir, generator: ImageGenerator,
+                             progress: Callable[[str], None] = print) -> str:
     output = Path(output_dir)
     vb = load_json(output / vbible.FILE_NAME) or {}
-    thumb = vb.get("thumbnail_shot") or {}
-    # The protagonist (first visual-bible character) anchors the thumbnail.
-    protagonist = [vb["characters"][0]["character_id"]] if vb.get("characters") else []
-    characters = list(thumb.get("characters") or [])
-    characters = protagonist + [cid for cid in characters if cid not in protagonist]
-    settings = {shot.get("location"): shot.get("setting_condition")
-                for shot in (load_json(output / shots_module.FILE_NAME) or {}).get("shots", [])}
-    shot = {"shot_id": "thumbnail", "scene_id": "", "shot_type": "medium",
-            "characters": characters, "location": thumb.get("location_id"),
-            "action": f"{thumb.get('description', '')}, strong emotional focal point on the right, "
-                      "dark negative space on the left", "face_visibility": "partial",
-            "others_present": False, "setting_condition": settings.get(thumb.get("location_id")) or "",
-            "seed": thumb.get("seed", vbible.seed_for("thumbnail", "episode")), "seed_offset": 0}
+    brief = load_json(output / "story_brief.json") or load_json(output / "research.json") or {}
+    shot = thumbnail_shot(vb, brief, load_json(output / shots_module.FILE_NAME))
+    if shot["characters"] and not vbible.approved_reference(vb, "character", shot["characters"][0], output):
+        raise ApprovalRequired(f"Approve {shot['characters'][0]}'s character sheet before the thumbnail: "
+                               "it must show the protagonist's reference, not a generic face.")
     composed = shots_module.compose_shot(shot, vb, output)
     job = ImageJob(job_id="thumbnail", prompt=composed["prompt"], seed=composed["seed"],
                    output_path=str(output / "thumbnail_bg.jpg"), kind=composed["kind"],
                    references=composed["references"], size=native_size(), final_size=(1280, 720))
     record = generator.generate_with_retry(job, new_seeds=2 if identity.is_illustration() else 1)
+    if visual_qa.enabled():
+        expected = visual_qa.expected_for(shot, vb, str(brief.get("thumbnail_concept") or ""))
+        record, _ = qa_and_retry(generator, job, record, expected, progress)
     _record_provenance(output, [record])
     return job.output_path
