@@ -138,6 +138,89 @@ def load_templates(folder=WORKFLOWS) -> tuple[dict, dict, dict]:
     return read(T2I_TEMPLATE.name), read(REF_TEMPLATE.name), read(MAP_FILE.name)
 
 
+# ── Region edit (Phase 3.5-D) ───────────────────────────────────────────────
+# The user's edit export, kept as an editor: the shot is <ref_image_0>, QA boxes
+# become <obj_N> through CreateBoundingBoxes → Flux3LayoutPrompt, up to 3 extra
+# references (approved portraits for identity fixes) follow, the latent comes
+# from the shot (16:9 kept) and the prompt upsampler is bypassed. With no box
+# the same graph runs as an instruction-only edit.
+
+REGION_EDIT_TEMPLATE = WORKFLOWS / "flux3_klein_regionedit_api.json"
+REGION_CANVAS = (1360, 768)                 # CreateBoundingBoxes needs multiples of 16; ~16:9
+
+
+def derive_region_edit(edit: dict) -> dict:
+    graph = {node_id: _node(edit, node_id) for node_id in _LOADERS}
+    for index, node_id in enumerate(REFERENCE_NODES):
+        loader = _node(edit, "11")
+        loader["inputs"] = {"image": "shot.png" if index == 0 else f"reference_{index}.png"}
+        loader["_meta"] = _meta("Shot (<ref_image_0>)" if index == 0 else f"Reference {index}")
+        graph[node_id] = loader
+    boxes = _node(edit, "33")
+    boxes["inputs"] = {"width": REGION_CANVAS[0], "height": REGION_CANVAS[1], "editor_state": {"__value__": []},
+                       "background": ["11", 0]}
+    graph["33"] = boxes
+    layout = _node(edit, "49")
+    layout["inputs"] = {"prompt": "", "element": ["33", 2]}
+    graph["49"] = layout
+    encode = _node(edit, "4")
+    encode["inputs"] = {"text": ["49", 0], "clip": ["2", 0]}
+    graph["4"] = encode
+    graph["32"] = _node(edit, "32")
+    reference = _node(edit, "17")
+    inputs = {key: value for key, value in reference["inputs"].items() if not key.startswith("images.")}
+    inputs.update({"positive": ["4", 0], "negative": ["32", 0], "vae": ["3", 0]})
+    inputs.update({f"images.image{index}": [node_id, 0] for index, node_id in enumerate(REFERENCE_NODES)})
+    reference["inputs"] = inputs
+    graph["17"] = reference
+    sampler = _node(edit, "7")
+    sampler["inputs"].update({"positive": ["17", 0], "negative": ["17", 1], "latent_image": ["17", 2], "seed": 0})
+    graph["7"] = sampler
+    graph["8"] = _node(edit, "8")
+    save = _node(edit, "9")
+    save["inputs"]["filename_prefix"] = "private_gravity_edit"
+    graph["9"] = save
+    return graph
+
+
+def load_region_edit(folder=WORKFLOWS, edit_path=EDIT_TEMPLATE) -> dict:
+    path = Path(folder) / REGION_EDIT_TEMPLATE.name
+    if not path.exists():
+        path.write_text(json.dumps(derive_region_edit(load_edit_template(edit_path)), indent=2,
+                                   ensure_ascii=False) + "\n", encoding="utf-8")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def build_region_edit(*, instruction: str, seed: int, shot: str, references: list[str] = (),
+                      boxes: list[tuple] = (), steps: int | None = None,
+                      filename_prefix: str = "private_gravity_edit", folder=WORKFLOWS) -> dict:
+    """The region-edit graph: ``shot`` and ``references`` are uploaded image names,
+    ``boxes`` [(normalized [x0, y0, x1, y1], short description)] in <obj_1>, <obj_2>… order."""
+    if len(references) > MAX_REFERENCES - 1:
+        raise TemplateError(f"a region edit takes the shot plus at most {MAX_REFERENCES - 1} references")
+    graph = copy.deepcopy(load_region_edit(folder))
+    names = [shot, *references]
+    for index, node_id in enumerate(REFERENCE_NODES):
+        if index < len(names):
+            graph[node_id]["inputs"]["image"] = names[index]
+        else:
+            graph.pop(node_id, None)
+            graph["17"]["inputs"].pop(f"images.image{index}", None)
+    width, height = graph["33"]["inputs"]["width"], graph["33"]["inputs"]["height"]
+    graph["33"]["inputs"]["editor_state"] = {"__value__": [
+        {"x": int(round(box[0] * width)), "y": int(round(box[1] * height)),
+         "width": max(16, int(round((box[2] - box[0]) * width))),
+         "height": max(16, int(round((box[3] - box[1]) * height))),
+         "metadata": {"type": "obj", "text": "", "desc": str(desc)[:80], "palette": []}}
+        for box, desc in boxes]}
+    graph["49"]["inputs"]["prompt"] = instruction
+    graph["7"]["inputs"]["seed"] = int(seed) % (2 ** 63)
+    if steps:
+        graph["7"]["inputs"]["steps"] = int(steps)
+    graph["9"]["inputs"]["filename_prefix"] = filename_prefix
+    return graph
+
+
 def graph_hash(graph: dict) -> str:
     return hashlib.sha256(json.dumps(graph, sort_keys=True).encode("utf-8")).hexdigest()
 

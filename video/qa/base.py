@@ -19,17 +19,20 @@ from PIL import Image
 
 QA_VERSION = 2
 ISSUE_TYPES = ("missing_marker", "duplicate_person", "extra_person", "unstated_injury", "text", "border",
-               "style_break", "wrong_subject", "other")
+               "style_break", "wrong_subject", "identity", "other")
 ANSWERS = ("yes", "no", "unclear")
 
 
 def issue(kind: str, *, severity: str = "blocking", box=None, target: str = "", note: str = "",
-          source: str = "") -> dict:
+          source: str = "", marker: str = "") -> dict:
     if kind not in ISSUE_TYPES:
         kind = "other"
-    return {"type": kind, "severity": "advisory" if severity == "advisory" else "blocking",
-            "box": [round(float(value), 4) for value in box] if box else None,
-            "target": target or "", "note": note[:200], "source": source}
+    found = {"type": kind, "severity": "advisory" if severity == "advisory" else "blocking",
+             "box": [round(float(value), 4) for value in box] if box else None,
+             "target": target or "", "note": note[:200], "source": source}
+    if marker:
+        found["marker"] = marker
+    return found
 
 
 def blocking(result: dict) -> list[dict]:

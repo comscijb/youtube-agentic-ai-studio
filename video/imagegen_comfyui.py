@@ -166,6 +166,9 @@ class ImageJob:
     latent_source: str = ""
     size: tuple = templates.DEFAULT_SIZE
     final_size: tuple = (1920, 1080)
+    # kind "region_edit": prompt is the edit instruction, references[0] the shot to edit,
+    # edit_boxes [(normalized box, description)] become <obj_1>, <obj_2>…
+    edit_boxes: list = field(default_factory=list)
 
 
 def aspect_ok(size, requested, tolerance: float = ASPECT_TOLERANCE) -> bool:
@@ -194,6 +197,11 @@ class ImageGenerator:
         self._validated: set[str] = set()
 
     def _graph(self, job: ImageJob, seed: int, uploaded: list[str]) -> dict:
+        if job.kind == "region_edit":
+            return templates.build_region_edit(
+                instruction=job.prompt, seed=seed, shot=uploaded[0], references=uploaded[1:],
+                boxes=[tuple(item) for item in job.edit_boxes], steps=getattr(config, "IMAGEGEN_STEPS", None),
+                filename_prefix=f"private_gravity/{job.job_id}")
         return templates.build_graph(
             job.kind, prompt=job.prompt, seed=seed, width=job.size[0], height=job.size[1],
             steps=getattr(config, "IMAGEGEN_STEPS", None), references=uploaded,

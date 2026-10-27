@@ -152,7 +152,7 @@ def apply(asked: list[base.Question], answers: dict, detection: dict, expected: 
             target = needing[0]["id"] if len(needing) == 1 else ""
             for index in without[:missing]:
                 issues.append(base.issue("missing_marker", box=persons[index]["face"]["box"], target=target,
-                                         note=f"face without {marker}", source="local_vlm"))
+                                         note=f"face without {marker}", source="local_vlm", marker=marker))
             if len(without) < missing:
                 issues.append(base.issue("missing_marker", severity="advisory", target=target,
                                          note=f"{marker}: unclear on the visible face(s)", source="local_vlm"))
