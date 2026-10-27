@@ -214,6 +214,13 @@ IMAGEGEN_FREE_MEMORY_EVERY   = 10         # call ComfyUI /free between batches o
 # flawed images are regenerated with new seeds, then margins are cropped away.
 IMAGEGEN_IMAGE_CHECKS        = True
 IMAGEGEN_CHECK_RETRIES       = 2
+# Visual QA (Gemini vision) of every generated shot and thumbnail: headcount, duplicated
+# person, signature markers, unstated injuries, text. A failed blocking check gets up to
+# IMAGEGEN_QA_RETRIES new seeds; the best attempt is kept and flagged in the GUI.
+IMAGEGEN_VISUAL_QA        = os.getenv("IMAGEGEN_VISUAL_QA", "true").lower() in ("1", "true", "yes", "on")
+IMAGEGEN_QA_RETRIES       = int(os.getenv("IMAGEGEN_QA_RETRIES", "2"))
+IMAGEGEN_QA_MAX_SIDE      = 768           # px; the image is downscaled before it is sent
+IMAGEGEN_VISUAL_QA_MODEL  = os.getenv("IMAGEGEN_VISUAL_QA_MODEL", "")   # "" = the configured Gemini chain (Flash)
 # Target share of wide/establishing shots with small figures: guidance for the
 # shot planner and a warning in shot_list.json, never a failure.
 IMAGEGEN_MIN_WIDE_SHARE      = float(os.getenv("IMAGEGEN_MIN_WIDE_SHARE", "0.3"))   # target only: a warning, never a failure

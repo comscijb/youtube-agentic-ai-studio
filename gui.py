@@ -911,7 +911,7 @@ def imagegen_status():
         "shots": [{key: shot.get(key) for key in ("shot_id", "scene_id", "start", "end", "shot_type",
                                                    "characters", "face_visibility", "reuse_of",
                                                    "action", "prompt", "image_path", "provider",
-                                                   "flags", "warnings")}
+                                                   "flags", "warnings", "qa")}
                   for shot in shots],
     })
 
@@ -1032,6 +1032,19 @@ def imagegen_edit_shot(shot_id):
     atomic_write_json(path, shot_list)
     shots_module.write_report(config.OUTPUT_DIR, shot_list)
     return jsonify({"ok": True, "warnings": shot.get("warnings", [])})
+
+
+@app.route("/api/imagegen/qa", methods=["POST"])
+def imagegen_qa():
+    """"Revisar planos com QA": visual QA of the existing shots, without regenerating them."""
+    from scripts import qa_shots
+    only = str((request.get_json(force=True) or {}).get("only", "")).strip() or None
+
+    def work():
+        summary = qa_shots.run(Path(config.OUTPUT_DIR), only=only, progress=_imagegen_progress)
+        _imagegen_progress(f"QA: {summary['checked']} checked, {summary['passed']} passed, "
+                           f"{len(summary['failed'])} failed, {summary['skipped']} skipped")
+    return _imagegen_run(work)
 
 
 @app.route("/api/imagegen/generate", methods=["POST"])

@@ -257,8 +257,12 @@ def generate(prompt: str, starting_model: str | None = None, *,
              response_mime_type: str | None = None,
              max_output_tokens: int | None = None,
              thinking: str | int | None = None,
-             timeout_seconds: float | None = None) -> str:
+             timeout_seconds: float | None = None,
+             images: list | None = None) -> str:
     """Generate text using discovered models and category-aware fallback.
+
+    ``images`` (optional) are ``(bytes, mime_type)`` pairs sent before the prompt
+    (multimodal, e.g. the visual QA of a generated shot).
 
     ``timeout_seconds`` is the per-request deadline (default
     ``config.GEMINI_TIMEOUT_SECONDS``). A ``deadline_exceeded`` failure is
@@ -306,7 +310,7 @@ def generate(prompt: str, starting_model: str | None = None, *,
         deadline_retries = 0
         backoff_retries = 0
         while True:
-            info, text = _attempt(client, model, prompt, stage, deadline, settings)
+            info, text = _attempt(client, model, prompt, stage, deadline, settings, images)
             if text:
                 return text
             if info.category == "deadline_exceeded" and deadline_retries < 1:
@@ -365,16 +369,18 @@ def generate(prompt: str, starting_model: str | None = None, *,
 
 
 def _attempt(client, model: str, prompt: str, stage: str, deadline: float,
-             settings: dict) -> tuple[GeminiErrorInfo | None, str]:
+             settings: dict, images: list | None = None) -> tuple[GeminiErrorInfo | None, str]:
     """Run one request; return ``(None, text)`` or ``(failure info, "")``."""
     started = time.monotonic()
     info = None
     text = ""
     seconds = int(round(deadline))
     try:
+        contents = prompt if not images else [
+            *(types.Part.from_bytes(data=data, mime_type=mime) for data, mime in images), prompt]
         response = client.models.generate_content(
             model=model,
-            contents=prompt,
+            contents=contents,
             config=types.GenerateContentConfig(
                 # The explicit header overrides any deadline left in the
                 # client's shared headers by an earlier default-timeout call.
@@ -435,11 +441,22 @@ def usage_summary() -> dict:
             "fallbacks": int(_usage["fallbacks"]), "failures": int(_usage["failures"])}
 
 
+def stage_summary(prefix: str) -> dict:
+    """Calls and seconds spent in stages starting with ``prefix`` (e.g. "visual_qa")."""
+    with _lock:
+        records = [record for record in _call_log if str(record["stage"]).startswith(prefix)]
+    return {"calls": len(records), "seconds": round(sum(record["elapsed_seconds"] for record in records), 1)}
+
+
 def usage_line() -> str:
     summary = usage_summary()
-    return (f"Gemini usage: {summary['calls']} calls, {summary['retries']} retries, "
+    line = (f"Gemini usage: {summary['calls']} calls, {summary['retries']} retries, "
             f"{summary['wait_seconds']:.0f}s waiting, {summary['fallbacks']} fallbacks, "
             f"{summary['failures']} failures")
+    qa = stage_summary("visual_qa")
+    if qa["calls"]:
+        line += f" (visual QA: {qa['calls']} calls, {qa['seconds']:.0f}s)"
+    return line
 
 
 def _record_call(stage: str, model: str, prompt_chars: int, elapsed: float,

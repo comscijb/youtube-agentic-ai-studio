@@ -545,6 +545,7 @@ input[type=range]{width:100%;accent-color:var(--primary)}
               <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="igPost('/api/imagegen/candidates')">Generate reference candidates</button>
               <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="igPost('/api/imagegen/generate', {limit: 5})">Generate 5 shots</button>
               <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="igPost('/api/imagegen/generate', {})">Generate all shots</button>
+              <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="igPost('/api/imagegen/qa', {})">Revisar planos com QA</button>
             </div>
             <div id="ig-refs"></div>
             <div id="ig-shots" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-top:8px"></div>
@@ -1259,6 +1260,13 @@ function loadImagegen() {
         flag.textContent = '⛔ ' + text + ' — edit to fix (skipped until then)';
         cell.appendChild(flag);
       });
+      if (shot.qa) {           // visual QA (Gemini vision): failed checks are flagged, passes get a tick
+        const qa = document.createElement('div');
+        const colour = {fail: 'var(--red)', pass: 'var(--green)', skipped: 'var(--amber)'}[shot.qa.status] || 'var(--muted)';
+        qa.style.cssText = `color:${colour};margin:2px 0`;
+        qa.textContent = shot.qa.status === 'pass' ? 'QA ✓' : `QA ${shot.qa.status}: ${(shot.qa.notes || []).join('; ')}`;
+        cell.appendChild(qa);
+      }
       (shot.warnings || []).forEach(text => {
         const warning = document.createElement('div');
         warning.style.cssText = 'color:var(--amber);margin:2px 0';

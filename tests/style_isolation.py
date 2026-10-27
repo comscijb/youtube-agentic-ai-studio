@@ -22,6 +22,7 @@ def setUpModule():
         patch.object(config, "PROJECTS_DIR", os.path.join(_state["temp"].name, "projects")),
         patch.object(config, "OUTPUT_DIR", config.OUTPUT_DIR),     # restored if a script activates one
         patch.object(config, "IMAGES_DIR", config.IMAGES_DIR),
+        patch.object(config, "IMAGEGEN_VISUAL_QA", False),       # QA tests enable it with a mocked Gemini
     ]
     for item in _state["patches"]:
         item.start()

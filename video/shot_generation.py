@@ -32,6 +32,7 @@ from agents import identity
 from agents import shot_list as shots_module
 from agents import visual_bible as vbible
 from agents.narrative import atomic_write_json, load_json
+from video import visual_qa
 from video.imagegen_comfyui import ComfyUnavailable, GenerationFailed, ImageGenerator, ImageJob
 
 PORTRAIT_SIZE = (1024, 1024)
@@ -252,6 +253,17 @@ def _record_provenance(output: Path, records: list[dict]) -> None:
     path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
+def update_provenance(output, job_id: str, **fields) -> None:
+    """Add fields to one generated-asset record (e.g. a later visual QA result)."""
+    path = Path(output) / "asset_manifest.json"
+    manifest = load_json(path) or {}
+    for item in manifest.get("generated_assets", []):
+        if item.get("job_id") == job_id:
+            item.update(fields)
+            path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
+            return
+
+
 def stock_allowed(shot: dict) -> bool:
     """Stock is opt-in (``STOCK_ENABLED``); then it serves any shot in
     ``cinematic_photo`` mode and, in the illustration style, only environment
@@ -312,7 +324,7 @@ def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None =
     every = max(1, int(getattr(config, "IMAGEGEN_FREE_MEMORY_EVERY", 10)))
     started = clock()
     summary = {"generated": 0, "cached": 0, "fallback": 0, "failed": [], "held": [], "total": len(queue),
-               "flagged": flagged, "warned": warned}
+               "flagged": flagged, "warned": warned, "qa_failed": []}
     for index, shot in enumerate(queue, 1):
         composed = shots_module.compose_shot(shot, vb, output)
         for note in shots_module.prompt_advice(composed["prompt"], narration.get(shot.get("scene_id", ""), "")):
@@ -347,6 +359,12 @@ def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None =
                 summary["failed"].append(shot["shot_id"])
                 progress(f"   ⚠ {shot['shot_id']}: {exc}")
             continue
+        if not record.get("fallback_from") and visual_qa.enabled():
+            expected = visual_qa.expected_for(shot, vb, narration.get(shot.get("scene_id", ""), ""))
+            record, result = qa_and_retry(generator, job, record, expected, progress)
+            shot["qa"] = {"status": result["status"], "notes": visual_qa.qa_note(result)}
+            if result["status"] == "fail":
+                summary["qa_failed"].append(shot["shot_id"])
         shot["prompt"] = composed["prompt"]
         shot["reference_slots"] = composed["slots"]
         shot.pop("hold_previous", None)
@@ -361,6 +379,53 @@ def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None =
             generator.client.free_memory()
     summary["seconds"] = round(clock() - started, 1)
     return summary
+
+
+QA_SEED_OFFSET = 3_000_017
+
+
+def qa_and_retry(generator: ImageGenerator, job: ImageJob, record: dict, expected: dict,
+                 progress: Callable[[str], None] = print) -> tuple[dict, dict]:
+    """Visual QA of a generated image; on a blocking failure, up to IMAGEGEN_QA_RETRIES new
+    seeds. The best attempt is kept at ``job.output_path`` and returned (record, QA result)."""
+    result = visual_qa.review(job.output_path, expected)
+    if result["status"] == "skipped":
+        progress(f"   ⚠ {job.job_id}: {result['warning']}")
+        record["visual_qa"] = result
+        return record, result
+    attempts = [{"seed": record.get("seed"), "status": result["status"], "blocking": result["blocking"]}]
+    best_record, best_result = record, result
+    keep = visual_qa.path_with_suffix(job.output_path, ".qa-best")
+    shutil.copy2(job.output_path, keep)
+    retries = int(getattr(config, "IMAGEGEN_QA_RETRIES", 2))
+    try:
+        for attempt in range(1, retries + 1):
+            if best_result["status"] != "fail":
+                break
+            progress(f"   ⚠ {job.job_id}: visual QA failed ({'; '.join(best_result['blocking'])}); "
+                     f"new seed {attempt}/{retries}")
+            try:
+                candidate = generator.generate(job, job.seed + QA_SEED_OFFSET * attempt)
+            except (GenerationFailed, OSError, ValueError) as exc:
+                attempts.append({"seed": job.seed + QA_SEED_OFFSET * attempt, "status": "error",
+                                 "error": str(exc)[:200]})
+                continue
+            checked = visual_qa.review(job.output_path, expected)
+            attempts.append({"seed": candidate.get("seed"), "status": checked["status"],
+                             "blocking": checked["blocking"]})
+            if checked["status"] == "skipped":
+                break
+            if visual_qa.better(checked, best_result):
+                best_record, best_result = candidate, checked
+                shutil.copy2(job.output_path, keep)
+    finally:
+        shutil.move(str(keep), job.output_path)          # the best attempt is the shot
+    if best_result["status"] == "fail":
+        progress(f"   ⛔ {job.job_id}: visual QA still fails after {retries} new seed(s); best attempt kept "
+                 f"and flagged ({'; '.join(best_result['blocking'])})")
+    best_result = {**best_result, "attempts": attempts}
+    best_record["visual_qa"] = best_result
+    return best_record, best_result
 
 
 def generate_thumbnail_image(output_dir, generator: ImageGenerator) -> str:

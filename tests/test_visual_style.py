@@ -37,7 +37,8 @@ class StyleTestCase(unittest.TestCase):
         self.output.mkdir()
         self.patches = [patch.object(config, "STYLE_REFS_DIR", str(self.root / "style_refs")),
                         patch.object(config, "VISUAL_STYLE", "dark_illustration"),
-                        patch.object(config, "VISUAL_STYLE_VARIANT", "hybrid")]
+                        patch.object(config, "VISUAL_STYLE_VARIANT", "hybrid"),
+                        patch.object(config, "IMAGEGEN_VISUAL_QA", False)]
         for item in self.patches:
             item.start()
 

@@ -512,6 +512,14 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   list per character: the reference name (the full descriptor only without a reference) + markers
   + this scene's outfit + this scene's state + this moment, with phrases about other scenes
   removed, repeated clauses and a setting that repeats itself dropped, and each part capped.
+- **Visual QA (Gemini vision).** After each generated shot and the thumbnail, a ~768 px copy and a
+  compact checklist go to Gemini (`IMAGEGEN_VISUAL_QA=true`, JSON mode). Blocking checks: headcount,
+  the same person twice, a visible face missing its signature markers, injuries/blood/marks the
+  scene narration does not state, text or watermarks. A failure gets up to `IMAGEGEN_QA_RETRIES`
+  (2) new seeds; the best attempt is kept and flagged on the GUI shot card with the QA notes, and
+  the result is stored as `visual_qa` in the manifest. Gemini unavailable → skipped with a warning,
+  never blocking. Calls and seconds appear in the Gemini usage line. Re-check existing shots with
+  `python -m scripts.qa_shots [--only sNN]` or the GUI button "Revisar planos com QA".
 - **Neutral character sheets.** Reference portraits are head-and-shoulders sheets (facing the
   viewer and three-quarter) on a plain flat dark-grey backdrop, in a simple plain dark top, with a
   neutral expression, even light and the drawing technique without environment clauses: the
