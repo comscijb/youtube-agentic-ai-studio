@@ -284,14 +284,16 @@ class ComposeTests(unittest.TestCase):
         self.assertIn("the man from the second image, wearing a navy blazer", prompt)
         self.assertIn("in the room from the third image", prompt)
 
-    def test_more_than_three_characters_keeps_two_references(self):
+    def test_four_characters_keep_the_three_most_important_as_references(self):
         vb = json.loads(json.dumps(VISUAL_BIBLE))
         vb["characters"].append({"character_id": "guest", "descriptor": "an older woman",
                                  "wardrobe": [{"scene_ids": ["s02"], "outfit": "a black dress"}]})
-        shot = self.shot(characters=["julian_vance", "marcus_croft", "elena_vance", "guest"])
+        shot = self.shot(characters=["guest", "julian_vance", "marcus_croft", "elena_vance"])
         composed = shots_module.compose_shot(shot, vb, "unused", assume_references=True)
-        self.assertEqual(len(composed["references"]), 2)
-        self.assertIn("an older woman, wearing a black dress", composed["prompt"])
+        self.assertEqual([slot["id"] for slot in composed["slots"]],
+                         ["julian_vance", "marcus_croft", "elena_vance"])
+        self.assertNotIn("an older woman", composed["prompt"])
+        self.assertIn("1 more distant, indistinct figure in shadow", composed["prompt"])
 
     def test_environment_shot_uses_t2i_and_new_seed_offset(self):
         composed = shots_module.compose_shot(

@@ -113,18 +113,21 @@ class SlotPlanTests(StyleTestCase):
                 "location": "loft", "action": "They wait across the table", "face_visibility": "partial",
                 "seed": 10, "seed_offset": 0}
 
-    def test_two_characters_location_then_style_anchor(self):
+    def test_characters_then_location_then_style_anchor(self):
         self.approve_anchor(1)
         vb = self.vb_with_refs()
-        composed = shots_module.compose_shot(
-            self.shot(["julian_vance", "marcus_croft", "elena_vance"]), vb, self.output)
+        composed = shots_module.compose_shot(self.shot(["julian_vance", "marcus_croft"]), vb, self.output)
         self.assertEqual([slot["kind"] for slot in composed["slots"]],
                          ["character", "character", "location", "style"])
         self.assertEqual([slot["slot"] for slot in composed["slots"]], [0, 1, 2, 3])
         self.assertIn("Rendered in the drawing style of the fourth image", composed["prompt"])
         self.assertIn("in the room from the third image", composed["prompt"])
-        self.assertIn("a 35-year-old woman of Spanish descent", composed["prompt"])   # described, not referenced
         self.assertTrue(composed["prompt"].startswith("Create an illustration of the man from the first image"))
+        # Three listed characters: the style anchor is dropped first, never a character.
+        three = shots_module.compose_shot(self.shot(["julian_vance", "marcus_croft", "elena_vance"]), vb, self.output)
+        self.assertEqual([slot["kind"] for slot in three["slots"]],
+                         ["character", "character", "character", "location"])
+        self.assertIn("the woman from the third image", three["prompt"])
 
     def test_style_anchor_takes_the_next_free_slot(self):
         self.approve_anchor(2)

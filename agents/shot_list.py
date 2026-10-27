@@ -38,6 +38,7 @@ SHOT_TYPES = ("wide", "establishing", "medium", "close_up", "insert", "over_the_
 FACE_VISIBILITY = ("none", "partial", "full")
 _SENTENCE_END = re.compile(r"[.!?…][\"'”’)\]]*$")
 ORDINALS = ("first", "second", "third", "fourth")
+MAX_CHARACTER_REFS = 3     # of the 4 reference slots; the 4th is the location or a style anchor
 FRAMING = {
     "wide": "wide shot, the figures small within towering architecture",
     "establishing": "establishing wide shot of the vast space, any figure tiny",
@@ -619,23 +620,27 @@ def _noun(descriptor: str) -> str:
 def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = False) -> dict:
     """Template kind, final prompt, reference image paths, slot plan and seed for one shot.
 
-    Reference slots in ReferenceMultiLatent (max 4), in order: characters in
-    the shot with approved portraits (at most 2, the most important first),
-    then the approved location reference (at most 1, not for inserts/hands),
-    then one approved style anchor when a slot is still free. Each is named by
-    its ordinal in the prompt.
+    Reference slots in ReferenceMultiLatent (max 4), in priority order: every
+    listed character with an approved sheet, whatever the face visibility
+    (silhouettes and backs still need build, hair, glasses and wardrobe; at
+    most 3, the most important — visual-bible order — first), then the
+    location reference (not for inserts/hands), then one style anchor. The
+    anchor is dropped first, then the location, never a listed character; a
+    4th+ character becomes a distant, indistinct figure. Each reference is
+    named by its ordinal in the prompt.
     """
     from agents import identity, style_refs
 
     style = identity.style_suffix()
     noun = identity.image_noun()
     framing = FRAMING.get(shot.get("shot_type"), "")
-    characters = list(shot.get("characters") or [])
-    use_faces = shot.get("face_visibility") != "none" or shot.get("shot_type") in {"hands", "silhouette"}
+    listed = list(shot.get("characters") or [])
+    order = [item["character_id"] for item in vb.get("characters", [])]
+    by_importance = sorted(listed, key=lambda cid: order.index(cid) if cid in order else len(order))
+    characters = [cid for cid in listed if cid in by_importance[:MAX_CHARACTER_REFS]]
+    background = [cid for cid in listed if cid not in characters]
     references, slots, ref_names = [], [], {}
     for cid in characters:
-        if len(ref_names) >= 2 or not use_faces:
-            break
         path = vbible.approved_reference(vb, "character", cid, output_dir)
         if path or assume_references:
             references.append(path or f"character_refs/{cid}.png")
@@ -669,6 +674,9 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
         subjects.append(", ".join([name] + [text.strip() for text in details if text.strip()]))
     article = "an" if noun[0] in "aeiou" else "a"
     crowd = _company(shot, len(characters))
+    if background:      # a 4th+ listed character: no reference slot left, kept far and indistinct
+        crowd = (f"{crowd} Further back, {len(background)} more distant, indistinct "
+                 f"figure{'s' if len(background) > 1 else ''} in shadow.").strip()
     if shot.get("shot_type") == "over_the_shoulder" and characters:
         framing = over_the_shoulder(characters, vb, ref_names)
     if references:

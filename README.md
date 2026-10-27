@@ -488,8 +488,10 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   light source and figures small within towering architecture; close-ups sit on a dark background
   with one light. Unnamed groups are rendered as a few distant, indistinct guests in shadow, each of a
   different age, build, posture and clothing — never clones.
-- **Shot references.** Reference slots per shot: characters (≤ 2) → location (≤ 1) →
-  style anchor (≤ 1). A failed shot gets two new seeds, then (only with `STOCK_ENABLED`, and only
+- **Shot references.** Reference slots per shot (4): every listed character with an approved
+  sheet, whatever the face visibility (≤ 3, the most important first) → location → style anchor;
+  the anchor is dropped first, then the location, never a listed character, and a 4th+ character
+  becomes a distant, indistinct figure. A failed shot gets two new seeds, then (only with `STOCK_ENABLED`, and only
   for shots without characters) stock, then the previous shot is held longer. The video overlay is lighter
   (`ILLUSTRATION_OVERLAY_OPACITY`), and the synthetic-content disclosure is a reviewer decision
   that defaults to "not realistic".
