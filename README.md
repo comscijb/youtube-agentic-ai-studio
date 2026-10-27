@@ -539,19 +539,42 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   list per character: the reference name (the full descriptor only without a reference) + markers
   + this scene's outfit + this scene's state + this moment, with phrases about other scenes
   removed, repeated clauses and a setting that repeats itself dropped, and each part capped.
-- **Visual QA (Gemini vision).** After each generated shot and the thumbnail, a ~768 px copy and a
-  compact checklist go to Gemini (`IMAGEGEN_VISUAL_QA=true`, JSON mode). Blocking checks: headcount,
-  the same person twice, a visible face missing its signature markers, injuries/blood/marks the
-  scene narration does not state, text or watermarks. A failure gets up to `IMAGEGEN_QA_RETRIES`
-  (2) new seeds; the best attempt is kept and flagged on the GUI shot card with the QA notes, and
-  the result is stored as `visual_qa` in the manifest. Gemini unavailable → skipped with a warning,
-  never blocking. Calls and seconds appear in the Gemini usage line. Re-check existing shots with
-  `python -m scripts.qa_shots [--only sNN]` or the GUI button "Revisar planos com QA".
+- **Visual QA, local first (Phase 3.5).** `IMAGEGEN_VISUAL_QA=true`, layers in `IMAGEGEN_QA_LAYERS`
+  (default `deterministic,local_vlm`):
+  1. *Layer 1, CPU, every shot* — OpenCV DNN detectors (`video/qa/deterministic.py`): YOLOX-s
+     counts people (backs and small background figures included), YuNet finds faces, SFace compares
+     them. It gives the headcount, extra people (blocking unless the scene has unnamed guests), the
+     same face twice, borders/panels and, when Tesseract is installed, lettering — **all boxes come
+     from here**. Install once: `pip install opencv-python-headless==4.11.0.86` and
+     `python -m scripts.setup_qa_models` (~75 MB of ONNX models in `models/qa/`, not in git).
+  2. *Layer 2, local VLM* — `qwen3vl_4b_int8_convrot` through ComfyUI's `TextGenerate` (chosen by the
+     probe, `data/qa_probe_report.json`; `IMAGEGEN_QA_VLM_BACKEND=ollama` is the alternative, never
+     pulled automatically). It never locates anything: it answers one-word questions about crops
+     (glasses on this face? man or woman? blood or red marks? any writing? same person?).
+  3. *Layer 3, Gemini vision* — off (`IMAGEGEN_QA_GEMINI=false`); only when the local VLM is
+     unavailable, or `qa_shots --gemini`.
+
+  The verdict is code (`video/qa/decision.py`): **edit** when the blocking issues are ≤ 2 and each is a
+  small box (< 35 % of the frame) or an instruction-only fix (injury, text); **regenerate** for
+  style/border/wrong-subject, the main subject covered, ≥ 3 issues, or after 2 edits. Edits are
+  FLUX 3 Klein region edits (`workflows/flux3_klein_regionedit_api.json`, derived from your edit
+  export: the shot is `<ref_image_0>`, boxes are `<obj_N>`, approved portraits follow), instructions
+  composed per issue type. Then up to `IMAGEGEN_QA_RETRIES` new seeds; then the best version is kept
+  and flagged. Every version is saved in `images/shots/history/<shot_id>_vN.jpg`.
+
+  `generate_shots` is phase-batched so Klein (7.6 GB) and the VLM never share the 8 GB: generate all
+  pending shots (layer 1 inline) → free ComfyUI → VLM answers the whole batch → unload → Klein edits
+  or regenerates what failed → QA again for those only (`IMAGEGEN_QA_ROUNDS`, 2). Resumable;
+  `python -m scripts.generate_shots --fix-only` continues the fixes. Re-check existing shots with
+  `python -m scripts.qa_shots [--layers deterministic,local_vlm] [--only sNN]` or "Revisar planos com
+  QA". Shot cards show the verdict, the boxes on hover, the history and "Editar (QA)", "Editar com
+  instrução própria" (draw a box, type the instruction) and "Gerar de novo".
+  Probe: `python -m scripts.probe_local_vlm [--mode focused]`.
 - **Thumbnail identity.** The thumbnail is composed like a shot: the protagonist's approved sheet
   as the first reference (it refuses to run without it, so it never shows a generic face), their
   signature markers, the brief's `thumbnail_concept`, and a figure whose head and shoulders fill at
   least half the frame height on the right third, with negative space on the left for the text.
-  Visual QA runs on it like on every shot.
+  The layered QA and the edit → regenerate path run on it like on every shot (`thumbnail_qa.json`).
 - **Neutral character sheets.** Reference portraits are head-and-shoulders sheets (facing the
   viewer and three-quarter) on a plain flat dark-grey backdrop, in a simple plain dark top, with a
   neutral expression, even light and the drawing technique without environment clauses: the
