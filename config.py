@@ -202,9 +202,9 @@ IMAGEGEN_STEPS            = None          # None keeps the template's 16 steps
 IMAGEGEN_LATENT_SOURCE    = os.getenv("IMAGEGEN_LATENT_SOURCE", "empty_16x9")  # "reference" follows the first reference's size
 IMAGEGEN_PROMPT_UPSAMPLER = False         # the 9B upsampler is costly on 8 GB VRAM; Gemini writes the prompts
 IMAGEGEN_TIMEOUT_SECONDS  = 900
-IMAGEGEN_MAX_UNIQUE_SHOTS = int(os.getenv("IMAGEGEN_MAX_UNIQUE_SHOTS", "50"))   # ~1 min each on Klein
+IMAGEGEN_MAX_UNIQUE_SHOTS = int(os.getenv("IMAGEGEN_MAX_UNIQUE_SHOTS", "75"))   # ~70 for 10 min at 6-9 s
 IMAGEGEN_SHOT_MIN_SECONDS = 6.0
-IMAGEGEN_SHOT_MAX_SECONDS = 12.0
+IMAGEGEN_SHOT_MAX_SECONDS = 9.0     # one image every 6-9 s (a single longer sentence keeps its image)
 # "reference": approved character portraits drive identity, faces may be visible.
 # "limited_faces": mostly none/partial faces, at most IMAGEGEN_MAX_FULL_FACE_SHOTS hero shots.
 IMAGEGEN_IDENTITY_POLICY  = os.getenv("IMAGEGEN_IDENTITY_POLICY", "reference")
@@ -252,7 +252,9 @@ BROLL_XFADE_DUR =  1.2   # crossfade duration (must be < BROLL_INTERVAL)
 
 # Render quality preset (ffmpeg libx264)
 # "ultrafast" = fastest/largest  |  "veryfast" = recommended  |  "medium" = best quality
-RENDER_PRESET = "ultrafast"
+RENDER_PRESET = "veryfast"
+# Constant quality instead of a fixed high bitrate: 18-20 gives ~4-8 Mbps for 1080p24 illustrations.
+RENDER_CRF = 20
 
 # Overlay opacity: lower = more image visible but text harder to read (0–1)
 OVERLAY_OPACITY = 0.62
@@ -329,7 +331,9 @@ MUSIC_DUCKING_RATIO     = 8       # sidechain ratio: higher = music dips further
 MUSIC_DUCKING_THRESHOLD = 0.03    # narration level that starts the ducking (0-1)
 # Final mix loudness (YouTube reference): two-pass ffmpeg loudnorm.
 LOUDNESS_TARGET_LUFS = -14.0
-LOUDNESS_TRUE_PEAK   = -1.0
+LOUDNESS_TRUE_PEAK   = -1.5     # mix target
+# Checked on the final MP4: above this the audio is limited again at LOUDNESS_TRUE_PEAK and remuxed.
+FINAL_TRUE_PEAK_MAX  = -1.0
 
 # ─────────────────────────────────────────
 #  Paths  (do not change unless you know what you're doing)

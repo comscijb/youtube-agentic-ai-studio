@@ -208,9 +208,9 @@ def music_filter(duration: float, track_duration: float, volume: float) -> tuple
     return ";".join(parts), loops
 
 
-def _loudnorm_filter(measured: dict | None = None) -> str:
+def _loudnorm_filter(measured: dict | None = None, peak: float | None = None) -> str:
     target = float(getattr(config, "LOUDNESS_TARGET_LUFS", -14.0))
-    peak = float(getattr(config, "LOUDNESS_TRUE_PEAK", -1.0))
+    peak = float(getattr(config, "LOUDNESS_TRUE_PEAK", -1.5) if peak is None else peak)
     base = f"loudnorm=I={target}:TP={peak}:LRA=11"
     if not measured:
         return base + ":print_format=json"
@@ -247,6 +247,33 @@ def normalize_loudness(source: str, destination: str) -> dict:
         "output_true_peak_dbtp": float(second.get("output_tp", second["input_tp"])),
         "target_lufs": float(getattr(config, "LOUDNESS_TARGET_LUFS", -14.0)),
     }
+
+
+def limit_final_true_peak(video_path: str) -> dict:
+    """Measure the true peak on the FINAL MP4; above FINAL_TRUE_PEAK_MAX (-1.0 dBTP) the audio
+    is limited again at LOUDNESS_TRUE_PEAK (-1.5 dBTP) and remuxed (the video is copied).
+
+    The mix may meet its target and the AAC encode of the render still push the peak up,
+    which is why the check runs on the delivered file.
+    """
+    limit = float(getattr(config, "FINAL_TRUE_PEAK_MAX", -1.0))
+    peak = float(getattr(config, "LOUDNESS_TRUE_PEAK", -1.5))
+    before = measure_loudness(video_path)
+    if before["true_peak_dbtp"] <= limit:
+        return {"action": "none", **before}
+    first = _loudnorm_json(_run(["-i", str(video_path), "-vn", "-af", _loudnorm_filter(None, peak),
+                                 "-f", "null", "-"]).stderr)
+    temporary = str(Path(video_path).with_suffix(".limited.mp4"))
+    result = _run(["-y", "-i", str(video_path), "-map", "0:v:0", "-map", "0:a:0", "-c:v", "copy",
+                   "-af", _loudnorm_filter(first, peak), "-ar", "48000", "-c:a", "aac", "-b:a", "192k",
+                   "-movflags", "+faststart", temporary])
+    if result.returncode != 0:
+        Path(temporary).unlink(missing_ok=True)
+        raise RuntimeError(f"true-peak remux failed: {result.stderr[-300:]}")
+    os.replace(temporary, video_path)
+    after = measure_loudness(video_path)
+    return {"action": "limited_and_remuxed", "before_true_peak_dbtp": before["true_peak_dbtp"],
+            **after}
 
 
 def _update_manifest(output_dir: str, music: dict) -> None:

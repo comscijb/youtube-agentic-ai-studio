@@ -403,7 +403,11 @@ sentence to confirm Edge TTS audio and word timings.
   `music library/tracks.json` (`file`, `moods`, `license`, `source_url`, `attribution`); without
   metadata the mood is read from "Title - Artist - Genre - Mood" file names. The track is chosen
   by mood, looped with crossfades, ducked under the narration, and the final mix is normalised to
-  −14 LUFS / −1 dBTP. Attribution is added to the YouTube description.
+  −14 LUFS / −1.5 dBTP. The true peak is measured again on the final MP4: above −1.0 dBTP
+  (`FINAL_TRUE_PEAK_MAX`) the audio is limited at −1.5 dBTP and remuxed without re-encoding the
+  video. The render uses `RENDER_PRESET = "veryfast"` with `RENDER_CRF = 20` (constant quality,
+  ~4–8 Mbps for 1080p24) and logs size, duration and bitrate. Attribution is added to the YouTube
+  description.
 - **Stock (opt-in fallback, `STOCK_ENABLED = False` by default).** When disabled no Pixabay or
   Openverse request is ever made, in any style, and preflight needs no stock keys; the GUI
   Settings checkbox "Usar banco de imagens (Pixabay/Openverse) como fallback" turns it on. Then
@@ -539,7 +543,7 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   shots read "seen over the shoulder of the man from the first image; the woman from the second
   image faces the viewer" — never a third body.
 - **Shot list** (`shot_list.json`, after narration, one Gemini call): cuts on sentence boundaries,
-  6–12 s per shot, at most `IMAGEGEN_MAX_UNIQUE_SHOTS` (50) unique images, a mix of framings with
+  6–9 s per shot (≈ 70 shots for 10 min), at most `IMAGEGEN_MAX_UNIQUE_SHOTS` (75) unique images, a mix of framings with
   40–60% of shots without a full face. Prompts and reference slots are composed in code: approved
   character portraits first ("the man from the first image"), then the location reference.
 - **Identity.** Approve one of four generated portraits per character (and optionally one of two

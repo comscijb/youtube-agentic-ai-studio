@@ -144,7 +144,7 @@ class PrepareFinalAudioTests(unittest.TestCase):
         self.assertEqual(len(loudnorm), 2)
         self.assertIn("I=-14.0", " ".join(loudnorm[0]))
         self.assertIn("measured_I=-20.60", " ".join(loudnorm[1]))
-        self.assertIn("TP=-1.0", " ".join(loudnorm[1]))
+        self.assertIn("TP=-1.5", " ".join(loudnorm[1]))          # Phase 3.4-F mix target
         record = self.manifest()["music"]
         self.assertTrue(record["track"].startswith("Orison"))
         self.assertEqual(record["attribution"], "Orison by Dan Bodan")

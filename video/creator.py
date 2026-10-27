@@ -1063,11 +1063,35 @@ def create_video(script: dict, audio_path: str, output_dir: str,
         codec="libx264",
         audio_codec="aac",
         threads=4,
-        preset=getattr(config, "RENDER_PRESET", "ultrafast"),
+        **encode_settings(),
         verbose=False,
         logger=None,
     )
 
-    size_mb = os.path.getsize(output_path) // (1024 * 1024)
-    print(f"\n   ✅ Video rendered: {output_path} ({size_mb} MB)")
+    print(f"\n   ✅ Video rendered: {render_summary(output_path, final.duration)}")
+    try:
+        from video.music import limit_final_true_peak
+        peak = limit_final_true_peak(output_path)
+        if peak["action"] != "none":
+            print(f"   → True peak {peak['before_true_peak_dbtp']:.1f} dBTP on the final MP4: audio limited "
+                  f"to {peak['true_peak_dbtp']:.1f} dBTP and remuxed (video not re-encoded)")
+        else:
+            print(f"   → Final MP4: {peak['integrated_lufs']:.1f} LUFS, true peak {peak['true_peak_dbtp']:.1f} dBTP")
+    except (OSError, RuntimeError, ValueError, KeyError) as exc:
+        print(f"   ⚠ Could not check the final true peak: {exc}")
     return output_path
+
+
+def encode_settings() -> dict:
+    """libx264 at constant quality (RENDER_CRF) instead of a fixed high bitrate (Phase 3.4-F)."""
+    return {"preset": getattr(config, "RENDER_PRESET", "veryfast"),
+            "ffmpeg_params": ["-crf", str(getattr(config, "RENDER_CRF", 20)), "-pix_fmt", "yuv420p",
+                              "-movflags", "+faststart"]}
+
+
+def render_summary(path: str, duration: float) -> str:
+    """"final_video.mp4 (412 MB, 10m 12s, 5.4 Mbps)"."""
+    size = os.path.getsize(path)
+    seconds = max(float(duration or 0), 0.001)
+    return (f"{path} ({size / 2 ** 20:.0f} MB, {int(seconds) // 60}m {int(seconds) % 60:02d}s, "
+            f"{size * 8 / seconds / 1e6:.1f} Mbps)")
