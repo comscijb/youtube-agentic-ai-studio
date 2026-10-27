@@ -143,6 +143,10 @@ class ComfyClient:
             "filename": image["filename"], "subfolder": image.get("subfolder", ""),
             "type": image.get("type", "output")}).content
 
+    def unload_models(self) -> None:
+        """Unload every model (Klein or the QA VLM) so the other one fits in VRAM."""
+        self._request("POST", "/free", json={"unload_models": True, "free_memory": True})
+
     def free_memory(self) -> None:
         try:
             self._request("POST", "/free", json={"unload_models": False, "free_memory": True})

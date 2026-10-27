@@ -40,6 +40,9 @@ import config
 from studio import projects
 from video import imagegen_comfyui as comfy
 from video import imagegen_templates as templates
+from video.qa import base, focused
+from video.qa import deterministic as det
+from video.qa.comfy_vlm import ComfyVLM
 
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURE = ROOT / "tests" / "fixtures" / "qa_probe_expected.json"
@@ -244,12 +247,13 @@ def parse_answer(text: str) -> tuple[dict | None, str]:
 
 
 def answered(answer: dict) -> dict:
-    """The six probe checks as the model answered them."""
-    kinds = {issue["type"] for issue in answer["issues"]}
-    notes = " ".join(issue["note"].lower() for issue in answer["issues"])
+    """The six probe checks as the model answered them (blocking issues only)."""
+    issues = [issue for issue in answer["issues"] if issue.get("severity") != "advisory"]
+    kinds = {issue["type"] for issue in issues}
+    notes = " ".join(issue["note"].lower() for issue in issues)
     glasses = any(issue["type"] == "missing_marker" and ("glass" in issue["note"].lower()
                                                          or issue["target"] == "julian_vance")
-                  for issue in answer["issues"])
+                  for issue in issues)
     return {"people_count": answer["people_count"], "duplicate_person": "duplicate_person" in kinds,
             "missing_glasses": glasses,
             "unstated_mark": "unstated_injury" in kinds or ("mark" in notes and "missing_marker" not in kinds),
@@ -399,6 +403,75 @@ def probe_model(client, sampler, findings, model, fixture, uploads, progress, *,
     return record
 
 
+def fixture_expected(item: dict, characters: dict) -> dict:
+    """The fixture frame's expectation in the shape visual_qa.expected_for returns."""
+    listed = item["expected"]["characters"]
+    return {"people": len(listed), "background": 0, "others_present": bool(item["expected"].get("others_present")),
+            "characters": [{"id": cid, **characters[cid]} for cid in listed], "narration": ""}
+
+
+def probe_focused(client, sampler, model, fixture, images, progress, *, swap: bool,
+                  detector=None, vlm=None) -> dict:
+    """Decision 6: layer 1 (detector) + focused one-word questions to the VLM, scored like the JSON mode."""
+    detector = detector or det.Detector()
+    vlm = vlm or ComfyVLM(client, model=model)
+    record = {"model": model, "mode": "focused", "clip_type": vlm.clip_type, "attempts": [], "results": [],
+              "swap": None}
+    timings = {}
+    if swap:
+        try:
+            timings["klein_warmup_s"] = load_klein(client, sampler)
+        except (comfy.GenerationFailed, comfy.ComfyUnavailable, templates.TemplateError) as exc:
+            record["attempts"].append({"step": "klein warm-up", "error": str(exc)[:300]})
+        timings["unload_klein_s"] = unload(client)
+    ocr = det.ocr_available()
+    for item in fixture["images"]:
+        expected = fixture_expected(item, fixture["characters"])
+        started = time.monotonic()
+        detection = detector.detect(images[item["shot_id"]])
+        with Image.open(images[item["shot_id"]]) as opened:
+            image = opened.convert("RGB")
+        issues = det.layer1(detection, expected, image)
+        asked = focused.questions(image, detection, expected, ocr=ocr)
+        layer1_seconds = round(time.monotonic() - started, 2)
+        sampler.reset()
+        started = time.monotonic()
+        try:
+            answers = vlm.ask(asked)
+            error = ""
+        except base.VLMUnavailable as exc:
+            answers, error = {}, str(exc)[:300]
+            record["attempts"].append({"shot_id": item["shot_id"], "error": error})
+        sampler.sample()
+        issues, count = focused.apply(asked, answers, detection, expected, issues)
+        record["results"].append({
+            "shot_id": item["shot_id"], "raw": json.dumps(answers), "error": error,
+            "answer": None if error else {"people_count": count, "issues": issues, "verdict": ""},
+            "seconds": round(time.monotonic() - started, 2), "layer1_seconds": layer1_seconds,
+            "questions": len(asked), "detected_people": len(detection["persons"]), "vram_peak_mb": sampler.peak})
+        progress(f"   {item['shot_id']}: {len(asked)} questions, "
+                 f"{', '.join(i['type'] for i in base.blocking({'issues': issues})) or 'pass'}"
+                 + (f" — {error}" if error else ""))
+    record["metrics"] = score(record["results"], fixture)
+    truths = {item["shot_id"]: item["truth"]["people_count"] for item in fixture["images"]}
+    detected = sum(min(result["detected_people"], truths[result["shot_id"]]) for result in record["results"])
+    record["metrics"].update({
+        "detector_person_recall": round(detected / sum(truths.values()), 3),
+        "layer1_seconds_per_image": round(sum(r["layer1_seconds"] for r in record["results"]) / len(truths), 2),
+        "questions_per_image": round(sum(r["questions"] for r in record["results"]) / len(truths), 1),
+        "ocr": ocr})
+    if swap:
+        timings["qa_load_and_run_s"] = round(sum(r["seconds"] or 0 for r in record["results"]), 2)
+        timings["unload_qa_s"] = unload(client)
+        try:
+            timings["reload_klein_s"] = load_klein(client, sampler)
+        except (comfy.GenerationFailed, comfy.ComfyUnavailable, templates.TemplateError) as exc:
+            record["attempts"].append({"step": "klein reload", "error": str(exc)[:300]})
+        timings["total_swap_s"] = round(sum(value for key, value in timings.items() if key != "klein_warmup_s"), 2)
+        record["swap"] = timings
+    return record
+
+
 def _result(shot_id: str, raw: str, seconds: float, peak) -> dict:
     answer, error = parse_answer(raw)
     return {"shot_id": shot_id, "raw": raw[:2000], "answer": answer, "error": error,
@@ -463,7 +536,8 @@ def contact_sheet(fixture: dict, images: dict, models: list[dict], path: Path, w
 
 def run(output: Path, *, client=None, models: list[str] | None = None, swap: bool = True,
         max_side: int | None = None, fixture_path: Path = FIXTURE, report_path: Path = REPORT,
-        sheet_path: Path = SHEET, progress: Callable[[str], None] = print) -> dict:
+        sheet_path: Path = SHEET, progress: Callable[[str], None] = print, mode: str = "json",
+        detector=None) -> dict:
     fixture = json.loads(Path(fixture_path).read_text(encoding="utf-8"))
     sampler = VramSampler()
     client = client or comfy.ComfyClient(sleep=sampler)
@@ -474,12 +548,22 @@ def run(output: Path, *, client=None, models: list[str] | None = None, swap: boo
     images = {item["shot_id"]: Path(output) / "images" / "shots" / f"{item['shot_id']}.jpg"
               for item in fixture["images"]}
     missing = [shot for shot, path in images.items() if not path.is_file()]
-    report = {"version": 1, "created_at": time.strftime("%Y-%m-%dT%H:%M:%S"), "project": Path(output).name,
+    report = {"version": 1, "mode": mode, "created_at": time.strftime("%Y-%m-%dT%H:%M:%S"), "project": Path(output).name,
               "fixture_confirmed_by_user": fixture.get("confirmed_by_user", False),
               "comfyui": client.base_url, "findings": findings, "models": [], "missing_images": missing}
     usable = findings["text_generate"] and findings["text_generate_takes_image"] and findings["preview_any"]
     chosen = list(models or findings["candidates"])
-    if usable and not missing and chosen:
+    if mode == "focused":
+        chosen = list(models or [getattr(config, "IMAGEGEN_QA_VLM_MODEL", PREFERRED[0] + ".safetensors")])
+        if detector is None and det.missing_models():
+            findings["problems"].append("layer-1 models missing in models/qa: " + ", ".join(det.missing_models()))
+            usable = False
+    if usable and not missing and chosen and mode == "focused":
+        for model in chosen:
+            progress(f"→ {model} (focused)")
+            report["models"].append(probe_focused(client, sampler, model, fixture, images, progress, swap=swap,
+                                                  detector=detector))
+    elif usable and not missing and chosen:
         side = int(max_side or getattr(config, "IMAGEGEN_QA_MAX_SIDE", 768))
         with tempfile.TemporaryDirectory() as scratch:
             uploads = {shot: upload_downscaled(client, path, side, Path(scratch)) for shot, path in images.items()}
@@ -511,11 +595,16 @@ def summary_lines(report: dict) -> list[str]:
             lines.append(f"{model['model']}: not usable — {errors}")
             continue
         accuracy = ", ".join(f"{key} {value:.0%}" for key, value in metrics["accuracy"].items())
-        lines.append(f"{model['model']} (type {model['clip_type']}): valid JSON {metrics['valid_json_rate']:.0%}; "
+        label = "answered" if model.get("mode") == "focused" else "valid JSON"
+        lines.append(f"{model['model']} (type {model['clip_type']}): {label} {metrics['valid_json_rate']:.0%}; "
                      f"{accuracy}; box IoU {metrics['box_iou_mean']}; {metrics['seconds_per_image']} s/image; "
                      f"VRAM peak {metrics['vram_peak_mb']} MB")
         if model.get("swap"):
             lines.append(f"   swap: {json.dumps(model['swap'])}")
+        if model.get("mode") == "focused":
+            lines.append(f"   detector person recall {metrics['detector_person_recall']:.0%}; layer 1 "
+                         f"{metrics['layer1_seconds_per_image']} s/image; {metrics['questions_per_image']} "
+                         f"questions/image; OCR {'on' if metrics['ocr'] else 'off (text asked to the VLM)'}")
     return lines
 
 
@@ -525,11 +614,15 @@ def main(argv=None) -> int:
     parser.add_argument("--output-dir", default=None, help="explicit folder (overrides the project)")
     parser.add_argument("--models", nargs="+", help="CLIPLoader model files to try (default: every candidate)")
     parser.add_argument("--no-swap", action="store_true", help="skip the Klein unload/reload timing")
+    parser.add_argument("--mode", choices=("json", "focused"), default="json",
+                        help="json: one big JSON answer per frame (section A); focused: detector + one-word "
+                             "questions about crops (decision 6)")
     parser.add_argument("--max-side", type=int, default=None, help="downscale frames to this side (default 768)")
     args = parser.parse_args(argv)
     output = projects.cli_output(args)
     try:
-        report = run(output, models=args.models, swap=not args.no_swap, max_side=args.max_side)
+        report = run(output, models=args.models, swap=not args.no_swap, max_side=args.max_side,
+                     mode=args.mode)
     except comfy.ComfyUnavailable as exc:
         print(f"✗ {exc}", file=sys.stderr)
         return 1

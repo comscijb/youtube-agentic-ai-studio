@@ -221,6 +221,19 @@ IMAGEGEN_VISUAL_QA        = os.getenv("IMAGEGEN_VISUAL_QA", "true").lower() in (
 IMAGEGEN_QA_RETRIES       = int(os.getenv("IMAGEGEN_QA_RETRIES", "2"))
 IMAGEGEN_QA_MAX_SIDE      = 768           # px; the image is downscaled before it is sent
 IMAGEGEN_VISUAL_QA_MODEL  = os.getenv("IMAGEGEN_VISUAL_QA_MODEL", "")   # "" = the configured Gemini chain (Flash)
+# Phase 3.5: local-first layered QA. Layer 1 = OpenCV detectors on the CPU (models in
+# models/qa/), layer 2 = a local VLM answering one-word questions about crops, layer 3 =
+# Gemini vision, off by default (fallback when the local VLM is unavailable, or qa_shots --gemini).
+IMAGEGEN_QA_LAYERS        = os.getenv("IMAGEGEN_QA_LAYERS", "deterministic,local_vlm")
+IMAGEGEN_QA_GEMINI        = os.getenv("IMAGEGEN_QA_GEMINI", "false").lower() in ("1", "true", "yes", "on")
+IMAGEGEN_QA_VLM_BACKEND   = os.getenv("IMAGEGEN_QA_VLM_BACKEND", "comfy_textgenerate")   # or "ollama"
+IMAGEGEN_QA_VLM_MODEL     = os.getenv("IMAGEGEN_QA_VLM_MODEL", "qwen3vl_4b_int8_convrot.safetensors")
+IMAGEGEN_QA_VLM_CLIP_TYPE = os.getenv("IMAGEGEN_QA_VLM_CLIP_TYPE", "flux3")
+IMAGEGEN_QA_OLLAMA_URL    = os.getenv("IMAGEGEN_QA_OLLAMA_URL", "http://127.0.0.1:11434")
+IMAGEGEN_QA_OLLAMA_MODEL  = os.getenv("IMAGEGEN_QA_OLLAMA_MODEL", "qwen2.5vl:3b")         # never pulled automatically
+IMAGEGEN_QA_MODELS_DIR    = os.getenv("IMAGEGEN_QA_MODELS_DIR", "")       # "" = models/qa
+IMAGEGEN_QA_MAX_EDITS     = 2             # region edits per shot before regenerating
+IMAGEGEN_QA_ROUNDS        = 2             # QA → fix rounds per generate_shots run
 # Target share of wide/establishing shots with small figures: guidance for the
 # shot planner and a warning in shot_list.json, never a failure.
 IMAGEGEN_MIN_WIDE_SHARE      = float(os.getenv("IMAGEGEN_MIN_WIDE_SHARE", "0.3"))   # target only: a warning, never a failure

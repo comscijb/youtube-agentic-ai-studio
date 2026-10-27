@@ -57,3 +57,6 @@ config.py
 client_secret.json
 # ── Stage diagnostics (raw model responses) ──
 debug/
+
+# Local QA detector models (Phase 3.5, downloaded from opencv_zoo)
+models/

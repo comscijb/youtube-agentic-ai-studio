@@ -1,8 +1,8 @@
 {
   "version": 1,
   "project": "2026-10-21-the-man-who-needed-everyone-to-envy-him",
-  "source": "Filled by Claude from a visual inspection of the existing shots (no Gemini QA results were stored in the manifest for these frames). Boxes are approximate, normalized 0-1 [x0, y0, x1, y1]. Pending user confirmation.",
-  "confirmed_by_user": false,
+  "source": "Filled by Claude from a visual inspection of the existing shots (no Gemini QA results were stored in the manifest for these frames). Boxes are approximate, normalized 0-1 [x0, y0, x1, y1]. Confirmed by the user on 2026-10-27.",
+  "confirmed_by_user": true, "confirmed_on": "2026-10-27",
   "characters": {
     "julian_vance": {"who": "a 37-year-old man", "markers": ["black horn-rimmed glasses", "polished platinum wedding band"]},
     "elena_vance": {"who": "a 35-year-old woman", "markers": ["chestnut hair in a low knot", "bare wrists without jewelry"]},
