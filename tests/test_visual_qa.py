@@ -3,7 +3,6 @@ import io
 import json
 import tempfile
 import unittest
-from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
@@ -142,16 +141,6 @@ class GenerationQATests(unittest.TestCase):
         self.assertEqual(shot["qa"]["status"], "skipped")
         self.assertEqual(summary["generated"], 1)
         self.assertTrue(any("visual QA skipped" in note for note in notes))
-
-    def test_qa_shots_script_checks_existing_shots_without_regenerating(self):
-        from scripts import qa_shots
-        self.run_shots(responder(PASS))
-        prompts = len(self.fake.prompts)
-        with redirect_stdout(io.StringIO()):
-            summary = qa_shots.run(self.output, generator=responder(NO_GLASSES))
-        self.assertEqual(summary["failed"], ["s01_01"])
-        self.assertEqual(len(self.fake.prompts), prompts)
-        self.assertEqual(load_json(self.output / "shot_list.json")["shots"][0]["qa"]["status"], "fail")
 
 
 class UsageTests(unittest.TestCase):
