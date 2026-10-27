@@ -1175,6 +1175,143 @@ function igImg(path, title) {
   return img;
 }
 
+// ── Layered QA on the shot card (3.5-F) ─────────────────────────────────────
+const IG_VERDICT = {pass: ['QA ✓', 'var(--green)'], edit: ['QA: editar', 'var(--amber)'],
+                    regenerate: ['QA: gerar de novo', 'var(--red)'], recheck: ['QA: a rechecar', 'var(--muted)']};
+
+function igPct(box) {
+  return `left:${box[0] * 100}%;top:${box[1] * 100}%;width:${(box[2] - box[0]) * 100}%;height:${(box[3] - box[1]) * 100}%`;
+}
+
+function igQaBoxes(frame, issues) {
+  // Boxes come from the detector only; drawn on hover so the shot stays readable.
+  const layer = document.createElement('div');
+  layer.style.cssText = 'position:absolute;inset:0;pointer-events:none;display:none';
+  issues.filter(i => i.box).forEach((issue, n) => {
+    const box = document.createElement('div');
+    const colour = issue.severity === 'blocking' ? 'var(--red)' : 'var(--amber)';
+    box.style.cssText = `position:absolute;${igPct(issue.box)};border:2px solid ${colour};border-radius:2px`;
+    const label = document.createElement('span');
+    label.style.cssText = `position:absolute;top:-14px;left:0;font-size:9px;background:${colour};color:#000;padding:0 3px;white-space:nowrap`;
+    label.textContent = `${n + 1} ${issue.type}`;
+    box.appendChild(label);
+    layer.appendChild(box);
+  });
+  frame.appendChild(layer);
+  frame.addEventListener('mouseenter', () => { layer.style.display = 'block'; });
+  frame.addEventListener('mouseleave', () => { layer.style.display = 'none'; });
+}
+
+function igQaSummary(cell, shot) {
+  const qa = shot.qa;
+  const line = document.createElement('div');
+  const [label, colour] = qa.flagged ? ['QA: melhor versão mantida (revisar)', 'var(--red)']
+    : (qa.status === 'skipped' ? ['QA pulado', 'var(--amber)'] : (IG_VERDICT[qa.verdict] || ['QA ' + (qa.status || ''), 'var(--muted)']));
+  line.style.cssText = `color:${colour};margin:2px 0;font-weight:600`;
+  line.textContent = label + (qa.edits ? ` · ${qa.edits} edição(ões)` : '') + (qa.regenerations ? ` · ${qa.regenerations} seed(s)` : '');
+  line.title = qa.reason || '';
+  cell.appendChild(line);
+  (qa.notes || []).forEach(note => {
+    const row = document.createElement('div');
+    row.style.cssText = 'margin:1px 0;color:' + (note.startsWith('⛔') ? 'var(--red)' : 'var(--muted)');
+    row.textContent = note;
+    cell.appendChild(row);
+  });
+  const history = qa.history || [];
+  if (!history.length) return;
+  const toggle = document.createElement('button');
+  toggle.className = 'btn btn-ghost';
+  toggle.style.cssText = 'font-size:10px;padding:1px 6px;margin:2px 0';
+  toggle.textContent = `Histórico (${history.length} versão(ões))`;
+  const strip = document.createElement('div');
+  strip.style.cssText = 'display:none;grid-template-columns:repeat(3,1fr);gap:3px;margin:3px 0';
+  const actions = qa.actions || [];
+  history.forEach(entry => {
+    const item = document.createElement('div');
+    const img = igImg(entry.path, `v${entry.version}`);
+    img.style.cursor = 'zoom-in';
+    img.onclick = () => window.open('/imagegen/file?path=' + encodeURIComponent(entry.path), '_blank');
+    item.appendChild(img);
+    const after = actions.find(a => a.replaced_version === entry.version);
+    const caption = document.createElement('div');
+    caption.textContent = `v${entry.version} · ${entry.verdict || '—'} · ${entry.blocking} ⛔` +
+      (after ? ` → ${after.action}` : '');
+    caption.title = after && after.instruction ? after.instruction : '';
+    item.appendChild(caption);
+    strip.appendChild(item);
+  });
+  const now = document.createElement('div');
+  now.appendChild(igImg(shot.image_path, 'atual'));
+  const nowCaption = document.createElement('div');
+  nowCaption.textContent = 'atual';
+  now.appendChild(nowCaption);
+  strip.appendChild(now);
+  toggle.onclick = () => { strip.style.display = strip.style.display === 'none' ? 'grid' : 'none'; };
+  cell.appendChild(toggle);
+  cell.appendChild(strip);
+}
+
+function igDrawBox(frame) {
+  // Drag a rectangle on the shot; a click without dragging means "no box" (instruction-only edit).
+  return new Promise(resolve => {
+    const pad = document.createElement('div');
+    pad.style.cssText = 'position:absolute;inset:0;cursor:crosshair;background:rgba(0,0,0,.15);z-index:2';
+    const hint = document.createElement('div');
+    hint.style.cssText = 'position:absolute;bottom:2px;left:2px;font-size:9px;background:#000;color:#fff;padding:1px 4px';
+    hint.textContent = 'Arraste para marcar a região (clique = sem região)';
+    pad.appendChild(hint);
+    const rect = document.createElement('div');
+    rect.style.cssText = 'position:absolute;border:2px dashed var(--accent, #4af);display:none';
+    pad.appendChild(rect);
+    frame.appendChild(pad);
+    let start = null;
+    const point = e => { const r = pad.getBoundingClientRect();
+      return [Math.min(Math.max((e.clientX - r.left) / r.width, 0), 1), Math.min(Math.max((e.clientY - r.top) / r.height, 0), 1)]; };
+    const boxOf = (a, b) => [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[0], b[0]), Math.max(a[1], b[1])];
+    pad.onmousedown = e => { start = point(e); e.preventDefault(); };
+    pad.onmousemove = e => {
+      if (!start) return;
+      const b = boxOf(start, point(e));
+      Object.assign(rect.style, {display: 'block', left: b[0] * 100 + '%', top: b[1] * 100 + '%',
+                                 width: (b[2] - b[0]) * 100 + '%', height: (b[3] - b[1]) * 100 + '%'});
+    };
+    pad.onmouseup = e => {
+      const box = start ? boxOf(start, point(e)) : null;
+      pad.remove();
+      resolve(box && (box[2] - box[0]) > 0.02 && (box[3] - box[1]) > 0.02 ? box.map(v => +v.toFixed(4)) : null);
+    };
+  });
+}
+
+function igFixButtons(cell, frame, shot) {
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;margin-top:3px';
+  const button = (text, title, onclick) => {
+    const b = document.createElement('button');
+    b.className = 'btn btn-ghost';
+    b.style.cssText = 'font-size:10px;padding:2px 6px';
+    b.textContent = text;
+    b.title = title;
+    b.onclick = onclick;
+    row.appendChild(b);
+    return b;
+  };
+  const qa = shot.qa || {};
+  if (qa.status === 'fail' && !qa.flagged && ['edit', 'regenerate'].includes(qa.verdict)) {
+    button('Editar (QA)', qa.reason || 'Corrige o que o QA encontrou (edição de região ou nova seed)',
+           () => igPost(`/api/imagegen/shot/${shot.shot_id}/fix`, {mode: 'qa'}));
+  }
+  button('Editar com instrução própria', 'Marque a região na imagem e escreva a instrução', async () => {
+    const box = await igDrawBox(frame);
+    const instruction = prompt('Instrução de edição (em inglês; use <box> para a região marcada):',
+                               box ? 'remove the object in <box>, continuing the background' : '');
+    if (instruction) igPost(`/api/imagegen/shot/${shot.shot_id}/fix`, {mode: 'custom', instruction, box});
+  });
+  button('Gerar de novo', 'Nova seed; a versão atual fica no histórico',
+         () => igPost(`/api/imagegen/shot/${shot.shot_id}/fix`, {mode: 'regenerate'}));
+  cell.appendChild(row);
+}
+
 function igTime(seconds) {
   const s = Math.round(seconds || 0);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -1243,8 +1380,14 @@ function loadImagegen() {
     d.shots.forEach(shot => {
       const cell = document.createElement('div');
       cell.style.cssText = 'font-size:10px;color:var(--muted)';
-      if (shot.image_path) cell.appendChild(igImg(shot.image_path, shot.prompt));
-      else {
+      let frame = null;
+      if (shot.image_path) {
+        frame = document.createElement('div');       // positioned: QA boxes and the drawn box go on top
+        frame.style.cssText = 'position:relative';
+        frame.appendChild(igImg(shot.image_path, shot.prompt));
+        if (shot.qa) igQaBoxes(frame, shot.qa.issues || []);
+        cell.appendChild(frame);
+      } else {
         const empty = document.createElement('div');
         empty.style.cssText = 'aspect-ratio:16/9;background:var(--surface2);border-radius:4px;display:flex;align-items:center;justify-content:center';
         empty.textContent = shot.reuse_of ? `reuses ${shot.reuse_of}` : 'pending';
@@ -1260,13 +1403,7 @@ function loadImagegen() {
         flag.textContent = '⛔ ' + text + ' — edit to fix (skipped until then)';
         cell.appendChild(flag);
       });
-      if (shot.qa) {           // visual QA (Gemini vision): failed checks are flagged, passes get a tick
-        const qa = document.createElement('div');
-        const colour = {fail: 'var(--red)', pass: 'var(--green)', skipped: 'var(--amber)'}[shot.qa.status] || 'var(--muted)';
-        qa.style.cssText = `color:${colour};margin:2px 0`;
-        qa.textContent = shot.qa.status === 'pass' ? 'QA ✓' : `QA ${shot.qa.status}: ${(shot.qa.notes || []).join('; ')}`;
-        cell.appendChild(qa);
-      }
+      if (shot.qa) igQaSummary(cell, shot);   // layered QA: verdict, issues, edit history
       (shot.warnings || []).forEach(text => {
         const warning = document.createElement('div');
         warning.style.cssText = 'color:var(--amber);margin:2px 0';
@@ -1289,6 +1426,7 @@ function loadImagegen() {
         };
         cell.appendChild(regen);
         cell.appendChild(edit);
+        if (frame) igFixButtons(cell, frame, shot);
       }
       grid.appendChild(cell);
     });

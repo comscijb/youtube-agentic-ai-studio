@@ -99,6 +99,59 @@ class GuiImagegenTests(unittest.TestCase):
         self.assertEqual(load_json(self.output / "shot_list.json")["shots"][0]["seed_offset"], 1)
         self.assertEqual(self.client.post("/api/imagegen/shot/zz/regenerate").status_code, 404)
 
+    def wait_idle(self, mock):
+        for _ in range(100):
+            if mock.called and not self.gui._state["imagegen_busy"]:
+                return
+            time.sleep(0.05)
+
+    def test_fix_endpoint_validates_its_input(self):
+        post = lambda body, shot="s01_01": self.client.post(f"/api/imagegen/shot/{shot}/fix", json=body)
+        self.assertEqual(post({"mode": "qa"}, shot="zz").status_code, 404)
+        self.assertEqual(post({"mode": "qa"}, shot="s02_01").status_code, 404)        # no image file yet
+        self.assertEqual(post({"mode": "paint"}).status_code, 400)
+        self.assertEqual(post({"mode": "custom", "instruction": " "}).status_code, 400)
+        self.assertIn("nothing to fix", post({"mode": "qa"}).get_json()["error"])
+        self.assertEqual(post({"mode": "custom", "instruction": "x", "box": [0.5, 0.5, 0.1, 0.1]}).status_code, 400)
+
+    def test_custom_edit_and_regenerate_keep_history_then_recheck(self):
+        from video.qa import fixes
+        action = {"action": "edit"}
+        with patch.object(fixes, "apply", return_value=action) as apply, \
+                patch.object(gen, "qa_rounds") as rounds, patch("video.imagegen_comfyui.ImageGenerator"):
+            response = self.client.post("/api/imagegen/shot/s01_01/fix", json={
+                "mode": "custom", "instruction": "remove the vase in <box>", "box": [0.1, 0.2, 0.3, 0.5]})
+            self.assertTrue(response.get_json()["ok"])
+            self.wait_idle(rounds)
+            self.assertEqual(apply.call_args.kwargs["custom"], "remove the vase in <box>")
+            self.assertEqual(apply.call_args.kwargs["custom_box"], [0.1, 0.2, 0.3, 0.5])
+            self.assertEqual(rounds.call_args.kwargs["rounds"], 0)                       # one QA pass, no auto-fix
+            apply.reset_mock()
+            rounds.reset_mock()
+            self.client.post("/api/imagegen/shot/s01_01/fix", json={"mode": "regenerate"})
+            self.wait_idle(rounds)
+            self.assertEqual(apply.call_args.kwargs["force"], "regenerate")
+        self.assertFalse((self.output / "final_video.mp4").exists())
+
+    def test_qa_fix_button_needs_a_failed_verdict(self):
+        from video.qa import fixes
+        shot_list = load_json(self.output / "shot_list.json")
+        shot_list["shots"][0]["qa"] = {"version": 2, "status": "fail", "verdict": "edit", "issues": [
+            {"type": "missing_marker", "severity": "blocking", "box": [0.4, 0.1, 0.5, 0.3], "target": "julian_vance",
+             "note": "face without horn-rimmed glasses", "source": "local_vlm"}],
+            "history": [{"version": 1, "path": "images/shots/history/s01_01_v1.jpg", "verdict": "edit", "blocking": 1}]}
+        atomic_write_json(self.output / "shot_list.json", shot_list)
+        with patch.object(fixes, "apply", return_value={"action": "edit"}) as apply, \
+                patch.object(gen, "qa_rounds") as rounds, patch("video.imagegen_comfyui.ImageGenerator"):
+            self.assertTrue(self.client.post("/api/imagegen/shot/s01_01/fix", json={"mode": "qa"}).get_json()["ok"])
+            self.wait_idle(rounds)
+        self.assertEqual((apply.call_args.kwargs["force"], apply.call_args.kwargs["custom"]), ("", ""))
+        qa = self.status()["shots"][0]["qa"]
+        self.assertEqual((qa["verdict"], qa["issues"][0]["box"], len(qa["history"])), ("edit", [0.4, 0.1, 0.5, 0.3], 1))
+        page = self.client.get("/").get_data(as_text=True)
+        for text in ("Editar (QA)", "Editar com instrução própria", "Gerar de novo", "Histórico", "igQaBoxes"):
+            self.assertIn(text, page)
+
     def test_pipeline_stops_politely_before_approval(self):
         script = {"sections": []}
         (self.output / "narration.mp3").write_bytes(b"audio")       # narration step already done

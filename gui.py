@@ -1035,6 +1035,64 @@ def imagegen_regenerate_shot(shot_id):
         config.OUTPUT_DIR, ImageGenerator(config.OUTPUT_DIR), only=shot_id, progress=_imagegen_progress))
 
 
+@app.route("/api/imagegen/shot/<shot_id>/fix", methods=["POST"])
+def imagegen_fix_shot(shot_id):
+    """Shot-card buttons (3.5-F): "Editar (QA)" (mode qa), "Editar com instrução própria" (mode custom:
+    instruction + optional box drawn on the image), "Gerar de novo" (mode regenerate). Every version is
+    kept in images/shots/history/; the shot is checked again by the layered QA right after."""
+    from agents import shot_list as shots_module
+    from agents import visual_bible as vbible
+    from video import shot_generation as shotgen
+    from video import visual_qa
+    from video.imagegen_comfyui import ImageGenerator
+    from video.qa import fixes
+    from video.qa.layered import LayeredQA
+    body = request.get_json(force=True) or {}
+    mode = str(body.get("mode", "qa"))
+    instruction = str(body.get("instruction", "")).strip()
+    box = body.get("box")
+    if mode not in ("qa", "custom", "regenerate"):
+        return jsonify({"ok": False, "error": "mode must be qa, custom or regenerate"}), 400
+    if mode == "custom" and not instruction:
+        return jsonify({"ok": False, "error": "Type the edit instruction"}), 400
+    if box is not None:
+        try:
+            box = [min(max(float(value), 0.0), 1.0) for value in box][:4]
+            if len(box) != 4 or box[2] <= box[0] or box[3] <= box[1]:
+                raise ValueError
+        except (TypeError, ValueError):
+            return jsonify({"ok": False, "error": "box must be [x0, y0, x1, y1] between 0 and 1"}), 400
+    output = Path(config.OUTPUT_DIR)
+    path = output / shots_module.FILE_NAME
+    shot_list = load_json(path) or {}
+    shot = next((item for item in shot_list.get("shots", []) if item["shot_id"] == shot_id), None)
+    if shot is None or not shot.get("image_path") or not (output / shot["image_path"]).is_file():
+        return jsonify({"ok": False, "error": "Unknown shot or no image yet"}), 404
+    if mode == "qa" and not fixes.needs_fix(shot):
+        return jsonify({"ok": False, "error": "QA found nothing to fix on this shot (run the QA first)"}), 400
+
+    def work():
+        current = load_json(path) or {}
+        target = next(item for item in current["shots"] if item["shot_id"] == shot_id)
+        vb = load_json(output / vbible.FILE_NAME) or {}
+        generator = ImageGenerator(output)
+        narration = shots_module.scene_narration(current["shots"])
+        entry = {"item": target, "image": output / target["image_path"],
+                 "expected": visual_qa.expected_for(target, vb, narration.get(target.get("scene_id", ""), "")),
+                 "factory": lambda offset: shotgen.shot_job(target, vb, output, offset)[0]}
+        action = fixes.apply(generator, output, target, vb, image_path=entry["image"], job_factory=entry["factory"],
+                             custom=instruction if mode == "custom" else "", custom_box=box if mode == "custom" else None,
+                             force="regenerate" if mode == "regenerate" else ("edit" if mode == "custom" else ""),
+                             progress=_imagegen_progress)
+        atomic_write_json(path, current)
+        Path(config.OUTPUT_DIR, "final_video.mp4").unlink(missing_ok=True)
+        if action["action"] in ("edit", "regenerate"):
+            shotgen.qa_rounds(generator, output, vb, [entry], LayeredQA(comfy=generator.client,
+                                                                        progress=_imagegen_progress),
+                              lambda: atomic_write_json(path, current), progress=_imagegen_progress, rounds=0)
+    return _imagegen_run(work)
+
+
 @app.route("/api/imagegen/shot/<shot_id>/prompt", methods=["POST"])
 def imagegen_edit_shot(shot_id):
     from agents import identity
@@ -1077,7 +1135,8 @@ def imagegen_qa():
     def work():
         summary = qa_shots.run(Path(config.OUTPUT_DIR), only=only, progress=_imagegen_progress)
         _imagegen_progress(f"QA: {summary['checked']} checked, {summary['passed']} passed, "
-                           f"{len(summary['failed'])} failed, {summary['skipped']} skipped")
+                           f"{len(summary['failed'])} failed ({len(summary['edit'])} to edit, "
+                           f"{len(summary['regenerate'])} to regenerate), {summary['skipped']} skipped")
     return _imagegen_run(work)
 
 
