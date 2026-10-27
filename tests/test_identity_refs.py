@@ -59,7 +59,7 @@ class VisualBibleRuleTests(unittest.TestCase):
 
     def test_contract_and_version(self):
         import inspect
-        self.assertEqual(vbible.VISUAL_BIBLE_VERSION, 2)
+        self.assertGreaterEqual(vbible.VISUAL_BIBLE_VERSION, 2)
         source = inspect.getsource(vbible.build_visual_bible)
         self.assertIn("physical identity only", source)
         self.assertIn("clothing and accessories only", source)

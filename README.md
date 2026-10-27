@@ -505,6 +505,13 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   grooming disorder, injuries or dirt; a scar only when the screenplay has one) and an outfit is
   clothing and accessories only (no skin, hands, dirt, stains or marks); the validator rejects
   both, so story details such as soil on her fingers live only in the shot whose narration has them.
+- **Clean prompts (visual bible v3).** Each character carries `signature_markers` (1–3
+  always-visible traits such as horn-rimmed glasses) and `scene_states` ({scene: state}); outfits
+  and grooming may not name scene ids, and the descriptor starts with age and a gender noun so a
+  reference is "the man from the first image", never "the person". A shot prompt has one clause
+  list per character: the reference name (the full descriptor only without a reference) + markers
+  + this scene's outfit + this scene's state + this moment, with phrases about other scenes
+  removed, repeated clauses and a setting that repeats itself dropped, and each part capped.
 - **Neutral character sheets.** Reference portraits are head-and-shoulders sheets (facing the
   viewer and three-quarter) on a plain flat dark-grey backdrop, in a simple plain dark top, with a
   neutral expression, even light and the drawing technique without environment clauses: the

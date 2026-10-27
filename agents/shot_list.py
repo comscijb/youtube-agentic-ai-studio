@@ -609,10 +609,15 @@ def _entry(segment: dict, shot: dict, settings: dict, vb: dict, output: Path, fl
 # ── Prompt composition ──────────────────────────────────────────────────────
 
 def _noun(descriptor: str) -> str:
-    words = set(re.findall(r"[a-z]+", descriptor.lower()))
-    if words & {"woman", "female", "girl"}:
+    """"man"/"woman" from the descriptor's nouns, then its pronouns ("on his left ring finger")."""
+    words = set(re.findall(r"[a-z]+", str(descriptor or "").lower()))
+    if words & {"woman", "female", "girl", "lady"}:
         return "woman"
-    if words & {"man", "male", "boy"}:
+    if words & {"man", "male", "boy", "gentleman"}:
+        return "man"
+    if words & {"she", "her", "hers"}:
+        return "woman"
+    if words & {"he", "his", "him"}:
         return "man"
     return "person"
 
@@ -655,8 +660,7 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
         references.append(location_ref)
         slots.append({"slot": len(references) - 1, "kind": "location", "id": location.get("location_id")})
         location_text = f"in the room from the {ORDINALS[len(references) - 1]} image"
-    if shot.get("setting_condition"):
-        location_text = f"{location_text}, {shot['setting_condition']}"
+    location_text = _setting_text(location_text, shot.get("setting_condition", ""))
     anchors = style_refs.approved_paths()
     style_text = ""
     if anchors and len(references) < 4:
@@ -664,14 +668,10 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
         slots.append({"slot": len(references) - 1, "kind": "style", "id": Path(anchors[0]).stem})
         style_text = f"Rendered in the drawing style of the {ORDINALS[len(references) - 1]} image."
 
-    subjects = []
     appearance = shot.get("appearance") or {}
-    for cid in characters:
-        outfit = vbible.wardrobe(vb, cid, shot.get("scene_id", ""))
-        name = ref_names.get(cid) or (vbible.character(vb, cid) or {}).get("descriptor", cid)
-        details = [f"wearing {outfit}" if outfit else "",
-                   vbible.grooming(vb, cid, shot.get("scene_id", "")), str(appearance.get(cid) or "")]
-        subjects.append(", ".join([name] + [text.strip() for text in details if text.strip()]))
+    subjects = [character_sentence(cid, vb, shot.get("scene_id", ""), str(appearance.get(cid) or ""),
+                                   ref_names.get(cid, "")) for cid in characters]
+    action = _cap(str(shot.get("action", "")).rstrip("."), ACTION_TEXT_MAX)
     article = "an" if noun[0] in "aeiou" else "a"
     crowd = _company(shot, len(characters))
     if background:      # a 4th+ listed character: no reference slot left, kept far and indistinct
@@ -681,11 +681,11 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
         framing = over_the_shoulder(characters, vb, ref_names)
     if references:
         lead = f"Create {article} {noun} of " + "; and ".join(subjects) if subjects else f"Create {article} {noun}"
-        prompt = f"{lead}. {shot['action']}. {crowd} Setting: {location_text}. {framing}. {style_text} {style}"
+        prompt = f"{lead}. {action}. {crowd} Setting: {location_text}. {framing}. {style_text} {style}"
         kind = "ref"
     else:
         people = f" Featuring {'; and '.join(subjects)}." if subjects else ""
-        prompt = f"{article.capitalize()} {noun}: {shot['action']}.{people} {crowd} Setting: {location_text}. {framing}. {style}"
+        prompt = f"{article.capitalize()} {noun}: {action}.{people} {crowd} Setting: {location_text}. {framing}. {style}"
         kind = "t2i"
     prompt = re.sub(r"\s+", " ", re.sub(r"\.\s*\.", ".", prompt)).strip()
     return {"kind": kind, "prompt": prompt, "references": references, "slots": slots,
@@ -735,6 +735,81 @@ def unnamed_people(action: str, cast_size: int) -> list[str]:
         if count > cast_size:
             found.append(match.group(0))
     return list(dict.fromkeys(found))
+
+
+# ── Clean composition (Phase 3.4-B) ─────────────────────────────────────────
+_SCENE_REF = re.compile(r"\bs\d{2}\b", re.I)
+_IN_SCENE = re.compile(r"\s*\b(?:in|during|for|from)\s+scenes?\s+s\d{2}(?:\s*(?:,|and|&)\s*s\d{2})*", re.I)
+CHARACTER_TEXT_MAX = 320     # characters per character sentence
+ACTION_TEXT_MAX = 420
+SETTING_TEXT_MAX = 320
+
+
+def scene_scoped(text: str, scene_id: str) -> str:
+    """Only what belongs to this scene: drop phrases naming another scene, strip "in scene sNN"."""
+    kept = []
+    for phrase in re.split(r"[;.]\s*", str(text or "")):
+        for part in phrase.split(","):
+            mentioned = {match.lower() for match in _SCENE_REF.findall(part)}
+            if mentioned - {str(scene_id).lower()}:
+                continue
+            part = _IN_SCENE.sub("", part).strip()
+            if part:
+                kept.append(part)
+    return ", ".join(kept)
+
+
+def _norm(clause: str) -> str:
+    clause = re.sub(r"^(?:wearing|with|in)\s+", "", clause.strip().lower())
+    return re.sub(r"[^a-z0-9 ]+", "", clause).strip()
+
+
+def _cap(text: str, limit: int) -> str:
+    """Shorten at a clause boundary (never mid-word)."""
+    text = str(text or "").strip()
+    if len(text) <= limit:
+        return text
+    cut = text[:limit]
+    for mark in ("; ", ", ", " "):
+        if mark in cut:
+            cut = cut[:cut.rindex(mark)]
+            break
+    return cut.rstrip(",;. ")
+
+
+def character_sentence(cid: str, vb: dict, scene_id: str, moment: str = "", ref_name: str = "") -> str:
+    """One clause list per character: reference name (or descriptor when there is no reference)
+    + signature markers + this scene's outfit + this scene's state + this moment, without
+    repeats or phrases from other scenes."""
+    entry = vbible.character(vb, cid) or {}
+    pieces = [ref_name] if ref_name else [part.strip() for part in
+                                          str(entry.get("descriptor") or cid).rstrip(". ").split(",")]
+    markers = vbible.signature_markers(vb, cid)
+    if markers:
+        pieces.append("with " + " and ".join(markers))
+    outfit = scene_scoped(vbible.wardrobe(vb, cid, scene_id), scene_id)
+    if outfit:
+        pieces.append("wearing " + outfit[0].lower() + outfit[1:])
+    for extra in (vbible.grooming(vb, cid, scene_id), vbible.scene_state(vb, cid, scene_id), moment):
+        pieces += [part for part in scene_scoped(extra, scene_id).split(", ") if part]
+    kept, seen = [], []
+    for piece in pieces:
+        norm = _norm(piece)
+        if not norm or any(norm in earlier for earlier in seen):
+            continue
+        kept.append(piece)
+        seen.append(norm)
+    return _cap(", ".join(kept), CHARACTER_TEXT_MAX)
+
+
+def _setting_text(descriptor: str, condition: str) -> str:
+    """The location once: a condition that repeats the descriptor is dropped (and vice versa)."""
+    descriptor, condition = str(descriptor or "").strip().rstrip("."), str(condition or "").strip().rstrip(".")
+    if not condition or _norm(condition) in _norm(descriptor):
+        return _cap(descriptor, SETTING_TEXT_MAX)
+    if _norm(descriptor) in _norm(condition):
+        return _cap(condition, SETTING_TEXT_MAX)
+    return _cap(f"{descriptor}, {condition}", SETTING_TEXT_MAX)
 
 
 def over_the_shoulder(characters: list[str], vb: dict, ref_names: dict) -> str:

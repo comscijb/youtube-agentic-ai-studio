@@ -122,7 +122,7 @@ class ComposeTests(unittest.TestCase):
         vb = json.loads(json.dumps(VISUAL_BIBLE))
         vb["characters"][1]["wardrobe"][0]["grooming"] = "light make-up"
         prompt = shots_module.compose_shot(self.shot(), vb, "unused", assume_references=True)["prompt"]
-        self.assertIn("the woman from the first image, wearing an ivory silk shirt, light make-up, "
+        self.assertIn("the woman from the first image, with dark bob, wearing an ivory silk shirt, light make-up, "
                       "poised, hair neatly pinned, composed expression", prompt)
         self.assertIn("vaulted concrete loft, blackened oak table, smoked decanters, immaculate", prompt)
         self.assertIn("Alone in the room.", prompt)

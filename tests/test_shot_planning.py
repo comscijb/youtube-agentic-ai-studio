@@ -32,10 +32,13 @@ VISUAL_BIBLE = {
                      "negative_prompt": "text, watermark"},
     "characters": [
         {"character_id": "julian_vance", "descriptor": "a 37-year-old white man, lean, sharp jaw",
+         "signature_markers": ["horn-rimmed glasses"],
          "wardrobe": [{"scene_ids": ["s01", "s02"], "outfit": "a charcoal tailored suit"}]},
         {"character_id": "elena_vance", "descriptor": "a 35-year-old woman of Spanish descent, dark bob",
+         "signature_markers": ["dark bob"],
          "wardrobe": [{"scene_ids": ["s01"], "outfit": "an ivory silk shirt"}]},
         {"character_id": "marcus_croft", "descriptor": "a 40-year-old broad-shouldered man, grey stubble",
+         "signature_markers": ["gold signet ring"],
          "wardrobe": [{"scene_ids": ["s02"], "outfit": "a navy blazer"}]},
     ],
     "locations": [{"location_id": "loft", "name": "Julian's loft",
@@ -280,8 +283,8 @@ class ComposeTests(unittest.TestCase):
         self.assertEqual([Path(p).name for p in composed["references"]],
                          ["julian_vance.png", "marcus_croft.png", "loft.png"])
         prompt = composed["prompt"]
-        self.assertIn("the man from the first image, wearing a charcoal tailored suit", prompt)
-        self.assertIn("the man from the second image, wearing a navy blazer", prompt)
+        self.assertIn("the man from the first image, with horn-rimmed glasses, wearing a charcoal tailored suit", prompt)
+        self.assertIn("the man from the second image, with gold signet ring, wearing a navy blazer", prompt)
         self.assertIn("in the room from the third image", prompt)
 
     def test_four_characters_keep_the_three_most_important_as_references(self):
