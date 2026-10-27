@@ -556,6 +556,40 @@ def list_projects():
     })
 
 
+@app.route("/api/projects/archive", methods=["POST"])
+def archive_project_endpoint():
+    """"Arquivar": move a published project to the HDD archive (dry_run lists the actions)."""
+    from studio import archive
+    body = request.get_json(force=True) or {}
+    try:
+        path = projects.path_for(str(body.get("slug", "")))
+    except projects.ProjectNotFound as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 404
+    if _state["running"] or _state.get("imagegen_busy") or _state.get("archiving"):
+        return jsonify({"ok": False, "error": "Wait for the running step to finish"}), 409
+    if body.get("dry_run"):
+        try:
+            work = archive.archive_project(path, dry_run=True)
+        except archive.ArchiveError as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 400
+        return jsonify({"ok": True, "target": work["target"], "megabytes": round(work["payload_bytes"] / 2**20),
+                        "actions": len(work["actions"])})
+    if archive.publication(path) is None:
+        return jsonify({"ok": False, "error": "Only published projects can be archived from the GUI "
+                                              "(use the CLI with --force --reason)"}), 400
+
+    def work():
+        _state["archiving"] = True
+        try:
+            archive.archive_project(path, log=lambda message: _log(message))
+        except (archive.ArchiveError, OSError) as exc:
+            _log(f"Archive of {path.name} failed: {exc}", "error")
+        finally:
+            _state["archiving"] = False
+    threading.Thread(target=work, daemon=True).start()
+    return jsonify({"ok": True, "started": True})
+
+
 @app.route("/projects/<slug>/thumbnail")
 def project_thumbnail(slug):
     try:

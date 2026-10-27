@@ -157,6 +157,7 @@ def sync_publications(service=None, *, path=None, interactive: bool = False) -> 
         ledger = load_ledger(path)
         pending = [item for item in ledger["publications"] if item.get("state") == PENDING]
         if not pending:
+            _archive_published([])               # still retry archives queued by an earlier sync
             return summary
         if service is None:
             from uploader.youtube import get_service
@@ -186,7 +187,19 @@ def sync_publications(service=None, *, path=None, interactive: bool = False) -> 
             else:
                 summary["pending"].append(record["video_id"])
         save_ledger(ledger, path)
+    published = [record.get("project") for record in pending if record.get("state") == PUBLISHED]
+    summary["archive"] = _archive_published(published)
     return summary
+
+
+def _archive_published(slugs: list) -> dict | None:
+    """Archive newly published projects to the HDD (ARCHIVE_ON_PUBLISH); never raises."""
+    try:
+        from studio import archive
+        return archive.archive_after_publish([slug for slug in slugs if slug])
+    except Exception as exc:
+        print(f"   WARNING: archive after publication skipped ({exc.__class__.__name__}: {exc})")
+        return None
 
 
 def sync_publications_safely(**kwargs) -> dict | None:

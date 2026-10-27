@@ -343,3 +343,7 @@ FINAL_TRUE_PEAK_MAX  = -1.0
 OUTPUT_DIR   = "output"
 IMAGES_DIR   = "output/images"
 PROJECTS_DIR = "projects"
+# Published projects move from the SSD to this archive on the HDD (studio/archive.py).
+ARCHIVE_ROOT       = os.getenv("ARCHIVE_ROOT", r"D:\Private Gravity\Archive")
+ARCHIVE_ON_PUBLISH = os.getenv("ARCHIVE_ON_PUBLISH", "true").lower() in ("1", "true", "yes", "on")
+ARCHIVE_QUEUE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "archive_queue.json")

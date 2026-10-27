@@ -364,12 +364,15 @@ def summary(path) -> dict:
     data = load(path)
     statuses = stage_status(path)
     thumbnail = next((name for name in ("thumbnail.jpg", "thumbnail_bg.jpg") if (path / name).is_file()), None)
+    archived = data.get("status") == "archived"
     return {
+        "status": data.get("status", "active"), "archived": archived, "archive_path": data.get("archive_path"),
+        "next_step": None if archived else next_step(statuses),
         "slug": path.name, "title": data.get("title") or path.name, "created": data.get("created"),
         "updated": data.get("updated"), "video_type": data.get("video_type", "normal"),
         "target_duration_minutes": data.get("target_duration_minutes"),
         "provisional": bool(data.get("provisional")), "published_video_id": data.get("published_video_id"),
-        "thumbnail": thumbnail, "stages": statuses, "next_step": next_step(statuses),
+        "thumbnail": thumbnail, "stages": statuses,
     }
 
 

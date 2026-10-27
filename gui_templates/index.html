@@ -1854,12 +1854,16 @@ function homeShowProjects() {
         ${p.thumbnail ? `<img src="/projects/${encodeURIComponent(p.slug)}/thumbnail?t=${Date.now()}" alt="">`
                       : '<div class="project-thumb-empty"></div>'}
         <div class="project-meta">
-          <div class="project-name">${_esc(p.title)}${p.slug === d.active ? ' <span class="badge">ativo</span>' : ''}</div>
+          <div class="project-name">${_esc(p.title)}${p.slug === d.active ? ' <span class="badge">ativo</span>' : ''}${p.archived ? ' <span class="badge">arquivado</span>' : ''}</div>
           <div class="help-text" style="margin:0">${p.updated ? _esc(new Date(p.updated).toLocaleString()) : ''} · ${_esc(p.slug)}</div>
           <div class="stage-badges">${_badges(p.stages)}</div>
           <div class="help-text" style="margin:0">Próximo passo: ${p.next_step ? _esc(p.next_step.label) + ' (' + STATUS_PT[p.next_step.status] + ')' : 'nada — pronto'}</div>
         </div>
-        <button class="btn btn-primary" onclick="openProject('${_esc(p.slug)}')">Abrir</button>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="btn btn-primary" onclick="openProject('${_esc(p.slug)}')">Abrir</button>
+          ${p.published_video_id && !p.archived
+              ? `<button class="btn btn-ghost" onclick="archiveProject('${_esc(p.slug)}')">Arquivar</button>` : ''}
+        </div>
       </div>`).join('');
   });
 }
@@ -1873,6 +1877,21 @@ function openProject(slug) {
 }
 
 function openProjectTab() { switchTab('project'); }
+
+function archiveProject(slug) {
+  const post = body => fetch('/api/projects/archive', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(Object.assign({slug}, body))}).then(r => r.json());
+  post({dry_run: true}).then(plan => {
+    if (!plan.ok) { alert(plan.error); return; }
+    if (!confirm(`Arquivar ${slug} em ${plan.target}?\n${plan.actions} ações, ${plan.megabytes} MB. ` +
+                 'Os arquivos são verificados (SHA-256) antes de sair do SSD.')) return;
+    post({}).then(d => {
+      if (!d.ok) { alert(d.error); return; }
+      _log(`Archiving ${slug}… (see the log)`);
+      setTimeout(homeShowProjects, 4000);
+    });
+  });
+}
 
 function setProjectChip(d) {
   const chip = document.getElementById('project-chip');

@@ -109,6 +109,29 @@ duration, stage status, published video id). Channel-wide assets stay outside: `
   (re-run it first, or run anyway). Approvals open inside the project; uploads record the
   project slug in the ledger.
 
+## Archive published projects (SSD → HDD)
+
+After a video is **published**, its project moves to `ARCHIVE_ROOT` (`D:\Private Gravity\Archive`
+by default) so the SSD doesn't fill up: automatically when `sync_publications` marks it published
+(`ARCHIVE_ON_PUBLISH=true`; if the drive is missing or short of space it is queued in
+`data/archive_queue.json` and retried on the next sync, never blocking generation), with the GUI
+button "Arquivar", or with `python -m scripts.archive_project --project <slug> [--dry-run]`
+(`--force --reason "..."` for an unpublished project, `--keep-cache` to keep the caches).
+
+- Layout `<slug>\`: `video\`, `images\` (shots, character/location refs, the style anchors used),
+  `audio\` (narration, mix, `music\<track>`), `captions\`, `text\` (brief, bible, outline, script,
+  reviews, visual bible, shot list and report, `youtube_metadata.json`, approval, project.json),
+  `manifests\` (asset manifest, timeline, `archive_manifest.json`), `logs\debug\`; unknown files go
+  to `other\`. Every artifact is mapped explicitly in `studio/archive.py`.
+- Project files are **moved** (copy → SHA-256 verify → delete), the music track and style anchors
+  are **copied**, regenerable caches are **deleted**. Sources are deleted only after the whole
+  project verified; a hash mismatch aborts without deleting anything; an interrupted run resumes;
+  the target needs 1.2 × the project size; an archive folder with other content is never
+  overwritten (`<slug>__2`). A stub stays on the SSD (`project.json` with status `archived`,
+  `ARCHIVED.txt`), so the GUI lists it as "arquivado".
+- `python -m scripts.restore_project --project <slug>` copies it back for a re-render or a Short;
+  the archive stays intact.
+
 ## 🏗️ How It Works
 
 The pipeline runs 6 sequential phases:
