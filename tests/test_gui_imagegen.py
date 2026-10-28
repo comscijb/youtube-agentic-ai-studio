@@ -147,10 +147,50 @@ class GuiImagegenTests(unittest.TestCase):
             self.wait_idle(rounds)
         self.assertEqual((apply.call_args.kwargs["force"], apply.call_args.kwargs["custom"]), ("", ""))
         qa = self.status()["shots"][0]["qa"]
-        self.assertEqual((qa["verdict"], qa["issues"][0]["box"], len(qa["history"])), ("edit", [0.4, 0.1, 0.5, 0.3], 1))
+        # shown under the current mode (advisory): the VLM's signal is a hint, not an edit verdict
+        self.assertEqual((qa["verdict"], qa["issues"][0]["box"], len(qa["history"])), ("pass", [0.4, 0.1, 0.5, 0.3], 1))
+        self.assertTrue(qa["issues"][0]["hint"])
+        self.assertEqual(self.status()["hinted"], 1)
         page = self.client.get("/").get_data(as_text=True)
-        for text in ("Editar (QA)", "Editar com instrução própria", "Gerar de novo", "Histórico", "igQaBoxes"):
+        for text in ("Remover figura", "Adicionar marcador", "Remover marcas", "Instrução livre", "Gerar de novo",
+                     "Ignorar aviso", "Marcar OK", "Executar fila", "Antes / depois", "Restaurar v", "igQaBoxes",
+                     "← → navegar"):
             self.assertIn(text, page)
+
+    def test_review_queue_run_restore_and_mark(self):
+        from video.qa import review
+        post = lambda url, body=None: self.client.post(url, json=body or {})
+        self.assertEqual(post("/api/imagegen/shot/s01_01/queue", {"kind": "remove_figure"}).status_code, 400)
+        self.assertEqual(post("/api/imagegen/shot/s02_01/queue", {"kind": "regenerate"}).status_code, 404)
+        self.assertEqual(post("/api/imagegen/queue/run").status_code, 400)                 # nothing queued
+        ok = post("/api/imagegen/shot/s01_01/queue", {"kind": "remove_figure", "box": [0.7, 0.4, 0.8, 0.8]})
+        self.assertEqual(ok.get_json()["queued"], 1)
+        post("/api/imagegen/shot/s01_01/queue", {"kind": "add_marker", "character": "julian_vance",
+                                                 "marker": "horn-rimmed glasses"})
+        self.assertEqual(post("/api/imagegen/shot/s01_01/queue/remove", {"index": 1}).get_json()["queue"][0]["kind"],
+                         "remove_figure")
+        status = self.status()
+        self.assertEqual(status["queued"], 1)
+        self.assertEqual(status["shots"][0]["edit_queue"][0]["label"], "Remover figura")
+        julian = next(item for item in status["characters"] if item["id"] == "julian_vance")
+        self.assertEqual(julian["markers"], ["horn-rimmed glasses"])
+        with patch.object(review, "run_queue", return_value={"edits": 1, "regenerations": 0, "failed": [],
+                                                             "shots": ["s01_01"]}) as run,                 patch("video.imagegen_comfyui.ImageGenerator"):
+            self.assertTrue(post("/api/imagegen/queue/run").get_json()["ok"])
+            self.wait_idle(run)
+        self.assertEqual(run.call_args.args[3]["shots"][0]["edit_queue"][0]["kind"], "remove_figure")
+        self.assertFalse((self.output / "final_video.mp4").exists())
+        self.assertEqual(post("/api/imagegen/shot/s01_01/restore", {"version": 3}).status_code, 400)
+        shot_list = load_json(self.output / "shot_list.json")
+        shot_list["shots"][0]["qa"] = {"status": "pass", "verdict": "pass", "issues": [
+            {"type": "extra_person", "severity": "advisory", "box": [0.7, 0.4, 0.8, 0.8], "target": "", "note": "",
+             "source": "deterministic", "hint": True}]}
+        atomic_write_json(self.output / "shot_list.json", shot_list)
+        self.assertEqual(self.status()["hinted"], 1)
+        self.assertTrue(post("/api/imagegen/shot/s01_01/review", {"action": "ignore", "issue": 0}).get_json()["ok"])
+        self.assertEqual(self.status()["hinted"], 0)
+        self.assertEqual(post("/api/imagegen/shot/s01_01/review", {"action": "nope"}).status_code, 400)
+        self.assertTrue(post("/api/imagegen/shot/s01_01/review", {"action": "ok"}).get_json()["qa"]["reviewed"])
 
     def test_pipeline_stops_politely_before_approval(self):
         script = {"sections": []}

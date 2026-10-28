@@ -100,6 +100,17 @@ def hints(result: dict) -> list[dict]:
     return [item for item in result.get("issues", []) if item["severity"] == "advisory"]
 
 
+class Rules:
+    """The current mode and measurements, for re-evaluating stored results (``fixes.reapply_policy``)."""
+
+    def __init__(self, chosen: str | None = None, accuracy: dict | None = None):
+        self.mode = mode(chosen)
+        self.accuracy = accuracy if accuracy is not None else (measured_accuracy() if self.mode == "auto" else {})
+
+    def policy(self, issues: list[dict]) -> list[dict]:
+        return apply(issues, self.mode, self.accuracy)
+
+
 def summary_line(chosen: str | None = None) -> str:
     chosen = mode(chosen)
     if chosen == "auto":

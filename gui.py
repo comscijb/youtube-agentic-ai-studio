@@ -910,6 +910,7 @@ def imagegen_status():
     from agents import visual_bible as vbible
     from video import shot_generation as shotgen
     from video.imagegen_comfyui import ComfyClient
+    from video.qa import fixes, policy
     output = Path(config.OUTPUT_DIR)
     vb = load_json(output / vbible.FILE_NAME) or {}
     shot_list = load_json(output / "shot_list.json") or {}
@@ -927,9 +928,15 @@ def imagegen_status():
                                if shotgen.candidate_is_current(vbible.reference_key(kind, ident), item)],
             })
     shots = shot_list.get("shots", [])
+    rules = policy.Rules()
+    for shot in shots:                    # stored results shown under the current QA mode (not saved)
+        fixes.reapply_policy(shot, rules)
     done = [shot for shot in shots if not shot.get("reuse_of") and shot.get("image_path")
             and (output / shot["image_path"]).is_file()]
     estimate = shotgen.estimate_gpu_seconds(shot_list, output) if shot_list else None
+    characters = [{"id": item["character_id"], "markers": vbible.signature_markers(vb, item["character_id"]),
+                   "approved": bool(vbible.approved_reference(vb, "character", item["character_id"], output))}
+                  for item in vb.get("characters", [])]
     return jsonify({
         "comfyui": ComfyClient(timeout=3).available(),
         "visual_bible": bool(vb), "shot_list": bool(shot_list),
@@ -937,6 +944,9 @@ def imagegen_status():
         "references": references,
         "missing_approvals": shotgen.missing_approvals(vb, shot_list, output) if vb and shot_list else [],
         "unique_shots": shot_list.get("unique_shots", 0), "done": len(done),
+        "characters": characters, "qa_mode": policy.mode(),
+        "queued": sum(len(shot.get("edit_queue") or []) for shot in shots),
+        "hinted": sum(1 for shot in shots if fixes.hinted(shot)),
         "eta_seconds": estimate,
         "style": {"name": identity.visual_style(), "variant": identity.style_variant(),
                   "hash": identity.style_hash(),
@@ -945,7 +955,7 @@ def imagegen_status():
         "shots": [{key: shot.get(key) for key in ("shot_id", "scene_id", "start", "end", "shot_type",
                                                    "characters", "face_visibility", "reuse_of",
                                                    "action", "prompt", "image_path", "provider",
-                                                   "flags", "warnings", "qa")}
+                                                   "flags", "warnings", "qa", "edit_queue")}
                   for shot in shots],
     })
 
@@ -1091,6 +1101,121 @@ def imagegen_fix_shot(shot_id):
                                                                         progress=_imagegen_progress),
                               lambda: atomic_write_json(path, current), progress=_imagegen_progress, rounds=0)
     return _imagegen_run(work)
+
+
+# ── Human review of the shots (3.5.1-C): one-click edits, queued, run in one Klein batch ──
+
+def _review_shot(shot_id: str):
+    """(shot_list path, shot list, shot) for a shot with an image, or a (response, status) error."""
+    path = Path(config.OUTPUT_DIR, "shot_list.json")
+    shot_list = load_json(path) or {}
+    shot = next((item for item in shot_list.get("shots", []) if item["shot_id"] == shot_id), None)
+    if shot is None or not shot.get("image_path") or not Path(config.OUTPUT_DIR, shot["image_path"]).is_file():
+        return None, (jsonify({"ok": False, "error": "Unknown shot or no image yet"}), 404)
+    return (path, shot_list, shot), None
+
+
+@app.route("/api/imagegen/shot/<shot_id>/queue", methods=["POST"])
+def imagegen_queue_edit(shot_id):
+    """"Remover figura", "Adicionar marcador", "Remover marcas", "Instrução livre", "Gerar de novo":
+    added to the shot's queue; nothing runs until "Executar fila"."""
+    from agents import visual_bible as vbible
+    from video.qa import review
+    found, error = _review_shot(shot_id)
+    if error:
+        return error
+    path, shot_list, shot = found
+    body = request.get_json(force=True) or {}
+    vb = load_json(Path(config.OUTPUT_DIR, vbible.FILE_NAME)) or {}
+    try:
+        entry = review.make_request(str(body.get("kind", "")), vb, box=body.get("box"),
+                                    character=str(body.get("character", "")), marker=str(body.get("marker", "")),
+                                    text=str(body.get("text", "")))
+    except ValueError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    queue = review.enqueue(shot, entry)
+    atomic_write_json(path, shot_list)
+    return jsonify({"ok": True, "queue": queue, "queued": sum(len(item.get("edit_queue", []))
+                                                              for item in shot_list["shots"])})
+
+
+@app.route("/api/imagegen/shot/<shot_id>/queue/remove", methods=["POST"])
+def imagegen_unqueue_edit(shot_id):
+    from video.qa import review
+    found, error = _review_shot(shot_id)
+    if error:
+        return error
+    path, shot_list, shot = found
+    try:
+        queue = review.dequeue(shot, int((request.get_json(force=True) or {}).get("index", -1)))
+    except (IndexError, TypeError, ValueError) as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    atomic_write_json(path, shot_list)
+    return jsonify({"ok": True, "queue": queue})
+
+
+@app.route("/api/imagegen/queue/run", methods=["POST"])
+def imagegen_run_queue():
+    """Every queued edit of every shot in one background batch, Klein loaded throughout."""
+    from agents import visual_bible as vbible
+    from video import shot_generation as shotgen
+    from video.imagegen_comfyui import ImageGenerator
+    from video.qa import review
+    path = Path(config.OUTPUT_DIR, "shot_list.json")
+    if not review.queued(load_json(path) or {}):
+        return jsonify({"ok": False, "error": "No edit queued"}), 400
+
+    def work():
+        output = Path(config.OUTPUT_DIR)
+        current = load_json(path) or {}
+        vb = load_json(output / vbible.FILE_NAME) or {}
+        summary = review.run_queue(
+            ImageGenerator(output), output, vb, current,
+            job_factory=lambda shot: (lambda offset: shotgen.shot_job(shot, vb, output, offset)[0]),
+            save=lambda: atomic_write_json(path, current), progress=_imagegen_progress)
+        Path(config.OUTPUT_DIR, "final_video.mp4").unlink(missing_ok=True)
+        _imagegen_progress(f"Fila: {summary['edits']} edição(ões), {summary['regenerations']} nova(s) seed(s)"
+                           + (f"; falharam (original mantido): {', '.join(summary['failed'])}" if summary["failed"]
+                              else ""))
+    return _imagegen_run(work)
+
+
+@app.route("/api/imagegen/shot/<shot_id>/restore", methods=["POST"])
+def imagegen_restore_version(shot_id):
+    """Undo: bring back any earlier version (the current one is kept in the history)."""
+    from video.qa import fixes
+    if _state.get("imagegen_busy"):
+        return jsonify({"ok": False, "error": "Wait for the running generation"}), 409
+    found, error = _review_shot(shot_id)
+    if error:
+        return error
+    path, shot_list, shot = found
+    try:
+        action = fixes.restore_version(config.OUTPUT_DIR, shot, Path(config.OUTPUT_DIR, shot["image_path"]),
+                                       int((request.get_json(force=True) or {}).get("version", 0)))
+    except (FileNotFoundError, TypeError, ValueError) as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    atomic_write_json(path, shot_list)
+    Path(config.OUTPUT_DIR, "final_video.mp4").unlink(missing_ok=True)
+    return jsonify({"ok": True, "action": action})
+
+
+@app.route("/api/imagegen/shot/<shot_id>/review", methods=["POST"])
+def imagegen_review_shot(shot_id):
+    """"Marcar OK" (action ok) or "Ignorar aviso" (action ignore, issue = its index)."""
+    from video.qa import review
+    found, error = _review_shot(shot_id)
+    if error:
+        return error
+    path, shot_list, shot = found
+    body = request.get_json(force=True) or {}
+    issue = body.get("issue")
+    try:
+        qa = review.mark(shot, str(body.get("action", "")), None if issue is None else int(issue))
+    except (IndexError, TypeError, ValueError) as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    atomic_write_json(path, shot_list)
+    return jsonify({"ok": True, "qa": qa})
 
 
 @app.route("/api/imagegen/shot/<shot_id>/prompt", methods=["POST"])

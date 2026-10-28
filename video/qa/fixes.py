@@ -71,11 +71,10 @@ def reapply_policy(item: dict, qa) -> bool:
 
 
 def hinted(item: dict) -> bool:
-    """A checked shot with something for the human review (hints or advisories)."""
+    """A checked shot with a hint for the human review: an issue that would have blocked but the
+    QA mode keeps advisory. "Unclear" answers stay on the card but do not ask for a review."""
     qa = item.get("qa") or {}
-    return qa.get("status") in ("pass", "fail") and any(entry["severity"] == "advisory"
-                                                         for entry in qa.get("issues", [])) \
-        and not qa.get("hints_dismissed")
+    return qa.get("status") in ("pass", "fail") and not qa.get("hints_dismissed") and not qa.get("reviewed")         and any(entry.get("hint") and not entry.get("ignored") for entry in qa.get("issues", []))
 
 
 def needs_qa(item: dict) -> bool:
@@ -117,6 +116,60 @@ def restore_best(output, item: dict, image_path: Path) -> dict | None:
     return best
 
 
+def edit_with_plan(generator, output, item: dict, plan: dict, *, image_path, base_job: ImageJob,
+                   origin: str = "qa", progress: Callable[[str], None] = print) -> dict:
+    """One Klein region edit of the current image from an ``edits.compose`` plan. The image
+    before it is kept as a history version; on failure the original stays and the failed
+    edit is recorded. ``origin`` "human" (GUI review) counts apart from the QA edit budget."""
+    output, image_path = Path(output), Path(image_path)
+    qa = state(item)
+    version = save_version(output, item, image_path)
+    counter = "edits" if origin == "qa" else "human_edits"
+    number = int(qa.get(counter, 0)) + 1
+    seed_number = number if origin == "qa" else 100 + number
+    job = ImageJob(job_id=f"{item['shot_id']}_{'edit' if origin == 'qa' else 'human'}{number}",
+                   prompt=plan["instruction"], seed=base_job.seed + EDIT_SEED_OFFSET * seed_number,
+                   output_path=str(image_path), kind="region_edit",
+                   references=[str(output / version["path"]), *plan["references"]],
+                   edit_boxes=[list(entry) for entry in plan["boxes"]], size=base_job.size,
+                   final_size=base_job.final_size)
+    progress(f"   ✎ {item['shot_id']}: {'region' if origin == 'qa' else 'review'} edit {number} — "
+             f"{plan['instruction'][:140]}")
+    try:
+        record = generator.generate(job)
+    except GenerationFailed as exc:
+        qa["history"].pop()
+        (output / version["path"]).unlink(missing_ok=True)
+        action = {"action": "failed", "tried": "edit", "origin": origin, "error": str(exc)[:200], "at": _now()}
+        qa["actions"].append(action)
+        progress(f"   ⚠ {item['shot_id']}: edit failed, original kept: {exc}")
+        return action
+    qa[counter] = number
+    action = {"action": "edit", "origin": origin, "number": number, "instruction": plan["instruction"],
+              "boxes": [entry[0] for entry in plan["boxes"]], "kinds": plan["kinds"],
+              "references": [Path(path).name for path in plan["references"]], "seed": record.get("seed"),
+              "replaced_version": version["version"], "at": _now(), "seconds": record.get("seconds")}
+    qa["actions"].append(action)
+    qa.update(status="pending", verdict="recheck", flagged=False)
+    return action
+
+
+def restore_version(output, item: dict, image_path, number: int) -> dict:
+    """Undo: the current image becomes a new history version, version ``number`` comes back."""
+    output, image_path = Path(output), Path(image_path)
+    qa = state(item)
+    entry = next((value for value in qa["history"] if value["version"] == int(number)), None)
+    if entry is None or not (output / entry["path"]).is_file():
+        raise FileNotFoundError(f"no version {number} for {item['shot_id']}")
+    saved = save_version(output, item, image_path)
+    shutil.copy2(output / entry["path"], image_path)
+    action = {"action": "restore", "version": entry["version"], "replaced_version": saved["version"], "at": _now()}
+    qa["actions"].append(action)
+    qa.update(issues=entry.get("issues", []), verdict="recheck", status="pending",
+              notes=base.notes({"issues": entry.get("issues", [])}))
+    return action
+
+
 def apply(generator, output, item: dict, vb: dict, *, image_path, job_factory: Callable[[int], ImageJob],
           custom: str = "", custom_box=None, force: str = "", progress: Callable[[str], None] = print) -> dict:
     """One fix step for a shot whose ``qa`` holds a failed verdict. Returns the action record.
@@ -139,30 +192,15 @@ def apply(generator, output, item: dict, vb: dict, *, image_path, job_factory: C
         return action
     if verdict not in ("edit", "regenerate"):
         return {"action": "none", "at": _now()}
+    if verdict == "edit":
+        plan = edits.compose(base.blocking(qa), vb, output, custom=custom, custom_box=custom_box)
+        return edit_with_plan(generator, output, item, plan, image_path=image_path, base_job=job_factory(0),
+                              progress=progress)
     version = save_version(output, item, image_path)
-    base_job = job_factory(0)
+    number = qa["regenerations"] + 1
     try:
-        if verdict == "edit":
-            plan = edits.compose(base.blocking(qa), vb, output, custom=custom, custom_box=custom_box)
-            number = qa["edits"] + 1
-            job = ImageJob(job_id=f"{item['shot_id']}_edit{number}", prompt=plan["instruction"],
-                           seed=base_job.seed + EDIT_SEED_OFFSET * number, output_path=str(image_path),
-                           kind="region_edit", references=[str(output / version["path"]), *plan["references"]],
-                           edit_boxes=[list(entry) for entry in plan["boxes"]], size=base_job.size,
-                           final_size=base_job.final_size)
-            progress(f"   ✎ {item['shot_id']}: region edit {number} — {plan['instruction'][:140]}")
-            record = generator.generate(job)
-            qa["edits"] = number
-            action = {"action": "edit", "number": number, "instruction": plan["instruction"],
-                      "boxes": [entry[0] for entry in plan["boxes"]], "kinds": plan["kinds"],
-                      "references": [Path(path).name for path in plan["references"]]}
-        else:
-            number = qa["regenerations"] + 1
-            job = job_factory(QA_SEED_OFFSET * number)
-            progress(f"   ↻ {item['shot_id']}: new seed {number}/{retries}")
-            record = generator.generate(job)
-            qa["regenerations"] = number
-            action = {"action": "regenerate", "number": number}
+        progress(f"   ↻ {item['shot_id']}: new seed {number}/{retries}")
+        record = generator.generate(job_factory(QA_SEED_OFFSET * number))
     except GenerationFailed as exc:
         qa["history"].pop()
         (output / version["path"]).unlink(missing_ok=True)
@@ -170,8 +208,9 @@ def apply(generator, output, item: dict, vb: dict, *, image_path, job_factory: C
         qa["actions"].append(action)
         progress(f"   ⚠ {item['shot_id']}: {verdict} failed: {exc}")
         return action
-    action.update(seed=record.get("seed"), replaced_version=version["version"], at=_now(),
-                  seconds=record.get("seconds"))
+    qa["regenerations"] = number
+    action = {"action": "regenerate", "number": number, "seed": record.get("seed"),
+              "replaced_version": version["version"], "at": _now(), "seconds": record.get("seconds")}
     qa["actions"].append(action)
     qa.update(status="pending", verdict="recheck", flagged=False)
     return action
