@@ -573,11 +573,20 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   **edit** for ≤ 2 small boxed or instruction-only issues, **regenerate** otherwise.
 
   **Region edits** are FLUX 3 Klein edits (`workflows/flux3_klein_regionedit_api.json`, derived from
-  your edit export: the shot is `<ref_image_0>`, boxes are `<obj_N>` on a canvas that follows the
-  shot, approved portraits follow). Klein returns 1360×768 for a 1920×1080 shot; any output within
-  `IMAGEGEN_ASPECT_TOLERANCE` (3 %) of 16:9 is fitted, and an edit is never re-rendered from an empty
-  latent: if it fails, the original stays. Every version is saved in
-  `images/shots/history/<shot_id>_vN.jpg`.
+  your edit export: the shot is `<ref_image_0>`, boxes are `<obj_N>`, approved portraits follow).
+  Since Phase 3.5.3 every boxed edit is **crop → edit → composite** (`video/qa/region.py`): a 16:9
+  crop around the box (×3 on its narrow side, ≥ 25 % of the frame's shorter side) is upscaled to
+  ~1 MP and edited alone, so a 3 %-wide figure becomes ~11 % of the edited canvas and can be grounded;
+  the result is tone-matched and pasted back through a feathered mask (the box grown by 15 %) —
+  **nothing outside the mask can change** (asserted). Instructions name a removal target by its
+  size and position, list the characters visible in the crop with their outfits ("Keep the woman in
+  the cream knit top exactly as they are") and end with "Change nothing outside <obj_1>". An edit
+  that changes nothing inside the box is reported as "edição sem efeito" and not saved; the person
+  detector checks that a removed figure is gone. The GUI warns before queuing a box that covers
+  > 20 % of a main character. Instruction-only edits keep the whole-frame path (with keep clauses).
+  Klein returns 1360×768 for a 1920×1080 frame; any output within `IMAGEGEN_ASPECT_TOLERANCE` (3 %)
+  of 16:9 is fitted, and an edit is never re-rendered from an empty latent. Every version is saved
+  in `images/shots/history/<shot_id>_vN.jpg` (crops as `_vN_crop_before/after.jpg`).
 
   **Human review in the GUI** (Continuar projeto → Shots, Phase 3.5.2). The grid is compact: thumbnails
   S / M / L (240 / 360 / 520 px, remembered), grouped by scene, each card with only its id, time,
