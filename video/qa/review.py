@@ -120,12 +120,14 @@ def mark(shot: dict, action: str, issue_index: int | None = None) -> dict:
 
 
 def run_queue(generator, output, vb: dict, shot_list: dict, *, job_factory: Callable[[dict], Callable],
-              save: Callable[[], None], progress: Callable[[str], None] = print) -> dict:
+              save: Callable[[], None], progress: Callable[[str], None] = print,
+              on_shot: Callable[[str | None], None] = lambda shot_id: None) -> dict:
     """Every queued request of every shot, in order, Klein loaded throughout. A failed edit keeps
     the original image (recorded on the shot); the queue entry is consumed either way."""
     output = Path(output)
     summary = {"edits": 0, "regenerations": 0, "failed": [], "shots": []}
     for shot in queued(shot_list):
+        on_shot(shot["shot_id"])                              # the GUI shows "processando"
         image = output / shot["image_path"]
         factory = job_factory(shot)
         while shot.get("edit_queue"):
@@ -148,4 +150,5 @@ def run_queue(generator, output, vb: dict, shot_list: dict, *, job_factory: Call
             save()
         fixes.state(shot)["reviewed"] = False                 # the new image needs a look
         summary["shots"].append(shot["shot_id"])
+    on_shot(None)
     return summary

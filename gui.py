@@ -945,6 +945,7 @@ def imagegen_status():
         "missing_approvals": shotgen.missing_approvals(vb, shot_list, output) if vb and shot_list else [],
         "unique_shots": shot_list.get("unique_shots", 0), "done": len(done),
         "characters": characters, "qa_mode": policy.mode(),
+        "current_shot": _state.get("imagegen_current") if _state.get("imagegen_busy") else None,
         "queued": sum(len(shot.get("edit_queue") or []) for shot in shots),
         "hinted": sum(1 for shot in shots if fixes.hinted(shot)),
         "eta_seconds": estimate,
@@ -955,7 +956,8 @@ def imagegen_status():
         "shots": [{key: shot.get(key) for key in ("shot_id", "scene_id", "start", "end", "shot_type",
                                                    "characters", "face_visibility", "reuse_of",
                                                    "action", "prompt", "image_path", "provider",
-                                                   "flags", "warnings", "qa", "edit_queue")}
+                                                   "flags", "warnings", "qa", "edit_queue",
+                                                   "narration_excerpt", "location", "generated_at")}
                   for shot in shots],
     })
 
@@ -1172,7 +1174,8 @@ def imagegen_run_queue():
         summary = review.run_queue(
             ImageGenerator(output), output, vb, current,
             job_factory=lambda shot: (lambda offset: shotgen.shot_job(shot, vb, output, offset)[0]),
-            save=lambda: atomic_write_json(path, current), progress=_imagegen_progress)
+            save=lambda: atomic_write_json(path, current), progress=_imagegen_progress,
+            on_shot=lambda shot_id: _state.update(imagegen_current=shot_id))
         Path(config.OUTPUT_DIR, "final_video.mp4").unlink(missing_ok=True)
         _imagegen_progress(f"Fila: {summary['edits']} edição(ões), {summary['regenerations']} nova(s) seed(s)"
                            + (f"; falharam (original mantido): {', '.join(summary['failed'])}" if summary["failed"]

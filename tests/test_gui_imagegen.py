@@ -153,9 +153,11 @@ class GuiImagegenTests(unittest.TestCase):
         self.assertEqual(self.status()["hinted"], 1)
         page = self.client.get("/").get_data(as_text=True)
         for text in ("Remover figura", "Adicionar marcador", "Remover marcas", "Instrução livre", "Gerar de novo",
-                     "Ignorar aviso", "Marcar OK", "Executar fila", "Antes / depois", "Restaurar v", "igQaBoxes",
-                     "← → navegar"):
+                     "Ignorar", "Marcar OK", "Executar fila", "Antes / depois", "Restaurar v", "igViewerBox",
+                     "mostrar incertos", "revisados", "Z ajustar/100 %", "H histórico", "Esc fechar"):
             self.assertIn(text, page)
+        for legacy in ("↻ new seed", "✎ edit"):
+            self.assertNotIn(legacy, page)
 
     def test_review_queue_run_restore_and_mark(self):
         from video.qa import review
@@ -171,6 +173,8 @@ class GuiImagegenTests(unittest.TestCase):
                          "remove_figure")
         status = self.status()
         self.assertEqual(status["queued"], 1)
+        self.assertIsNone(status["current_shot"])
+        self.assertIn("narration_excerpt", status["shots"][0])
         self.assertEqual(status["shots"][0]["edit_queue"][0]["label"], "Remover figura")
         julian = next(item for item in status["characters"] if item["id"] == "julian_vance")
         self.assertEqual(julian["markers"], ["horn-rimmed glasses"])
