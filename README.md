@@ -579,14 +579,23 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   latent: if it fails, the original stays. Every version is saved in
   `images/shots/history/<shot_id>_vN.jpg`.
 
-  **Human review in the GUI** (Continuar projeto → Shots). Each card shows the hints (detector boxes
-  on hover, "Ignorar aviso" per hint) and one-click edits: **Remover figura** (click a suggested box
-  or draw one), **Adicionar marcador** (character + signature marker, its approved portrait as
-  reference), **Remover marcas**, **Instrução livre** (optional box + text), **Gerar de novo**,
-  **Marcar OK**. Edits wait in a queue; "Executar fila" runs them in one batch with Klein loaded.
-  "Antes / depois" and the history ("Restaurar vN") undo any edit. Keyboard: ← → move between
-  cards, O marks OK and moves on, F / M / G remove figure / marker / regenerate, B before/after;
-  "só planos com avisos" shows only what needs a look.
+  **Human review in the GUI** (Continuar projeto → Shots, Phase 3.5.2). The grid is compact: thumbnails
+  S / M / L (240 / 360 / 520 px, remembered), grouped by scene, each card with only its id, time,
+  type, a badge (`OK`, `n avisos`, `revisado`, `editado`, `na fila`) and the first real warning.
+  Filters: Todos · Com avisos · Não revisados · Editados · OK, and an "x/66 revisados" counter.
+  "Unclear" VLM answers are hidden ("mostrar incertos" shows them) and never count as warnings.
+
+  Click a shot (or Enter) to open the **viewer**: the full-resolution image (fit / 100 % / wheel zoom,
+  drag to pan, detector boxes on/off), the narration of that moment, the characters' approved
+  portraits, the hints (real ones first, repeats collapsed, "Ignorar"), the QA layers and date, the
+  composed prompt, the history ("Antes / depois", "Restaurar vN"). Actions — **Remover figura**,
+  **Adicionar marcador** (character + signature marker, its portrait as reference), **Remover
+  marcas**, **Instrução livre**, **Gerar de novo**, **Marcar OK** — use boxes drawn on the large image
+  (click a suggested detector box or drag one, then move/resize it; "Sem caixa" for instruction-only
+  edits). Edits join the queue; "Executar fila" runs them in one batch with Klein loaded, and the
+  viewer shows "na fila / processando / pronto" and refreshes the image. Keys: ← → shot, O OK (and
+  next), G regenerate, I instruction, F remove figure, M marker, B boxes, Z fit/100 %, H history,
+  Esc close.
 
   **Gemini second opinion** (optional, live): "Segunda opinião (Gemini)" on a card or for every shot
   with hints, or `python -m scripts.qa_shots --backend gemini [--only sNN_MM]`. Stored beside the
