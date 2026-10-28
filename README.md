@@ -557,22 +557,52 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   3. *Layer 3, Gemini vision* — off (`IMAGEGEN_QA_GEMINI=false`); only when the local VLM is
      unavailable, or `qa_shots --gemini`.
 
-  The verdict is code (`video/qa/decision.py`): **edit** when the blocking issues are ≤ 2 and each is a
-  small box (< 35 % of the frame) or an instruction-only fix (injury, text); **regenerate** for
-  style/border/wrong-subject, the main subject covered, ≥ 3 issues, or after 2 edits. Edits are
-  FLUX 3 Klein region edits (`workflows/flux3_klein_regionedit_api.json`, derived from your edit
-  export: the shot is `<ref_image_0>`, boxes are `<obj_N>`, approved portraits follow), instructions
-  composed per issue type. Then up to `IMAGEGEN_QA_RETRIES` new seeds; then the best version is kept
-  and flagged. Every version is saved in `images/shots/history/<shot_id>_vN.jpg`.
+  **QA is advice by default (Phase 3.5.1).** On the confirmed fixtures the local QA was not reliable
+  (people count 25 %, duplicate 62 %, glasses 62 %, extra person 75 %: it passed real defects and
+  flagged clean frames; in this style every face shares one drawing). `IMAGEGEN_QA_MODE` /
+  `generate_shots --qa` (`video/qa/policy.py`):
+  - `advisory` (default): every issue is stored, but only the reliable deterministic checks act on
+    their own: borders/panels, blank or unreadable frames, text read by OCR. Everything else
+    (VLM answers, people counts) is a **hint** for the human review;
+  - `auto`: an issue type also acts on its own when its accuracy in the latest
+    `data/qa_probe_report.json` is ≥ 85 %; `duplicate_person` never does (low-confidence hint);
+  - `off`: no QA.
 
-  `generate_shots` is phase-batched so Klein (7.6 GB) and the VLM never share the 8 GB: generate all
-  pending shots (layer 1 inline) → free ComfyUI → VLM answers the whole batch → unload → Klein edits
-  or regenerates what failed → QA again for those only (`IMAGEGEN_QA_ROUNDS`, 2). Resumable;
-  `python -m scripts.generate_shots --fix-only` continues the fixes. Re-check existing shots with
-  `python -m scripts.qa_shots [--layers deterministic,local_vlm] [--only sNN]` or "Revisar planos com
-  QA". Shot cards show the verdict, the boxes on hover, the history and "Editar (QA)", "Editar com
-  instrução própria" (draw a box, type the instruction) and "Gerar de novo".
-  Probe: `python -m scripts.probe_local_vlm [--mode focused]`.
+  Stored results are re-evaluated under the current mode, so hints from earlier runs are never
+  "fixed" automatically. When something does act, the verdict is code (`video/qa/decision.py`):
+  **edit** for ≤ 2 small boxed or instruction-only issues, **regenerate** otherwise.
+
+  **Region edits** are FLUX 3 Klein edits (`workflows/flux3_klein_regionedit_api.json`, derived from
+  your edit export: the shot is `<ref_image_0>`, boxes are `<obj_N>` on a canvas that follows the
+  shot, approved portraits follow). Klein returns 1360×768 for a 1920×1080 shot; any output within
+  `IMAGEGEN_ASPECT_TOLERANCE` (3 %) of 16:9 is fitted, and an edit is never re-rendered from an empty
+  latent: if it fails, the original stays. Every version is saved in
+  `images/shots/history/<shot_id>_vN.jpg`.
+
+  **Human review in the GUI** (Continuar projeto → Shots). Each card shows the hints (detector boxes
+  on hover, "Ignorar aviso" per hint) and one-click edits: **Remover figura** (click a suggested box
+  or draw one), **Adicionar marcador** (character + signature marker, its approved portrait as
+  reference), **Remover marcas**, **Instrução livre** (optional box + text), **Gerar de novo**,
+  **Marcar OK**. Edits wait in a queue; "Executar fila" runs them in one batch with Klein loaded.
+  "Antes / depois" and the history ("Restaurar vN") undo any edit. Keyboard: ← → move between
+  cards, O marks OK and moves on, F / M / G remove figure / marker / regenerate, B before/after;
+  "só planos com avisos" shows only what needs a look.
+
+  **Gemini second opinion** (optional, live): "Segunda opinião (Gemini)" on a card or for every shot
+  with hints, or `python -m scripts.qa_shots --backend gemini [--only sNN_MM]`. Stored beside the
+  local result, advisory only.
+
+  `generate_shots` stays phase-batched (Klein and the VLM never share the 8 GB) and ends with the
+  shots that have hints and the GUI command. Re-check existing shots with
+  `python -m scripts.qa_shots [--layers ...] [--mode advisory|auto]`. Probe:
+  `python -m scripts.probe_local_vlm --mode focused`, and `--backend gemini` adds Gemini on the same
+  fixtures, side by side in the report.
+
+  ```powershell
+  python -m scripts.generate_shots --qa advisory      # regenerates nothing already OK; stores hints
+  python gui.py                                       # Continuar projeto → Shots: review hints, one-click edits
+  python -m scripts.probe_local_vlm --backend gemini  # optional comparison
+  ```
 - **Thumbnail identity.** The thumbnail is composed like a shot: the protagonist's approved sheet
   as the first reference (it refuses to run without it, so it never shows a generic face), their
   signature markers, the brief's `thumbnail_concept`, and a figure whose head and shoulders fill at
