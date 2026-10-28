@@ -124,6 +124,14 @@ def questions(image: Image.Image, detection: dict, expected: dict, *, ocr: bool 
     return asked
 
 
+def _unclear(found: dict, reply: str) -> dict:
+    """Mark an issue that only exists because the VLM answered "unclear": the GUI hides those by
+    default and never counts them as warnings."""
+    if reply == "unclear":
+        found["unclear"] = True
+    return found
+
+
 def apply(asked: list[base.Question], answers: dict, detection: dict, expected: dict,
           issues: list[dict]) -> tuple[list[dict], int]:
     """Layer-1 issues plus what the answers add; returns (issues, people count)."""
@@ -156,20 +164,23 @@ def apply(asked: list[base.Question], answers: dict, detection: dict, expected: 
                 issues.append(base.issue("missing_marker", box=persons[index]["face"]["box"], target=target,
                                          note=f"face without {marker}", source="local_vlm", marker=marker))
             if len(without) < missing:
-                issues.append(base.issue("missing_marker", severity="advisory", target=target,
-                                         note=f"{marker}: unclear on the visible face(s)", source="local_vlm"))
+                issues.append(dict(base.issue("missing_marker", severity="advisory", target=target,
+                                              note=f"{marker}: unclear on the visible face(s)", source="local_vlm"),
+                                   unclear=True))
     for question in by_kind.get("injury", []):
         reply = answer(question)
         if reply in ("yes", "unclear"):
-            issues.append(base.issue("unstated_injury", severity="blocking" if reply == "yes" else "advisory",
-                                     note="blood, wounds or red marks the narration does not state"
-                                          + ("" if reply == "yes" else " (unclear)"), source="local_vlm"))
+            issues.append(_unclear(base.issue("unstated_injury", severity="blocking" if reply == "yes" else "advisory",
+                                              note="blood, wounds or red marks the narration does not state"
+                                                   + ("" if reply == "yes" else " (unclear)"), source="local_vlm"),
+                                   reply))
     for question in by_kind.get("text", []):
         reply = answer(question)
         if reply in ("yes", "unclear"):
-            issues.append(base.issue("text", severity="blocking" if reply == "yes" else "advisory",
-                                     note="visible writing or a watermark" + ("" if reply == "yes" else " (unclear)"),
-                                     source="local_vlm"))
+            issues.append(_unclear(base.issue("text", severity="blocking" if reply == "yes" else "advisory",
+                                              note="visible writing or a watermark"
+                                                   + ("" if reply == "yes" else " (unclear)"), source="local_vlm"),
+                                   reply))
     allowed = expected["people"] + expected.get("background", 0)
     sure = len(found["main"]) + len(found["background"]) + len(found["extras"])
     confirmed = 0
@@ -190,7 +201,8 @@ def apply(asked: list[base.Question], answers: dict, detection: dict, expected: 
         copy = min((first, second), key=lambda index: base.area(persons[index]["box"]))
         box = persons[copy]["box"]
         issues = [item for item in issues if not (item["type"] == "extra_person" and item["box"] == box)]
-        issues.append(base.issue("duplicate_person", severity="blocking" if reply == "yes" else "advisory",
-                                 box=box, note="two faces look like the same person"
-                                               + ("" if reply == "yes" else " (unclear)"), source="local_vlm"))
+        issues.append(_unclear(base.issue("duplicate_person", severity="blocking" if reply == "yes" else "advisory",
+                                          box=box, note="two faces look like the same person"
+                                                        + ("" if reply == "yes" else " (unclear)"), source="local_vlm"),
+                               reply))
     return issues, len(persons) + confirmed

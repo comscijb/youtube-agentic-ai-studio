@@ -111,6 +111,9 @@ class FocusedQuestionTests(unittest.TestCase):
         self.assertIn(("duplicate_person", "blocking"), found)
         self.assertEqual(count, 3)
         self.assertTrue(all(i["box"] is None for i in issues if i["type"] in ("unstated_injury", "text")))
+        # only "unclear" answers carry the flag the GUI hides by default (Phase 3.5.2-C)
+        self.assertEqual(sorted((i["type"], i["severity"]) for i in issues if i.get("unclear")),
+                         [("missing_marker", "advisory"), ("unstated_injury", "advisory")])
 
     def test_parse_choice(self):
         self.assertEqual(base.parse_choice("<think></think> Yes."), "yes")
