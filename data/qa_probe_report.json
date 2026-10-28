@@ -1,7 +1,7 @@
 {
   "version": 1,
   "mode": "focused",
-  "created_at": "2026-10-27T19:15:47",
+  "created_at": "2026-10-28T12:25:36",
   "project": "2026-10-21-the-man-who-needed-everyone-to-envy-him",
   "fixture_confirmed_by_user": true,
   "comfyui": "http://127.0.0.1:8188",
@@ -85,22 +85,14 @@
           "shot_id": "s09_04",
           "raw": "{\"marker:0:black horn-rimmed glasses\": \"unclear\", \"injury:0\": \"unclear\", \"text\": \"unclear\"}",
           "error": "",
+          "model_texts": {
+            "marker:0:black horn-rimmed glasses": " || retry: ",
+            "injury:0": "user || retry: user",
+            "text": " || retry: "
+          },
           "answer": {
-            "people_count": 2,
+            "people_count": 1,
             "issues": [
-              {
-                "type": "duplicate_person",
-                "severity": "blocking",
-                "box": [
-                  0.1845,
-                  0.1423,
-                  0.4015,
-                  1.0
-                ],
-                "target": "",
-                "note": "the same face appears twice (similarity 0.44); this is the smaller copy",
-                "source": "deterministic"
-              },
               {
                 "type": "missing_marker",
                 "severity": "advisory",
@@ -128,32 +120,29 @@
             ],
             "verdict": ""
           },
-          "seconds": 5.9,
-          "layer1_seconds": 0.75,
+          "seconds": 5.93,
+          "layer1_seconds": 1.23,
           "questions": 3,
-          "detected_people": 2,
-          "vram_peak_mb": 5852.9
+          "detected_people": 1,
+          "vram_peak_mb": 6611.3
         },
         {
           "shot_id": "s03_06",
-          "raw": "{\"gender:0\": \"unclear\", \"marker:0:black horn-rimmed glasses\": \"unclear\", \"gender:2\": \"unclear\", \"marker:2:black horn-rimmed glasses\": \"unclear\", \"injury:0\": \"unclear\", \"injury:2\": \"unclear\", \"text\": \"unclear\", \"same:1:2\": \"unclear\"}",
+          "raw": "{\"gender:0\": \"unclear\", \"marker:0:black horn-rimmed glasses\": \"unclear\", \"gender:1\": \"unclear\", \"marker:1:black horn-rimmed glasses\": \"unclear\", \"injury:0\": \"unclear\", \"injury:1\": \"unclear\", \"text\": \"unclear\", \"same:0:1\": \"unclear\"}",
           "error": "",
+          "model_texts": {
+            "gender:0": " || retry: ",
+            "marker:0:black horn-rimmed glasses": " || retry: ",
+            "gender:1": " || retry: ",
+            "marker:1:black horn-rimmed glasses": " || retry: ",
+            "injury:0": " || retry: ",
+            "injury:1": " || retry: ",
+            "text": " || retry: ",
+            "same:0:1": " || retry: "
+          },
           "answer": {
-            "people_count": 3,
+            "people_count": 2,
             "issues": [
-              {
-                "type": "duplicate_person",
-                "severity": "blocking",
-                "box": [
-                  0.419,
-                  0.0434,
-                  0.6097,
-                  1.0
-                ],
-                "target": "",
-                "note": "the same face appears twice (similarity 0.68); this is the smaller copy",
-                "source": "deterministic"
-              },
               {
                 "type": "missing_marker",
                 "severity": "advisory",
@@ -190,10 +179,10 @@
                 "type": "duplicate_person",
                 "severity": "advisory",
                 "box": [
-                  0.419,
-                  0.0434,
-                  0.6097,
-                  1.0
+                  0.5256,
+                  0.1283,
+                  0.774,
+                  0.9907
                 ],
                 "target": "",
                 "note": "two faces look like the same person (unclear)",
@@ -202,16 +191,21 @@
             ],
             "verdict": ""
           },
-          "seconds": 6.94,
-          "layer1_seconds": 0.44,
+          "seconds": 8.47,
+          "layer1_seconds": 0.43,
           "questions": 8,
-          "detected_people": 3,
-          "vram_peak_mb": 5883.5
+          "detected_people": 2,
+          "vram_peak_mb": 6623.8
         },
         {
           "shot_id": "s01_05",
-          "raw": "{\"text\": \"no\", \"marker:0:black horn-rimmed glasses\": \"unclear\", \"injury:0\": \"unclear\"}",
+          "raw": "{\"marker:0:black horn-rimmed glasses\": \"unclear\", \"injury:0\": \"unclear\", \"text\": \"unclear\"}",
           "error": "",
+          "model_texts": {
+            "marker:0:black horn-rimmed glasses": " || retry: ",
+            "injury:0": " || retry: ",
+            "text": " || retry: "
+          },
           "answer": {
             "people_count": 1,
             "issues": [
@@ -230,20 +224,32 @@
                 "target": "",
                 "note": "blood, wounds or red marks the narration does not state (unclear)",
                 "source": "local_vlm"
+              },
+              {
+                "type": "text",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "visible writing or a watermark (unclear)",
+                "source": "local_vlm"
               }
             ],
             "verdict": ""
           },
-          "seconds": 3.28,
-          "layer1_seconds": 0.41,
+          "seconds": 3.9,
+          "layer1_seconds": 0.4,
           "questions": 3,
           "detected_people": 1,
-          "vram_peak_mb": 5882.6
+          "vram_peak_mb": 6643.2
         },
         {
           "shot_id": "s03_05",
           "raw": "{\"injury:0\": \"unclear\", \"text\": \"unclear\"}",
           "error": "",
+          "model_texts": {
+            "injury:0": " || retry: ",
+            "text": " || retry: "
+          },
           "answer": {
             "people_count": 1,
             "issues": [
@@ -266,82 +272,35 @@
             ],
             "verdict": ""
           },
-          "seconds": 2.24,
-          "layer1_seconds": 0.4,
+          "seconds": 3.29,
+          "layer1_seconds": 0.41,
           "questions": 2,
           "detected_people": 1,
-          "vram_peak_mb": 5855.0
+          "vram_peak_mb": 6789.0
         },
         {
           "shot_id": "s02_04",
           "raw": "{\"marker:0:black horn-rimmed glasses\": \"unclear\", \"injury:0\": \"unclear\", \"text\": \"unclear\"}",
           "error": "",
+          "model_texts": {
+            "marker:0:black horn-rimmed glasses": " || retry: ",
+            "injury:0": " || retry: ",
+            "text": " || retry: "
+          },
           "answer": {
-            "people_count": 6,
+            "people_count": 2,
             "issues": [
               {
                 "type": "extra_person",
                 "severity": "blocking",
                 "box": [
-                  0.0992,
-                  0.3701,
-                  0.1603,
-                  0.7364
+                  0.78,
+                  0.3869,
+                  0.819,
+                  0.6515
                 ],
                 "target": "",
-                "note": "6 people detected, 1 expected",
-                "source": "deterministic"
-              },
-              {
-                "type": "extra_person",
-                "severity": "blocking",
-                "box": [
-                  0.7776,
-                  0.3815,
-                  0.8298,
-                  0.7536
-                ],
-                "target": "",
-                "note": "6 people detected, 1 expected",
-                "source": "deterministic"
-              },
-              {
-                "type": "extra_person",
-                "severity": "blocking",
-                "box": [
-                  0.7313,
-                  0.4262,
-                  0.7705,
-                  0.7188
-                ],
-                "target": "",
-                "note": "6 people detected, 1 expected",
-                "source": "deterministic"
-              },
-              {
-                "type": "extra_person",
-                "severity": "blocking",
-                "box": [
-                  0.2255,
-                  0.4452,
-                  0.2578,
-                  0.6661
-                ],
-                "target": "",
-                "note": "6 people detected, 1 expected",
-                "source": "deterministic"
-              },
-              {
-                "type": "extra_person",
-                "severity": "blocking",
-                "box": [
-                  0.8424,
-                  0.4491,
-                  0.8515,
-                  0.4703
-                ],
-                "target": "",
-                "note": "6 people detected, 1 expected",
+                "note": "2 people detected, 1 expected",
                 "source": "deterministic"
               },
               {
@@ -371,19 +330,44 @@
             ],
             "verdict": ""
           },
-          "seconds": 3.31,
-          "layer1_seconds": 0.43,
+          "seconds": 3.9,
+          "layer1_seconds": 0.39,
           "questions": 3,
-          "detected_people": 6,
-          "vram_peak_mb": 5839.9
+          "detected_people": 2,
+          "vram_peak_mb": 6637.3
         },
         {
           "shot_id": "s01_03",
-          "raw": "{\"injury:0\": \"no\", \"text\": \"unclear\"}",
+          "raw": "{\"injury:0\": \"unclear\", \"text\": \"unclear\"}",
           "error": "",
+          "model_texts": {
+            "injury:0": " || retry: ",
+            "text": " || retry: "
+          },
           "answer": {
-            "people_count": 1,
+            "people_count": 2,
             "issues": [
+              {
+                "type": "extra_person",
+                "severity": "blocking",
+                "box": [
+                  0.1442,
+                  0.4146,
+                  0.1549,
+                  0.4377
+                ],
+                "target": "",
+                "note": "2 people detected, 1 expected",
+                "source": "deterministic"
+              },
+              {
+                "type": "unstated_injury",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "blood, wounds or red marks the narration does not state (unclear)",
+                "source": "local_vlm"
+              },
               {
                 "type": "text",
                 "severity": "advisory",
@@ -395,19 +379,37 @@
             ],
             "verdict": ""
           },
-          "seconds": 2.19,
-          "layer1_seconds": 0.39,
+          "seconds": 2.76,
+          "layer1_seconds": 0.4,
           "questions": 2,
-          "detected_people": 1,
-          "vram_peak_mb": 5857.2
+          "detected_people": 2,
+          "vram_peak_mb": 6667.1
         },
         {
           "shot_id": "s04_03",
           "raw": "{\"marker:0:black horn-rimmed glasses\": \"unclear\", \"injury:0\": \"unclear\", \"text\": \"unclear\"}",
           "error": "",
+          "model_texts": {
+            "marker:0:black horn-rimmed glasses": " || retry: ",
+            "injury:0": " || retry: ",
+            "text": " || retry: "
+          },
           "answer": {
-            "people_count": 1,
+            "people_count": 2,
             "issues": [
+              {
+                "type": "duplicate_person",
+                "severity": "blocking",
+                "box": [
+                  0.6097,
+                  0.1513,
+                  0.8557,
+                  0.9928
+                ],
+                "target": "",
+                "note": "the same face appears twice (similarity 0.53); this is the smaller copy",
+                "source": "deterministic"
+              },
               {
                 "type": "missing_marker",
                 "severity": "advisory",
@@ -415,6 +417,55 @@
                 "target": "julian_vance",
                 "note": "black horn-rimmed glasses: unclear on the visible face(s)",
                 "source": "local_vlm"
+              },
+              {
+                "type": "unstated_injury",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "blood, wounds or red marks the narration does not state (unclear)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "text",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "visible writing or a watermark (unclear)",
+                "source": "local_vlm"
+              }
+            ],
+            "verdict": ""
+          },
+          "seconds": 3.88,
+          "layer1_seconds": 0.4,
+          "questions": 3,
+          "detected_people": 2,
+          "vram_peak_mb": 6635.1
+        },
+        {
+          "shot_id": "s08_02",
+          "raw": "{\"injury:0\": \"unclear\", \"text\": \"unclear\"}",
+          "error": "",
+          "model_texts": {
+            "injury:0": " || retry: ",
+            "text": " || retry: "
+          },
+          "answer": {
+            "people_count": 2,
+            "issues": [
+              {
+                "type": "extra_person",
+                "severity": "blocking",
+                "box": [
+                  0.8131,
+                  0.3325,
+                  0.8601,
+                  0.6347
+                ],
+                "target": "",
+                "note": "2 people detected, 1 expected",
+                "source": "deterministic"
               },
               {
                 "type": "unstated_injury",
@@ -437,70 +488,38 @@
           },
           "seconds": 2.85,
           "layer1_seconds": 0.39,
-          "questions": 3,
-          "detected_people": 1,
-          "vram_peak_mb": 5884.4
-        },
-        {
-          "shot_id": "s08_02",
-          "raw": "{\"injury:0\": \"unclear\", \"text\": \"unclear\"}",
-          "error": "",
-          "answer": {
-            "people_count": 1,
-            "issues": [
-              {
-                "type": "unstated_injury",
-                "severity": "advisory",
-                "box": null,
-                "target": "",
-                "note": "blood, wounds or red marks the narration does not state (unclear)",
-                "source": "local_vlm"
-              },
-              {
-                "type": "text",
-                "severity": "advisory",
-                "box": null,
-                "target": "",
-                "note": "visible writing or a watermark (unclear)",
-                "source": "local_vlm"
-              }
-            ],
-            "verdict": ""
-          },
-          "seconds": 2.23,
-          "layer1_seconds": 0.4,
           "questions": 2,
-          "detected_people": 1,
-          "vram_peak_mb": 5882.5
+          "detected_people": 2,
+          "vram_peak_mb": 6667.0
         }
       ],
       "swap": {
-        "klein_warmup_s": 3.06,
+        "klein_warmup_s": 3.56,
         "unload_klein_s": 0.0,
-        "qa_load_and_run_s": 28.94,
+        "qa_load_and_run_s": 34.98,
         "unload_qa_s": 0.0,
-        "reload_klein_s": 7.86,
-        "total_swap_s": 36.8
+        "reload_klein_s": 3.82,
+        "total_swap_s": 38.8
       },
       "metrics": {
         "images": 8,
         "valid_json_rate": 1.0,
         "accuracy": {
-          "people_count": 0.875,
-          "duplicate_person": 1.0,
+          "people_count": 0.25,
+          "duplicate_person": 0.625,
           "missing_glasses": 0.625,
           "unstated_mark": 0.875,
-          "extra_person": 1.0,
+          "extra_person": 0.75,
           "text": 1.0
         },
-        "box_iou_mean": 0.224,
-        "box_hits_iou_0_3": 4,
+        "box_iou_mean": 0.038,
+        "box_hits_iou_0_3": 1,
         "boxes_expected": 13,
-        "seconds_per_image": 3.62,
-        "seconds_first_image": 5.9,
-        "vram_peak_mb": 5884.4,
-        "detector_person_recall": 1.0,
-        "layer1_seconds_per_image": 0.45,
+        "seconds_per_image": 4.37,
+        "seconds_first_image": 5.93,
+        "vram_peak_mb": 6789.0,
+        "detector_person_recall": 0.667,
+        "layer1_seconds_per_image": 0.51,
         "questions_per_image": 3.2,
         "ocr": false
       }

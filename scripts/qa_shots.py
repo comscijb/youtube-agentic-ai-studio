@@ -29,7 +29,7 @@ from video.qa.layered import LayeredQA, configured_layers
 
 
 def run(output, *, only: str | None = None, layers: list[str] | None = None, qa: LayeredQA | None = None,
-        progress: Callable[[str], None] = print) -> dict:
+        progress: Callable[[str], None] = print, mode: str | None = None) -> dict:
     output = Path(output)
     vb = load_json(output / vbible.FILE_NAME) or {}
     shot_list = load_json(output / shots_module.FILE_NAME) or {}
@@ -38,7 +38,7 @@ def run(output, *, only: str | None = None, layers: list[str] | None = None, qa:
     selected = [shot for shot in shots if not shot.get("reuse_of") and shot.get("image_path")
                 and (output / shot["image_path"]).is_file()
                 and (not only or only in (shot["scene_id"], shot["shot_id"]))]
-    summary = {"checked": 0, "passed": 0, "failed": [], "skipped": 0, "edit": [], "regenerate": [],
+    summary = {"checked": 0, "passed": 0, "failed": [], "skipped": 0, "edit": [], "regenerate": [], "hints": 0,
                "without_image": sum(1 for shot in shots if not shot.get("reuse_of") and not (
                    shot.get("image_path") and (output / shot["image_path"]).is_file())
                    and (not only or only in (shot["scene_id"], shot["shot_id"])))}
@@ -46,7 +46,7 @@ def run(output, *, only: str | None = None, layers: list[str] | None = None, qa:
         return summary
     if qa is None:
         from video.imagegen_comfyui import ComfyClient
-        qa = LayeredQA(layers, comfy=ComfyClient(), progress=progress)
+        qa = LayeredQA(layers, comfy=ComfyClient(), progress=progress, mode=mode)
     progress(f"   QA layers: {', '.join(qa.layers)} — layer 1 on {len(selected)} shot(s)…")
     items = [(output / shot["image_path"],
               visual_qa.expected_for(shot, vb, narration.get(shot.get("scene_id", ""), "")),
@@ -61,6 +61,7 @@ def run(output, *, only: str | None = None, layers: list[str] | None = None, qa:
         fixes.record_result(shot, result)
         gen.update_provenance(output, shot["shot_id"], visual_qa=result)
         summary["checked"] += 1
+        summary["hints"] += int(fixes.hinted(shot))
         if result["status"] == "pass":
             summary["passed"] += 1
         elif result["status"] == "fail":
@@ -81,13 +82,16 @@ def main(argv=None) -> int:
     parser.add_argument("--only", help="scene id (s04) or shot id (s04_02)")
     parser.add_argument("--layers", help="comma list of deterministic, local_vlm, gemini (default: IMAGEGEN_QA_LAYERS)")
     parser.add_argument("--gemini", action="store_true", help="add Gemini vision as layer 3")
+    parser.add_argument("--mode", choices=("advisory", "auto"), default=None,
+                        help="which issues may stay blocking (default: IMAGEGEN_QA_MODE, advisory)")
     args = parser.parse_args(argv)
     output = projects.cli_output(args)
     layers = configured_layers(args.layers, gemini=True if args.gemini else None)
-    summary = run(output, only=args.only, layers=layers)
+    summary = run(output, only=args.only, layers=layers, mode=args.mode)
     print(f"Visual QA: {summary['checked']} checked, {summary['passed']} passed, "
           f"{len(summary['failed'])} failed ({len(summary['edit'])} to edit, "
-          f"{len(summary['regenerate'])} to regenerate), {summary['skipped']} skipped.")
+          f"{len(summary['regenerate'])} to regenerate), {summary['skipped']} skipped; "
+          f"{summary['hints']} with hints to review in the GUI.")
     if summary["without_image"]:
         print(f"{summary['without_image']} shot(s) of shot_list.json have no image yet, so they were not checked "
               "(images on disk from an earlier shot list are not linked). Generate them with: "

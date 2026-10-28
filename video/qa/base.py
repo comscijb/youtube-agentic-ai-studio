@@ -19,7 +19,7 @@ from PIL import Image
 
 QA_VERSION = 2
 ISSUE_TYPES = ("missing_marker", "duplicate_person", "extra_person", "unstated_injury", "text", "border",
-               "style_break", "wrong_subject", "identity", "other")
+               "blank", "corrupt", "style_break", "wrong_subject", "identity", "other")
 ANSWERS = ("yes", "no", "unclear")
 
 

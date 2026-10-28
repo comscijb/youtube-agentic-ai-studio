@@ -9,10 +9,12 @@ Decided by code from the issues, never by a model:
   there are at most ``EDIT_MAX_ISSUES`` of them: missing glasses, a mark on a
   hand, an extra background figure, lettering, a duplicated person who is not
   the main subject;
-* **regenerate** — a style break, border/panel or wrong subject, a blocking issue
+* **regenerate** — a style break, border/panel, blank or corrupt image, wrong subject, a blocking issue
   whose box covers the main subject (>= ``EDIT_MAX_AREA``), any other issue
   without a box, three or more blocking issues, or ``IMAGEGEN_QA_MAX_EDITS``
   edits already failed.
+
+Which issues may be blocking at all is decided first by ``policy`` (``IMAGEGEN_QA_MODE``).
 """
 from __future__ import annotations
 
@@ -21,7 +23,7 @@ from video.qa import base
 
 EDIT_MAX_AREA = 0.35
 EDIT_MAX_ISSUES = 2
-REGENERATE_TYPES = {"style_break", "border", "wrong_subject"}
+REGENERATE_TYPES = {"style_break", "border", "blank", "corrupt", "wrong_subject"}
 INSTRUCTION_EDITABLE = {"unstated_injury", "text"}
 
 

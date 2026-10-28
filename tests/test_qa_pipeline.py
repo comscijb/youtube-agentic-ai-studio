@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import config
+from tests.qa_modes import auto_mode
 from agents import visual_bible as vbible
 from agents.narrative import atomic_write_json, load_json
 from tests.fake_comfy import FakeComfy
@@ -67,6 +68,7 @@ class GlassesVLM:
         self.log.append("unload vlm")
 
 
+@auto_mode
 class PipelineTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()

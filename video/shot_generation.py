@@ -36,7 +36,7 @@ from agents.narrative import atomic_write_json, load_json
 from studio.filenames import safe_filename
 from video import visual_qa
 from video.imagegen_comfyui import ComfyUnavailable, GenerationFailed, ImageGenerator, ImageJob
-from video.qa import fixes
+from video.qa import fixes, policy
 
 PORTRAIT_SIZE = (1024, 1024)
 CANDIDATES_FILE = "reference_candidates.json"
@@ -308,7 +308,8 @@ def _in_scope(shot: dict, only: str | None) -> bool:
 
 def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None = None,
                    only: str | None = None, progress: Callable[[str], None] = print,
-                   clock: Callable[[], float] = time.monotonic, qa=None, fix_only: bool = False) -> dict:
+                   clock: Callable[[], float] = time.monotonic, qa=None, fix_only: bool = False,
+                   qa_mode: str | None = None) -> dict:
     """Phase-batched so Klein and the QA VLM never share the 8 GB of VRAM (Phase 3.5-E):
 
     1. generate every pending shot (Klein loaded), layer-1 QA inline on the CPU;
@@ -317,7 +318,10 @@ def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None =
     4. repeat 2-3 for the fixed shots only (``IMAGEGEN_QA_ROUNDS``).
 
     ``fix_only`` skips step 1 and works on shots whose stored QA failed (or was never run).
-    Everything is checkpointed in shot_list.json, so an interrupted run resumes."""
+    ``qa_mode`` (``IMAGEGEN_QA_MODE``): in the default ``advisory`` mode steps 3-4 only run for
+    the reliable deterministic checks; everything else is stored as hints for the GUI review
+    (``summary["qa_hints"]``). Everything is checkpointed in shot_list.json, so an interrupted
+    run resumes."""
     output = Path(output_dir)
     vb = load_json(output / vbible.FILE_NAME)
     shot_list = load_json(output / shots_module.FILE_NAME)
@@ -349,10 +353,12 @@ def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None =
     summary = {"generated": 0, "cached": 0, "fallback": 0, "failed": [], "held": [], "total": len(queue),
                "flagged": flagged, "warned": warned, "qa_failed": [], "qa_flagged": [], "qa_edits": 0,
                "qa_regenerations": 0}
-    use_qa = visual_qa.enabled()
+    use_qa = visual_qa.enabled() and policy.mode(qa_mode) != "off"
     if use_qa and qa is None:
         from video.qa.layered import LayeredQA
-        qa = LayeredQA(comfy=generator.client, progress=progress)
+        qa = LayeredQA(comfy=generator.client, progress=progress, mode=qa_mode)
+    if use_qa:
+        progress(f"   {policy.summary_line(qa.mode)}")
     items, pendings = {}, {}
 
     def expected(shot):
@@ -417,13 +423,20 @@ def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None =
         for shot in shots:                                # resume: unchecked or failed shots in scope
             if shot.get("reuse_of") or not _in_scope(shot, only) or shot["shot_id"] in items:
                 continue
-            if shot.get("image_path") and (output / shot["image_path"]).is_file() and shot.get("provider") != "stock" \
-                    and (fixes.needs_qa(shot) or fixes.needs_fix(shot)):
+            if not (shot.get("image_path") and (output / shot["image_path"]).is_file()
+                    and shot.get("provider") != "stock"):
+                continue
+            fixes.reapply_policy(shot, qa)               # results stored under another mode
+            if fixes.needs_qa(shot) or fixes.needs_fix(shot):
                 track(shot)
         save = lambda: atomic_write_json(output / shots_module.FILE_NAME, shot_list)
         outcome = qa_rounds(generator, output, vb, list(items.values()), qa, save, progress=progress,
                             pendings=pendings, per=per)
         summary.update(outcome)
+        summary["qa_mode"] = qa.mode
+        summary["qa_hints"] = [shot["shot_id"] for shot in shots
+                               if not shot.get("reuse_of") and _in_scope(shot, only) and fixes.hinted(shot)]
+        save()
     summary["seconds"] = round(clock() - started, 1)
     return summary
 
@@ -530,7 +543,7 @@ def generate_thumbnail_image(output_dir, generator: ImageGenerator,
                    references=composed["references"], size=native_size(), final_size=(1280, 720))
     record = generator.generate_with_retry(job, new_seeds=2 if identity.is_illustration() else 1)
     _record_provenance(output, [record])
-    if visual_qa.enabled():                           # same QA → fix path as the shots
+    if visual_qa.enabled() and policy.mode() != "off":   # same QA → fix path as the shots
         from video.qa.layered import LayeredQA
         holder = {"shot_id": "thumbnail", "qa": {}}
         factory = lambda offset: replace(job, seed=job.seed + offset)

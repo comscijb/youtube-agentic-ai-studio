@@ -46,11 +46,36 @@ def state(item: dict) -> dict:
 def record_result(item: dict, result: dict) -> dict:
     """Store a QA result on the shot, keeping its edit/regeneration budget, history and actions."""
     qa = state(item)
-    qa.update(version=result.get("version"), status=result["status"], verdict=result["verdict"],
+    qa.pop("hints_dismissed", None)
+    qa.update(version=result.get("version"), status=result["status"], verdict=result["verdict"], mode=result.get("mode"),
               reason=result.get("verdict_reason", ""), issues=result.get("issues", []),
               people_count=result.get("people_count"), layers=result.get("layers", []),
               warnings=result.get("warnings", []), notes=base.notes(result), checked_at=_now())
     return qa
+
+
+def reapply_policy(item: dict, qa) -> bool:
+    """Re-evaluate a stored QA result under ``qa``'s mode (``LayeredQA.policy``) without
+    re-running the checks: results saved under another mode, or before the mode existed,
+    turn their VLM signals into hints. Returns True when the verdict changed."""
+    stored = item.get("qa") or {}
+    if not stored.get("issues") or stored.get("version") != base.QA_VERSION or stored.get("verdict") == "recheck" \
+            or stored.get("status") not in ("pass", "fail"):
+        return False
+    before = stored.get("verdict")
+    result = decision.finalize({"status": stored["status"], "issues": qa.policy(stored["issues"]),
+                                "warnings": stored.get("warnings", [])}, int(stored.get("edits", 0)))
+    stored.update(status=result["status"], verdict=result["verdict"], reason=result["verdict_reason"],
+                  issues=result["issues"], notes=base.notes(result), mode=qa.mode)
+    return stored["verdict"] != before
+
+
+def hinted(item: dict) -> bool:
+    """A checked shot with something for the human review (hints or advisories)."""
+    qa = item.get("qa") or {}
+    return qa.get("status") in ("pass", "fail") and any(entry["severity"] == "advisory"
+                                                         for entry in qa.get("issues", [])) \
+        and not qa.get("hints_dismissed")
 
 
 def needs_qa(item: dict) -> bool:

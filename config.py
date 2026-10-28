@@ -235,6 +235,9 @@ IMAGEGEN_QA_OLLAMA_MODEL  = os.getenv("IMAGEGEN_QA_OLLAMA_MODEL", "qwen2.5vl:3b"
 IMAGEGEN_QA_MODELS_DIR    = os.getenv("IMAGEGEN_QA_MODELS_DIR", "")       # "" = models/qa
 IMAGEGEN_QA_MAX_EDITS     = 2             # region edits per shot before regenerating
 IMAGEGEN_QA_ROUNDS        = 2             # QA → fix rounds per generate_shots run
+# advisory: only borders, blank/corrupt images and OCR text act on their own, everything else is a hint
+# for the GUI review; auto: also issue types measured >= 85 % on the probe fixtures; off: no QA.
+IMAGEGEN_QA_MODE          = os.getenv("IMAGEGEN_QA_MODE", "advisory")
 # Target share of wide/establishing shots with small figures: guidance for the
 # shot planner and a warning in shot_list.json, never a failure.
 IMAGEGEN_MIN_WIDE_SHARE      = float(os.getenv("IMAGEGEN_MIN_WIDE_SHARE", "0.3"))   # target only: a warning, never a failure

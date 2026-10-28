@@ -11,6 +11,7 @@ from unittest.mock import patch
 from PIL import Image
 
 import config
+from tests.qa_modes import auto_mode
 from agents import visual_bible as vbible
 from agents.narrative import atomic_write_json, load_json
 from tests.style_isolation import setUpModule, tearDownModule  # noqa: F401
@@ -99,6 +100,7 @@ class LayerSelectionTests(unittest.TestCase):
         self.assertEqual(config.IMAGEGEN_QA_VLM_MODEL, "qwen3vl_4b_int8_convrot.safetensors")
 
 
+@auto_mode
 class LayeredTests(LayeredTestCase):
     def test_batch_asks_the_vlm_once_between_unloads(self):
         log = []
@@ -177,6 +179,7 @@ class BackendTests(unittest.TestCase):
         self.assertEqual(posted[-1][1], {"model": "qwen2.5vl:3b", "keep_alive": 0})
 
 
+@auto_mode
 class QaShotsScriptTests(unittest.TestCase):
     def test_qa_shots_stores_verdict_and_issues_without_regenerating(self):
         from scripts import qa_shots

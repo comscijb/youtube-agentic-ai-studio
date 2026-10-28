@@ -211,11 +211,24 @@ def layer1(detection: dict, expected: dict, image: Image.Image | None = None) ->
                                       "(the detector may miss hands-only or very stylized figures)",
                                  source="deterministic"))
     if image is not None:
+        issues += blank_issues(image)
         report = image_checks.inspect(image)
         if report["bordered"] or report["panels"]:
             issues.append(base.issue("border", note="paper margins or comic panels", source="deterministic"))
         issues += ocr_issues(image)
     return issues
+
+
+BLANK_STD = 3.0     # grey-level standard deviation below which a frame shows nothing
+
+
+def blank_issues(image: Image.Image) -> list[dict]:
+    """A (nearly) uniform frame: the sampler produced nothing."""
+    from PIL import ImageStat
+    small = image.convert("L").resize((64, 36))
+    if ImageStat.Stat(small).stddev[0] < BLANK_STD:
+        return [base.issue("blank", note="the frame is (nearly) uniform", source="deterministic")]
+    return []
 
 
 def ocr_available() -> bool:

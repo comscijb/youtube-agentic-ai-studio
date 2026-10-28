@@ -9,6 +9,10 @@ with Klein: ``prepare`` (layer 1 on the CPU for every image, and the focused
 questions), ``answer`` (free ComfyUI's models, ask every question, unload the
 VLM), ``finish`` (issues → verdict). Layer 2 is skipped for an image whose
 layer-1 verdict is already "regenerate": it will be redrawn anyway.
+
+``mode`` (``IMAGEGEN_QA_MODE``, see ``policy``) decides which issues may stay
+blocking; in the default ``advisory`` mode the VLM and the people detector
+only produce hints for the GUI review.
 """
 from __future__ import annotations
 
@@ -18,7 +22,7 @@ from typing import Callable
 from PIL import Image
 
 import config
-from video.qa import base, decision, focused
+from video.qa import base, decision, focused, policy
 from video.qa import deterministic as det
 
 LAYERS = ("deterministic", "local_vlm", "gemini")
@@ -43,8 +47,11 @@ def local_backend(client=None):
 
 class LayeredQA:
     def __init__(self, layers: list[str] | None = None, *, detector=None, vlm=None, gemini=None, comfy=None,
-                 progress: Callable[[str], None] = print):
+                 progress: Callable[[str], None] = print, mode: str | None = None, accuracy: dict | None = None):
         self.layers = list(layers or configured_layers())
+        self.mode = policy.mode(mode)
+        self.accuracy = accuracy if accuracy is not None else (
+            policy.measured_accuracy() if self.mode == "auto" else {})
         self.detector = detector or det.Detector()
         self.comfy = comfy
         self._vlm = vlm
@@ -85,20 +92,26 @@ class LayeredQA:
         started = time.monotonic()
         pending = {"path": str(path), "expected": expected, "edits_done": edits_done, "detection": None,
                    "issues": [], "questions": [], "warnings": [], "layers": [], "answers": {}}
+        try:
+            with Image.open(path) as opened:
+                image = opened.convert("RGB")
+        except (OSError, ValueError) as exc:
+            pending.update(issues=[base.issue("corrupt", note=f"the image cannot be read: {exc}"[:200],
+                                              source="deterministic")], layers=["image_checks"])
+            pending["seconds"] = round(time.monotonic() - started, 2)
+            return pending
         if "deterministic" not in self.layers:
             pending["warnings"].append("layer 1 disabled: no people/face detection")
         elif not self.detector.available():
             pending["warnings"].append("layer 1 skipped: OpenCV or models/qa missing "
                                        "(python -m scripts.setup_qa_models)")
         else:
-            with Image.open(path) as opened:
-                image = opened.convert("RGB")
             if self.ocr is None:
                 self.ocr = det.ocr_available()
             detection = self.detector.detect(path)
             pending.update(detection=detection, issues=det.layer1(detection, expected, image))
             pending["layers"].append("deterministic")
-            layer1 = decision.verdict({"issues": pending["issues"]}, edits_done)[0]
+            layer1 = decision.verdict({"issues": self.policy(pending["issues"])}, edits_done)[0]
             if layer1 != "regenerate" and ({"local_vlm", "gemini"} & set(self.layers)):
                 pending["questions"] = focused.questions(image, detection, expected, ocr=self.ocr)
         pending["seconds"] = round(time.monotonic() - started, 2)
@@ -145,13 +158,17 @@ class LayeredQA:
                 pending["warnings"] += warnings
                 pending["seconds"] = round(pending["seconds"] + seconds * len(pending["questions"]) / len(asked), 2)
 
+    def policy(self, issues: list[dict]) -> list[dict]:
+        return policy.apply(issues, self.mode, self.accuracy)
+
     def finish(self, pending: dict) -> dict:
         issues, people = pending["issues"], None
         if pending["detection"] is not None:
             issues, people = focused.apply(pending["questions"], pending["answers"], pending["detection"],
                                            pending["expected"], pending["issues"])
         status = "skipped" if not pending["layers"] else None
-        result = {"version": base.QA_VERSION, "status": status, "people_count": people, "issues": issues,
+        result = {"version": base.QA_VERSION, "status": status, "people_count": people,
+                  "issues": self.policy(issues), "mode": self.mode,
                   "layers": pending["layers"], "warnings": pending["warnings"],
                   "questions": len(pending["questions"]), "seconds": pending["seconds"]}
         return decision.finalize(result, pending["edits_done"])

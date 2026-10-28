@@ -3,12 +3,15 @@
 Run:  python -m scripts.generate_shots --limit 5     # quick look at style/consistency
       python -m scripts.generate_shots               # full episode (long; resumable)
       python -m scripts.generate_shots --only s04    # one scene (or one shot id)
+      python -m scripts.generate_shots --qa advisory # QA stores hints; only reliable checks fix (default)
       python -m scripts.generate_shots --fix-only    # edit/regenerate only what failed QA
 
 Phase-batched (3.5-E): all pending shots are generated with Klein (layer-1 QA on
 the CPU as they come), then ComfyUI's models are freed and the local VLM checks
 the batch, then Klein comes back to region-edit or regenerate what failed;
-QA → fix repeats for the fixed shots (IMAGEGEN_QA_ROUNDS).
+QA → fix repeats for the fixed shots (IMAGEGEN_QA_ROUNDS). In the default
+``--qa advisory`` mode only borders, blank/corrupt images and OCR text are fixed
+automatically; everything else is a hint to review in the GUI (Shots).
 
 Builds visual_bible.json and shot_list.json first when missing (Gemini).
 Refuses to start until every character in the shot list has an approved
@@ -23,6 +26,7 @@ from pathlib import Path
 import config
 from studio import projects
 from video import shot_generation as gen
+from video.qa import policy
 from video.imagegen_comfyui import ComfyUnavailable, ImageGenerator
 
 
@@ -36,6 +40,8 @@ def main(argv=None) -> int:
     parser.add_argument("--no-thumbnail", action="store_true")
     parser.add_argument("--fix-only", action="store_true",
                         help="no new shots: QA what was never checked and fix what failed QA")
+    parser.add_argument("--qa", choices=policy.MODES, default=None,
+                        help="advisory (default: hints only, reliable checks fix), auto, or off")
     args = parser.parse_args(argv)
     output = projects.cli_output(args)
     shot_list = gen.ensure_shot_list(output, force=args.rebuild_shot_list and not args.fix_only)
@@ -51,7 +57,8 @@ def main(argv=None) -> int:
         return 0
     generator = ImageGenerator(output)
     try:
-        summary = gen.generate_shots(output, generator, limit=args.limit, only=args.only, fix_only=args.fix_only)
+        summary = gen.generate_shots(output, generator, limit=args.limit, only=args.only, fix_only=args.fix_only,
+                                     qa_mode=args.qa)
         if not args.no_thumbnail and not args.only and not args.limit and not args.fix_only:
             print("   → Thumbnail image…")
             gen.generate_thumbnail_image(output, generator)
@@ -71,8 +78,13 @@ def main(argv=None) -> int:
         print(f"QA: {summary['qa_checked']} check(s), {summary['qa_edits']} region edit(s), "
               f"{summary['qa_regenerations']} new seed(s); still failing: {', '.join(summary['qa_failed']) or 'none'}"
               f"; kept best and flagged: {', '.join(summary['qa_flagged']) or 'none'}")
-        if summary["qa_failed"]:
-            print("Continue with: python -m scripts.generate_shots --fix-only")
+        if summary["qa_failed"] and summary.get("qa_mode") == "auto":
+            print("Continue with: python -m scripts.generate_shots --fix-only --qa auto")
+        hints = summary.get("qa_hints") or []
+        if hints:
+            print(f"QA hints to review ({len(hints)} shot(s)): {', '.join(hints)}")
+            print("Review them in the GUI: python gui.py → Continuar projeto → Shots "
+                  "(one-click edits, 'Ignorar aviso', keyboard ← → and O to mark OK)")
     if summary.get("flagged"):
         print("Flagged shots (skipped until edited in the GUI, or re-planned with --rebuild-shot-list): "
               + ", ".join(summary["flagged"]))

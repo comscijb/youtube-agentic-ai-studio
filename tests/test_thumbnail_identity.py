@@ -10,6 +10,7 @@ from unittest.mock import patch
 from PIL import Image
 
 import config
+from tests.qa_modes import auto_mode
 from agents import identity
 from agents import shot_list as shots_module
 from agents import visual_bible as vbible
@@ -25,6 +26,7 @@ BRIEF = {"thumbnail_concept": "A medium shot of an impeccably dressed man at a c
                               "from him, an empty chair and a half-full wine glass"}
 
 
+@auto_mode
 class ThumbnailTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
