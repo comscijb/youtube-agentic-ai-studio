@@ -54,7 +54,7 @@ def _now() -> str:
 
 
 def native_size() -> tuple:
-    return tuple(getattr(config, "IMAGEGEN_SIZE", (1360, 752)))
+    return tuple(getattr(config, "IMAGEGEN_SIZE", (1280, 720)))
 
 
 def _artifacts(output: Path) -> tuple[dict, dict, dict, dict]:

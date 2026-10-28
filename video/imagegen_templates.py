@@ -33,7 +33,7 @@ MAP_FILE = WORKFLOWS / "flux3_klein_map.json"
 
 MAX_REFERENCES = 4
 REFERENCE_NODES = ("11", "12", "13", "14")
-DEFAULT_SIZE = (1360, 752)
+DEFAULT_SIZE = (1280, 720)
 LATENT_SOURCES = ("reference", "empty_16x9")
 _LOADERS = ("1", "2", "3")
 _UPSAMPLER = ("46", "47", "48")
@@ -191,11 +191,23 @@ def load_region_edit(folder=WORKFLOWS, edit_path=EDIT_TEMPLATE) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def region_canvas(source_size=None, pixels: int = 1024 * 1024) -> tuple[int, int]:
+    """The box canvas for a source image: its ratio at ~1 MP in multiples of 16, the size the
+    reference latent ("resize", 1 MP) gives the edit (1920x1080 -> 1360x768)."""
+    if not source_size or not all(source_size):
+        return REGION_CANVAS
+    width, height = source_size
+    scale = (pixels / (width * height)) ** 0.5
+    return max(16, round(width * scale / 16) * 16), max(16, round(height * scale / 16) * 16)
+
+
 def build_region_edit(*, instruction: str, seed: int, shot: str, references: list[str] = (),
-                      boxes: list[tuple] = (), steps: int | None = None,
+                      boxes: list[tuple] = (), steps: int | None = None, source_size=None,
                       filename_prefix: str = "private_gravity_edit", folder=WORKFLOWS) -> dict:
     """The region-edit graph: ``shot`` and ``references`` are uploaded image names,
-    ``boxes`` [(normalized [x0, y0, x1, y1], short description)] in <obj_1>, <obj_2>… order."""
+    ``boxes`` [(normalized [x0, y0, x1, y1], short description)] in <obj_1>, <obj_2>… order.
+    The box canvas follows ``source_size`` (the shot's pixels); the output size follows the
+    shot through the reference latent."""
     if len(references) > MAX_REFERENCES - 1:
         raise TemplateError(f"a region edit takes the shot plus at most {MAX_REFERENCES - 1} references")
     graph = copy.deepcopy(load_region_edit(folder))
@@ -206,7 +218,8 @@ def build_region_edit(*, instruction: str, seed: int, shot: str, references: lis
         else:
             graph.pop(node_id, None)
             graph["17"]["inputs"].pop(f"images.image{index}", None)
-    width, height = graph["33"]["inputs"]["width"], graph["33"]["inputs"]["height"]
+    width, height = region_canvas(source_size)
+    graph["33"]["inputs"].update(width=width, height=height)
     graph["33"]["inputs"]["editor_state"] = {"__value__": [
         {"x": int(round(box[0] * width)), "y": int(round(box[1] * height)),
          "width": max(16, int(round((box[2] - box[0]) * width))),

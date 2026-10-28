@@ -36,7 +36,7 @@ class TemplateDerivationTests(unittest.TestCase):
         self.assertEqual(graph["7"]["inputs"]["latent_image"], ["44", 0])     # disconnected in export
         self.assertEqual(graph["7"]["inputs"]["negative"], ["32", 0])
         self.assertEqual(graph["32"]["class_type"], "ConditioningZeroOut")
-        self.assertEqual((graph["44"]["inputs"]["width"], graph["44"]["inputs"]["height"]), (1360, 752))
+        self.assertEqual((graph["44"]["inputs"]["width"], graph["44"]["inputs"]["height"]), (1280, 720))
         self.assertIsInstance(graph["4"]["inputs"]["text"], str)               # raw prompt, no upsampler
         for key in ("steps", "cfg", "sampler_name", "scheduler"):
             self.assertEqual(graph["7"]["inputs"][key], EDIT["7"]["inputs"][key])

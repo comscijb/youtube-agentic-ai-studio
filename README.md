@@ -507,10 +507,13 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   valid.
 - **Always 16:9.** The frame comes from the sampler latent only: `IMAGEGEN_LATENT_SOURCE =
   "empty_16x9"` (default; `reference` makes the output follow the first reference's size and is
-  kept for edit-like uses). Character and location references keep their own sizes. An output
-  more than 2 % off the requested ratio is never center-cropped: it is rendered once more from an
-  empty 16:9 latent, and fails with a clear message if it is still wrong. The latent source is
-  part of the image cache key.
+  kept for edit-like uses). Character and location references keep their own sizes. Klein rounds
+  latent sizes (an edit of a 1920×1080 shot comes back 1360×768), so an output within
+  `IMAGEGEN_ASPECT_TOLERANCE` (3 %) of 16:9 is scaled to cover 1920×1080 and centre-cropped by at
+  most that much. Further off, a generation is rendered once more from an empty 16:9 latent and
+  fails with a clear message if it is still wrong; a region edit is never re-rendered from an
+  empty latent: it fails and the original shot stays. The latent source is part of the image
+  cache key.
 - **Dread and crowds.** The `engraving` suffix asks for deep black negative space, one small warm
   light source and figures small within towering architecture; close-ups sit on a dark background
   with one light. Unnamed groups are rendered as a few distant, indistinct guests in shadow, each of a
@@ -595,7 +598,7 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
 - **Identity.** Approve one of four generated portraits per character (and optionally one of two
   establishing images per recurring location) before any shot is generated. If identity
   retention is weak, set `IMAGEGEN_IDENTITY_POLICY=limited_faces` (≤ 6 full-face shots).
-- **Generation.** ~1 MP 16:9 (1360×752), Lanczos-upscaled to 1920×1080; cached by prompt, seed,
+- **Generation.** Native 1280×720 (`IMAGEGEN_SIZE`; 1360×768 gives a little more detail), Lanczos-upscaled to 1920×1080; cached by prompt, seed,
   size, template, models and reference hashes; resumable; one retry with a new seed, then stock.
   At about 1 minute per image a 50-shot episode needs roughly 50–60 minutes of GPU time.
 - **Renderer.** One image per shot for its exact timing, motion by shot type (push-in on

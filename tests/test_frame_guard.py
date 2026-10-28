@@ -36,7 +36,7 @@ class FrameGuardTests(unittest.TestCase):
             job = ref_job(temp)
             graph = gen._graph(job, 7, ["a.png", "b.png"])
             self.assertEqual(graph["7"]["inputs"]["latent_image"], ["44", 0])
-            self.assertEqual((graph["44"]["inputs"]["width"], graph["44"]["inputs"]["height"]), (1360, 752))
+            self.assertEqual((graph["44"]["inputs"]["width"], graph["44"]["inputs"]["height"]), (1280, 720))
             self.assertNotEqual(gen.cache_key(job, 7), gen.cache_key(ref_job(temp, "reference"), 7))
 
     def test_square_output_is_regenerated_from_an_empty_latent_not_cropped(self):

@@ -10,9 +10,13 @@ latent source). Failures retry once with a new seed; the caller can then fall
 back to stock.
 
 The output frame is set by the sampler latent only (``empty_16x9`` by default;
-references keep their own sizes). An image whose ratio is off by more than 2 %
-is never cropped to fit: it is rendered once more from an empty 16:9 latent and
-otherwise fails.
+references keep their own sizes). Klein rounds latent sizes (an edit of a
+1920x1080 shot comes back 1360x768), so any output within
+``IMAGEGEN_ASPECT_TOLERANCE`` (3 %) of the final 16:9 frame is accepted and
+fitted: scaled to cover and centre-cropped by at most that much per axis.
+Further off, a generation is rendered once more from an empty 16:9 latent and
+otherwise fails; a region edit is never re-rendered from an empty latent (that
+would throw the source image away): it fails and the caller keeps the shot.
 """
 from __future__ import annotations
 
@@ -35,7 +39,7 @@ from video import imagegen_templates as templates
 
 RETRY_SEED_OFFSET = 1_000_003
 CHECK_SEED_OFFSET = 2_000_029
-ASPECT_TOLERANCE = 0.02     # output ratio vs requested ratio
+ASPECT_TOLERANCE = 0.03     # default of IMAGEGEN_ASPECT_TOLERANCE: output ratio vs the final frame
 MAX_BORDER_CROP = 0.06      # per side; a deeper paper margin means regenerate, not crop
 DEFAULT_LATENT = "empty_16x9"
 
@@ -171,16 +175,35 @@ class ImageJob:
     edit_boxes: list = field(default_factory=list)
 
 
-def aspect_ok(size, requested, tolerance: float = ASPECT_TOLERANCE) -> bool:
-    return abs((size[0] / size[1]) / (requested[0] / requested[1]) - 1) <= tolerance
+def aspect_tolerance() -> float:
+    return float(getattr(config, "IMAGEGEN_ASPECT_TOLERANCE", ASPECT_TOLERANCE))
+
+
+def aspect_ok(size, requested, tolerance: float | None = None) -> bool:
+    tolerance = aspect_tolerance() if tolerance is None else tolerance
+    return abs((size[0] / size[1]) / (requested[0] / requested[1]) - 1) <= tolerance + 1e-9
 
 
 def fit_resize(image: Image.Image, size: tuple) -> Image.Image:
-    """Lanczos resize to exactly ``size``; never crops (the ratio must already match within 2 %)."""
+    """Scale to cover ``size`` (Lanczos) and centre-crop the small excess. Only within the aspect
+    tolerance, so at most ~3 % of one axis is cut; anything further off is refused, not cropped."""
     if not aspect_ok(image.size, size):
         raise GenerationFailed(f"image is {image.width}x{image.height}, not the {size[0]}x{size[1]} "
                                "frame; it is regenerated instead of cropped")
-    return image.convert("RGB").resize(tuple(size), Image.LANCZOS)
+    width, height = size
+    scale = max(width / image.width, height / image.height)
+    scaled = (max(width, round(image.width * scale)), max(height, round(image.height * scale)))
+    resized = image.convert("RGB").resize(scaled, Image.LANCZOS)
+    left, top = (scaled[0] - width) // 2, (scaled[1] - height) // 2
+    return resized.crop((left, top, left + width, top + height))
+
+
+def _image_size(path) -> tuple | None:
+    try:
+        with Image.open(path) as image:
+            return image.size
+    except (OSError, ValueError):
+        return None
 
 
 def latent_source(job: "ImageJob") -> str:
@@ -200,6 +223,7 @@ class ImageGenerator:
         if job.kind == "region_edit":
             return templates.build_region_edit(
                 instruction=job.prompt, seed=seed, shot=uploaded[0], references=uploaded[1:],
+                source_size=_image_size(job.references[0]) if job.references else None,
                 boxes=[tuple(item) for item in job.edit_boxes], steps=getattr(config, "IMAGEGEN_STEPS", None),
                 filename_prefix=f"private_gravity/{job.job_id}")
         return templates.build_graph(
@@ -298,14 +322,19 @@ class ImageGenerator:
         Returns (image, graph, aspect note or None).
         """
         image, graph = self._render(job, seed, uploaded)
-        if aspect_ok(image.size, job.size):
+        if aspect_ok(image.size, job.final_size):
             return image, graph, None
         wrong = list(image.size)
+        if job.kind == "region_edit":
+            raise GenerationFailed(
+                f"{job.job_id}: the edit came back {wrong[0]}x{wrong[1]}, more than {aspect_tolerance():.0%} "
+                f"off the {job.final_size[0]}x{job.final_size[1]} frame; the original shot is kept "
+                "(an edit is never re-rendered from an empty latent)")
         print(f"   ⚠ {job.job_id}: ComfyUI returned {wrong[0]}x{wrong[1]} for a {job.size[0]}x{job.size[1]} "
               "frame; regenerating from an empty 16:9 latent")
         retry = replace(job, latent_source="empty_16x9")
         image, graph = self._render(retry, seed, uploaded)
-        if not aspect_ok(image.size, job.size):
+        if not aspect_ok(image.size, job.final_size):
             raise GenerationFailed(
                 f"{job.job_id}: ComfyUI returned {image.width}x{image.height} for a {job.size[0]}x"
                 f"{job.size[1]} frame twice (latent empty_16x9); check the latent size of the "
@@ -346,7 +375,7 @@ class ImageGenerator:
         action = "kept_panels"
         if report["bordered"]:
             width, height = image.size
-            cropped, box = image_checks.crop_border(image, ratio=job.size[0] / job.size[1])
+            cropped, box = image_checks.crop_border(image, ratio=width / height)
             cut = max(box[0] / width, box[1] / height, 1 - box[2] / width, 1 - box[3] / height)
             if cut > MAX_BORDER_CROP:
                 raise GenerationFailed(f"{job.job_id}: paper margins persist and cropping them would cut "
