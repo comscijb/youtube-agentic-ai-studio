@@ -550,6 +550,7 @@ input[type=range]{width:100%;accent-color:var(--primary)}
             <div id="ig-refs"></div>
             <div id="ig-review-bar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:11px;margin-top:8px">
               <button id="ig-run-queue" class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="igPost('/api/imagegen/queue/run', {})">Executar fila (0)</button>
+              <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" title="Gemini responde às perguntas de todos os planos com avisos; fica só como aviso" onclick="igPost('/api/imagegen/second_opinion', {hinted: true})">Segunda opinião (Gemini) nos avisos</button>
               <label style="display:flex;gap:4px;align-items:center;color:var(--muted)"><input type="checkbox" id="ig-only-hints" onchange="loadImagegen()"> só planos com avisos</label>
               <span style="color:var(--muted)" title="Clique num plano ou use as setas">Revisão: ← → navegar · O marcar OK · F remover figura · M marcador · G gerar de novo · B antes/depois</span>
             </div>
@@ -1250,6 +1251,16 @@ function igQaSummary(cell, shot) {
     row.textContent = '⚠ ' + text;
     cell.appendChild(row);
   });
+  const second = qa.second_opinion;
+  if (second) {
+    const found = (second.issues || []).filter(i => !/\(unclear\)/.test(i.note || ''));
+    const row = document.createElement('div');
+    row.style.cssText = 'margin:2px 0;color:var(--dim)';
+    row.textContent = 'Gemini: ' + (found.length ? found.map(i => i.type + (i.note ? ` (${i.note})` : '')).join('; ')
+                                                  : 'nada encontrado');
+    row.title = `segunda opinião, só aviso · ${second.checked_at || ''}`;
+    cell.appendChild(row);
+  }
 }
 
 function igHistory(cell, frame, shot) {
@@ -1410,6 +1421,8 @@ function igReviewButtons(cell, frame, shot) {
   button('Instrução livre', 'Caixa opcional + texto', () => IG_ACTIONS.custom(shot, frame));
   button('Gerar de novo', 'Nova seed; a versão atual fica no histórico (tecla G)', () => IG_ACTIONS.regenerate(shot));
   button('Marcar OK', 'Revisado: dispensa todos os avisos (tecla O)', () => IG_ACTIONS.ok(shot));
+  button('Segunda opinião (Gemini)', 'Gemini responde às mesmas perguntas; fica só como aviso',
+         () => igPost('/api/imagegen/second_opinion', {shot_id: shot.shot_id}));
   cell.appendChild(row);
   (shot.edit_queue || []).forEach((entry, index) => {
     const queued = document.createElement('div');

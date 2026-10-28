@@ -77,6 +77,17 @@ def hinted(item: dict) -> bool:
     return qa.get("status") in ("pass", "fail") and not qa.get("hints_dismissed") and not qa.get("reviewed")         and any(entry.get("hint") and not entry.get("ignored") for entry in qa.get("issues", []))
 
 
+def record_second_opinion(item: dict, result: dict) -> dict:
+    """Gemini's answer to the same questions, kept beside the local result (never replaces it,
+    never triggers work)."""
+    qa = state(item)
+    qa["second_opinion"] = {"backend": "gemini", "issues": [dict(entry, severity="advisory")
+                                                            for entry in result.get("issues", [])],
+                            "layers": result.get("layers", []), "warnings": result.get("warnings", []),
+                            "people_count": result.get("people_count"), "checked_at": _now()}
+    return qa["second_opinion"]
+
+
 def needs_qa(item: dict) -> bool:
     qa = item.get("qa") or {}
     return qa.get("version") != base.QA_VERSION or qa.get("verdict") == "recheck"

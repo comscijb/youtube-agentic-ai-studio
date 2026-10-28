@@ -4,6 +4,7 @@ Run:  python -m scripts.qa_shots                                   # configured 
       python -m scripts.qa_shots --layers deterministic,local_vlm  # explicit layers
       python -m scripts.qa_shots --gemini                          # Gemini answers the focused questions
       python -m scripts.qa_shots --only s04                        # one scene (or a shot id, e.g. s04_02)
+      python -m scripts.qa_shots --backend gemini [--only s04_02]  # Gemini second opinion (advisory, stored apart)
 
 Layer 1 (CPU detectors) runs on every shot first; then ComfyUI's models are
 freed, the local VLM answers every focused question of the batch in one go,
@@ -29,7 +30,10 @@ from video.qa.layered import LayeredQA, configured_layers
 
 
 def run(output, *, only: str | None = None, layers: list[str] | None = None, qa: LayeredQA | None = None,
-        progress: Callable[[str], None] = print, mode: str | None = None) -> dict:
+        progress: Callable[[str], None] = print, mode: str | None = None, backend: str = "local",
+        shot_ids: list[str] | None = None) -> dict:
+    """``backend="gemini"``: a second opinion — Gemini answers the focused questions, the result is
+    stored as ``qa.second_opinion`` (advisory) and the local result is left as it is."""
     output = Path(output)
     vb = load_json(output / vbible.FILE_NAME) or {}
     shot_list = load_json(output / shots_module.FILE_NAME) or {}
@@ -37,8 +41,10 @@ def run(output, *, only: str | None = None, layers: list[str] | None = None, qa:
     narration = shots_module.scene_narration(shots)
     selected = [shot for shot in shots if not shot.get("reuse_of") and shot.get("image_path")
                 and (output / shot["image_path"]).is_file()
-                and (not only or only in (shot["scene_id"], shot["shot_id"]))]
+                and (not only or only in (shot["scene_id"], shot["shot_id"]))
+                and (shot_ids is None or shot["shot_id"] in shot_ids)]
     summary = {"checked": 0, "passed": 0, "failed": [], "skipped": 0, "edit": [], "regenerate": [], "hints": 0,
+               "second_opinions": 0,
                "without_image": sum(1 for shot in shots if not shot.get("reuse_of") and not (
                    shot.get("image_path") and (output / shot["image_path"]).is_file())
                    and (not only or only in (shot["scene_id"], shot["shot_id"])))}
@@ -46,7 +52,10 @@ def run(output, *, only: str | None = None, layers: list[str] | None = None, qa:
         return summary
     if qa is None:
         from video.imagegen_comfyui import ComfyClient
-        qa = LayeredQA(layers, comfy=ComfyClient(), progress=progress, mode=mode)
+        if backend == "gemini":
+            qa = LayeredQA(["deterministic", "gemini"], progress=progress, mode="advisory")
+        else:
+            qa = LayeredQA(layers, comfy=ComfyClient(), progress=progress, mode=mode)
     progress(f"   QA layers: {', '.join(qa.layers)} — layer 1 on {len(selected)} shot(s)…")
     items = [(output / shot["image_path"],
               visual_qa.expected_for(shot, vb, narration.get(shot.get("scene_id", ""), "")),
@@ -58,6 +67,11 @@ def run(output, *, only: str | None = None, layers: list[str] | None = None, qa:
     qa.answer(pendings)
     for shot, pending in zip(selected, pendings):
         result = qa.finish(pending)
+        if backend == "gemini":
+            fixes.record_second_opinion(shot, result)
+            summary["checked"] += 1
+            summary["second_opinions"] += 1
+            continue
         fixes.record_result(shot, result)
         gen.update_provenance(output, shot["shot_id"], visual_qa=result)
         summary["checked"] += 1
@@ -82,12 +96,17 @@ def main(argv=None) -> int:
     parser.add_argument("--only", help="scene id (s04) or shot id (s04_02)")
     parser.add_argument("--layers", help="comma list of deterministic, local_vlm, gemini (default: IMAGEGEN_QA_LAYERS)")
     parser.add_argument("--gemini", action="store_true", help="add Gemini vision as layer 3")
+    parser.add_argument("--backend", choices=("local", "gemini"), default="local",
+                        help="gemini: second opinion stored beside the local result (advisory, live)")
     parser.add_argument("--mode", choices=("advisory", "auto"), default=None,
                         help="which issues may stay blocking (default: IMAGEGEN_QA_MODE, advisory)")
     args = parser.parse_args(argv)
     output = projects.cli_output(args)
     layers = configured_layers(args.layers, gemini=True if args.gemini else None)
-    summary = run(output, only=args.only, layers=layers, mode=args.mode)
+    summary = run(output, only=args.only, layers=layers, mode=args.mode, backend=args.backend)
+    if args.backend == "gemini":
+        print(f"Gemini second opinion: {summary['second_opinions']} shot(s); see the shot cards in the GUI.")
+        return 0
     print(f"Visual QA: {summary['checked']} checked, {summary['passed']} passed, "
           f"{len(summary['failed'])} failed ({len(summary['edit'])} to edit, "
           f"{len(summary['regenerate'])} to regenerate), {summary['skipped']} skipped; "

@@ -22,6 +22,11 @@ What it does, without installing anything:
 
 Writes ``data/qa_probe_report.json`` and ``data/qa_probe_contact_sheet.jpg``
 (each model's answers drawn over the frames).
+
+``--backend gemini`` (Phase 3.5.1-D, live, run by the user) asks Gemini the same
+focused questions on the same 8 fixtures with the same metrics; ComfyUI is not
+needed. Its entry (``"backend": "gemini"``) is added next to the local one
+already in the report, and the summary prints both side by side.
 """
 from __future__ import annotations
 
@@ -416,8 +421,8 @@ def probe_focused(client, sampler, model, fixture, images, progress, *, swap: bo
     """Decision 6: layer 1 (detector) + focused one-word questions to the VLM, scored like the JSON mode."""
     detector = detector or det.Detector()
     vlm = vlm or ComfyVLM(client, model=model)
-    record = {"model": model, "mode": "focused", "clip_type": vlm.clip_type, "attempts": [], "results": [],
-              "swap": None}
+    record = {"model": model, "mode": "focused", "clip_type": getattr(vlm, "clip_type", ""), "attempts": [],
+              "results": [], "swap": None}
     timings = {}
     if swap:
         try:
@@ -536,6 +541,42 @@ def contact_sheet(fixture: dict, images: dict, models: list[dict], path: Path, w
 
 # ── Entry point ─────────────────────────────────────────────────────────────
 
+def run_gemini(output: Path, *, vlm=None, detector=None, fixture_path: Path = FIXTURE, report_path: Path = REPORT,
+               sheet_path: Path = SHEET, progress: Callable[[str], None] = print) -> dict:
+    """The focused probe answered by Gemini; merged into the existing report beside the local entries."""
+    from video.qa.gemini_vlm import GeminiVLM
+    fixture = json.loads(Path(fixture_path).read_text(encoding="utf-8"))
+    images = {item["shot_id"]: Path(output) / "images" / "shots" / f"{safe_filename(item['shot_id'])}.jpg"
+              for item in fixture["images"]}
+    try:
+        report = json.loads(Path(report_path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        report = {"version": 1, "findings": {"text_generate": False, "text_generate_takes_image": False,
+                                             "clip_loader_types": [], "candidates": [], "problems": []}}
+    missing = [shot for shot, path in images.items() if not path.is_file()]
+    report.update(created_at=time.strftime("%Y-%m-%dT%H:%M:%S"), project=Path(output).name,
+                  fixture_confirmed_by_user=fixture.get("confirmed_by_user", False), missing_images=missing)
+    report["models"] = [entry for entry in report.get("models", []) if entry.get("backend") != "gemini"]
+    if missing:
+        report.setdefault("findings", {}).setdefault("problems", []).append(
+            f"probe frames missing in {output}: {', '.join(missing)}")
+    else:
+        vlm = vlm or GeminiVLM()
+        name = getattr(vlm, "model", None) or getattr(config, "IMAGEGEN_VISUAL_QA_MODEL", "") or "gemini"
+        progress(f"→ Gemini ({name}, focused)")
+        record = probe_focused(None, VramSampler(), name, fixture, images, progress, swap=False,
+                               detector=detector, vlm=vlm)
+        record["backend"] = "gemini"
+        record["calls"] = getattr(vlm, "calls", None)
+        report["models"].append(record)
+    Path(report_path).parent.mkdir(parents=True, exist_ok=True)
+    Path(report_path).write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+    if not missing:
+        contact_sheet(fixture, images, report["models"], Path(sheet_path))
+        report["contact_sheet"] = str(sheet_path)
+    return report
+
+
 def run(output: Path, *, client=None, models: list[str] | None = None, swap: bool = True,
         max_side: int | None = None, fixture_path: Path = FIXTURE, report_path: Path = REPORT,
         sheet_path: Path = SHEET, progress: Callable[[str], None] = print, mode: str = "json",
@@ -598,7 +639,8 @@ def summary_lines(report: dict) -> list[str]:
             continue
         accuracy = ", ".join(f"{key} {value:.0%}" for key, value in metrics["accuracy"].items())
         label = "answered" if model.get("mode") == "focused" else "valid JSON"
-        lines.append(f"{model['model']} (type {model['clip_type']}): {label} {metrics['valid_json_rate']:.0%}; "
+        kind = "Gemini" if model.get("backend") == "gemini" else f"type {model['clip_type']}"
+        lines.append(f"{model['model']} ({kind}): {label} {metrics['valid_json_rate']:.0%}; "
                      f"{accuracy}; box IoU {metrics['box_iou_mean']}; {metrics['seconds_per_image']} s/image; "
                      f"VRAM peak {metrics['vram_peak_mb']} MB")
         if model.get("swap"):
@@ -607,6 +649,23 @@ def summary_lines(report: dict) -> list[str]:
             lines.append(f"   detector person recall {metrics['detector_person_recall']:.0%}; layer 1 "
                          f"{metrics['layer1_seconds_per_image']} s/image; {metrics['questions_per_image']} "
                          f"questions/image; OCR {'on' if metrics['ocr'] else 'off (text asked to the VLM)'}")
+    lines += comparison_lines(report)
+    return lines
+
+
+def comparison_lines(report: dict) -> list[str]:
+    """Local (focused) vs Gemini, metric by metric, when the report has both."""
+    local = next((m for m in report["models"] if m.get("backend") != "gemini" and m.get("mode") == "focused"
+                  and m.get("metrics")), None)
+    gemini = next((m for m in report["models"] if m.get("backend") == "gemini" and m.get("metrics")), None)
+    if not (local and gemini):
+        return []
+    keys = list(local["metrics"]["accuracy"])
+    lines = ["", f"{'accuracy':<18}{'local':>8}{'gemini':>8}"]
+    for key in keys:
+        lines.append(f"{key:<18}{local['metrics']['accuracy'].get(key, 0):>8.0%}"
+                     f"{gemini['metrics']['accuracy'].get(key, 0):>8.0%}")
+    lines.append(f"{'s/image':<18}{local['metrics']['seconds_per_image']:>8}{gemini['metrics']['seconds_per_image']:>8}")
     return lines
 
 
@@ -620,8 +679,16 @@ def main(argv=None) -> int:
                         help="json: one big JSON answer per frame (section A); focused: detector + one-word "
                              "questions about crops (decision 6)")
     parser.add_argument("--max-side", type=int, default=None, help="downscale frames to this side (default 768)")
+    parser.add_argument("--backend", choices=("local", "gemini"), default="local",
+                        help="gemini: the focused probe answered by Gemini (live), added beside the local result")
     args = parser.parse_args(argv)
     output = projects.cli_output(args)
+    if args.backend == "gemini":
+        report = run_gemini(output)
+        for line in summary_lines(report):
+            print(line)
+        print(f"Report: {REPORT}")
+        return 0
     try:
         report = run(output, models=args.models, swap=not args.no_swap, max_side=args.max_side,
                      mode=args.mode)

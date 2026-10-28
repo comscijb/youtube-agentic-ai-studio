@@ -1200,6 +1200,31 @@ def imagegen_restore_version(shot_id):
     return jsonify({"ok": True, "action": action})
 
 
+@app.route("/api/imagegen/second_opinion", methods=["POST"])
+def imagegen_second_opinion():
+    """"Segunda opinião (Gemini)": one shot (shot_id) or every shot with hints (hinted: true);
+    Gemini answers the focused questions, stored beside the local result, advisory only."""
+    from scripts import qa_shots
+    from video.qa import fixes
+    body = request.get_json(force=True) or {}
+    shot_list = load_json(Path(config.OUTPUT_DIR, "shot_list.json")) or {}
+    shots = shot_list.get("shots", [])
+    if body.get("shot_id"):
+        selected = [str(body["shot_id"])]
+    elif body.get("hinted"):
+        selected = [shot["shot_id"] for shot in shots if fixes.hinted(shot)]
+    else:
+        return jsonify({"ok": False, "error": "Pass shot_id or hinted"}), 400
+    if not selected:
+        return jsonify({"ok": False, "error": "No shot to check"}), 400
+
+    def work():
+        summary = qa_shots.run(Path(config.OUTPUT_DIR), backend="gemini", shot_ids=selected,
+                               progress=_imagegen_progress)
+        _imagegen_progress(f"Segunda opinião (Gemini): {summary['second_opinions']} plano(s)")
+    return _imagegen_run(work)
+
+
 @app.route("/api/imagegen/shot/<shot_id>/review", methods=["POST"])
 def imagegen_review_shot(shot_id):
     """"Marcar OK" (action ok) or "Ignorar aviso" (action ignore, issue = its index)."""
