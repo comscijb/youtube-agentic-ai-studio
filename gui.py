@@ -1141,6 +1141,29 @@ def imagegen_queue_edit(shot_id):
                                                               for item in shot_list["shots"])})
 
 
+@app.route("/api/imagegen/shot/<shot_id>/check_box", methods=["POST"])
+def imagegen_check_box(shot_id):
+    """Before queuing a removal: does the box cover > 20 % of a main character? (layer-1 detector)"""
+    from video.qa import fixes, region, review
+    found, error = _review_shot(shot_id)
+    if error:
+        return error
+    _, _, shot = found
+    try:
+        box = review.clean_box((request.get_json(force=True) or {}).get("box"))
+    except ValueError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    detector = fixes._detector()
+    if not box or detector is None:
+        return jsonify({"ok": True, "warnings": [], "detector": detector is not None})
+    warnings = region.overlap_warnings(detector.detect(Path(config.OUTPUT_DIR, shot["image_path"])), shot, box)
+    for item in warnings:
+        names = item["candidates"]
+        who = names[0] if len(names) == 1 else "um personagem principal (" + " ou ".join(names) + ")"
+        item["message"] = f"a caixa cobre {item['covered']:.0%} de {who}"
+    return jsonify({"ok": True, "warnings": warnings, "detector": True})
+
+
 @app.route("/api/imagegen/shot/<shot_id>/queue/remove", methods=["POST"])
 def imagegen_unqueue_edit(shot_id):
     from video.qa import review

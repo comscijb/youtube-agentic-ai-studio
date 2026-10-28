@@ -1912,11 +1912,25 @@ function igQueue(shot, body) {
   igPost(`/api/imagegen/shot/${shot.shot_id}/queue`, body);
 }
 
+async function igBoxCoversCharacter(shot, box) {
+  // A removal box that covers > 20 % of a main character (layer-1 detector) asks first.
+  if (!box) return true;
+  try {
+    const r = await fetch(`/api/imagegen/shot/${shot.shot_id}/check_box`, {method: 'POST',
+      headers: {'Content-Type': 'application/json'}, body: JSON.stringify({box})});
+    const d = await r.json();
+    if (!d.ok || !(d.warnings || []).length) return true;
+    return confirm(d.warnings.map(w => '⚠ ' + w.message).join('\n') + '\n\nEnfileirar mesmo assim?');
+  } catch (e) {
+    return true;
+  }
+}
+
 const IG_ACTIONS = {
   // Every edit joins the batch queue; "Executar fila" runs them with Klein loaded once.
   async figure(shot) {
     const box = await igViewerBox(igSuggested(shot, ['extra_person', 'duplicate_person']), false, 'Remover figura');
-    if (box) igQueue(shot, {kind: 'remove_figure', box});
+    if (box && await igBoxCoversCharacter(shot, box)) igQueue(shot, {kind: 'remove_figure', box});
   },
   async marker(shot) {
     const select = document.getElementById('igv-marker');
@@ -1934,7 +1948,7 @@ const IG_ACTIONS = {
     const text = (area && area.value || '').trim();
     if (!text) { if (area) area.focus(); return; }
     const box = await igViewerBox([], true, 'Instrução livre');
-    if (box === undefined) return;
+    if (box === undefined || !(await igBoxCoversCharacter(shot, box))) return;
     _igView.text = '';
     igQueue(shot, {kind: 'custom', text, box});
   },
