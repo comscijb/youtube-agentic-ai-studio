@@ -144,7 +144,8 @@ class FixTests(unittest.TestCase):
         shot = {"shot_id": "s01_01", "qa": {"status": "pass", "verdict": "pass", "issues": []}}
         action = self.fix(shot, custom="remove the vase in <box>", custom_box=[0.1, 0.1, 0.3, 0.4])
         self.assertEqual((action["action"], action["kinds"]), ("edit", ["custom"]))
-        self.assertEqual(self.fake.prompts[-1]["49"]["inputs"]["prompt"], "In <ref_image_0>, remove the vase in <obj_1>")
+        self.assertEqual(self.fake.prompts[-1]["49"]["inputs"]["prompt"],
+                         "In <ref_image_0>, remove the vase in <obj_1>. Change nothing outside <obj_1>.")
         self.assertEqual(self.fix(shot, force="regenerate")["action"], "regenerate")
 
     def test_generation_failure_keeps_the_image_and_drops_the_version(self):

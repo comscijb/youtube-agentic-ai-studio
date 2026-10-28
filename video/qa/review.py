@@ -138,11 +138,13 @@ def run_queue(generator, output, vb: dict, shot_list: dict, *, job_factory: Call
             else:
                 action = fixes.edit_with_plan(generator, output, shot, plan_for(request, vb, output),
                                               image_path=image, base_job=factory(0), origin="human",
-                                              progress=progress)
+                                              progress=progress, vb=vb)
             action["request"] = request["label"]
             dequeue(shot, 0)
             if action["action"] == "edit":
                 summary["edits"] += 1
+            elif action["action"] == "no_effect":
+                summary.setdefault("no_effect", []).append(shot["shot_id"])
             elif action["action"] == "regenerate":
                 summary["regenerations"] += 1
             else:

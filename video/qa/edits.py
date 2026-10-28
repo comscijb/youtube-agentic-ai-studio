@@ -75,4 +75,5 @@ def compose(issues: list[dict], vb: dict, output_dir, *, custom: str = "", custo
                 image = ORDINALS[1 + references.index(portrait)]
         sentences.append(instruction_for(item, obj, image, vb))
     return {"instruction": "In <ref_image_0>: " + " ".join(sentences), "boxes": boxes, "references": references,
-            "kinds": [item["type"] for item in issues]}
+            "kinds": [item["type"] for item in issues],
+            "targets": [item["target"] for item in issues if item.get("target")]}

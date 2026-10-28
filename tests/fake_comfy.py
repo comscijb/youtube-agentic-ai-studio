@@ -42,9 +42,17 @@ OBJECT_INFO = {
 }
 
 
-def png_bytes(size=(1360, 752), color=(40, 35, 30)) -> bytes:
+def png_bytes(size=(1360, 752), color=(40, 35, 30), textured: bool = False, phase: int = 0) -> bytes:
+    """A solid frame; ``textured`` draws stripes (shifted by ``phase``), the way a real region edit
+    changes the content — a different pattern every edit."""
     buffer = io.BytesIO()
-    Image.new("RGB", size, color).save(buffer, "PNG")
+    image = Image.new("RGB", size, color)
+    if textured:
+        stripe = Image.new("RGB", (max(1, size[0] // 40), size[1]), (220, 210, 190))
+        step = max(2, size[0] // 20)
+        for x in range((phase * 11) % step, size[0], step):
+            image.paste(stripe, (x, 0))
+    image.save(buffer, "PNG")
     return buffer.getvalue()
 
 
@@ -109,8 +117,11 @@ class FakeComfy:
         if path == "/view":
             if self.image is not None:
                 return Response(content=self.image)
+            edit = bool(self.prompts) and "33" in self.prompts[-1]          # a region edit changes content
             if self.sizes:
-                return Response(content=png_bytes(tuple(self.sizes.pop(0))))
+                return Response(content=png_bytes(tuple(self.sizes.pop(0)), textured=edit, phase=len(self.prompts)))
+            if edit:
+                return Response(content=png_bytes((1360, 768), textured=True, phase=len(self.prompts)))
             latent = (self.prompts[-1].get("44") or {}).get("inputs", {}) if self.prompts else {}
             return Response(content=png_bytes((latent.get("width", 1360), latent.get("height", 752))))
         if path == "/free":
