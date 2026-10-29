@@ -265,8 +265,10 @@ class CalibrateStyleTests(unittest.TestCase):
         self.assertEqual(len(fake.prompts) - before, 6)
         self.assertEqual(set(data["variants"]), {"engraving", "charcoal_gouache", "hybrid"})
         self.assertEqual(data["variants"]["hybrid"]["seed_base"], 6464)
-        with redirect_stdout(io.StringIO()), patch("sys.stderr", io.StringIO()), self.assertRaises(SystemExit):
-            calibrate_style.main(["--variants", "watercolour"])
+        # an explicit folder: without it main() would activate the real project (and leave
+        # config.IMAGES_DIR pointing at it for the tests that follow)
+        with tempfile.TemporaryDirectory() as temp, redirect_stdout(io.StringIO()),                 patch("sys.stderr", io.StringIO()), self.assertRaises(SystemExit):
+            calibrate_style.main(["--output-dir", temp, "--variants", "watercolour"])
 
 
 if __name__ == "__main__":

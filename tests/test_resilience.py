@@ -246,7 +246,9 @@ class PipelineResumeTests(unittest.TestCase):
         with patch.object(pipeline, "research_topic", side_effect=RuntimeError("stop")) as research, \
                 patch.object(pipeline, "sync_publications_safely"), \
                 tempfile.TemporaryDirectory() as temp, patch.object(config, "OUTPUT_DIR", temp), \
-                patch.object(config, "IMAGES_DIR", str(Path(temp, "images"))):
+                patch.object(config, "IMAGES_DIR", str(Path(temp, "images"))), \
+                patch.object(pipeline.projects, "resolve", return_value=Path(temp)):
+            # --resume activates the active project: resolve it to the temp folder, never the real one
             output = io.StringIO()
             with redirect_stdout(output), self.assertRaises(RuntimeError):
                 pipeline.run(resume=True)
