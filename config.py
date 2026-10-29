@@ -301,6 +301,8 @@ COLORS = {
 SHORTS_PER_EPISODE  = int(os.getenv("SHORTS_PER_EPISODE", "3"))
 SHORTS_MIN_SECONDS  = 45          # YouTube allows 3 min; shorter Shorts keep viewers better
 SHORTS_MAX_SECONDS  = 75
+# When the Shorts go public: the first with the episode, then one every spacing_hours at time (local).
+SHORTS_SCHEDULE     = {"first": "with_episode", "spacing_hours": 24, "time": "18:00"}
 
 # Thumbnails (Phase 3.6): no channel wordmark; an optional tiny corner mark instead.
 THUMBNAIL_LOGO = os.getenv("THUMBNAIL_LOGO", "false").lower() in ("1", "true", "yes", "on")

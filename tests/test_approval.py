@@ -81,7 +81,7 @@ class ApprovalGateTests(GateTestCase):
         self.assertTrue(stored["approved_at"])
         self.assertEqual(set(stored["checklist"]), set(approval.CHECKLIST))
         self.assertEqual(set(stored["bindings"]),
-                         {"script", "video", "title", "description", "tags", "thumbnail"})
+                         {"script", "video", "title", "description", "tags", "thumbnail", "shorts"})
         service = FakeService(inserted_id="vidapprov1")
         record = self.upload(service)
         self.assertEqual(len(service.videos().insert_calls), 1)

@@ -43,7 +43,8 @@ FILES = {
     "asset_manifest.json": "manifests", "scene_timeline.json": "manifests",
 }
 FOLDERS = {"images": "images", "character_refs": "images/character_refs",
-           "location_refs": "images/location_refs", "debug": "logs/debug"}
+           "location_refs": "images/location_refs", "debug": "logs/debug",
+           "shorts": "shorts"}                  # Phase 3.7: Short videos, plan and captions
 # Usage summaries are archived with the logs when a run wrote them.
 LOG_FILES = ("gemini_usage.json", "comfyui_usage.json")
 

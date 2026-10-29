@@ -1699,6 +1699,15 @@ def approve_upload():
     return jsonify({"ok": True, "approved_at": record["approved_at"]})
 
 
+@app.route("/api/upload/plan")
+def upload_plan():
+    """What the confirmation dialog shows: the episode now/scheduled and each Short's planned time."""
+    from uploader import shorts_upload
+    privacy = request.args.get("privacy", config.VIDEO_PRIVACY)
+    return jsonify({"ok": True, **shorts_upload.plan_lines(config.OUTPUT_DIR, privacy=privacy,
+                                                           publish_at=request.args.get("publish_at", ""))})
+
+
 @app.route("/api/upload", methods=["POST"])
 def upload():
     if _state.get("uploading"):
@@ -1731,6 +1740,10 @@ def upload():
             _state["yt_url"]     = record["url"]
             _state["upload_pct"] = 100
             _log(f"Uploaded! {_state['yt_url']} (recorded as pending publication)")
+            if record.get("shorts"):
+                from uploader import shorts_upload
+                _state["upload_note"] = shorts_upload.reminder(record["url"], len(record["shorts"]))
+                _log(_state["upload_note"])
 
         except Exception as e:
             _log(f"Upload error: {e}", "error")

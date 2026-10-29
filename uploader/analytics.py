@@ -238,7 +238,14 @@ def refresh_due_safely() -> None:
 def overview() -> dict:
     """The channel at a glance, from the cache only (no API call)."""
     videos = []
-    for record in published_records():
+    records = published_records()
+    shorts_of = {}
+    for record in records:
+        if record.get("parent_video_id"):
+            shorts_of.setdefault(record["parent_video_id"], []).append(record)
+    for record in [item for item in records if not item.get("parent_video_id")] + \
+            [item for item in records if item.get("parent_video_id") and
+             item["parent_video_id"] not in {other["video_id"] for other in records}]:
         stats = cached(record["video_id"]) or {}
         totals, reach = stats.get("totals") or {}, stats.get("reach") or {}
         videos.append({"video_id": record["video_id"], "title": record.get("title", ""), "project": record.get("project"),
@@ -246,7 +253,10 @@ def overview() -> dict:
                        "views": totals.get("views"), "average_view_percentage": totals.get("averageViewPercentage"),
                        "subscribers_gained": totals.get("subscribersGained"), "impressions": reach.get("impressions"),
                        "ctr": reach.get("ctr"), "us_share": stats.get("us_share"), "flags": stats.get("flags", []),
-                       "fetched_at": stats.get("fetched_at")})
+                       "fetched_at": stats.get("fetched_at"),
+                       "shorts": [{"video_id": short["video_id"], "title": short.get("title", ""),
+                                   "views": ((cached(short["video_id"]) or {}).get("totals") or {}).get("views")}
+                                  for short in shorts_of.get(record["video_id"], [])]})
     total = lambda key: sum(float(item[key] or 0) for item in videos)
     return {"videos": videos, "views": total("views"), "subscribers_gained": total("subscribers_gained"),
             "impressions": total("impressions"), "note": LAG_NOTE}

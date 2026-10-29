@@ -79,7 +79,14 @@ def bindings(run_dir, *, video_path, title, description, tags=None, thumbnail_pa
         "description": _sha256_text(description),
         "tags": _sha256_text("\n".join(str(tag) for tag in tags or [])),
         "thumbnail": _sha256_file(thumbnail_path),
+        "shorts": _shorts_binding(run_dir),
     }
+
+
+def _shorts_binding(run_dir) -> str:
+    """The included Shorts (files and texts) are approved together with the episode (Phase 3.7)."""
+    from uploader import shorts_upload
+    return shorts_upload.binding(run_dir)
 
 
 def contains_synthetic_media(run_dir) -> bool:
@@ -95,11 +102,21 @@ def realistic_synthetic_media(run_dir) -> bool:
                for item in manifest.get("generated_assets", []))
 
 
+SHORTS_ITEM = {
+    "shorts_reviewed": "I watched every included Short and checked its title, texts and description.",
+}
+
+
 def checklist_for(run_dir) -> dict:
-    """The base checklist, plus the synthetic-media decision when generated images are used."""
-    if not contains_synthetic_media(run_dir):
-        return dict(CHECKLIST)
-    return {**CHECKLIST, **(SYNTHETIC_ITEM if realistic_synthetic_media(run_dir) else ILLUSTRATION_ITEM)}
+    """The base checklist, plus the synthetic-media decision when generated images are used and the
+    Shorts item when Shorts will be uploaded with the episode."""
+    from uploader import shorts_upload
+    items = dict(CHECKLIST)
+    if contains_synthetic_media(run_dir):
+        items.update(SYNTHETIC_ITEM if realistic_synthetic_media(run_dir) else ILLUSTRATION_ITEM)
+    if shorts_upload.included(run_dir):
+        items.update(SHORTS_ITEM)
+    return items
 
 
 def narrative_status(run_dir) -> str:
@@ -156,6 +173,8 @@ def review_summary(run_dir, *, title: str, **artifacts) -> dict:
         "narrative_status": status,
         "status_override_required": status in BLOCKED_STATUSES or status == "missing",
         "description_findings": description_findings,
+        "shorts": [{key: item.get(key) for key in ("id", "title", "hook_text", "end_text", "description", "start", "end")}
+                   | {"video": f"shorts/{item['id']}.mp4"} for item in _included_shorts(run_dir)],
         "description_passes": upload_description.passes(description_findings),
         "title_findings": findings,
         "title_passes": title_passes(findings),
@@ -166,6 +185,11 @@ def review_summary(run_dir, *, title: str, **artifacts) -> dict:
         "approval_valid": not current,
         "approval_problems": current,
     }
+
+
+def _included_shorts(run_dir) -> list[dict]:
+    from uploader import shorts_upload
+    return shorts_upload.included(run_dir)
 
 
 def approve(run_dir, *, checklist: dict, video_path, title, description, tags=None,

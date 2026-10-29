@@ -104,8 +104,9 @@ def build_record(video_id: str, run_dir, *, title: str = "", video_path: str | N
     return record
 
 
-def record_upload(video_id: str, run_dir, *, path=None, **kwargs) -> dict:
-    """Write the pending record right after a successful upload (idempotent per video)."""
+def record_upload(video_id: str, run_dir, *, path=None, touch_project: bool = True, **kwargs) -> dict:
+    """Write the pending record right after a successful upload (idempotent per video). Shorts
+    (``touch_project=False``) never become the project's published video."""
     with _lock:
         ledger = load_ledger(path)
         existing = next((item for item in ledger["publications"]
@@ -115,8 +116,9 @@ def record_upload(video_id: str, run_dir, *, path=None, **kwargs) -> dict:
         record = build_record(video_id, run_dir, **kwargs)
         ledger["publications"].append(record)
         save_ledger(ledger, path)
-    from studio import projects
-    projects.touch(run_dir, published_video_id=video_id)
+    if touch_project:
+        from studio import projects
+        projects.touch(run_dir, published_video_id=video_id)
     return record
 
 
@@ -179,7 +181,8 @@ def sync_publications(service=None, *, path=None, interactive: bool = False) -> 
             if state == PUBLISHED:
                 record["state"] = PUBLISHED
                 record["published_at"] = checked_at
-                append_banned_entry(banned_entry(record))
+                if not record.get("parent_video_id"):      # a Short never bans its episode's topic
+                    append_banned_entry(banned_entry(record))
                 summary["published"].append(record["video_id"])
             elif state in (FAILED, REMOVED):
                 record["state"] = state
@@ -187,7 +190,8 @@ def sync_publications(service=None, *, path=None, interactive: bool = False) -> 
             else:
                 summary["pending"].append(record["video_id"])
         save_ledger(ledger, path)
-    published = [record.get("project") for record in pending if record.get("state") == PUBLISHED]
+    published = [record.get("project") for record in pending
+                 if record.get("state") == PUBLISHED and not record.get("parent_video_id")]
     summary["archive"] = _archive_published(published)
     return summary
 

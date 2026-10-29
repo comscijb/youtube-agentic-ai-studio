@@ -274,6 +274,15 @@ def upload_run(run_dir: str, *, video_path: str, title: str, description: str, t
             captions = {"action": "failed", "error": f"{exc.__class__.__name__}: {str(exc)[:200]}"}
             print(f"   WARNING: caption upload failed ({exc.__class__.__name__}); video kept. Retry with "
                   f"python -m scripts.youtube_backfill --video-id {video_id} --captions")
+    shorts = []
+    from uploader import shorts_upload
+    if shorts_upload.included(run_dir):                 # Phase 3.7: after the episode, with its URL
+        try:
+            shorts = shorts_upload.upload_shorts(run_dir, video_id, service=service, privacy=privacy,
+                                                 publish_at=publish_at)
+        except Exception as exc:                       # noqa: BLE001 — the episode is uploaded and recorded
+            print(f"   WARNING: Shorts upload stopped ({exc.__class__.__name__}: {str(exc)[:200]}); "
+                  "the episode is uploaded.")
     return publications.record_upload(
         video_id, run_dir, title=title, video_path=video_path,
         scheduled_publish_at=publish_at or None,
@@ -282,7 +291,8 @@ def upload_run(run_dir: str, *, video_path: str, title: str, description: str, t
             "narrative_status": approval.get("narrative_status"),
             "status_override_reason": approval.get("status_override_reason", ""),
             "title_override_reason": approval.get("title_override_reason", ""),
-        }, "captions": captions, "language": getattr(config, "VIDEO_LANGUAGE", "en")},
+        }, "captions": captions, "language": getattr(config, "VIDEO_LANGUAGE", "en"),
+            "shorts": [record["video_id"] for record in shorts]},
     )
 
 

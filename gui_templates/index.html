@@ -1043,6 +1043,13 @@ function loadPerformance() {
         flag.textContent = '⚠ ' + f;
         card.appendChild(flag);
       });
+      (v.shorts || []).forEach(s => {
+        // Phase 3.7-B: the Shorts cut from this episode, listed under it.
+        const row = document.createElement('div');
+        row.style.cssText = 'font-size:12px;color:var(--muted);margin-top:2px;padding-left:12px';
+        row.textContent = `📱 ${s.title} · views ${s.views ?? '—'}`;
+        card.appendChild(row);
+      });
       const more = document.createElement('details');
       more.innerHTML = '<summary style="cursor:pointer;font-size:12px;color:var(--muted)">Países, origens de tráfego, série diária</summary>';
       more.ontoggle = () => {
@@ -2695,6 +2702,23 @@ function loadReviewGate() {
       row.querySelector('span').textContent = label;
       list.appendChild(row);
     });
+    (d.shorts || []).forEach(short => {
+      // Phase 3.7-B: each Short reviewed in the gate; include/exclude is in "Shorts do episódio".
+      const card = document.createElement('div');
+      card.style.cssText = 'display:flex;gap:8px;align-items:flex-start;border:1px solid var(--border);border-radius:6px;padding:6px;font-size:11px';
+      card.innerHTML = `<video src="/imagegen/file?path=${encodeURIComponent(short.video)}" controls style="height:180px"></video>
+        <div><b></b><div class="hook"></div><div class="desc" style="color:var(--muted)"></div>
+        <button class="btn btn-ghost" style="font-size:10px;padding:1px 6px;margin-top:4px">Excluir deste upload</button></div>`;
+      card.querySelector('b').textContent = `${short.id} · ${short.title}`;
+      card.querySelector('.hook').textContent = `“${short.hook_text}” … “${short.end_text}”`;
+      card.querySelector('.desc').textContent = short.description;
+      card.querySelector('button').onclick = () => {
+        const segments = (_shorts.plan.segments || []).map(s => s.id === short.id ? Object.assign({}, s, {include: false}) : s);
+        fetch('/api/shorts/save', {method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({segments})}).then(r => r.json()).then(x => { if (!x.ok) alert(x.error); loadShorts(); loadReviewGate(); });
+      };
+      list.appendChild(card);
+    });
     if (d.license_flags.length) {
       const flags = document.createElement('div');
       flags.style.cssText = 'font-size:11px;color:var(--muted)';
@@ -2744,13 +2768,21 @@ function approveUpload() {
   });
 }
 
-function scheduleUpload() {
+async function uploadPlan(privacy, publishAt) {
+  // Phase 3.7-B: the Shorts go up after the episode; show when each one becomes public.
+  const query = new URLSearchParams({privacy, publish_at: publishAt || ''});
+  try { return await (await fetch('/api/upload/plan?' + query)).json(); } catch (e) { return {shorts: [], text: ''}; }
+}
+
+async function scheduleUpload() {
   const dt = document.getElementById('schedule-datetime').value;
   if (!dt) { alert('Please pick a date and time.'); return; }
   // Convert local datetime to RFC 3339 (UTC) as YouTube requires
   const publishAt = new Date(dt).toISOString();
   const privacy   = document.getElementById('schedule-privacy').value;
-  if (!confirm(`This video will be uploaded now and become ${privacy.toUpperCase()} at ${new Date(dt).toString()}. Continue?`)) return;
+  const plan = await uploadPlan(privacy, publishAt);
+  if (!confirm(`This video will be uploaded now and become ${privacy.toUpperCase()} at ${new Date(dt).toString()}.` +
+               (plan.shorts.length ? `\n\n${plan.text}` : '') + '\n\nContinue?')) return;
   const btn = document.getElementById('schedule-btn');
   btn.disabled = true; btn.textContent = '⏳ Uploading…';
   document.getElementById('upload-progress-wrap').style.display = 'block';
@@ -2769,12 +2801,14 @@ function scheduleUpload() {
   });
 }
 
-function uploadToYouTube() {
+async function uploadToYouTube() {
   const btn = document.getElementById('upload-btn');
   const privacy = document.getElementById('upload-privacy').value;
-  const warning = privacy === 'public'
-    ? 'This video will be PUBLIC immediately. Continue?'
-    : `This video will be uploaded as ${privacy.toUpperCase()}. Continue?`;
+  const plan = await uploadPlan(privacy, '');
+  const warning = (privacy === 'public'
+    ? 'This video will be PUBLIC immediately.'
+    : `This video will be uploaded as ${privacy.toUpperCase()}.`) +
+    (plan.shorts.length ? `\n\n${plan.text}` : '') + '\n\nContinue?';
   if (!confirm(warning)) return;
   btn.disabled = true;
   document.getElementById('upload-progress-wrap').style.display = 'block';
