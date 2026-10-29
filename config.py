@@ -297,6 +297,11 @@ COLORS = {
     "red":        (197, 102, 112),    # Dusty Crimson
 }
 
+# Shorts cut from each episode (Phase 3.7): same narration and shots, uploaded with the episode.
+SHORTS_PER_EPISODE  = int(os.getenv("SHORTS_PER_EPISODE", "3"))
+SHORTS_MIN_SECONDS  = 45          # YouTube allows 3 min; shorter Shorts keep viewers better
+SHORTS_MAX_SECONDS  = 75
+
 # Thumbnails (Phase 3.6): no channel wordmark; an optional tiny corner mark instead.
 THUMBNAIL_LOGO = os.getenv("THUMBNAIL_LOGO", "false").lower() in ("1", "true", "yes", "on")
 

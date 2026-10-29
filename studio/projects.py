@@ -44,6 +44,7 @@ STAGES = (
     ("references", "References", (), False),
     ("shots", "Shots", ("shots",), False),
     ("video", "Video", ("video",), False),
+    ("shorts", "Shorts", ("shorts",), True),
     ("publish", "Publish", (), True),
 )
 STAGE_KEYS = tuple(stage for stage, *_ in STAGES)
@@ -51,7 +52,7 @@ UPSTREAM = {
     "script": ("story_brief",), "narration": ("script",), "music": ("narration",),
     "visual_bible": ("script",), "references": ("visual_bible",),
     "shots": ("narration", "visual_bible", "references"),
-    "video": ("narration", "shots"), "publish": ("video",),
+    "video": ("narration", "shots"), "shorts": ("narration", "shots"), "publish": ("video",),
 }
 
 
@@ -326,6 +327,20 @@ def stage_status(path) -> list[dict]:
         inputs += [path / shot["image_path"] for shot in done if shot.get("image_path")]
         result.append(_entry("video", "stale", "narration or shots changed after the render")
                       if _newer(inputs, video) else _entry("video", "done"))
+
+    from video import shorts as shorts_module
+    plan = shorts_module.load(path)
+    if data.get("video_type") == "shorts":
+        result.append(_entry("shorts", "skipped", "standalone Short project"))
+    elif not plan:
+        result.append(_entry("shorts", "missing", "no Shorts plan yet"))
+    elif _newer([path / shorts_module.WORDS_FILE, files["narration.srt"]], path / shorts_module.FOLDER / shorts_module.PLAN_FILE):
+        result.append(_entry("shorts", "stale", "the narration changed after the Shorts plan"))
+    else:
+        wanted = [item for item in plan.get("segments", []) if item.get("include", True)]
+        rendered = [item for item in wanted if (path / shorts_module.FOLDER / f"{item['id']}.mp4").is_file()]
+        status = "done" if wanted and len(rendered) == len(wanted) else "partial"
+        result.append(_entry("shorts", status, f"{len(rendered)}/{len(wanted)} Shorts rendered"))
 
     published = data.get("published_video_id")
     result.append(_entry("publish", "done" if published else "missing",

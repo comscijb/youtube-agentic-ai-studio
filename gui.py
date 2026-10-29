@@ -692,6 +692,60 @@ def premise_brief_parse():
                     "notes": bool(brief.get("notes"))})
 
 
+@app.route("/api/shorts")
+def shorts_status():
+    """Phase 3.7-B: the Shorts plan with the sentences it can be cut on."""
+    from video import shorts
+    output = Path(config.OUTPUT_DIR)
+    words = shorts.word_timeline(output, _state.get("script"))
+    sentence_list = shorts.sentences(words)
+    plan = shorts.load(output) or {}
+    audio = next((name for name in ("narration_mixed.mp3", "narration.mp3") if (output / name).is_file()), None)
+    for item in plan.get("segments", []):
+        video = output / shorts.FOLDER / f"{item['id']}.mp4"
+        item["video"] = f"{shorts.FOLDER}/{item['id']}.mp4" if video.is_file() else None
+    return jsonify({"ok": True, "plan": plan, "audio": bool(audio), "limits": shorts.limits(),
+                    "sentences": [{key: item[key] for key in ("index", "start", "end", "text")} for item in sentence_list],
+                    "busy": _state.get("imagegen_busy", False)})
+
+
+@app.route("/api/shorts/plan", methods=["POST"])
+def shorts_plan():
+    """Gemini proposes the segments (validated by code); a new proposal replaces the plan."""
+    from video import shorts
+    force = bool((request.get_json(force=True) or {}).get("force"))
+    if not shorts.word_timeline(Path(config.OUTPUT_DIR), _state.get("script")):
+        return jsonify({"ok": False, "error": "Run the narration step first (the plan needs real timings)"}), 400
+
+    def run():
+        plan = shorts.build_plan(config.OUTPUT_DIR, script=_state.get("script"), brief=_state.get("research"),
+                                 force=force)
+        _imagegen_progress(f"Shorts: {len(plan['segments'])} segmento(s) propostos")
+    return _imagegen_run(run)
+
+
+@app.route("/api/shorts/save", methods=["POST"])
+def shorts_save():
+    from agents.narrative import NarrativeValidationError
+    from video import shorts
+    segments = (request.get_json(force=True) or {}).get("segments")
+    try:
+        plan = shorts.save(config.OUTPUT_DIR, segments, brief=_state.get("research"))
+    except (NarrativeValidationError, KeyError, TypeError, ValueError) as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    return jsonify({"ok": True, "plan": plan})
+
+
+@app.route("/api/shorts/audio")
+def shorts_audio():
+    """The episode audio for play-from/to in the Shorts review."""
+    output = Path(config.OUTPUT_DIR)
+    path = next((output / name for name in ("narration_mixed.mp3", "narration.mp3") if (output / name).is_file()), None)
+    if path is None:
+        abort(404)
+    return send_file(str(path), mimetype="audio/mpeg", conditional=True)
+
+
 @app.route("/api/projects/stage/<stage>", methods=["POST"])
 def project_stage(stage):
     """Run / re-run / skip one stage of the current project, respecting existing artifacts."""

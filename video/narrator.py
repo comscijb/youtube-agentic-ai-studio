@@ -239,6 +239,7 @@ def generate_narration(script: dict, output_dir: str) -> str:
     clips = []
     durations = []
     scene_srts = []
+    timed_words = []                      # narration_words.json (Phase 3.7: Shorts cut on sentences)
     cursor = 0.0
     scenes_without_words = []
     with tempfile.TemporaryDirectory(prefix="private_gravity_tts_") as temp_dir:
@@ -257,6 +258,9 @@ def generate_narration(script: dict, output_dir: str) -> str:
                 if not events:
                     scenes_without_words.append(index)
                 _write_srt_blocks(scene_cues(text, events, duration), scene_srt)
+                timed_words += [{**word, "start": round(word["start"] + cursor, 3), "end": round(word["end"] + cursor, 3),
+                                 "scene_id": section.get("id")}
+                                for word in (align_words(text, events) if events else proportional_words(text, duration))]
                 durations.append(duration)
                 scene_srts.append((scene_srt, cursor))
                 cursor += duration
@@ -279,6 +283,8 @@ def generate_narration(script: dict, output_dir: str) -> str:
     rendered_duration = _get_audio_duration_ms(audio_path) / 1000
     durations[-1] += rendered_duration - sum(durations)
     write_timeline(os.path.join(output_dir, "scene_timeline.json"), sections, durations)
+    with open(os.path.join(output_dir, "narration_words.json"), "w", encoding="utf-8") as handle:
+        json.dump({"words": timed_words, "total_duration": round(rendered_duration, 3)}, handle, ensure_ascii=False)
 
     words = sum(len(section["narration"].split()) for section in sections)
     entry = record_calibration(words, rendered_duration)

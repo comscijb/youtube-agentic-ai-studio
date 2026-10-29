@@ -563,6 +563,19 @@ input[type=range]{width:100%;accent-color:var(--primary)}
             <div class="help-text" style="margin-top:4px">A escolhida vai no upload pela API. As outras: baixe e envie à mão em YouTube Studio → Test &amp; compare.</div>
           </div>
 
+          <div id="shorts-panel" style="margin:12px 0">
+            <div class="flex-row" style="margin-bottom:6px;gap:6px;flex-wrap:wrap">
+              <div class="field-label" style="margin:0">Shorts do episódio</div>
+              <button class="btn btn-ghost" style="padding:3px 10px;font-size:11px" onclick="igPost('/api/shorts/plan', {force: true})">Propor cortes (Gemini)</button>
+              <button class="btn btn-ghost" style="padding:3px 10px;font-size:11px" onclick="shortsAdd()">+ Adicionar</button>
+              <button class="btn btn-ghost" style="padding:3px 10px;font-size:11px" onclick="shortsSave()">Salvar cortes</button>
+              <span id="shorts-msg" style="font-size:11px;color:var(--muted)"></span>
+            </div>
+            <audio id="shorts-audio" preload="none" style="width:100%;height:28px"></audio>
+            <div id="shorts-timeline" style="position:relative;height:18px;background:var(--surface2);border-radius:4px;margin:6px 0"></div>
+            <div id="shorts-list" style="display:flex;flex-direction:column;gap:8px;font-size:11px"></div>
+          </div>
+
           <div id="imagegen-panel">
             <div class="flex-row" style="margin-bottom:6px">
               <div class="field-label" style="margin:0">Generated images (ComfyUI)</div>
@@ -2383,8 +2396,110 @@ function checkDescription() {
   });
 }
 
+// ── Shorts cut from the episode (Phase 3.7-B) ─────────────────────────────
+let _shorts = {plan: {segments: []}, sentences: []};
+let _shortsStop = null;
+
+function shortsSentenceOptions(selected, kind) {
+  return _shorts.sentences.map(s => `<option value="${s.index}" ${s.index === selected ? 'selected' : ''}>` +
+    `${s.index} · ${(kind === 'start' ? s.start : s.end).toFixed(1)} s · ${s.text.slice(0, 48).replace(/</g, '&lt;')}</option>`).join('');
+}
+
+function shortsPlay(segment) {
+  const audio = document.getElementById('shorts-audio');
+  if (!audio.src) audio.src = '/api/shorts/audio';
+  const start = _shorts.sentences[segment.start_sentence].start, end = _shorts.sentences[segment.end_sentence].end;
+  audio.currentTime = start;
+  audio.play();
+  clearInterval(_shortsStop);
+  _shortsStop = setInterval(() => { if (audio.currentTime >= end) { audio.pause(); clearInterval(_shortsStop); } }, 100);
+}
+
+function renderShorts() {
+  const list = document.getElementById('shorts-list');
+  const line = document.getElementById('shorts-timeline');
+  if (!list) return;
+  list.innerHTML = '';
+  line.innerHTML = '';
+  const total = _shorts.sentences.length ? _shorts.sentences[_shorts.sentences.length - 1].end : 1;
+  if (_shorts.plan.twist_start) {
+    const twist = document.createElement('div');
+    twist.title = 'início da virada (os Shorts terminam antes)';
+    twist.style.cssText = `position:absolute;top:0;bottom:0;left:${_shorts.plan.twist_start / total * 100}%;right:0;background:rgba(220,80,80,.25)`;
+    line.appendChild(twist);
+  }
+  const [low, high] = _shorts.limits || [45, 75];
+  (_shorts.plan.segments || []).forEach((segment, index) => {
+    const s = _shorts.sentences[segment.start_sentence], e = _shorts.sentences[segment.end_sentence];
+    if (!s || !e) return;
+    const bar = document.createElement('div');
+    bar.style.cssText = `position:absolute;top:2px;bottom:2px;left:${s.start / total * 100}%;width:${Math.max(0.5, (e.end - s.start) / total * 100)}%;` +
+      `background:${segment.include === false ? 'var(--muted)' : 'var(--accent, #4af)'};border-radius:3px`;
+    bar.title = segment.title;
+    line.appendChild(bar);
+    const card = document.createElement('div');
+    card.style.cssText = 'border:1px solid var(--border);border-radius:6px;padding:6px';
+    const seconds = e.end - s.start;
+    card.innerHTML = `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <b>${segment.id || 'novo'}</b>
+        <span style="color:${seconds < low || seconds > high ? 'var(--red)' : 'var(--muted)'}">${s.start.toFixed(1)}–${e.end.toFixed(1)} s (${seconds.toFixed(0)} s)</span>
+        ${segment.approaches_reversal ? '<span style="color:var(--amber)">perto da virada</span>' : ''}
+        <label style="margin-left:auto"><input type="checkbox" data-k="include" ${segment.include === false ? '' : 'checked'}> incluir</label>
+        <button class="btn btn-ghost" style="font-size:10px;padding:1px 6px" data-a="play">▶ ouvir</button>
+        <button class="btn btn-ghost" style="font-size:10px;padding:1px 6px" data-a="drop">✕</button></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">
+        <select data-k="start_sentence">${shortsSentenceOptions(segment.start_sentence, 'start')}</select>
+        <select data-k="end_sentence">${shortsSentenceOptions(segment.end_sentence, 'end')}</select>
+        <input data-k="title" placeholder="Título (#Shorts é adicionado)">
+        <input data-k="hook_text" placeholder="Texto de gancho (≤ 6 palavras)">
+        <input data-k="end_text" placeholder="Texto final (≤ 6 palavras)">
+        <input data-k="description" placeholder="Descrição (1–2 linhas)"></div>` +
+      (segment.video ? `<video src="/imagegen/file?path=${encodeURIComponent(segment.video)}&t=${Date.now()}" controls style="height:220px;margin-top:4px"></video>` : '');
+    ['title', 'hook_text', 'end_text', 'description'].forEach(k => { card.querySelector(`[data-k="${k}"]`).value = segment[k] || ''; });
+    card.querySelectorAll('[data-k]').forEach(input => input.onchange = () => {
+      const key = input.dataset.k;
+      segment[key] = key === 'include' ? input.checked : key.endsWith('sentence') ? parseInt(input.value, 10) : input.value;
+      renderShorts();
+    });
+    card.querySelector('[data-a="play"]').onclick = () => shortsPlay(segment);
+    card.querySelector('[data-a="drop"]').onclick = () => { _shorts.plan.segments.splice(index, 1); renderShorts(); };
+    list.appendChild(card);
+  });
+  if (!(_shorts.plan.segments || []).length)
+    list.textContent = _shorts.sentences.length ? 'Nenhum corte ainda — “Propor cortes”.' : 'Precisa da narração (tempos reais) antes dos Shorts.';
+}
+
+function shortsAdd() {
+  if (!_shorts.sentences.length) return;
+  const used = (_shorts.plan.segments || []).map(s => s.end_sentence);
+  const start = used.length ? Math.min(Math.max(...used) + 1, _shorts.sentences.length - 1) : 0;
+  let end = start;
+  while (end < _shorts.sentences.length - 1 && _shorts.sentences[end].end - _shorts.sentences[start].start < (_shorts.limits || [45])[0]) end++;
+  _shorts.plan.segments = (_shorts.plan.segments || []).concat([{start_sentence: start, end_sentence: end, title: '',
+    hook_text: '', end_text: 'Full story on the channel', description: '', include: true}]);
+  renderShorts();
+}
+
+function shortsSave() {
+  fetch('/api/shorts/save', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({segments: _shorts.plan.segments})}).then(r => r.json()).then(d => {
+      const msg = document.getElementById('shorts-msg');
+      msg.style.color = d.ok ? 'var(--green)' : 'var(--red)';
+      msg.textContent = d.ok ? 'Cortes salvos' : d.error;
+      if (d.ok) loadShorts();
+    });
+}
+
+function loadShorts() {
+  fetch('/api/shorts').then(r => r.json()).then(d => {
+    _shorts = {plan: d.plan && d.plan.segments ? d.plan : {segments: []}, sentences: d.sentences || [], limits: d.limits};
+    renderShorts();
+  });
+}
+
 function loadReviewData() {
   loadImagegen();
+  loadShorts();
   loadThumbVariants();
   loadTitleScores();
   checkDescription();
