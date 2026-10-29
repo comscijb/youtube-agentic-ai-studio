@@ -214,7 +214,10 @@ psychological_theme is the broad theme (e.g. "envy"); psychological_angle is ONE
 naming the mechanism explored (e.g. "needing to be envied as a substitute for self-worth").
 PUBLISHED TOPICS RULE: {BANNED_RULE}
 title_candidates: exactly 5 objects {{"title": "...", "rationale": "one sentence on the curiosity it
-creates"}} that follow the title policy; video_title must be the strongest of them.
+creates"}} that follow the title policy; video_title must be the strongest of them. At least two of
+them must be built on the story's most shareable moment (the reversal: what the protagonist does that
+a viewer would retell to a friend), not only on the premise. At most 60 characters, the hook within
+the first ~45.
 thumbnail_text_candidates: exactly 3 strings that follow the thumbnail text policy.
 
 Use one of these narrative_type values: {json.dumps(sorted(NARRATIVE_TYPES))}.
@@ -263,6 +266,7 @@ Uniqueness nonce: {time.time_ns()}"""
         run_dir=config.OUTPUT_DIR,
     )
     _apply_title_review(brief, _review_titles(brief))
+    _score_titles(brief)
     atomic_write_json(brief_path, brief)
     return brief
 
@@ -340,6 +344,25 @@ The previous candidates failed for these reasons; do not repeat them:
         "thumbnail_text_candidates": review["thumbnail_text_candidates"],
     }
     return retried
+
+
+def _score_titles(brief: dict) -> None:
+    """Phase 3.6-B: score the candidates and choose the best one that passes the title policy.
+    A scoring failure keeps the policy's choice (scoring is advice, the validator is the gate)."""
+    from agents import packaging
+    review = brief.get("title_review") or {}
+    try:
+        scored = packaging.score_titles(brief, review.get("title_candidates") or [], generator=generate)
+    except (NarrativeValidationError, KeyError, TypeError, ValueError) as exc:
+        brief["title_scoring_error"] = str(exc)[:300]
+        return
+    brief["title_scores"] = scored
+    best = next((row for row in scored if row["passes"]), None)
+    if best:
+        brief["video_title"] = best["title"]
+        review["selected_title"] = best["title"]
+        review["selected_title_findings"] = best["findings"]
+    packaging.save_titles(config.OUTPUT_DIR, scored, brief.get("video_title", ""))
 
 
 def _apply_title_review(brief: dict, review: dict) -> None:

@@ -583,6 +583,11 @@ input[type=range]{width:100%;accent-color:var(--primary)}
             <input type="text" id="edit-title" placeholder="Video title…" oninput="markDirty(); scheduleTitleCheck()">
             <div class="help-text">Present a person and a situation; never explain the theme. Max 70 characters / 12 words.</div>
             <div id="title-findings" style="font-size:11px;margin-top:4px"></div>
+            <div class="flex-row" style="margin:8px 0 4px">
+              <div class="field-label" style="margin:0">Títulos pontuados</div>
+              <button class="btn btn-ghost" style="padding:3px 10px;font-size:11px" onclick="igPost('/api/titles/score', {})">Pontuar</button>
+            </div>
+            <div id="title-scores" style="font-size:11px;color:var(--muted)"></div>
 
             <div>
               <div class="flex-row" style="margin-bottom:6px">
@@ -2128,9 +2133,52 @@ function loadThumbVariants() {
   });
 }
 
+function loadTitleScores() {
+  // Phase 3.6-B: curiosity / concreteness / emotion / clarity (1-5) + length, total 0-100; pick or edit.
+  fetch('/api/titles').then(r => r.json()).then(d => {
+    const box = document.getElementById('title-scores');
+    if (!box) return;
+    box.innerHTML = '';
+    if (!(d.candidates || []).length) { box.textContent = 'Ainda não pontuados — clique em “Pontuar”.'; return; }
+    d.candidates.forEach(c => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:6px;align-items:center;margin:2px 0' + (c.title === d.selected ? ';color:var(--green)' : '');
+      const total = document.createElement('b');
+      total.style.cssText = 'width:30px;text-align:right';
+      total.textContent = c.total != null ? c.total : '—';
+      row.appendChild(total);
+      const text = document.createElement('span');
+      text.style.flex = '1';
+      const s = c.scores || {};
+      text.textContent = `${c.title} (${c.title.length})` + (c.passes ? '' : ' ⛔ política');
+      text.title = `curiosidade ${s.curiosity} · concretude ${s.concreteness} · emoção ${s.emotion} · clareza ${s.clarity} · tamanho ${s.length}` +
+        (c.note ? `
+${c.note}` : '');
+      row.appendChild(text);
+      const use = document.createElement('button');
+      use.className = 'btn btn-ghost';
+      use.style.cssText = 'font-size:10px;padding:1px 6px';
+      use.textContent = c.title === d.selected ? '✓' : 'Usar';
+      use.onclick = () => fetch('/api/titles/select', {method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({title: c.title})}).then(r => r.json()).then(x => {
+          if (!x.ok) { alert(x.error); return; }
+          document.getElementById('edit-title').value = x.title; loadTitleScores(); });
+      row.appendChild(use);
+      box.appendChild(row);
+    });
+    if (d.thumbnail_text) {
+      const note = document.createElement('div');
+      note.style.marginTop = '4px';
+      note.textContent = `Texto da thumbnail: “${d.thumbnail_text}” — não deve repetir o título.`;
+      box.appendChild(note);
+    }
+  });
+}
+
 function loadReviewData() {
   loadImagegen();
   loadThumbVariants();
+  loadTitleScores();
   // Video
   fetch('/api/status').then(r=>r.json()).then(d => {
     const vw = document.getElementById('video-wrap');

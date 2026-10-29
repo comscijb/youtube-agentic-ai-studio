@@ -133,9 +133,15 @@ def packaging_findings(run_dir, title: str) -> list[dict]:
     if not brief.get("psychological_theme"):
         brief = dict(brief, psychological_theme=script.get("psychological_theme", ""))
     findings = validate_title(title, brief)
-    thumbnail_text = script.get("thumbnail_text") or brief.get("thumbnail_text")
+    from agents.packaging import text_repeats_title, thumbnail_text_for
+    thumbnail_text = thumbnail_text_for(run_dir, script, brief)
     if thumbnail_text:
         findings += validate_thumbnail_text(thumbnail_text, brief)
+        if title and text_repeats_title(thumbnail_text, title):           # Phase 3.6-B: they complement
+            findings.append({"severity": "blocking", "rule": "thumbnail_repeats_title",
+                             "claim": f"The thumbnail text {thumbnail_text!r} repeats the title.",
+                             "evidence": [thumbnail_text, title], "fix": "Pick another thumbnail or title.",
+                             "issue_type": "thumbnail_text_policy"})
     return findings
 
 

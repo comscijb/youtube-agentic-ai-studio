@@ -302,6 +302,7 @@ class ResumeTests(unittest.TestCase):
         self.assertEqual(brief, first)
         self.assertEqual(bible_value["characters"][0]["character_id"], "eli")
 
+    @patch("agents.researcher._score_titles", new=lambda brief: None)   # scoring has its own tests
     def test_resume_ignores_brief_from_a_different_request(self):
         with tempfile.TemporaryDirectory() as temp, patch.object(config, "OUTPUT_DIR", temp):
             with patch.object(researcher, "generate", return_value=json.dumps(story_brief())):

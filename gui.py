@@ -779,6 +779,56 @@ def validate_title_route():
     return jsonify({"ok": True, "passes": title_passes(findings), "findings": findings})
 
 
+@app.route("/api/titles")
+def titles_status():
+    """Phase 3.6-B: the scored title candidates (best first), the chosen one and earlier choices."""
+    from agents import packaging
+    output = Path(config.OUTPUT_DIR)
+    record = load_json(output / packaging.TITLES_FILE) or {}
+    brief = _state.get("research") or load_json(output / "story_brief.json") or {}
+    candidates = record.get("candidates") or brief.get("title_scores") or []
+    script = _state.get("script") or {}
+    return jsonify({"ok": True, "candidates": candidates, "selected": record.get("selected") or script.get("title", ""),
+                    "history": record.get("history", []),
+                    "thumbnail_text": packaging.thumbnail_text_for(output, script, brief)})
+
+
+@app.route("/api/titles/score", methods=["POST"])
+def titles_score():
+    """Score the brief's candidates (plus the current title) with Gemini — for projects made before 3.6."""
+    from agents import packaging
+    from agents.gemini_client import generate
+    output = Path(config.OUTPUT_DIR)
+    brief = _state.get("research") or load_json(output / "story_brief.json") or {}
+    review = brief.get("title_review") or {}
+    candidates = list(review.get("title_candidates") or brief.get("title_candidates") or [])
+    current = (_state.get("script") or {}).get("title", "")
+    if current:
+        candidates.append({"title": current, "rationale": "current title"})
+    if not candidates:
+        return jsonify({"ok": False, "error": "No title candidates in the story brief"}), 400
+
+    def run():
+        scored = packaging.score_titles(brief, candidates, generator=generate)
+        packaging.save_titles(output, scored, current or (scored[0]["title"] if scored else ""))
+        _imagegen_progress(f"Títulos pontuados: {len(scored)}")
+    return _imagegen_run(run)
+
+
+@app.route("/api/titles/select", methods=["POST"])
+def titles_select():
+    """Use one of the scored titles (or an edited one); the previous choice stays in the history."""
+    from agents import packaging
+    title = str((request.get_json(force=True) or {}).get("title", "")).strip()
+    if not title or not _state.get("script"):
+        return jsonify({"ok": False, "error": "No title or no script loaded"}), 400
+    _state["script"]["title"] = title
+    atomic_write_json(f"{config.OUTPUT_DIR}/script.json", _state["script"])
+    packaging.save_titles(config.OUTPUT_DIR, None, title, reason="user")
+    findings = _title_findings(title)
+    return jsonify({"ok": True, "title": title, "title_passes": title_passes(findings), "title_findings": findings})
+
+
 @app.route("/api/save-output", methods=["POST"])
 def save_output():
     body = request.get_json(force=True) or {}
@@ -793,8 +843,11 @@ def save_output():
         atomic_write_json(f"{config.OUTPUT_DIR}/script.json", _state["script"])
         # Packaging edits do not invalidate narration. The thumbnail is the
         # only derived visual that contains the editable title.
+        if "title" in body and not Path(config.OUTPUT_DIR, "thumbnails", "thumbnails.json").is_file():
+            Path(config.OUTPUT_DIR, "thumbnail.jpg").unlink(missing_ok=True)   # variants carry no title
         if "title" in body:
-            Path(config.OUTPUT_DIR, "thumbnail.jpg").unlink(missing_ok=True)
+            from agents import packaging
+            packaging.save_titles(config.OUTPUT_DIR, None, body["title"], reason="edited")
     findings = _title_findings(body["title"]) if "title" in body else []
     return jsonify({"ok": True, "title_passes": title_passes(findings), "title_findings": findings})
 

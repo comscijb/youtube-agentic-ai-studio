@@ -8,6 +8,10 @@ moment. Every stage here is contract-first Gemini JSON, validated by code.
 * ``thumbnail_concepts`` — 3 distinct concepts, each from a different
   composition template (``COMPOSITIONS``), with ≤ 4 words of text that pass the
   thumbnail-text policy and do not repeat the title.
+* ``title_scoring`` — the 5 title candidates scored (low temperature) on
+  curiosity, concreteness, emotion and clarity, plus a deterministic length score
+  (≤ 60 characters, the hook within ~45); the policy validator still decides
+  what may be published (``titles.json`` keeps the list for later swaps).
 """
 from __future__ import annotations
 
@@ -152,5 +156,115 @@ def generate_thumbnail_concepts(output_dir, *, brief: dict, script: dict, vb: di
         generator=generator or generate, context=f"STORY: {compact_json(story)}",
         stage="thumbnail_concepts", temperature_key="packaging", run_dir=str(output_dir))
     record = {"key": key, **value, "style": identity.visual_style()}
+    atomic_write_json(path, record)
+    return record
+
+
+# ── Titles (Phase 3.6-B) ─────────────────────────────────────────────────────
+
+TITLES_FILE = "titles.json"
+TITLE_WEIGHTS = {"curiosity": 0.30, "concreteness": 0.25, "emotion": 0.20, "clarity": 0.15, "length": 0.10}
+TITLE_HOOK_CHARS = 45
+TITLE_TARGET_CHARS = 60
+SCORE_KEYS = ("curiosity", "concreteness", "emotion", "clarity")
+
+
+def length_score(title: str) -> int:
+    """≤ 45 characters: the whole hook survives truncation; ≤ 60 still fits; longer loses the end."""
+    size = len(str(title or ""))
+    return 5 if size <= TITLE_HOOK_CHARS else 4 if size <= TITLE_TARGET_CHARS else 2 if size <= 70 else 1
+
+
+def title_scoring_contract(titles: list[str]) -> str:
+    listing = "\n".join(f"{index}. {title}" for index, title in enumerate(titles))
+    return f"""You score YouTube titles for one Private Gravity episode (cinematic psychological fiction).
+Score each title from 1 (weak) to 5 (strong) on:
+- curiosity: does it open a gap the viewer needs to close, without explaining the thesis or the ending?
+- concreteness: a specific person, an act, a number, an object — not an abstraction
+- emotion: emotional charge a viewer feels at a glance
+- clarity: understood instantly at feed speed (no puzzle, no jargon)
+Titles built on the story's most shareable moment (the reversal) usually beat titles that restate the
+premise. Return ONLY JSON {{"scores": [one object per title, in order: {{"index": 0, "curiosity": 1-5,
+"concreteness": 1-5, "emotion": 1-5, "clarity": 1-5, "note": "one short sentence"}}]}}.
+
+TITLES:
+{listing}"""
+
+
+def validate_title_scores(value: dict, count: int) -> dict:
+    scores = value.get("scores") if isinstance(value, dict) else None
+    if not isinstance(scores, list) or len(scores) != count:
+        raise NarrativeValidationError(f"title scoring requires exactly {count} scores")
+    clean = []
+    for position, item in enumerate(scores):
+        if not isinstance(item, dict):
+            raise NarrativeValidationError(f"score {position} must be an object")
+        row = {"index": int(item.get("index", position)), "note": str(item.get("note", "")).strip()[:200]}
+        for key in SCORE_KEYS:
+            try:
+                number = int(round(float(item.get(key))))
+            except (TypeError, ValueError):
+                raise NarrativeValidationError(f"score {position}: {key} must be a number 1-5") from None
+            if not 1 <= number <= 5:
+                raise NarrativeValidationError(f"score {position}: {key} must be 1-5")
+            row[key] = number
+        clean.append(row)
+    if sorted(row["index"] for row in clean) != list(range(count)):
+        raise NarrativeValidationError("title scores must cover every index once")
+    return {"scores": sorted(clean, key=lambda row: row["index"])}
+
+
+def total_score(scores: dict) -> int:
+    """0-100: the weighted 1-5 scores (length is deterministic)."""
+    return round(sum(TITLE_WEIGHTS[key] * scores[key] for key in TITLE_WEIGHTS) / 5 * 100)
+
+
+def score_titles(brief: dict, candidates: list, *, generator) -> list[dict]:
+    """Every candidate (title-policy findings kept) with Gemini's 1-5 scores, the length score and a
+    0-100 total, best first; candidates that break the policy always rank after the passing ones."""
+    from agents.narrative import title_passes, validate_title
+    rows = []
+    for item in candidates:
+        title = item["title"] if isinstance(item, dict) else str(item)
+        if title and all(row["title"] != title for row in rows):
+            findings = item["findings"] if isinstance(item, dict) and "findings" in item else validate_title(title, brief)
+            rows.append({"title": title, "rationale": item.get("rationale", "") if isinstance(item, dict) else "",
+                         "findings": findings, "passes": title_passes(findings)})
+    if not rows:
+        return []
+    story = {key: brief.get(key, "") for key in ("logline", "potential_turning_point", "central_contradiction",
+                                                 "main_character_concept")}
+    value = generate_json(title_scoring_contract([row["title"] for row in rows]), "title scores",
+                          lambda value: validate_title_scores(value, len(rows)), generator=generator,
+                          context=f"STORY: {compact_json(story)}", stage="title_scoring",
+                          temperature_key="title_scoring")
+    for row, scores in zip(rows, value["scores"]):
+        row["scores"] = {key: scores[key] for key in SCORE_KEYS}
+        row["scores"]["length"] = length_score(row["title"])
+        row["note"] = scores["note"]
+        row["total"] = total_score(row["scores"])
+    return sorted(rows, key=lambda row: (not row["passes"], -row["total"]))
+
+
+def thumbnail_text_for(output_dir, script: dict | None = None, brief: dict | None = None) -> str:
+    """The text on the thumbnail that will be uploaded: the selected variant's, else the brief's."""
+    index = load_json(Path(output_dir) / "thumbnails" / "thumbnails.json") or {}
+    selected = next((item for item in index.get("variants", []) if item.get("number") == index.get("selected")), None)
+    if selected and (selected.get("concept") or {}).get("text"):
+        return selected["concept"]["text"]
+    return str((script or {}).get("thumbnail_text") or (brief or {}).get("thumbnail_text") or "")
+
+
+def save_titles(output_dir, scored: list[dict] | None, selected: str, *, reason: str = "scored") -> dict:
+    """titles.json: the scored list, the chosen title and every earlier choice (for later swaps)."""
+    path = Path(output_dir) / TITLES_FILE
+    record = load_json(path) or {"history": []}
+    record.setdefault("history", [])
+    if scored:
+        record["candidates"] = scored
+    if selected and selected != record.get("selected"):
+        if record.get("selected"):
+            record["history"].append({"title": record["selected"], "replaced_by": selected, "reason": reason})
+        record["selected"] = selected
     atomic_write_json(path, record)
     return record

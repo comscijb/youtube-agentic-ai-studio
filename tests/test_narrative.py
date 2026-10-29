@@ -151,6 +151,7 @@ def editorial_assessment(findings=None, score=8):
 
 
 class NarrativeContractTests(unittest.TestCase):
+    @patch("agents.researcher._score_titles", new=lambda brief: None)   # scoring has its own tests
     def test_automatic_premise_generation_uses_psychological_theme(self):
         payload = story_brief()
         payload["premise_candidates"] = [
