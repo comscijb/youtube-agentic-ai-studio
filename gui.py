@@ -52,6 +52,7 @@ _state = {
         "visual_bible": "pending",
         "shots":     "pending",
         "video":     "pending",
+        "shorts":    "pending",
     },
     "video_path":   None,
     "thumb_path":   None,
@@ -437,6 +438,18 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
             vp = vp_short if os.path.exists(vp_short) else vp_norm
             _state["video_path"] = vp if os.path.exists(vp) else None
 
+        # ── Shorts cut from the episode (Phase 3.7-B) ─────────
+        if "shorts" in steps and video_type == "normal":
+            from video import shorts, shorts_render
+            _stage("shorts", "running")
+            plan = shorts.load(config.OUTPUT_DIR)
+            if not plan or not plan.get("segments"):
+                plan = shorts.build_plan(config.OUTPUT_DIR, script=_state.get("script"), brief=_state.get("research"))
+                _log(f"Shorts: {len(plan['segments'])} cut(s) proposed — review them in Review & Edit")
+            done = shorts_render.render_all(config.OUTPUT_DIR, progress=lambda message: _log(message.strip()))
+            _log(f"Shorts rendered: {len(done)}")
+            _stage("shorts", "done")
+
         # ── Build description ─────────────────────────────────
         if _state["research"] and _state["script"]:
             _state["description"] = _build_description(
@@ -734,6 +747,20 @@ def shorts_save():
     except (NarrativeValidationError, KeyError, TypeError, ValueError) as exc:
         return jsonify({"ok": False, "error": str(exc)}), 400
     return jsonify({"ok": True, "plan": plan})
+
+
+@app.route("/api/shorts/render", methods=["POST"])
+def shorts_render():
+    """Render every included Short of the plan (1080x1920), or one (``id``)."""
+    from video import shorts, shorts_render as renderer
+    if not (shorts.load(config.OUTPUT_DIR) or {}).get("segments"):
+        return jsonify({"ok": False, "error": "No Shorts plan yet"}), 400
+    only = (request.get_json(force=True) or {}).get("id")
+
+    def run():
+        done = renderer.render_all(config.OUTPUT_DIR, progress=_imagegen_progress, only=only)
+        _imagegen_progress(f"Shorts renderizados: {len(done)}")
+    return _imagegen_run(run)
 
 
 @app.route("/api/shorts/audio")
@@ -1259,9 +1286,9 @@ def imagegen_status():
 def imagegen_file():
     output = Path(config.OUTPUT_DIR).resolve()
     target = (output / request.args.get("path", "")).resolve()
-    if output not in target.parents or not target.is_file() or target.suffix.lower() not in {".jpg", ".png"}:
+    if output not in target.parents or not target.is_file() or target.suffix.lower() not in {".jpg", ".png", ".mp4"}:
         abort(404)
-    return send_file(str(target))
+    return send_file(str(target), conditional=True)
 
 
 @app.route("/imagegen/style_file")

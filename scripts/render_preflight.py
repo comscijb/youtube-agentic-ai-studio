@@ -269,6 +269,12 @@ def run(script_path: Path, *, long_image_seconds: float = DEFAULT_LONG_IMAGE_SEC
     checks.append(("narration wpm", PASS, wpm_note))
     checks.append(loudness_check(script_path.parent))
     checks.append(imagegen_check(script_path.parent))
+    from video import shorts, shorts_render
+    plan = shorts.load(script_path.parent)
+    if plan and plan.get("segments"):                  # Phase 3.7: Shorts cut from the episode
+        wanted = [item for item in plan["segments"] if item.get("include", True)]
+        checks.append(("shorts", PASS, f"{len(wanted)} Short(s), {sum(item['seconds'] for item in wanted):.0f} s; "
+                                       f"render ≈ {shorts_render.estimate_seconds(plan) / 60:.1f} min"))
     if live:
         checks.append(live_tts_check())
         if getattr(config, "IMAGEGEN_ENABLED", True):

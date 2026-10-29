@@ -161,9 +161,12 @@ def font_name(path: str) -> str:
 
 
 def write_ass(captions: list[dict], path, size: tuple[int, int], *, font_path: str | None, font_size: int,
-              margin_bottom: int, background=(0, 0, 0, 160), foreground=(255, 255, 255)) -> str:
-    """captions [{start, end, text}] → an ASS file: bottom-centre, opaque box (BorderStyle 3)."""
+              margin_bottom: int, background=(0, 0, 0, 160), foreground=(255, 255, 255),
+              margin_left: int = 100, margin_right: int = 100, box: bool = True) -> str:
+    """captions [{start, end, text}] → an ASS file, bottom-centred between the margins: an opaque box
+    (BorderStyle 3, the episode pill) or, with ``box=False``, a thick black outline (the Shorts look)."""
     width, height = size
+    border, outline = (3, 10) if box else (1, max(4, font_size // 12))
     back_alpha = 255 - int(background[3]) if len(background) > 3 else 0
     name = font_name(font_path) if font_path else "Arial"
     lines = [
@@ -173,8 +176,8 @@ def write_ass(captions: list[dict], path, size: tuple[int, int], *, font_path: s
         "Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, "
         "MarginR, MarginV, Encoding",
         f"Style: Caption,{name},{font_size},{_ass_colour(foreground)},{_ass_colour(foreground)},"
-        f"{_ass_colour(background, back_alpha)},{_ass_colour(background, back_alpha)},-1,0,0,0,100,100,0,0,3,10,0,2,"
-        f"100,100,{margin_bottom},1",
+        f"{_ass_colour(background, back_alpha if box else 0)},{_ass_colour(background, back_alpha)},-1,0,0,0,100,100,0,0,"
+        f"{border},{outline},0,2,{margin_left},{margin_right},{margin_bottom},1",
         "", "[Events]", "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
     ]
     for cue in captions:
