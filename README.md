@@ -690,9 +690,81 @@ python -m scripts.register_publication --video-id <id> --run-dir <dir>   # manua
 ```
 
 Sync uses `videos.list`, which requires the `youtube.readonly` scope in addition to
-`youtube.upload`; a stored token without it triggers a one-time re-consent in the browser.
+`youtube.upload`; captions, language backfill and analytics add `youtube.force-ssl` and
+`yt-analytics.readonly` (Phase 3.6). A stored token without a scope triggers a one-time
+re-consent in the browser.
 Banned-topic lines can be plain premises or `theme: … | angle: … | premise: … | title: … |
 video: … | published: …`; the same theme may return from a clearly different angle.
+
+---
+
+## Packaging, language, analytics and the tape look (Phase 3.6)
+
+Episode 1 got 220 impressions and 0 clicks in its first 12 hours: a grey thumbnail with the text
+over the guests' faces, the protagonist's head cropped, and a title that restated the premise.
+
+- **Thumbnails: 3 variants per episode** (`agents/packaging.py`, `video/thumbnails.py`). Gemini
+  proposes 3 concepts, each from a different composition: big face with a readable emotion, small
+  figure against an overwhelming presence, the telling object, or two-person tension. Each concept
+  has ≤ 4 words of text (thumbnail-text policy; it must not repeat the title). Each concept is
+  generated with the character references, then:
+  - thumbnail-only grade: lifted midtones, local contrast, a darker clean background and one
+    saturated accent (Antique Gold or Dusty Crimson) on the focal element;
+  - very large text: cap height ≥ 18 % of the height, on a clean dark side, never over a face;
+  - checks: WCAG contrast ≥ 4.5, head inside the frame (detector), text clear of faces, advisory
+    QA hints.
+
+  No "PRIVATE GRAVITY" wordmark (`THUMBNAIL_LOGO` adds a tiny corner mark). Review → Thumbnails
+  shows the 3 variants side by side, each with its 168×94 phone-feed preview. "Usar esta" makes
+  it the uploaded `thumbnail.jpg`. "Baixar" saves the others for YouTube Studio's **Test &
+  compare**, which is manual (not in the API).
+- **Titles.** Story Development still writes 5 candidates, at least two built on the story's most
+  shareable moment (the reversal), ≤ 60 characters with the hook in the first ~45. A scoring pass
+  (Gemini, temperature 0.2) rates curiosity, concreteness, emotion and clarity; a length score is
+  added and the total runs 0-100. The best title that passes the policy is chosen. Review lists
+  the scored titles ("Usar" / edit); `titles.json` keeps every choice for later swaps. The approval
+  refuses a thumbnail text that repeats the title.
+- **Description** (`video/description.py`, template in `data/description_template.txt`, editable
+  in Settings):
+  - hook (no spoilers);
+  - chapters from `scene_timeline.json`: first at 0:00, ≥ 3, each ≥ 10 s, spoiler-free titles;
+  - a CTA block (subscribe, like, share with someone who'd recognise themselves, an
+    episode-specific comment question);
+  - channel line, fiction note, credits, 2–3 hashtags at the end.
+
+  It is validated (≤ 5000 characters, CTA, chapters). The pinned-comment suggestion appears under
+  the description to copy (the API cannot pin).
+- **English signals and captions.** Uploads set `defaultLanguage`/`defaultAudioLanguage` = `en`
+  and send `narration.srt` as the "English" caption track (`captions.insert`). This needs the
+  `youtube.force-ssl` scope, and analytics needs `yt-analytics.readonly`: a stored token without
+  them triggers one re-consent. The OAuth app is in *Testing*, so sign in with the channel's
+  account (a listed test user).
+- **Desempenho tab** (`uploader/analytics.py`):
+  - from the YouTube Analytics API: views, average view duration and percentage, subscribers,
+    top-10 countries with the US share, traffic sources, daily series;
+  - impressions and impressions CTR come from the **Reporting API** daily report
+    `channel_reach_basic_a1` (the Analytics API has no thumbnail impressions). The first report
+    arrives 1–2 days after the job is created.
+
+  Cached in `data/analytics/` and refreshed on demand or by the publication sync (every 6 h at
+  most). Studio data lags 24–48 h. Flags: CTR < 2 % after ≥ 1 000 impressions, average viewed
+  < 30 %.
+- **Tape (VHS) look** (`VIDEO_TAPE_EFFECT = off | subtle | medium`, default `subtle`), applied by
+  ffmpeg in the final encode:
+  - grain, 1–2 px chromatic aberration, faint scanlines, vignette, slight luminance wobble and
+    gate weave;
+  - a 0.3 s tracking glitch only on scene cuts.
+
+  The captions are burnt in after it (ASS, same pill style), so they stay crisp. A
+  photosensitivity guard keeps the frame-to-frame luminance change ≤ 10 % and glitches ≥ 1 s
+  apart. It costs about +13 s of encode per minute of video. Thumbnails never get it.
+
+```powershell
+python -m scripts.youtube_backfill --video-id w-XazyuEUv8 --captions --language --description   # re-consent first time; --dry-run to preview
+python -m scripts.thumbnails --project 2026-10-21-the-man-who-needed-everyone-to-envy-him --restore   # 3 variants (archived: restores only what it needs)
+python -m scripts.preview_tape_effect --seconds 20 --intensity subtle   # before | after, and the encode overhead
+python gui.py   # Review: thumbnails, scored titles, description; 📈 Desempenho
+```
 
 ---
 
