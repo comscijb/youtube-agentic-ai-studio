@@ -165,6 +165,8 @@ class StageAndGuiTests(unittest.TestCase):
         self.assertEqual(bad.status_code, 400)
         self.assertFalse(good["plan"]["segments"][0]["include"])
         self.assertIn("Shorts do episódio", page)
+        self.assertIn("Short original (história própria)", page)        # the standalone mode, renamed (B.4)
+        self.assertNotIn(">YouTube Shorts<", page)
 
 
 if __name__ == "__main__":

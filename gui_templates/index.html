@@ -499,8 +499,8 @@ input[type=range]{width:100%;accent-color:var(--primary)}
               <button id="fmt-shorts" class="fmt-btn" onclick="setFormat('shorts')">
                 <span style="font-size:16px">📱</span>
                 <span>
-                  <div style="font-weight:700;font-size:12px">YouTube Shorts</div>
-                  <div style="font-size:10px;color:var(--muted)">9:16 · ~60 sec · 1080×1920</div>
+                  <div style="font-weight:700;font-size:12px">Short original (história própria)</div>
+                  <div style="font-size:10px;color:var(--muted)">9:16 · ~60 s · 1080×1920 · os Shorts do episódio saem do vídeo normal</div>
                 </span>
               </button>
             </div>
@@ -1209,7 +1209,7 @@ function setFormat(type) {
   document.getElementById('fmt-shorts').classList.toggle('fmt-active', type === 'shorts');
   // Update generate button label
   document.getElementById('gen-btn').textContent =
-    type === 'shorts' ? '📱 Generate YouTube Short' : '🚀 Generate Full Video';
+    type === 'shorts' ? '📱 Gerar Short original' : '🚀 Generate Full Video';
   // Update manual mode placeholder for Shorts vs Normal
   const manualInput = document.getElementById('topic-input');
   if (manualInput) {
