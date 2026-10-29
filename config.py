@@ -324,12 +324,17 @@ REVIEW_PORT = 5050
 # ─────────────────────────────────────────
 YOUTUBE_CLIENT_SECRET = "client_secret.json"   # OAuth credentials file (see SETUP.md)
 # youtube.upload covers videos.insert and thumbnails.set; videos.list (used to
-# detect when an upload becomes public) requires youtube.readonly. A stored
-# token missing a scope triggers a one-time re-consent.
+# detect when an upload becomes public) requires youtube.readonly; captions.insert
+# and videos.update (language, description backfill) require youtube.force-ssl
+# (Phase 3.6-D). A stored token missing a scope triggers a one-time re-consent.
+# The OAuth app is in Testing: the channel's Google account must be a test user.
 YOUTUBE_SCOPES        = [
     "https://www.googleapis.com/auth/youtube.upload",
     "https://www.googleapis.com/auth/youtube.readonly",
+    "https://www.googleapis.com/auth/youtube.force-ssl",
 ]
+VIDEO_LANGUAGE        = "en"   # snippet.defaultLanguage / defaultAudioLanguage and the caption track
+CAPTION_TRACK_NAME    = "English"
 VIDEO_CATEGORY_ID     = "24"  # Entertainment
 VIDEO_PRIVACY         = "public"   # "public" | "unlisted" | "private"
 

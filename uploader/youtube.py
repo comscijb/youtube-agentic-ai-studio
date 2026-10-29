@@ -6,6 +6,7 @@ and the publication-ledger record written right after a successful upload.
 """
 import os
 import pickle
+from pathlib import Path
 
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
@@ -68,8 +69,10 @@ def load_credentials(interactive: bool = True):
     if creds is None or not creds.valid:
         if not interactive:
             raise YouTubeAuthError(
-                "YouTube authorization is missing, expired or lacks a required scope. "
-                "Run: python -m scripts.sync_publications"
+                "YouTube authorization is missing, expired or lacks a required scope "
+                "(captions and analytics need new ones since Phase 3.6). Run once: "
+                "python -m scripts.sync_publications — the browser asks for consent again; the OAuth app "
+                "is in Testing, so sign in with the channel's account (a listed test user)."
             )
         if not os.path.exists(config.YOUTUBE_CLIENT_SECRET):
             raise FileNotFoundError(
@@ -136,6 +139,9 @@ def upload_video(video_path: str, *, title: str, description: str, tags=None,
             "description": description,
             "tags":        list(tags or []),
             "categoryId":  config.VIDEO_CATEGORY_ID,
+            # English language signals (Phase 3.6-D): metadata and spoken audio.
+            "defaultLanguage":      getattr(config, "VIDEO_LANGUAGE", "en"),
+            "defaultAudioLanguage": getattr(config, "VIDEO_LANGUAGE", "en"),
         },
         "status": {
             # If scheduling: upload as private, YouTube publishes at publishAt
@@ -185,6 +191,57 @@ def upload_video(video_path: str, *, title: str, description: str, tags=None,
     return video_id
 
 
+def upload_captions(video_id: str, srt_path, *, service=None, language: str | None = None,
+                    name: str | None = None, replace: bool = False) -> dict:
+    """Upload ``srt_path`` as the video's caption track (captions.insert, youtube.force-ssl scope).
+
+    An existing track with the same language and name (not YouTube's automatic one) is kept,
+    or replaced with ``replace=True``. Returns {"action": "inserted"|"updated"|"kept", "id"}."""
+    youtube = service or get_service()
+    language = language or getattr(config, "VIDEO_LANGUAGE", "en")
+    name = name or getattr(config, "CAPTION_TRACK_NAME", "English")
+    if not Path(srt_path).is_file():
+        raise FileNotFoundError(f"no caption file at {srt_path}")
+    existing = youtube.captions().list(part="snippet", videoId=video_id).execute().get("items", [])
+    same = next((item for item in existing if item["snippet"].get("language") == language
+                 and item["snippet"].get("name", "") == name
+                 and item["snippet"].get("trackKind") != "asr"), None)
+    if same and not replace:
+        return {"action": "kept", "id": same["id"]}
+    with open(srt_path, "rb") as handle:
+        media = MediaIoBaseUpload(handle, mimetype="application/octet-stream", resumable=False)
+        if same:
+            response = youtube.captions().update(part="snippet", body={"id": same["id"], "snippet": {
+                "isDraft": False}}, media_body=media).execute()
+            return {"action": "updated", "id": response.get("id", same["id"])}
+        response = youtube.captions().insert(part="snippet", body={"snippet": {
+            "videoId": video_id, "language": language, "name": name, "isDraft": False}},
+            media_body=media).execute()
+    return {"action": "inserted", "id": response.get("id")}
+
+
+def update_snippet(video_id: str, *, service=None, description: str | None = None,
+                   language: bool = False) -> dict:
+    """videos.update of the snippet: the description and/or the English language fields. The
+    current title, category and tags are read first and sent back unchanged (the API requires them)."""
+    youtube = service or get_service()
+    items = youtube.videos().list(part="snippet", id=video_id).execute().get("items", [])
+    if not items:
+        raise ValueError(f"video {video_id} not found on this channel")
+    current = items[0]["snippet"]
+    snippet = {"title": current["title"], "categoryId": current.get("categoryId", config.VIDEO_CATEGORY_ID),
+               "description": current.get("description", ""), "tags": current.get("tags", [])}
+    for key in ("defaultLanguage", "defaultAudioLanguage"):
+        if current.get(key):
+            snippet[key] = current[key]
+    if description is not None:
+        snippet["description"] = description
+    if language:
+        snippet["defaultLanguage"] = snippet["defaultAudioLanguage"] = getattr(config, "VIDEO_LANGUAGE", "en")
+    youtube.videos().update(part="snippet", body={"id": video_id, "snippet": snippet}).execute()
+    return snippet
+
+
 def upload_run(run_dir: str, *, video_path: str, title: str, description: str, tags=None,
                privacy: str | None = None, publish_at: str = "",
                thumbnail_path: str | None = None, progress=None, service=None) -> dict:
@@ -208,6 +265,15 @@ def upload_run(run_dir: str, *, video_path: str, title: str, description: str, t
         service=service,
         contains_synthetic_media=approval.get("synthetic_disclosure", realistic_synthetic_media(run_dir)),
     )
+    captions = {"action": "skipped", "reason": "no narration.srt"}
+    srt = Path(run_dir) / "narration.srt"
+    if srt.is_file():                                   # English captions (Phase 3.6-D); never fails the upload
+        try:
+            captions = upload_captions(video_id, srt, service=service)
+        except Exception as exc:                       # noqa: BLE001
+            captions = {"action": "failed", "error": f"{exc.__class__.__name__}: {str(exc)[:200]}"}
+            print(f"   WARNING: caption upload failed ({exc.__class__.__name__}); video kept. Retry with "
+                  f"python -m scripts.youtube_backfill --video-id {video_id} --captions")
     return publications.record_upload(
         video_id, run_dir, title=title, video_path=video_path,
         scheduled_publish_at=publish_at or None,
@@ -216,7 +282,7 @@ def upload_run(run_dir: str, *, video_path: str, title: str, description: str, t
             "narrative_status": approval.get("narrative_status"),
             "status_override_reason": approval.get("status_override_reason", ""),
             "title_override_reason": approval.get("title_override_reason", ""),
-        }},
+        }, "captions": captions, "language": getattr(config, "VIDEO_LANGUAGE", "en")},
     )
 
 
