@@ -530,6 +530,13 @@ input[type=range]{width:100%;accent-color:var(--primary)}
               <div class="no-thumb">No thumbnail yet</div>
             </div>
             <div class="help-text" style="margin-top:6px">Thumbnail is auto-generated from your title + stock image. Edit the title on the right and click ↻ Regenerate to update it.</div>
+            <div class="flex-row" style="margin:10px 0 6px">
+              <div class="field-label" style="margin:0">Thumbnails — 3 variantes</div>
+              <button class="btn btn-ghost" style="padding:5px 12px;font-size:11px" onclick="igPost('/api/thumbnails/generate', {})">Gerar variantes</button>
+              <button class="btn btn-ghost" style="padding:5px 12px;font-size:11px" onclick="igPost('/api/thumbnails/generate', {new_concepts: true})">Novos conceitos</button>
+            </div>
+            <div id="thumb-variants" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:11px;color:var(--muted)"></div>
+            <div class="help-text" style="margin-top:4px">A escolhida vai no upload pela API. As outras: baixe e envie à mão em YouTube Studio → Test &amp; compare.</div>
           </div>
 
           <div id="imagegen-panel">
@@ -2069,8 +2076,61 @@ function loadImagegen() {
   });
 }
 
+function loadThumbVariants() {
+  // Phase 3.6-A: the 3 variants side by side, each with its phone-feed preview (168×94) and checks.
+  fetch('/api/thumbnails').then(r => r.json()).then(d => {
+    const box = document.getElementById('thumb-variants');
+    if (!box) return;
+    box.innerHTML = '';
+    (d.variants || []).forEach(v => {
+      const cell = document.createElement('div');
+      cell.style.cssText = 'border-radius:6px;padding:4px;outline:' + (v.number === d.selected ? '2px solid var(--green)' : 'none');
+      const img = document.createElement('img');
+      img.src = '/imagegen/file?path=' + encodeURIComponent(v.path) + '&t=' + Date.now();
+      img.style.cssText = 'width:100%;border-radius:4px;display:block';
+      cell.appendChild(img);
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:6px;align-items:center;margin-top:4px';
+      const mobile = document.createElement('img');
+      mobile.src = '/imagegen/file?path=' + encodeURIComponent(v.preview) + '&t=' + Date.now();
+      mobile.title = 'Como aparece no feed do celular (168×94)';
+      mobile.style.cssText = 'width:168px;height:94px;border-radius:3px;flex:none';
+      row.appendChild(mobile);
+      const info = document.createElement('div');
+      const c = v.checks || {};
+      const bad = ['contrast_ok', 'cap_height_ok', 'text_clear_of_faces', 'head_in_frame'].filter(k => c[k] === false);
+      const hints = ((v.qa || {}).issues || []).filter(i => i.hint).map(i => i.type);
+      info.textContent = `${v.concept.composition} · “${v.concept.text}” · contraste ${c.contrast}:1` +
+        (bad.length ? ` · ⚠ ${bad.join(', ')}` : ' · checagens OK') + (hints.length ? ` · QA: ${hints.join(', ')}` : '');
+      info.title = v.concept.curiosity || '';
+      row.appendChild(info);
+      cell.appendChild(row);
+      const actions = document.createElement('div');
+      actions.style.cssText = 'display:flex;gap:4px;margin-top:4px';
+      const pick = document.createElement('button');
+      pick.className = 'btn btn-ghost';
+      pick.style.cssText = 'font-size:11px;padding:3px 8px';
+      pick.textContent = v.number === d.selected ? '✓ vai no upload' : 'Usar esta';
+      pick.onclick = () => fetch('/api/thumbnails/select', {method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({number: v.number})}).then(r => r.json()).then(x => { if (!x.ok) alert(x.error); loadReviewData(); });
+      actions.appendChild(pick);
+      const download = document.createElement('a');
+      download.className = 'btn btn-ghost';
+      download.style.cssText = 'font-size:11px;padding:3px 8px';
+      download.href = '/imagegen/file?path=' + encodeURIComponent(v.path);
+      download.download = `thumbnail_variant_${v.number}.jpg`;
+      download.textContent = 'Baixar';
+      actions.appendChild(download);
+      cell.appendChild(actions);
+      box.appendChild(cell);
+    });
+    if (!(d.variants || []).length) box.textContent = 'Nenhuma variante ainda — clique em “Gerar variantes” (precisa do ComfyUI).';
+  });
+}
+
 function loadReviewData() {
   loadImagegen();
+  loadThumbVariants();
   // Video
   fetch('/api/status').then(r=>r.json()).then(d => {
     const vw = document.getElementById('video-wrap');

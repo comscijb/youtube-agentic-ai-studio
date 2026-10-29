@@ -1,4 +1,7 @@
-"""Episode thumbnail (1280x720): the validated thumbnail_text over the strongest human shot.
+"""Fallback episode thumbnail (1280x720): the validated thumbnail_text over the strongest human shot.
+
+Phase 3.6 thumbnails come from ``video.thumbnails`` (3 graded variants); this
+single layout is used when no variant exists (no ComfyUI, stock episodes).
 
 The title is never repeated on the thumbnail: the thumbnail carries the short
 inner-voice line chosen and validated in Phase 2.2 (<= 5 words, e.g. "Are they
@@ -144,8 +147,9 @@ def make_thumbnail(script: dict, image_map: dict, output_dir: str,
             _shadow(draw, (x, top + index * line_height), word, font, fill, radius=6)
             x += draw.textbbox((0, 0), word + " ", font=font)[2]
     draw.rectangle([70, top - 28, 230, top - 20], fill=colors["accent"])
-    _shadow(draw, (70, TH - 70), config.CHANNEL_NAME.upper(), _font("bold", 30),
-            colors["light"], radius=3)
+    if getattr(config, "THUMBNAIL_LOGO", False):       # Phase 3.6: no wordmark, an optional tiny mark
+        from video.thumbnails import logo_mark
+        image = logo_mark(image)
 
     out = os.path.join(output_dir, "thumbnail.jpg")
     image.save(out, "JPEG", quality=95)

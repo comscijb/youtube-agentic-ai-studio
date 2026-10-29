@@ -58,7 +58,7 @@ class ThumbnailTests(unittest.TestCase):
         self.assertEqual(size, (1280, 720))
         self.assertEqual(words[:3], ["ARE", "THEY", "WATCHING?"])
         self.assertNotIn("ENVY", words)
-        self.assertIn(config.CHANNEL_NAME.upper(), words)
+        self.assertNotIn(config.CHANNEL_NAME.upper(), words)          # no wordmark since Phase 3.6
 
     def test_no_arbitrary_highlight_only_the_key_word(self):
         drawn, _, _, _ = self.render(SCRIPT)

@@ -62,6 +62,16 @@ def main(argv=None) -> int:
         if not args.no_thumbnail and not args.only and not args.limit and not args.fix_only:
             print("   → Thumbnail image…")
             gen.generate_thumbnail_image(output, generator)
+            print("   → Thumbnail variants (3 concepts)…")
+            try:
+                from video import thumbnails
+                from video.qa.layered import LayeredQA
+                index = thumbnails.generate_variants(output, generator,
+                                                     qa=LayeredQA(comfy=generator.client, mode="advisory"))
+                print(f"     variant {index['selected']} is thumbnail.jpg; pick another in the GUI "
+                      "(Review → Thumbnails) or with python -m scripts.thumbnails --select N")
+            except Exception as exc:                      # noqa: BLE001 — the single fallback thumbnail stays
+                print(f"     ⚠ thumbnail variants skipped: {exc}")
     except gen.ApprovalRequired as exc:
         print(exc, file=sys.stderr)
         return 3

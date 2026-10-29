@@ -181,6 +181,8 @@ GEMINI_STAGE_TEMPERATURES = {
     "expansion": 0.7,
     "editorial_review": 0.2,
     "repair": 0.2,
+    "packaging": 0.8,          # thumbnail concepts, description parts (Phase 3.6)
+    "title_scoring": 0.2,      # title candidates scored on curiosity, concreteness, emotion, clarity
 }
 
 # ─────────────────────────────────────────
@@ -290,6 +292,9 @@ COLORS = {
     "success":    (121, 171, 152),    # Muted Sage
     "red":        (197, 102, 112),    # Dusty Crimson
 }
+
+# Thumbnails (Phase 3.6): no channel wordmark; an optional tiny corner mark instead.
+THUMBNAIL_LOGO = os.getenv("THUMBNAIL_LOGO", "false").lower() in ("1", "true", "yes", "on")
 
 # Fonts — add your own .ttf paths for best results; system falls back gracefully
 FONT_PATHS = {

@@ -273,8 +273,12 @@ def archive_project(project, *, target_root=None, force: bool = False, reason: s
     return manifest
 
 
-def restore_project(slug: str, *, archive_path=None, log=print) -> Path:
-    """Copy an archived project back to projects/<slug> (the archive stays intact)."""
+def restore_project(slug: str, *, archive_path=None, log=print, only=None) -> Path:
+    """Copy an archived project back to projects/<slug> (the archive stays intact).
+
+    ``only`` (project-relative names or folder prefixes, e.g. ``["visual_bible.json",
+    "character_refs"]``) restores just those files — enough to regenerate thumbnails or
+    rebuild a description without copying the whole video back."""
     stub_path = projects.root() / slug
     info = projects.load(stub_path) if stub_path.exists() else {}
     target = Path(archive_path or info.get("archive_path") or root() / slug)
@@ -287,13 +291,22 @@ def restore_project(slug: str, *, archive_path=None, log=print) -> Path:
         if item["action"] != "move":
             continue
         source = target / item["archive"]
-        destination = project / Path(item["original"]).relative_to(Path(manifest["source"]))
+        relative = Path(item["original"]).relative_to(Path(manifest["source"]))
+        if only is not None and not any(relative.parts[:len(Path(name).parts)] == Path(name).parts for name in only):
+            continue
+        destination = project / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(_long(source), _long(destination))
         if sha256(destination) != item["sha256"]:
             raise ArchiveError(f"restored {destination} does not match the archive")
         restored += 1
     data = projects.load(project)
+    if only is not None:                       # partial: the project stays archived
+        data.update(partially_restored=sorted(set(data.get("partially_restored", [])) | set(only)),
+                    restored_at=_now(), archive_path=str(target))
+        atomic_write_json(project / projects.PROJECT_FILE, data)
+        log(f"Restored {restored} file(s) of {slug} ({', '.join(only)}) from {target}")
+        return project
     data.update(status="restored", restored_at=_now(), archive_path=str(target))
     atomic_write_json(project / projects.PROJECT_FILE, data)
     (project / POINTER).unlink(missing_ok=True)

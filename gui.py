@@ -101,7 +101,15 @@ def _stage(name, status):
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _make_thumbnail(script, image_map, output_dir):
+    """The selected Phase 3.6 variant when there is one, else the single fallback layout."""
+    from video import thumbnails
     from video.thumbnail import make_thumbnail
+    index = load_json(Path(output_dir, thumbnails.FOLDER, thumbnails.INDEX)) or {}
+    if index.get("variants") and index.get("selected"):
+        try:
+            return thumbnails.select(output_dir, index["selected"])
+        except FileNotFoundError:
+            pass
     brief = _state.get("research") or load_json(Path(output_dir, "story_brief.json")) or {}
     return make_thumbnail(script, image_map, output_dir, brief)
 
@@ -857,6 +865,51 @@ Return ONLY the description text, no explanation."""
 
 
 # ── Thumbnail regeneration ────────────────────────────────────────────────────
+
+@app.route("/api/thumbnails")
+def thumbnails_status():
+    """The 3 thumbnail variants (Phase 3.6-A): paths, 168×94 previews, checks, QA hints, the selected one."""
+    from agents import packaging
+    from video import thumbnails
+    output = Path(config.OUTPUT_DIR)
+    index = load_json(output / thumbnails.FOLDER / thumbnails.INDEX) or {"variants": [], "selected": None}
+    concepts = load_json(output / packaging.CONCEPTS_FILE) or {}
+    return jsonify({"ok": True, **index, "concepts": concepts.get("concepts", []),
+                    "busy": _state.get("imagegen_busy", False)})
+
+
+@app.route("/api/thumbnails/generate", methods=["POST"])
+def thumbnails_generate():
+    from video import thumbnails
+    from video.imagegen_comfyui import ImageGenerator
+    from video.qa.layered import LayeredQA
+    new = bool((request.get_json(force=True) or {}).get("new_concepts"))
+
+    def run():
+        from agents import packaging
+        from agents import visual_bible as vbible
+        output = Path(config.OUTPUT_DIR)
+        brief = load_json(output / "story_brief.json") or load_json(output / "research.json") or {}
+        concepts = packaging.generate_thumbnail_concepts(
+            output, brief=brief, script=_state.get("script") or load_json(output / "script.json") or {},
+            vb=load_json(output / vbible.FILE_NAME) or {}, force=new)
+        generator = ImageGenerator(output)
+        thumbnails.generate_variants(output, generator, concepts=concepts, progress=_imagegen_progress,
+                                     qa=LayeredQA(comfy=generator.client, mode="advisory", progress=_imagegen_progress))
+        _state["thumb_path"] = str(output / "thumbnail.jpg")
+    return _imagegen_run(run)
+
+
+@app.route("/api/thumbnails/select", methods=["POST"])
+def thumbnails_select():
+    from video import thumbnails
+    try:
+        path = thumbnails.select(config.OUTPUT_DIR, int((request.get_json(force=True) or {}).get("number", 0)))
+    except (FileNotFoundError, TypeError, ValueError) as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    _state["thumb_path"] = path
+    return jsonify({"ok": True, "ts": int(time.time())})
+
 
 @app.route("/api/regenerate-thumbnail", methods=["POST"])
 def regen_thumbnail():
