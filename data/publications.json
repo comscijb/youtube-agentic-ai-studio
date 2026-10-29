@@ -1,4 +1,34 @@
 {
   "schema_version": 1,
-  "publications": []
+  "publications": [
+    {
+      "video_id": "w-XazyuEUv8",
+      "url": "https://www.youtube.com/watch?v=w-XazyuEUv8",
+      "run_dir": "projects\\2026-10-21-the-man-who-needed-everyone-to-envy-him",
+      "project": "2026-10-21-the-man-who-needed-everyone-to-envy-him",
+      "uploaded_at": "2026-10-28T23:09:07+00:00",
+      "scheduled_publish_at": null,
+      "title": "The Man Who Needed Everyone to Envy Him",
+      "thumbnail_text": "Are they watching?",
+      "premise": "The Man Who Needed Everyone to Envy Him",
+      "logline": "A rising architectural curator curates his relationship into an enviable public spectacle, only to realize that holding others in awe has made him utterly untouchable to the woman he loves.",
+      "psychological_theme": "Intimacy and vulnerability",
+      "psychological_angle": "Craving the envy of onlookers functions as a defense mechanism against the terrifying exposure required for genuine love.",
+      "narrative_type": "realistic_psychological_fiction",
+      "central_contradiction": "He believes securing the envy of others will make him feel worthy of love, but the act of seeking envy keeps everyone, including his partner, at an emotional distance.",
+      "source_hashes": {
+        "script": "0b18c600bce19be26424c28b42919753cd734d5d9c113d4b60d154b58f82b84e",
+        "video": "39272cd247c53d36cd6da2d5796d5352009c8ffe8229c59046e1702fcb9c35a3"
+      },
+      "state": "published",
+      "state_checked_at": "2026-10-28T23:36:46+00:00",
+      "published_at": "2026-10-28T23:36:46+00:00",
+      "review": {
+        "approved_at": "2026-10-28T23:07:42+00:00",
+        "narrative_status": "ready_for_human_review",
+        "status_override_reason": "",
+        "title_override_reason": ""
+      }
+    }
+  ]
 }
