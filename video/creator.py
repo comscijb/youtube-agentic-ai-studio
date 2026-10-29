@@ -7,13 +7,14 @@ Shorts  : Fast-paced 1080×1920, image slideshow (cuts every 2-3 s),
 
 Runs fully offline: MoviePy 1.0.3 + Pillow + NumPy.
 """
-import json, os, re, math
+import json, os, re, math, time
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from moviepy.editor import VideoClip, AudioFileClip, ColorClip, concatenate_videoclips
 
 import config
 from agents.narrative import assert_no_mojibake
+from video import tape
 from video.timeline import load_timeline, proportional_scene_durations, write_timeline
 
 # ── globals (overwritten per call) ────────────────────────────
@@ -918,6 +919,7 @@ def create_video(script: dict, audio_path: str, output_dir: str,
     BROLL_XFADE_DUR = float(getattr(config, "BROLL_XFADE_DUR",  1.2))
 
     is_shorts = video_type == "shorts" or script.get("video_type") == "shorts"
+    tape_level = "off"                     # the tape effect is for normal episodes only
     if is_shorts:
         W, H, FPS = config.SHORTS_WIDTH, config.SHORTS_HEIGHT, config.SHORTS_FPS
     else:
@@ -998,6 +1000,10 @@ def create_video(script: dict, audio_path: str, output_dir: str,
         else:
             print("   → No SRT captions — subtitles will be disabled for this render.")
 
+        # Tape effect (Phase 3.6-F): ffmpeg applies it in the final encode, then burns the
+        # captions on top (ASS, same pill look) so they stay crisp; frames are drawn without them.
+        tape_level = tape.intensity()
+        frame_captions = captions if tape_level == "off" else []
         schedule = load_shot_schedule(output_dir, sections, durations)
         if schedule:
             print(f"\n   Building {total_sections} section clips from shot_list.json "
@@ -1028,7 +1034,7 @@ def create_video(script: dict, audio_path: str, output_dir: str,
 
             section_shots = _prepare_shots(schedule.get(section["id"], [])) if schedule else None
             clip = _make_clip(section, duration, bg_images, i + 1, total_sections,
-                              captions=captions, section_start_t=section_start_t,
+                              captions=frame_captions, section_start_t=section_start_t,
                               cinematic=cinematic, shots=section_shots)
             clips.append(clip)
             section_start_t += duration   # advance global timestamp
@@ -1051,22 +1057,36 @@ def create_video(script: dict, audio_path: str, output_dir: str,
         final = final.set_audio(audio)
 
         output_path = os.path.join(output_dir, "final_video.mp4")
+        if tape_level != "off":
+            cuts = [sum(durations[:index]) for index in range(1, len(durations))]
+            extra_params, tape_report = tape.ffmpeg_params(
+                tape_level, size=(W, H), fps=FPS, cuts=cuts, duration=audio.duration, captions=captions or None,
+                output_dir=output_dir, font_path=next((path for path in config.FONT_PATHS["bold"]
+                                                       if os.path.exists(path)), None),
+                font_size=NORMAL_CAP_FONT_SIZE, margin_bottom=NORMAL_CAP_MARGIN_B)
+            print(f"   → Tape effect '{tape_level}': {tape_report['glitches']} tracking glitch(es) on scene cuts, "
+                  f"max luminance step {tape_report['max_luma_step']:.1%} (≤ 10 %), captions burnt after it")
 
     # ── EXPORT ─────────────────────────────────────────────────
     total_secs = int(final.duration)
     print(f"\n   → Rendering {total_secs // 60}m {total_secs % 60}s video…")
     print(f"      (~{max(1, total_secs // 10)} min — go get a coffee ☕)\n")
 
+    settings = encode_settings()
+    if not is_shorts and tape_level != "off":
+        settings["ffmpeg_params"] = settings["ffmpeg_params"] + extra_params
+    started = time.monotonic()
     final.write_videofile(
         output_path,
         fps=FPS,
         codec="libx264",
         audio_codec="aac",
         threads=4,
-        **encode_settings(),
+        **settings,
         verbose=False,
         logger=None,
     )
+    print(f"   → Encode took {time.monotonic() - started:.0f}s")
 
     print(f"\n   ✅ Video rendered: {render_summary(output_path, final.duration)}")
     try:

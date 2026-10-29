@@ -279,6 +279,10 @@ RENDER_CRF = 20
 OVERLAY_OPACITY = 0.62
 CINEMATIC_OVERLAY_OPACITY = 0.38
 NORMAL_SUBTITLES_ENABLED = True
+# Tape (VHS) playback effect, applied by ffmpeg before the captions (Phase 3.6-F): "off" | "subtle" | "medium".
+# Preview it first: python -m scripts.preview_tape_effect --seconds 20 --intensity subtle
+VIDEO_TAPE_EFFECT        = os.getenv("VIDEO_TAPE_EFFECT", "subtle")
+VIDEO_TAPE_GLITCH_TITLE  = False          # also a tracking glitch on the title card (first second)
 
 # Colour palette — customise to match your brand
 COLORS = {
