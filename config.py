@@ -332,7 +332,10 @@ YOUTUBE_SCOPES        = [
     "https://www.googleapis.com/auth/youtube.upload",
     "https://www.googleapis.com/auth/youtube.readonly",
     "https://www.googleapis.com/auth/youtube.force-ssl",
+    # YouTube Analytics API (views, retention, countries, traffic) and Reporting API (impressions, CTR).
+    "https://www.googleapis.com/auth/yt-analytics.readonly",
 ]
+ANALYTICS_REFRESH_HOURS = float(os.getenv("ANALYTICS_REFRESH_HOURS", "6"))   # cache age before a new fetch
 VIDEO_LANGUAGE        = "en"   # snippet.defaultLanguage / defaultAudioLanguage and the caption track
 CAPTION_TRACK_NAME    = "English"
 VIDEO_CATEGORY_ID     = "24"  # Entertainment

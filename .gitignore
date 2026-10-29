@@ -60,3 +60,6 @@ debug/
 
 # Local QA detector models (Phase 3.5, downloaded from opencv_zoo)
 models/
+
+# YouTube Analytics cache (Phase 3.6-E)
+data/analytics/

@@ -323,6 +323,7 @@ input[type=range]{width:100%;accent-color:var(--primary)}
       <div class="tab active" onclick="switchTab('generate')">🚀 Generate</div>
       <div class="tab" onclick="switchTab('review')">🎬 Review & Edit</div>
       <div class="tab" onclick="switchTab('settings')">⚙️ Settings</div>
+      <div class="tab" onclick="switchTab('performance')">📈 Desempenho</div>
     </div>
 
     <!-- ════ PROJECT TAB ════ -->
@@ -339,6 +340,22 @@ input[type=range]{width:100%;accent-color:var(--primary)}
         <div class="help-text">Run uses what is already there (cached artifacts and checkpoints); Re-run
           builds the stage again; Skip marks it as not needed for this project. References and style
           anchors are approved in Review &amp; Edit, inside this project.</div>
+      </div>
+    </div>
+
+    <!-- ════ PERFORMANCE TAB (Phase 3.6-E) ════ -->
+    <div class="tab-content" id="tab-performance">
+      <div class="project-stages">
+        <div class="flex-row" style="justify-content:space-between">
+          <div class="home-title" style="font-size:18px">Desempenho</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span id="perf-message" style="font-size:11px;color:var(--muted)"></span>
+            <button class="btn btn-ghost" onclick="refreshPerformance()">⟳ Atualizar</button>
+          </div>
+        </div>
+        <div id="perf-overview" style="font-size:13px"></div>
+        <div id="perf-videos" style="display:flex;flex-direction:column;gap:10px"></div>
+        <div class="help-text" id="perf-note"></div>
       </div>
     </div>
 
@@ -958,13 +975,112 @@ input[type=range]{width:100%;accent-color:var(--primary)}
 // ══════════════════════════════════════════════════════════
 //  TAB SWITCHING
 // ══════════════════════════════════════════════════════════
+function perfPct(value, digits = 1) {
+  return value === null || value === undefined ? '—' : (value * 100).toFixed(digits) + ' %';
+}
+
+function perfBar(rows, key, label) {
+  // A tiny daily bar series (views or impressions) as text-free divs; the numbers are in the tooltip.
+  const box = document.createElement('div');
+  box.style.cssText = 'display:flex;align-items:flex-end;gap:2px;height:48px;margin-top:4px';
+  const max = Math.max(1, ...rows.map(r => Number(r[key]) || 0));
+  rows.forEach(r => {
+    const bar = document.createElement('div');
+    bar.style.cssText = `width:8px;background:var(--accent, #4af);height:${Math.max(1, (Number(r[key]) || 0) / max * 48)}px`;
+    bar.title = `${r.day}: ${r[key]} ${label}`;
+    box.appendChild(bar);
+  });
+  return box;
+}
+
+function loadPerformance() {
+  fetch('/api/analytics').then(r => r.json()).then(d => {
+    document.getElementById('perf-message').textContent = d.busy ? 'Atualizando…' : (d.message || '');
+    document.getElementById('perf-note').textContent = d.note || '';
+    document.getElementById('perf-overview').textContent = `Canal: ${d.videos.length} vídeo(s) publicado(s) · ` +
+      `${Math.round(d.views)} views · ${Math.round(d.impressions)} impressões · +${Math.round(d.subscribers_gained)} inscritos`;
+    const list = document.getElementById('perf-videos');
+    list.innerHTML = '';
+    if (!d.videos.length) list.textContent = 'Nenhum vídeo publicado ainda.';
+    d.videos.forEach(v => {
+      const card = document.createElement('div');
+      card.style.cssText = 'padding:10px;border:1px solid var(--border);border-radius:var(--r-sm)' +
+        ((d.project_videos || []).includes(v.video_id) ? ';outline:2px solid var(--accent, #4af)' : '');
+      const head = document.createElement('div');
+      head.style.fontWeight = '600';
+      head.textContent = `${v.title} · publicado ${v.published_at || '—'}`;
+      card.appendChild(head);
+      const line = document.createElement('div');
+      line.style.cssText = 'font-size:12px;color:var(--muted);margin-top:2px';
+      line.textContent = `Impressões ${v.impressions ?? '—'} · CTR ${perfPct(v.ctr)} · views ${v.views ?? '—'} · ` +
+        `assistido em média ${v.average_view_percentage != null ? Number(v.average_view_percentage).toFixed(0) + ' %' : '—'} · ` +
+        `+${v.subscribers_gained ?? 0} inscritos · EUA ${perfPct(v.us_share, 0)}` + (v.fetched_at ? ` · dados de ${v.fetched_at.slice(0, 16).replace('T', ' ')}` : '');
+      card.appendChild(line);
+      (v.flags || []).forEach(f => {
+        const flag = document.createElement('div');
+        flag.style.cssText = 'color:var(--amber);font-size:12px;margin-top:2px';
+        flag.textContent = '⚠ ' + f;
+        card.appendChild(flag);
+      });
+      const more = document.createElement('details');
+      more.innerHTML = '<summary style="cursor:pointer;font-size:12px;color:var(--muted)">Países, origens de tráfego, série diária</summary>';
+      more.ontoggle = () => {
+        if (!more.open || more.dataset.loaded) return;
+        more.dataset.loaded = '1';
+        fetch('/api/analytics/' + encodeURIComponent(v.video_id)).then(r => r.json()).then(x => {
+          if (!x.ok) { more.appendChild(document.createTextNode(x.error)); return; }
+          const block = document.createElement('div');
+          block.style.cssText = 'font-size:12px;margin-top:4px;display:grid;grid-template-columns:1fr 1fr;gap:10px';
+          const countries = document.createElement('div');
+          countries.innerHTML = '<b>Países (top 10)</b>';
+          (x.countries || []).forEach(c => { const row = document.createElement('div'); row.textContent = `${c.country}: ${c.views}`; countries.appendChild(row); });
+          const traffic = document.createElement('div');
+          traffic.innerHTML = '<b>Origens de tráfego</b>';
+          (x.traffic_sources || []).forEach(t => { const row = document.createElement('div'); row.textContent = `${t.insightTrafficSourceType}: ${t.views}`; traffic.appendChild(row); });
+          block.appendChild(countries);
+          block.appendChild(traffic);
+          more.appendChild(block);
+          const views = document.createElement('div');
+          views.style.cssText = 'font-size:12px;margin-top:6px';
+          views.textContent = 'Views por dia';
+          views.appendChild(perfBar(x.daily || [], 'views', 'views'));
+          more.appendChild(views);
+          if (((x.reach || {}).daily || []).length) {
+            const reach = document.createElement('div');
+            reach.style.cssText = 'font-size:12px;margin-top:6px';
+            reach.textContent = 'Impressões por dia';
+            reach.appendChild(perfBar(x.reach.daily, 'impressions', 'impressões'));
+            more.appendChild(reach);
+          } else {
+            const none = document.createElement('div');
+            none.style.cssText = 'font-size:12px;color:var(--muted);margin-top:6px';
+            none.textContent = 'Impressões/CTR: ainda sem relatório do YouTube (chega 1–2 dias após o primeiro Atualizar).';
+            more.appendChild(none);
+          }
+        });
+      };
+      card.appendChild(more);
+      list.appendChild(card);
+    });
+    if (d.busy) setTimeout(loadPerformance, 3000);
+  });
+}
+
+function refreshPerformance() {
+  fetch('/api/analytics/refresh', {method: 'POST'}).then(r => r.json()).then(d => {
+    if (!d.ok) alert(d.error);
+    setTimeout(loadPerformance, 500);
+  });
+}
+
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach((t,i) => {
-    const names = ['project','generate','review','settings'];
+    const names = ['project','generate','review','settings','performance'];
     t.classList.toggle('active', names[i] === name);
   });
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
+  if (name === 'performance') loadPerformance();
   if (name === 'review') {
     loadReviewData();
     // Pre-fill schedule datetime to tomorrow 9am if blank

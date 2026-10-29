@@ -222,8 +222,10 @@ def start_background_sync(interval_minutes: float | None = None) -> threading.Th
     stop = threading.Event()
 
     def loop():
+        from uploader import analytics
         while not stop.is_set():
             sync_publications_safely(interactive=False)
+            analytics.refresh_due_safely()            # Phase 3.6-E: at most every ANALYTICS_REFRESH_HOURS
             stop.wait(max(60.0, minutes * 60))
 
     thread = threading.Thread(target=loop, name="publication-sync", daemon=True)

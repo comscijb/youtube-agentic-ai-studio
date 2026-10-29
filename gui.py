@@ -887,6 +887,47 @@ def description_template():
     return jsonify({"ok": True})
 
 
+@app.route("/api/analytics")
+def analytics_overview():
+    """Desempenho: the channel overview and every published video, from the cache (no API call)."""
+    from uploader import analytics
+    data = analytics.overview()
+    slug = Path(config.OUTPUT_DIR).name
+    data["project_videos"] = [item["video_id"] for item in data["videos"] if item.get("project") == slug]
+    return jsonify({"ok": True, **data, "busy": _state.get("analytics_busy", False),
+                    "message": _state.get("analytics_message", "")})
+
+
+@app.route("/api/analytics/<video_id>")
+def analytics_video(video_id):
+    from uploader import analytics
+    record = analytics.cached(video_id)
+    if record is None:
+        return jsonify({"ok": False, "error": "No data yet; click Atualizar"}), 404
+    return jsonify({"ok": True, **record})
+
+
+@app.route("/api/analytics/refresh", methods=["POST"])
+def analytics_refresh():
+    """Fetch now (Analytics + Reporting APIs). Needs the yt-analytics.readonly consent: when it is missing
+    the message says to run python -m scripts.sync_publications once."""
+    from uploader import analytics
+    if _state.get("analytics_busy"):
+        return jsonify({"ok": False, "error": "Already refreshing"}), 409
+
+    def work():
+        _state.update(analytics_busy=True, analytics_message="Atualizando…")
+        try:
+            done = analytics.refresh_all(force=True, interactive=False)
+            _state["analytics_message"] = f"Atualizado: {len(done)} vídeo(s)"
+        except Exception as exc:                      # noqa: BLE001 — shown in the tab
+            _state["analytics_message"] = f"Erro: {exc}"
+        finally:
+            _state["analytics_busy"] = False
+    threading.Thread(target=work, daemon=True).start()
+    return jsonify({"ok": True})
+
+
 @app.route("/api/save-output", methods=["POST"])
 def save_output():
     body = request.get_json(force=True) or {}
