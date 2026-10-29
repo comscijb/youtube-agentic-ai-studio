@@ -12,6 +12,9 @@ moment. Every stage here is contract-first Gemini JSON, validated by code.
   curiosity, concreteness, emotion and clarity, plus a deterministic length score
   (≤ 60 characters, the hook within ~45); the policy validator still decides
   what may be published (``titles.json`` keeps the list for later swaps).
+* ``description_parts`` — the description's hook, spoiler-free chapter titles,
+  an episode-specific comment question and a pinned-comment suggestion
+  (assembled and validated by ``video.description``).
 """
 from __future__ import annotations
 
@@ -266,5 +269,73 @@ def save_titles(output_dir, scored: list[dict] | None, selected: str, *, reason:
         if record.get("selected"):
             record["history"].append({"title": record["selected"], "replaced_by": selected, "reason": reason})
         record["selected"] = selected
+    atomic_write_json(path, record)
+    return record
+
+
+# ── Description parts (Phase 3.6-C) ─────────────────────────────────────────
+
+DESCRIPTION_PARTS_FILE = "description_parts.json"
+CHAPTER_TITLE_MAX = 40
+
+
+def description_parts_contract(scene_count: int) -> str:
+    return f"""You write the YouTube description parts for one Private Gravity episode (cinematic
+psychological fiction). Never spoil the ending or the reversal; never explain the thesis.
+Return ONLY JSON with:
+- "hook": 1-2 short lines (max 220 characters) from the logline that make a viewer press play
+- "chapter_titles": exactly {scene_count} short evocative scene titles (max {CHAPTER_TITLE_MAX} characters
+  each, 2-5 words, no spoilers, no numbering), in scene order
+- "comment_question": one open question from the story's philosophical question that invites viewers
+  to share their own experience (ends with "?"), e.g. "Have you ever performed happiness for someone
+  else's eyes?"
+- "pinned_comment": the comment the creator pins: the same question plus a one-line invitation
+  (max 300 characters)"""
+
+
+def validate_description_parts(value: dict, scene_count: int) -> dict:
+    problems = []
+    hook = str(value.get("hook", "")).strip() if isinstance(value, dict) else ""
+    titles = value.get("chapter_titles") if isinstance(value, dict) else None
+    question = str((value or {}).get("comment_question", "")).strip()
+    pinned = str((value or {}).get("pinned_comment", "")).strip()
+    if not hook or len(hook) > 260 or hook.count("\n") > 1:
+        problems.append("hook must be 1-2 lines, at most 220 characters")
+    if not isinstance(titles, list) or len(titles) != scene_count:
+        problems.append(f"chapter_titles must have exactly {scene_count} items")
+    else:
+        for index, title in enumerate(titles):
+            if not str(title).strip() or len(str(title)) > CHAPTER_TITLE_MAX:
+                problems.append(f"chapter title {index} must be 1-{CHAPTER_TITLE_MAX} characters")
+    if not question.endswith("?"):
+        problems.append("comment_question must be a question ending with '?'")
+    if not pinned or len(pinned) > 320:
+        problems.append("pinned_comment must be 1-300 characters")
+    if problems:
+        raise NarrativeValidationError("description parts: " + "; ".join(problems))
+    return {"hook": hook, "chapter_titles": [str(title).strip() for title in titles],
+            "comment_question": question, "pinned_comment": pinned}
+
+
+def generate_description_parts(output_dir, *, brief: dict, script: dict, timeline: dict | None,
+                               generator=None, force: bool = False) -> dict:
+    """Hook, chapter titles, comment question and pinned comment; cached per story and timeline."""
+    from agents.gemini_client import generate
+    path = Path(output_dir) / DESCRIPTION_PARTS_FILE
+    scenes = (timeline or {}).get("scenes") or []
+    key = {"logline": brief.get("logline", ""), "scenes": [scene.get("title", "") for scene in scenes], "version": 1}
+    saved = load_json(path) or {}
+    if saved.get("key") == key and not force:
+        return saved
+    story = {name: brief.get(name, "") for name in ("logline", "philosophical_question", "central_dramatic_question",
+                                                    "main_character_concept", "psychological_theme")}
+    story["title"] = script.get("title", "")
+    story["scenes"] = [{"index": index, "title": scene.get("title", ""), "seconds": round(float(scene.get("duration", 0)))}
+                       for index, scene in enumerate(scenes)]
+    value = generate_json(description_parts_contract(len(scenes)), "description parts",
+                          lambda value: validate_description_parts(value, len(scenes)),
+                          generator=generator or generate, context=f"STORY: {compact_json(story)}",
+                          stage="description_parts", temperature_key="packaging", run_dir=str(output_dir))
+    record = {"key": key, **value}
     atomic_write_json(path, record)
     return record

@@ -595,6 +595,16 @@ input[type=range]{width:100%;accent-color:var(--primary)}
                 <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="regenDescription()">✨ AI Rewrite</button>
               </div>
               <textarea id="edit-desc" rows="12" style="font-size:12px" placeholder="Video description…" oninput="markDirty()"></textarea>
+              <div class="flex-row" style="margin-top:4px;gap:6px">
+                <button class="btn btn-ghost" style="padding:3px 10px;font-size:11px" title="Gancho, capítulos sem spoiler, pergunta para os comentários e comentário fixado (Gemini)" onclick="igPost('/api/description/parts', {})">Gerar textos (gancho, capítulos, CTA)</button>
+                <button class="btn btn-ghost" style="padding:3px 10px;font-size:11px" onclick="checkDescription()">Validar</button>
+              </div>
+              <div id="desc-findings" style="font-size:11px;margin-top:4px;color:var(--muted)"></div>
+              <div id="pinned-comment" style="display:none;font-size:11px;margin-top:6px;padding:6px;border:1px dashed var(--border);border-radius:4px">
+                <div style="color:var(--muted)">Comentário para fixar (a API não fixa — copie e fixe no YouTube):</div>
+                <div id="pinned-comment-text" style="margin:4px 0"></div>
+                <button class="btn btn-ghost" style="padding:2px 8px;font-size:10px" onclick="navigator.clipboard.writeText(document.getElementById('pinned-comment-text').textContent)">Copiar</button>
+              </div>
             </div>
 
             <div>
@@ -752,6 +762,13 @@ input[type=range]{width:100%;accent-color:var(--primary)}
               <div class="field-label">Channel Description</div>
               <textarea id="s-channel-desc" rows="5" style="font-size:12px"></textarea>
               <div class="help-text">Tells the AI what kind of videos to make. Be specific about topics, style, and audience.</div>
+            </div>
+            <div class="settings-field">
+              <div class="field-label">Modelo da descrição</div>
+              <textarea id="s-desc-template" rows="9" style="font-size:12px;font-family:monospace"></textarea>
+              <div class="help-text">Campos: {hook} {chapters} {cta} {channel_line} {fiction_note} {credits} {hashtags} {title}. {chapters} e {cta} são obrigatórios; o resultado é validado (≤ 5000 caracteres, CTA, capítulos).</div>
+              <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;margin-top:4px" onclick="saveDescTemplate()">Salvar modelo</button>
+              <span id="s-desc-template-msg" style="font-size:11px;margin-left:6px"></span>
             </div>
           </div>
         </div>
@@ -2175,10 +2192,42 @@ ${c.note}` : '');
   });
 }
 
+function saveDescTemplate() {
+  fetch('/api/description-template', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({template: document.getElementById('s-desc-template').value})}).then(r => r.json()).then(d => {
+      const msg = document.getElementById('s-desc-template-msg');
+      msg.style.color = d.ok ? 'var(--green)' : 'var(--red)';
+      msg.textContent = d.ok ? 'Salvo' : d.error;
+    });
+}
+
+function checkDescription() {
+  // Phase 3.6-C: length, CTA block and chapter rules; the pinned-comment suggestion to copy.
+  fetch('/api/description/check').then(r => r.json()).then(d => {
+    const box = document.getElementById('desc-findings');
+    if (!box) return;
+    box.innerHTML = '';
+    const head = document.createElement('div');
+    head.style.color = d.passes ? 'var(--green)' : 'var(--red)';
+    head.textContent = (d.passes ? '✓ descrição válida' : '⛔ descrição com problemas') + ` · ${d.chars}/5000`;
+    box.appendChild(head);
+    (d.findings || []).forEach(f => {
+      const row = document.createElement('div');
+      row.style.color = f.severity === 'blocking' ? 'var(--red)' : 'var(--amber)';
+      row.textContent = (f.severity === 'blocking' ? '⛔ ' : '• ') + f.claim;
+      box.appendChild(row);
+    });
+    const pinned = document.getElementById('pinned-comment');
+    pinned.style.display = d.pinned_comment ? 'block' : 'none';
+    document.getElementById('pinned-comment-text').textContent = d.pinned_comment || '';
+  });
+}
+
 function loadReviewData() {
   loadImagegen();
   loadThumbVariants();
   loadTitleScores();
+  checkDescription();
   // Video
   fetch('/api/status').then(r=>r.json()).then(d => {
     const vw = document.getElementById('video-wrap');
@@ -2488,6 +2537,8 @@ function loadSettings() {
     document.getElementById('s-stock-license').checked = d.stock_license_log !== false;
     document.getElementById('s-channel-name').value = d.channel_name|| '';
     document.getElementById('s-channel-desc').value = d.channel_desc|| '';
+    fetch('/api/description-template').then(r => r.json()).then(t => {
+      document.getElementById('s-desc-template').value = t.template || ''; });
     document.getElementById('s-voice').value        = d.voice_id    || 'en-US-AndrewNeural';
     document.getElementById('s-wpm-info').textContent = d.calibrated_wpm
       ? `Planning: ${d.planning_wpm} wpm measured for this voice and rate (configured ${d.configured_wpm}).`

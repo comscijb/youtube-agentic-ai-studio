@@ -123,8 +123,19 @@ def _ts(secs):
     return f"{h}:{m:02d}:{s:02d}" if h else f"{m}:{s:02d}"
 
 def _build_description(script, research, video_type: str = "normal", output_dir=None):
+    """Phase 3.6-C: normal episodes use the validated template (hook, chapters, CTAs, credits,
+    hashtags); the legacy layout below stays for Shorts and when the template cannot be filled."""
     sections = script.get("sections", [])
     is_shorts = video_type == "shorts" or script.get("video_type") == "shorts"
+    if not is_shorts:
+        from agents import packaging
+        from video import description
+        folder = output_dir or config.OUTPUT_DIR
+        try:
+            return description.build(folder, script, research or {},
+                                     load_json(os.path.join(folder, packaging.DESCRIPTION_PARTS_FILE)))
+        except (description.DescriptionError, OSError, KeyError, ValueError) as exc:
+            _log(f"Description template not used ({exc}); legacy layout instead", "warn")
 
     lines = []
     if research.get("hook_question"): lines += [research["hook_question"], ""]
@@ -827,6 +838,53 @@ def titles_select():
     packaging.save_titles(config.OUTPUT_DIR, None, title, reason="user")
     findings = _title_findings(title)
     return jsonify({"ok": True, "title": title, "title_passes": title_passes(findings), "title_findings": findings})
+
+
+@app.route("/api/description/check")
+def description_check():
+    """Findings of the current description and the pinned-comment suggestion (pin it by hand)."""
+    from agents import packaging
+    from video import description
+    text = _state.get("description") or ""
+    parts = load_json(Path(config.OUTPUT_DIR, packaging.DESCRIPTION_PARTS_FILE)) or {}
+    findings = description.validate(text)
+    return jsonify({"ok": True, "findings": findings, "passes": description.passes(findings),
+                    "chars": len(text), "pinned_comment": parts.get("pinned_comment", "")})
+
+
+@app.route("/api/description/parts", methods=["POST"])
+def description_parts():
+    """Gemini writes the hook, chapter titles, comment question and pinned comment; then the
+    description is rebuilt from the template."""
+    from agents import packaging
+    from agents.gemini_client import generate
+    output = Path(config.OUTPUT_DIR)
+    script = _state.get("script")
+    if not script:
+        return jsonify({"ok": False, "error": "No script loaded"}), 400
+
+    def run():
+        brief = _state.get("research") or load_json(output / "story_brief.json") or {}
+        packaging.generate_description_parts(output, brief=brief, script=script,
+                                             timeline=load_timeline(output / "scene_timeline.json"),
+                                             generator=generate, force=True)
+        _state["description"] = _build_description(script, brief, _state.get("video_type", "normal"))
+        _imagegen_progress("Descrição refeita pelo modelo (gancho, capítulos, CTA)")
+    return _imagegen_run(run)
+
+
+@app.route("/api/description-template", methods=["GET", "POST"])
+def description_template():
+    """Settings: the description template (placeholders {hook} {chapters} {cta} {channel_line}
+    {fiction_note} {credits} {hashtags} {title}; {chapters} and {cta} are required)."""
+    from video import description
+    if request.method == "GET":
+        return jsonify({"ok": True, "template": description.template()})
+    try:
+        description.save_template(str((request.get_json(force=True) or {}).get("template", "")))
+    except description.DescriptionError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    return jsonify({"ok": True})
 
 
 @app.route("/api/save-output", methods=["POST"])

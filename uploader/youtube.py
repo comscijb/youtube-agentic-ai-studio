@@ -95,8 +95,18 @@ _get_service = get_service
 
 
 def build_upload_description(script: dict, output_dir: str | None = None) -> str:
-    """The description pipeline.py uploads: story text, music credit, footer, hashtags."""
+    """The description pipeline.py uploads: the validated template (Phase 3.6-C) when it can be
+    filled, else the legacy story text, music credit, footer and hashtags."""
+    from agents import packaging
+    from agents.narrative import load_json
+    from video import description
     from video.music import music_attribution
+    folder = output_dir or config.OUTPUT_DIR
+    try:
+        brief = load_json(os.path.join(folder, "story_brief.json")) or load_json(os.path.join(folder, "research.json")) or {}
+        return description.build(folder, script, brief, load_json(os.path.join(folder, packaging.DESCRIPTION_PARTS_FILE)))
+    except (description.DescriptionError, OSError, KeyError, ValueError):
+        pass
 
     credit = music_attribution(output_dir or config.OUTPUT_DIR)
     return (

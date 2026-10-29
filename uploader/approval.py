@@ -150,9 +150,13 @@ def review_summary(run_dir, *, title: str, **artifacts) -> dict:
     status = narrative_status(run_dir)
     findings = packaging_findings(run_dir, title)
     current = check_approval(run_dir, title=title, **artifacts)
+    from video import description as upload_description
+    description_findings = upload_description.validate(artifacts.get("description", ""))
     return {
         "narrative_status": status,
         "status_override_required": status in BLOCKED_STATUSES or status == "missing",
+        "description_findings": description_findings,
+        "description_passes": upload_description.passes(description_findings),
         "title_findings": findings,
         "title_passes": title_passes(findings),
         "license_flags": license_flags(run_dir),

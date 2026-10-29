@@ -263,8 +263,9 @@ class PipelineDashboardTests(GateTestCase):
     def test_pipeline_description_matches_upload(self):
         script = {"title": GOOD_TITLE, "description": "Story.", "tags": ["a", "b"]}
         description = youtube.build_upload_description(script)
-        self.assertIn("#a #b", description)
+        self.assertIn("#PrivateGravity #A #B", description)              # 2-3 hashtags, at the end (3.6-C)
         self.assertIn(config.CHANNEL_NAME, description)
+        self.assertIn("Tell us in the comments.", description)
 
 
 if __name__ == "__main__":
