@@ -698,6 +698,67 @@ video: … | published: …`; the same theme may return from a clearly different
 
 ---
 
+## Premise briefs and Shorts cut from each episode (Phase 3.7)
+
+- **Detailed premise briefs** (`agents/premise_brief.py`). Instead of a one-sentence premise you can
+  give the story a brief, up to ~4 000 characters: free text, Markdown with optional headings, or
+  JSON. Recognised fields:
+  - working title, narrative type (A/B/C), logline;
+  - protagonist, other characters (≤ 2 recommended), setting;
+  - beats: hook, strategy works, hidden cost, reversal, philosophical layer, ending;
+  - tone, must include, must avoid;
+  - target minutes, title ideas, thumbnail idea.
+
+  The brief is **authoritative**: the Story Development Agent keeps every provided decision and
+  only fills the gaps. `story_brief.json` records `brief_coverage` and `requested_brief_hash`.
+  The bible, outline and scene prompts receive only the relevant parts (`author_brief`).
+
+  A faithfulness check reports `major` findings (`brief_faithfulness`), which the targeted
+  revision may fix:
+  - every must-include present and no must-avoid;
+  - every beat mapped to an outline scene;
+  - names and ages unchanged.
+
+  A changed brief makes the Story Brief stale. A single sentence still works exactly as before.
+  In the GUI, the premise field is a textarea with **Inserir modelo**, **Carregar arquivo** and a
+  character counter. Examples: `briefs/ai-companion.md`, `briefs/people-pleaser.md`.
+- **Shorts cut from the episode** (`video/shorts.py`, `video/shorts_render.py`,
+  `uploader/shorts_upload.py`). After narration, Gemini proposes `SHORTS_PER_EPISODE` (3) cuts of
+  45–75 s on sentence boundaries: a hook in the first 2 s, understandable alone, ending on tension.
+  Code validates every rule; no cut may reach the episode's twist, and at most one may come close.
+
+  In Review → "Shorts do episódio" you can:
+  - see the cuts on the episode timeline;
+  - play each one;
+  - move its in/out points (snapped to sentences), drop or add a cut, edit its texts.
+
+  Each Short is rendered at 1080×1920:
+  - the exact slice of the final mix, normalised to −14 LUFS / −1.5 dBTP;
+  - the shots of the cut reframed to 9:16 on the detected faces, or over a blurred copy of the
+    image when the subjects don't fit;
+  - large word-timed captions clear of the YouTube UI, after the episode's tape effect;
+  - the hook text at the start and an end card.
+
+  The approval gate covers the episode **and** its Shorts (their files and texts are hashed).
+  Uploads go episode first, then each Short:
+  - `#Shorts` in the title and the episode link in the description;
+  - English language fields and their own captions;
+  - `SHORTS_SCHEDULE` (default: the first with the episode, then one a day at 18:00, via
+    `publishAt`).
+
+  The confirmation shows the plan ("o episódio será PÚBLICO agora; Shorts: agora, amanhã 18:00,
+  depois de amanhã 18:00"). Set each Short's "related video" by hand in YouTube Studio; the API
+  can't. Shorts are recorded with `parent_video_id`, never ban a topic, appear under their episode
+  in Desempenho and are archived in `shorts/`. The standalone mode is now called "Short original
+  (história própria)".
+
+```powershell
+python -m scripts.project new --brief-file briefs/ai-companion.md      # or GUI → Novo projeto → Inserir modelo
+python gui.py   # run stages; review episode + Shorts in the approval gate; upload all
+```
+
+---
+
 ## Packaging, language, analytics and the tape look (Phase 3.6)
 
 Episode 1 got 220 impressions and 0 clicks in its first 12 hours: a grey thumbnail with the text
