@@ -223,12 +223,22 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
         # ── Research ──────────────────────────────────────────
         if "research" in steps:
             _stage("research", "running")
+            # Phase 3.7-A: a detailed brief is saved in the project and is authoritative; one
+            # sentence stays the exact premise as before; an empty field uses the project's brief.
+            from agents import premise_brief
+            author = None
+            if premise_brief.is_brief(topic_override):
+                author = premise_brief.save(config.OUTPUT_DIR, premise_brief.parse(topic_override))
+                topic_override = ""
+            elif not topic_override.strip():
+                author = premise_brief.load(config.OUTPUT_DIR)
             research = research_topic(
                 channel_description = config.CHANNEL_DESCRIPTION,
                 topic_override      = topic_override,
                 focus_angle         = focus_angle,
                 narrative_type      = narrative_type,
                 target_duration_minutes = target_duration,
+                premise_brief       = author,
             )
             invalidate_downstream("story_brief", config.OUTPUT_DIR)
             _state["research"] = research
@@ -656,6 +666,30 @@ def new_project():
     projects.set_active(path.name)
     _reload_state_from_disk()
     return jsonify({"ok": True, **_current_summary()})
+
+
+@app.route("/api/premise-brief")
+def premise_brief_info():
+    """The template ("Inserir modelo") and the current project's brief, if any."""
+    from agents import premise_brief
+    path = Path(config.OUTPUT_DIR, premise_brief.MARKDOWN_FILE)
+    return jsonify({"ok": True, "template": premise_brief.TEMPLATE, "max_chars": premise_brief.MAX_CHARS,
+                    "current": path.read_text(encoding="utf-8") if path.is_file() else ""})
+
+
+@app.route("/api/premise-brief/parse", methods=["POST"])
+def premise_brief_parse():
+    """Which fields the text provides (shown under the textarea); nothing is saved."""
+    from agents import premise_brief
+    text = str((request.get_json(force=True) or {}).get("text", ""))
+    if not premise_brief.is_brief(text):
+        return jsonify({"ok": True, "brief": False, "fields": []})
+    try:
+        brief = premise_brief.parse(text)
+    except premise_brief.BriefError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    return jsonify({"ok": True, "brief": True, "fields": [key for key in premise_brief.FIELDS if key in brief],
+                    "notes": bool(brief.get("notes"))})
 
 
 @app.route("/api/projects/stage/<stage>", methods=["POST"])

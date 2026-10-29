@@ -139,6 +139,7 @@ def research_topic(
     narrative_type: str = "auto",
     target_duration_minutes: float | None = None,
     reuse_cached: bool = False,
+    premise_brief: dict | None = None,
 ) -> dict:
     """Develop several premises and select one production-ready story brief.
 
@@ -146,15 +147,28 @@ def research_topic(
     verbatim in ``topic`` and ``requested_premise`` even if the model paraphrases.
     With ``reuse_cached`` a valid ``story_brief.json`` produced by the same
     request in ``config.OUTPUT_DIR`` is returned without an API call.
+
+    ``premise_brief`` (Phase 3.7, ``agents.premise_brief``) is a detailed author brief: it is
+    authoritative — provided fields are preserved, Gemini fills only what is missing. The story
+    brief records ``requested_brief_hash``, ``brief_coverage`` and ``author_brief`` (the parts the
+    bible, outline and scene prompts need).
     """
+    from agents import premise_brief as briefs
+    author = dict(premise_brief or {})
+    if author:
+        narrative_type = author["narrative_type"] if author.get("narrative_type") in NARRATIVE_TYPES \
+            else narrative_type
+        topic_override = topic_override.strip() or briefs.exact_premise(author)
+        target_duration_minutes = target_duration_minutes or author.get("target_minutes")
     if narrative_type != "auto" and narrative_type not in NARRATIVE_TYPES:
         raise ValueError(f"Unsupported narrative type: {narrative_type}")
     exact = topic_override.strip()
     duration = float(target_duration_minutes or getattr(config, "TARGET_DURATION_MINUTES", 15))
-    request_hash = stable_hash({
-        "premise": exact, "theme": focus_angle.strip(),
-        "narrative_type": narrative_type, "duration": duration,
-    })
+    request = {"premise": exact, "theme": focus_angle.strip(), "narrative_type": narrative_type,
+               "duration": duration}
+    if author:
+        request["brief"] = briefs.brief_hash(author)
+    request_hash = stable_hash(request)
     brief_path = os.path.join(config.OUTPUT_DIR, "story_brief.json")
     if reuse_cached:
         cached = _cached_brief(brief_path, request_hash)
@@ -183,7 +197,10 @@ def research_topic(
         "Choose the narrative type that best serves the story."
         if narrative_type == "auto" else f'Use exactly this narrative type: "{narrative_type}".'
     )
-    print(f"   -> Developing {'exact premise' if exact else 'original premises'}: {exact or theme}")
+    if author:
+        mode_instruction += "\n\n" + briefs.contract_block(author)
+    print(f"   -> Developing {'author brief' if author else 'exact premise' if exact else 'original premises'}: "
+          f"{exact or theme}")
     contract = f"""You are the Story Development Agent for Private Gravity, an anthology of
 cinematic psychological fiction. Ideas from psychology and philosophy must emerge through
 character choice, consequence, image and subtext—never through a lecture or explainer.
@@ -254,6 +271,8 @@ Uniqueness nonce: {time.time_ns()}"""
             )
         if matches:
             brief["published_topic_warning"] = [item["raw"] for item in matches]
+        if author:
+            _apply_author_brief(brief, author, published)
         if not exact and len(brief.get("premise_candidates", [])) < 3:
             raise NarrativeValidationError(
                 "automatic story development requires at least three premise_candidates"
@@ -344,6 +363,35 @@ The previous candidates failed for these reasons; do not repeat them:
         "thumbnail_text_candidates": review["thumbnail_text_candidates"],
     }
     return retried
+
+
+def _apply_author_brief(brief: dict, author: dict, published: list[dict]) -> None:
+    """Phase 3.7-A: provided fields win over the model's; record the coverage and a topic warning."""
+    from agents import premise_brief as briefs
+    if author.get("logline"):
+        brief["logline"] = author["logline"]
+    if author.get("narrative_type") in NARRATIVE_TYPES:
+        brief["narrative_type"] = author["narrative_type"]
+    if author.get("thumbnail_idea"):
+        brief["thumbnail_concept"] = author["thumbnail_idea"]
+    ideas = [{"title": title, "rationale": "author's title idea"} for title in author.get("title_ideas") or []]
+    if author.get("working_title"):
+        ideas.insert(0, {"title": author["working_title"], "rationale": "author's working title"})
+    existing = {str(item.get("title") if isinstance(item, dict) else item) for item in brief.get("title_candidates") or []}
+    brief["title_candidates"] = [item for item in ideas if item["title"] not in existing] + \
+        list(brief.get("title_candidates") or [])
+    brief["author_brief"] = briefs.author_parts(author)
+    brief["requested_brief_hash"] = briefs.brief_hash(author)
+    model_coverage = brief.get("brief_coverage") if isinstance(brief.get("brief_coverage"), dict) else {}
+    brief["brief_coverage"] = {**{key: str(value) for key, value in model_coverage.items()},
+                               **briefs.coverage(author, brief)}
+    theme, angle = brief.get("psychological_theme", ""), brief.get("psychological_angle", "")
+    similar = [item["raw"] for item in published if item.get("theme") and
+               str(item["theme"]).strip().lower() == str(theme).strip().lower()
+               and briefs.mentioned(item.get("angle", ""), angle, 0.5)]
+    if similar:
+        print("   WARNING: the brief's theme and angle match a published episode: " + "; ".join(similar))
+        brief["published_topic_warning"] = list(brief.get("published_topic_warning") or []) + similar
 
 
 def _score_titles(brief: dict) -> None:

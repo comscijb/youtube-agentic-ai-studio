@@ -245,8 +245,14 @@ def stage_status(path) -> list[dict]:
     shot_list = load_json(files["shot_list.json"]) or {}
     result = []
 
-    result.append(_entry("story_brief", "done" if brief else "missing",
-                         brief.get("video_title", "") if brief else "no story brief yet"))
+    from agents import premise_brief as briefs
+    author = briefs.load(path)
+    if brief and author and brief.get("requested_brief_hash") != author.get("hash"):
+        result.append(_entry("story_brief", "stale", "the premise brief changed after the story brief"))
+    else:
+        result.append(_entry("story_brief", "done" if brief else "missing",
+                             brief.get("video_title", "") if brief else
+                             ("premise brief ready" if author else "no story brief yet")))
 
     if not script:
         result.append(_entry("script", "partial" if bible or outline else "missing",

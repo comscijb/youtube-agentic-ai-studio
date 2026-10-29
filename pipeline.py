@@ -65,12 +65,16 @@ def _run(resume: bool):
 
     # ── 1. Research ───────────────────────────────────────────
     banner("1 / 6  ·  Developing and selecting a story premise  [Gemini]")
+    from agents import premise_brief
+    author = premise_brief.load(config.OUTPUT_DIR)          # Phase 3.7: a project made from a brief
     research = research_topic(
         config.CHANNEL_DESCRIPTION,
         narrative_type=getattr(config, "NARRATIVE_TYPE", "auto"),
         focus_angle=getattr(config, "PSYCHOLOGICAL_THEME", ""),
-        target_duration_minutes=getattr(config, "TARGET_DURATION_MINUTES", 15),
+        target_duration_minutes=(author or {}).get("target_minutes")
+        or getattr(config, "TARGET_DURATION_MINUTES", 15),
         reuse_cached=resume,
+        premise_brief=author,
     )
     print(f"\n  ✅  Premise: {research['topic']}")
     print(f"      Title : {research['video_title']}")

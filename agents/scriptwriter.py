@@ -6,7 +6,7 @@ import shutil
 from pathlib import Path
 
 import config
-from agents import structured
+from agents import premise_brief, structured
 from agents.gemini_client import generate
 from agents.voice_calibration import planning_wpm
 from agents.identity import STACKED_MODIFIER_RULE, TITLE_POLICY, identity_block
@@ -98,7 +98,7 @@ example only; do not copy its character or story content into the requested stor
 For behavioral_patterns use a canonical STRING, for example: "Avoids difficult conversations;
 checks his phone for social approval." Never use null, an empty string, an empty array, generic
 placeholders, or omit a required field. Keep the cast compact and preserve the brief's exact story
-decisions. If the premise is not speculative, speculative_rules must be an empty array."""
+decisions. If the premise is not speculative, speculative_rules must be an empty array.""" + _author_rule(brief, "bible")
     bible = _generate_json(
         contract, "character bible",
         lambda value: validate_character_bible(value, source_hash),
@@ -152,7 +152,7 @@ objects, gestures, environments or silhouettes). The first scene must function a
 the final scene as resolution/aftermath, with a climax before it. Every scene must change the
 situation through a decision, discovery, confrontation or consequence. Assign varied word budgets
 that sum approximately to the target; do not divide them mechanically. Escalate through decisions and consequences. No lecture,
-chapter summary, bullet lesson, generic CTA, or unsupported twist."""
+chapter summary, bullet lesson, generic CTA, or unsupported twist.""" + _author_rule(brief, "outline")
     outline = _generate_json(
         contract, "story outline", lambda value: validate_outline(
             {**value, "narrative_contract_version": NARRATIVE_CONTRACT_VERSION}, bible, True
@@ -167,6 +167,26 @@ chapter summary, bullet lesson, generic CTA, or unsupported twist."""
     outline["target_duration_minutes"] = target_minutes
     atomic_write_json(path, outline)
     return outline
+
+
+def _author_rule(brief: dict, stage: str) -> str:
+    """Phase 3.7-A: the author's brief (``author_brief`` in the STORY BRIEF) is authoritative."""
+    if not brief.get("author_brief"):
+        return ""
+    rules = {
+        "bible": "The STORY BRIEF's author_brief is authoritative: keep every named character with the exact "
+                 "name, age and relationship given there; add at most what the story needs.",
+        "outline": "The STORY BRIEF's author_brief is authoritative: map each of its beats to the scene(s) that "
+                   "express it (arc_movements: hook, mechanism/escalation_success, hidden_cost, reversal, "
+                   "philosophical_layer, ending); plan every must_include item into a scene; never use a "
+                   "must_avoid item; keep its setting and tone.",
+        "scenes": "Honour the STORY BRIEF's author_brief: its tone, every must_include item placed in its "
+                  "planned scene, never a must_avoid item, names and ages exactly as given.",
+        "review": "The STORY BRIEF has an author_brief: also check faithfulness to it (must_include present, "
+                  "must_avoid absent, beats mapped, names/ages/relationships unchanged); report each violation "
+                  "with issue_type brief_faithfulness and the scene_ids to change.",
+    }
+    return "\n" + rules[stage]
 
 
 def _write_scene_batch(brief: dict, bible: dict, outline: dict, scenes: list[dict],
@@ -189,7 +209,8 @@ function from the outline), narration, setting, characters_present, dramatic_fun
 visual_direction, image_query, image_query_2, image_query_3, caption_text, on_screen_text.
 Search queries must depict story-world environments/objects/actions and not educational diagrams.
 Use on_screen_text only for diegetic or dramatically necessary text; otherwise empty string.
-No placeholders, headings inside narration, moral summary, subscribe request or bullet points."""
+No placeholders, headings inside narration, moral summary, subscribe request or bullet points.""" + \
+        _author_rule(brief, "scenes")
     context = f"""STORY BRIEF: {compact_json(brief)}
 CHARACTER BIBLE: {compact_json(bible)}
 FULL OUTLINE: {compact_json(outline)}
@@ -300,7 +321,7 @@ major finding with issue_type "lecture".
 WORD COUNTS AND DURATION ARE PRE-COMPUTED: the DETERMINISTIC MEASUREMENTS below are exact and
 authoritative. Do not count words, estimate runtime or report duration, length or word-count
 findings; those verdicts belong to the deterministic checks. Use style_lint as context when
-scoring literary_style."""
+scoring literary_style.""" + _author_rule(brief, "review")
     context = f"""DETERMINISTIC MEASUREMENTS: {compact_json(_measurements(deterministic))}
 STORY BRIEF: {compact_json(brief)}
 CHARACTER BIBLE: {compact_json(bible)}
@@ -405,7 +426,7 @@ OUTLINE: {compact_json(outline)}"""
 
 SEMANTIC_REVISION_TYPES = (
     "lecture", "continuity", "unintroduced_character", "character_consistency", "agency",
-    "causality", "repetition", "style",
+    "causality", "repetition", "style", "brief_faithfulness",
 )
 # Reviewer spellings -> canonical eligible type. Unknown types are not eligible.
 _SEMANTIC_ALIASES = {
@@ -422,6 +443,8 @@ _SEMANTIC_ALIASES = {
     "causality": "causality", "causal_logic": "causality",
     "repetition": "repetition", "repetition_control": "repetition", "repetitive": "repetition",
     "style": "style", "literary_style": "style", "prose_style": "style",
+    "brief_faithfulness": "brief_faithfulness", "faithfulness": "brief_faithfulness",
+    "author_brief": "brief_faithfulness",
 }
 
 
@@ -571,6 +594,7 @@ CHARACTER BIBLE: {compact_json(bible)}"""
         {key: item[key] for key in ("kind", "scene_ids", "success")} for item in revisions
     ]
     new_review = deterministic_review(revised, target, outline, attempts, brief)
+    new_review = premise_brief.add_findings(new_review, brief, bible=bible, outline=outline, script=revised)
     rereview = {"performed": False}
     if getattr(config, "NARRATIVE_SEMANTIC_REREVIEW", True):
         print("   -> Re-running editorial review after the semantic revision...")
@@ -686,6 +710,7 @@ def _write_script(brief: dict, video_type: str, output: Path, target: float,
     atomic_write_json(output / "script.json", script)
 
     review = deterministic_review(script, target, outline, repair_attempts, brief)
+    review = premise_brief.add_findings(review, brief, bible=bible, outline=outline, script=script)
     use_editor = (getattr(config, "NARRATIVE_REVIEW_ENABLED", True)
                   if narrative_review is None else narrative_review)
     if use_editor:

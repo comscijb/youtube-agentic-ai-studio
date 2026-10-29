@@ -3,6 +3,7 @@
 Run:  python -m scripts.project list
       python -m scripts.project show <slug>
       python -m scripts.project open <slug>     # make it the active project
+      python -m scripts.project new --brief-file briefs/ai-companion.md [--minutes 12]
 """
 from __future__ import annotations
 
@@ -18,13 +19,41 @@ def _line(item: dict) -> str:
     return f"  {BADGES.get(item['status'], '?')} {item['label']:<13} {item['status']:<8} {item['detail']}"
 
 
+def new_from_brief(path: str, minutes: float | None = None) -> int:
+    """Phase 3.7-A: a new active project holding premise_brief.md/json; Story Development then follows it."""
+    from agents import premise_brief
+    try:
+        brief = premise_brief.parse(path=path)
+    except (OSError, premise_brief.BriefError) as exc:
+        print(f"Brief not usable: {exc}", file=sys.stderr)
+        return 1
+    target = float(minutes or brief.get("target_minutes") or 12)
+    if not 12 <= target <= 20:
+        print("Episodes target 12-20 minutes (--minutes).", file=sys.stderr)
+        return 1
+    brief["target_minutes"] = target
+    folder = projects.create(brief.get("working_title", ""), video_type="normal", target_duration=target)
+    premise_brief.save(folder, brief)
+    projects.set_active(folder.name)
+    provided = [key for key in premise_brief.FIELDS if key in brief]
+    print(f"Project {folder.name} created from {path} ({len(brief.get('raw', ''))} characters).")
+    print(f"Brief fields: {', '.join(provided) or 'free text only'}")
+    print("Next: python gui.py (Generate → the brief is used automatically) or python pipeline.py --resume")
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="List, inspect and open projects.")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("list")
     for name in ("show", "open"):
         sub.add_parser(name).add_argument("slug")
+    new = sub.add_parser("new", help="create a project from a premise brief (.md / .txt / .json)")
+    new.add_argument("--brief-file", required=True)
+    new.add_argument("--minutes", type=float, help="target duration (default: the brief's, else 12)")
     args = parser.parse_args(argv)
+    if args.command == "new":
+        return new_from_brief(args.brief_file, args.minutes)
     if args.command == "list":
         paths = projects.all_paths()
         if not paths:

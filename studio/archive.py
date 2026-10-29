@@ -39,6 +39,7 @@ FILES = {
     "story_outline.json": "text", "script.json": "text", "narrative_review.json": "text",
     "visual_bible.json": "text", "shot_list.json": "text", "shot_list_report.json": "text",
     "review_approval.json": "text", "reference_candidates.json": "text", "project.json": "text",
+    "premise_brief.md": "text", "premise_brief.json": "text",
     "asset_manifest.json": "manifests", "scene_timeline.json": "manifests",
 }
 FOLDERS = {"images": "images", "character_refs": "images/character_refs",

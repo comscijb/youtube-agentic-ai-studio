@@ -411,10 +411,17 @@ input[type=range]{width:100%;accent-color:var(--primary)}
 
             <!-- Manual mode panel -->
             <div id="panel-manual" style="display:none">
-              <div class="field-label" style="margin-bottom:4px">Exact Story Premise</div>
-              <input type="text" id="topic-input"
-                     placeholder="e.g. A man secretly attends the retirement party held for his invented twin">
-              <div class="help-text">The story will preserve <strong>this exact premise</strong> without creative substitution.</div>
+              <div class="flex-row" style="margin-bottom:4px;gap:6px">
+                <div class="field-label" style="margin:0">Premissa exata ou briefing detalhado</div>
+                <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" type="button" onclick="insertBriefTemplate()">Inserir modelo</button>
+                <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px" type="button" onclick="document.getElementById('brief-file').click()">Carregar arquivo</button>
+                <input type="file" id="brief-file" accept=".md,.txt,.json" style="display:none" onchange="loadBriefFile(this)">
+                <span id="brief-count" style="font-size:11px;color:var(--muted);margin-left:auto">0 / 4000</span>
+              </div>
+              <textarea id="topic-input" rows="10" style="font-size:12px;font-family:inherit"
+                        oninput="briefChanged()"
+                        placeholder="e.g. A man secretly attends the retirement party held for his invented twin — or a detailed brief (Inserir modelo)"></textarea>
+              <div class="help-text" id="brief-fields">Uma frase: a história preserva <strong>esta premissa exata</strong>. Um briefing (personagens, cenário, beats, tom, incluir/evitar) é seguido como decisão do autor.</div>
             </div>
 
           </div>
@@ -1070,6 +1077,43 @@ function refreshPerformance() {
   fetch('/api/analytics/refresh', {method: 'POST'}).then(r => r.json()).then(d => {
     if (!d.ok) alert(d.error);
     setTimeout(loadPerformance, 500);
+  });
+}
+
+let _briefTimer = null;
+function briefChanged() {
+  // Phase 3.7-A: character counter and the fields the brief provides.
+  const text = document.getElementById('topic-input').value;
+  const count = document.getElementById('brief-count');
+  count.textContent = `${text.length} / 4000`;
+  count.style.color = text.length > 4000 ? 'var(--red)' : 'var(--muted)';
+  clearTimeout(_briefTimer);
+  _briefTimer = setTimeout(() => fetch('/api/premise-brief/parse', {method: 'POST',
+    headers: {'Content-Type': 'application/json'}, body: JSON.stringify({text})}).then(r => r.json()).then(d => {
+      const box = document.getElementById('brief-fields');
+      if (!d.ok) { box.textContent = '⚠ ' + d.error; return; }
+      box.textContent = d.brief
+        ? `Briefing detalhado: ${d.fields.length ? d.fields.join(', ') : 'texto livre'}${d.notes ? ' + notas' : ''} — decisões do autor, preservadas.`
+        : 'Uma frase: a história preserva esta premissa exata.';
+    }), 400);
+}
+
+function insertBriefTemplate() {
+  fetch('/api/premise-brief').then(r => r.json()).then(d => {
+    const area = document.getElementById('topic-input');
+    if (area.value.trim() && !confirm('Substituir o texto atual pelo modelo?')) return;
+    area.value = d.template;
+    briefChanged();
+  });
+}
+
+function loadBriefFile(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  file.text().then(text => {
+    document.getElementById('topic-input').value = text;
+    briefChanged();
+    input.value = '';
   });
 }
 

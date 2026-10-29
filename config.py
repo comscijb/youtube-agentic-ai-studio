@@ -125,7 +125,7 @@ NARRATIVE_SEMANTIC_REREVIEW = os.getenv(
 NARRATIVE_STYLE_LINT_THRESHOLD = int(os.getenv("NARRATIVE_STYLE_LINT_THRESHOLD", "3"))
 NARRATIVE_SEMANTIC_REVISION_TYPES = (
     "lecture", "continuity", "unintroduced_character", "character_consistency", "agency",
-    "causality", "repetition", "style",
+    "causality", "repetition", "style", "brief_faithfulness",
 )
 
 # ─────────────────────────────────────────
