@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import json
 import re
+import unicodedata
 from pathlib import Path
 
 from agents.narrative import atomic_write_json, load_json, stable_hash
@@ -210,10 +211,26 @@ def parse(text: str = "", *, path=None) -> dict:
             brief = normalise(data)
             brief["raw"] = json.dumps(data, ensure_ascii=False, indent=2)
             return _check(brief)
-    text = str(text or "").strip()
+    text = normalise_text(text)
     brief = parse_markdown(text)
     brief["raw"] = text
     return _check(brief)
+
+
+def normalise_text(text) -> str:
+    """LF line ends, no trailing spaces, Unicode NFC: a Windows textarea (CRLF) gives the same brief."""
+    text = unicodedata.normalize("NFC", str(text or "")).replace("\r\n", "\n").replace("\r", "\n")
+    return "\n".join(line.rstrip() for line in text.split("\n")).strip()
+
+
+def _canonical(value):
+    if isinstance(value, str):
+        return normalise_text(value)
+    if isinstance(value, list):
+        return [_canonical(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _canonical(item) for key, item in value.items()}
+    return value
 
 
 def _check(brief: dict) -> dict:
@@ -225,14 +242,30 @@ def _check(brief: dict) -> dict:
 
 
 def brief_hash(brief: dict) -> str:
-    return stable_hash({key: value for key, value in brief.items() if key != "raw"})
+    """Hash of the parsed fields (never the raw text or a stored ``hash``), on normalised text."""
+    return stable_hash(_canonical({key: value for key, value in brief.items() if key not in ("raw", "hash")}))
+
+
+def matches(story_brief: dict, author: dict) -> bool:
+    """The story brief was made from this premise brief. Story briefs written by Phase 3.7 hashed the
+    saved record including its own ``hash`` key; that value is still accepted."""
+    requested = story_brief.get("requested_brief_hash")
+    return requested in (brief_hash(author), stable_hash({key: value for key, value in author.items()
+                                                          if key != "raw"}))
 
 
 def save(output_dir, brief: dict) -> dict:
-    """premise_brief.md (as written) + premise_brief.json (parsed, with its hash)."""
+    """premise_brief.md (normalised, LF) + premise_brief.json (parsed, with its hash).
+    Nothing is rewritten when the normalised brief is unchanged."""
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
-    (output / MARKDOWN_FILE).write_text(brief.get("raw", "").rstrip() + "\n", encoding="utf-8")
+    text = normalise_text(brief.get("raw", "")) + "\n"
+    current = load(output)
+    markdown = output / MARKDOWN_FILE
+    same_text = markdown.is_file() and normalise_text(markdown.read_text(encoding="utf-8")) + "\n" == text
+    if current and brief_hash(current) == brief_hash(brief) and same_text:
+        return current
+    markdown.write_text(text, encoding="utf-8", newline="\n")
     record = {**{key: value for key, value in brief.items() if key != "raw"}, "hash": brief_hash(brief)}
     atomic_write_json(output / JSON_FILE, record)
     return record
@@ -241,6 +274,14 @@ def save(output_dir, brief: dict) -> dict:
 def load(output_dir) -> dict | None:
     record = load_json(Path(output_dir) / JSON_FILE)
     return record if record and any(key in record for key in FIELDS + ("notes",)) else None
+
+
+def target_minutes(brief: dict | None, requested=None) -> float | None:
+    """The brief's target duration wins over the GUI / CLI value (episodes are 12-20 minutes)."""
+    value = (brief or {}).get("target_minutes")
+    if value and 12 <= float(value) <= 20:
+        return float(value)
+    return float(requested) if requested else None
 
 
 def exact_premise(brief: dict) -> str:
@@ -290,6 +331,42 @@ def coverage(brief: dict, story: dict) -> dict:
     return result
 
 
+_QUOTE = re.compile(r'"([^"]+)"|“([^”]+)”')
+_SUFFIXES = ("ing", "ed", "es", "s")
+
+
+def spoken_lines(text: str) -> list[str]:
+    """Direct speech in ``text``: the lines between double quotes (straight or curly)."""
+    return [first or second for first, second in _QUOTE.findall(str(text or ""))]
+
+
+def beat_quotes(brief: dict) -> list[tuple[str, str]]:
+    """(beat, line) for every line the brief's beats quote (two or more content words)."""
+    return [(beat, line.strip()) for beat, text in (brief.get("beats") or {}).items()
+            for line in spoken_lines(text) if len(_words(line)) >= 2]
+
+
+def ending_items(brief: dict) -> list[str]:
+    """The ending beat's details, one per sentence (quoted lines are checked as dialogue)."""
+    text = _QUOTE.sub(". ", str((brief.get("beats") or {}).get("ending", "")))
+    items = []
+    for sentence in re.split(r"(?<=[.!?])\s+", text):
+        sentence = re.sub(r"^\s*(?:open question|question)\s*:\s*", "", sentence.strip(), flags=re.I)
+        sentence = sentence.strip(" :;,.")
+        if len(_words(sentence)) >= 2:
+            items.append(sentence)
+    return items
+
+
+def _stem(word: str) -> str:
+    word = word.removesuffix("'s")
+    for suffix in _SUFFIXES:
+        if word.endswith(suffix) and len(word) - len(suffix) >= 3:
+            word = word[:-len(suffix)]
+            break
+    return word[:5]
+
+
 def _words(text: str) -> set[str]:
     stop = {"the", "a", "an", "of", "to", "and", "in", "on", "at", "his", "her", "he", "she", "it", "is", "any",
             "with", "for", "that", "this", "about", "from", "every", "their", "they", "who", "be", "by", "as"}
@@ -307,9 +384,14 @@ def mentioned(item: str, text: str, ratio: float = 0.7) -> bool:
     if not words:
         return False
     found = _words(text)
-    stems = {word[:5] for word in found}
-    hits = sum(1 for word in words if word in found or word[:5] in stems)
+    stems = {_stem(word) for word in found}
+    hits = sum(1 for word in words if word in found or _stem(word) in stems)
     return hits / len(words) >= ratio
+
+
+def said(line: str, text: str, ratio: float = 0.8) -> bool:
+    """``line`` appears as direct speech (inside quotes) in ``text``."""
+    return any(mentioned(line, spoken, ratio) for spoken in spoken_lines(text))
 
 
 def _people(brief: dict) -> list[dict]:
@@ -344,6 +426,24 @@ def faithfulness(brief: dict, *, bible: dict | None, outline: dict | None, scrip
         if scenes:
             finding(f"must_avoid item present: {item!r}", [item], f"Remove {item!r}.", scenes)
     movements = {movement for scene in (outline or {}).get("scenes") or [] for movement in scene.get("arc_movements") or []}
+
+    def beat_scenes(beat):
+        """Screenplay scene ids that deliver ``beat`` (via the outline's arc_movements)."""
+        planned = {scene.get("scene_id") for scene in (outline or {}).get("scenes") or []
+                   if set(BEAT_MOVEMENTS.get(beat, ())) & set(scene.get("arc_movements") or [])}
+        return [int(scene["id"]) for scene in sections if scene.get("outline_scene_id") in planned]
+    if sections:
+        for beat, line in beat_quotes(brief):
+            if not said(line, story_text):
+                finding(f"the brief's line is not spoken as direct dialogue: \"{line}\"", [brief["beats"][beat]],
+                        f"Have the character say it aloud, in double quotes, in the {beat.replace('_', ' ')} "
+                        f"scene: \"{line}\"", beat_scenes(beat))
+        ending = beat_scenes("ending") or [int(scene["id"]) for scene in sections[-2:]]
+        ending_text = " ".join(str(scene.get("narration", "")) for scene in sections if int(scene["id"]) in ending)
+        for item in ending_items(brief):                       # implicit must_include of the final scenes
+            if not mentioned(item, ending_text, 0.6):
+                finding(f"ending detail missing: {item!r}", [brief["beats"]["ending"]],
+                        f"Put {item!r} on the page in the final scene(s).", ending)
     if (outline or {}).get("scenes"):
         for beat in brief.get("beats") or {}:
             if not set(BEAT_MOVEMENTS.get(beat, ())) & movements:

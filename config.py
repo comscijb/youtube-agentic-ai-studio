@@ -109,6 +109,8 @@ NARRATIVE_AUTO_REVISION_ENABLED = os.getenv(
 ).lower() in ("1", "true", "yes", "on")
 NARRATIVE_EXPANSION_MAX_CALLS = int(os.getenv("NARRATIVE_EXPANSION_MAX_CALLS", "3"))
 NARRATIVE_EXPANSION_BATCH_SIZE = int(os.getenv("NARRATIVE_EXPANSION_BATCH_SIZE", "3"))
+# A batch that is not fully accepted is retried scene by scene (at most this many extra calls).
+NARRATIVE_EXPANSION_SINGLE_RETRIES = int(os.getenv("NARRATIVE_EXPANSION_SINGLE_RETRIES", "3"))
 # One bounded rewrite of scenes cited by confirmed/probable major or blocking
 # editorial findings (lecture, continuity, agency...). Worst-case cost per
 # episode: +1 revision call per batch (MAX_CALLS) and +1 editorial re-review.

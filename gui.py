@@ -212,6 +212,23 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
 
     try:
         Path(config.OUTPUT_DIR).mkdir(exist_ok=True)
+        if video_type == "normal":
+            # Phase 3.7: the brief's target duration wins over the dropdown (and is kept in project.json).
+            from agents import premise_brief
+            try:
+                pending = premise_brief.parse(topic_override) if premise_brief.is_brief(topic_override) \
+                    else premise_brief.load(config.OUTPUT_DIR) if not topic_override.strip() else None
+            except premise_brief.BriefError:
+                pending = None
+            wanted = premise_brief.target_minutes(pending, target_duration)
+            if wanted and wanted != float(target_duration):
+                _log(f"Target duration: {wanted:g} min from the premise brief (instead of {float(target_duration):g}).")
+                target_duration = wanted
+            if projects.is_project(config.OUTPUT_DIR):
+                data = projects.load(config.OUTPUT_DIR)
+                if data.get("target_duration_minutes") != target_duration:
+                    data["target_duration_minutes"] = target_duration
+                    projects.save(config.OUTPUT_DIR, data)
         Path(config.IMAGES_DIR).mkdir(exist_ok=True)
 
         from agents.researcher   import research_topic
@@ -536,6 +553,9 @@ def run_pipeline():
         return jsonify({"ok": False, "error": "Invalid video format"}), 400
     if video_type == "normal" and not 12 <= target_duration <= 20:
         return jsonify({"ok": False, "error": "Regular episodes must target 12-20 minutes"}), 400
+    guard = _regeneration_guard(steps, body)
+    if guard:
+        return guard
     for s in steps:
         if s in _state["stages"]: _state["stages"][s] = "pending"
     _state["video_type"] = video_type
@@ -702,7 +722,7 @@ def premise_brief_parse():
     except premise_brief.BriefError as exc:
         return jsonify({"ok": False, "error": str(exc)}), 400
     return jsonify({"ok": True, "brief": True, "fields": [key for key in premise_brief.FIELDS if key in brief],
-                    "notes": bool(brief.get("notes"))})
+                    "notes": bool(brief.get("notes")), "target_minutes": premise_brief.target_minutes(brief)})
 
 
 @app.route("/api/shorts")
@@ -773,6 +793,39 @@ def shorts_audio():
     return send_file(str(path), mimetype="audio/mpeg", conditional=True)
 
 
+def _regeneration_guard(steps: list, body: dict):
+    """Re-running the Story Brief (the "research" step) discards the screenplay and everything after
+    it: the GUI must confirm, seeing the list, before it runs (409 + impact otherwise)."""
+    if "research" not in steps or body.get("confirm_regenerate"):
+        return None
+    impact = projects.regeneration_impact(config.OUTPUT_DIR)
+    if not impact["discard"]:
+        return None
+    return jsonify({"ok": False, "needs_regenerate_confirmation": True, "impact": impact,
+                    "error": "Regenerating the Story Brief discards: " + ", ".join(impact["discard"])}), 409
+
+
+@app.route("/api/projects/discard", methods=["POST"])
+def discard_project_endpoint():
+    """"Descartar projeto": delete an empty project (only project.json, nothing generated)."""
+    body = request.get_json(force=True) or {}
+    try:
+        path = projects.path_for(str(body.get("slug", "")))
+    except projects.ProjectNotFound as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 404
+    if _state["running"] or _state.get("imagegen_busy"):
+        return jsonify({"ok": False, "error": "Wait for the running step to finish"}), 409
+    current = Path(config.OUTPUT_DIR).resolve() == path.resolve()
+    try:
+        projects.discard(path)
+    except (ValueError, OSError) as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    if current:                                   # fall back to the most recent project (or legacy output/)
+        projects.activate(projects.resolve())
+        _reload_state_from_disk()
+    return jsonify({"ok": True})
+
+
 @app.route("/api/projects/stage/<stage>", methods=["POST"])
 def project_stage(stage):
     """Run / re-run / skip one stage of the current project, respecting existing artifacts."""
@@ -813,6 +866,9 @@ def project_stage(stage):
         for item in upstream:
             steps += [step for step in projects.steps_for(item["stage"]) if step not in steps]
     steps += [step for step in projects.steps_for(stage) if step not in steps]
+    guard = _regeneration_guard(steps, body)
+    if guard:
+        return guard
     info = projects.load(out)
     video_type = info.get("video_type") or _state.get("video_type") or "normal"
     target = float(info.get("target_duration_minutes") or 15)

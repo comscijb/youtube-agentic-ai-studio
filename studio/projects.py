@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
@@ -248,7 +249,7 @@ def stage_status(path) -> list[dict]:
 
     from agents import premise_brief as briefs
     author = briefs.load(path)
-    if brief and author and brief.get("requested_brief_hash") != author.get("hash"):
+    if brief and author and not briefs.matches(brief, author):
         result.append(_entry("story_brief", "stale", "the premise brief changed after the story brief"))
     else:
         result.append(_entry("story_brief", "done" if brief else "missing",
@@ -393,8 +394,65 @@ def summary(path) -> dict:
         "updated": data.get("updated"), "video_type": data.get("video_type", "normal"),
         "target_duration_minutes": data.get("target_duration_minutes"),
         "provisional": bool(data.get("provisional")), "published_video_id": data.get("published_video_id"),
-        "thumbnail": thumbnail, "stages": statuses,
+        "thumbnail": thumbnail, "stages": statuses, "empty": is_empty(path),
     }
+
+
+def regeneration_impact(path) -> dict:
+    """What re-running the Story Brief throws away, and which approvals survive it.
+    ``discard`` is empty when nothing downstream exists (no confirmation needed)."""
+    path = Path(path)
+    discard = []
+    script = load_json(path / "script.json") or {}
+    for name, label in (("character_bible.json", "Character Bible"), ("story_outline.json", "outline"),
+                        ("script.json", f"roteiro ({len(script.get('sections', []))} cenas)"),
+                        ("narrative_review.json", "revisão editorial"), ("narration.mp3", "narração"),
+                        ("narration_mixed.mp3", "mix com música"), ("thumbnail.jpg", "thumbnail"),
+                        ("final_video.mp4", "vídeo final"), ("final_short.mp4", "Short final")):
+        if (path / name).is_file():
+            discard.append(label)
+    vb = load_json(path / "visual_bible.json") or {}
+    if vb:
+        discard.append("visual bible (fica desatualizada e é refeita)")
+    shots = [shot for shot in (load_json(path / "shot_list.json") or {}).get("shots", []) if not shot.get("reuse_of")]
+    if shots:
+        images = sum(1 for shot in shots if shot.get("image_path") and (path / shot["image_path"]).is_file())
+        discard.append(f"planos: {len(shots)} planos e {images} imagens ficam desatualizados")
+    from video import shorts as shorts_module
+    if shorts_module.load(path):
+        discard.append("Shorts do episódio (plano e vídeos)")
+    if (path / "review_approval.json").is_file():
+        discard.append("aprovação de publicação")
+    keep = []
+    if discard:
+        from agents import visual_bible as vbible
+        for key in sorted(vb.get("references") or {}):
+            kind, _, identifier = key.partition(":")
+            if vbible.approved_reference(vb, kind, identifier, path):
+                keep.append(f"referência aprovada: {identifier} ({'personagem' if kind == 'character' else 'local'})"
+                            " — vale enquanto a nova visual bible mantiver esse id")
+        if (path / "premise_brief.md").is_file():
+            keep.append("o briefing (premise_brief.md)")
+    return {"discard": discard, "keep": keep}
+
+
+def is_empty(path) -> bool:
+    """Only project.json: nothing was generated yet."""
+    return all(item.name == PROJECT_FILE or (item.is_dir() and not any(item.rglob("*")))
+               for item in Path(path).iterdir())
+
+
+def discard(path) -> None:
+    """Delete an empty project folder ("Descartar projeto"). Projects with any artifact are refused."""
+    path = Path(path)
+    if not is_project(path) or path.resolve().parent != root().resolve():
+        raise ProjectNotFound(f"{path.name} is not a project")
+    if not is_empty(path):
+        raise ValueError(f"{path.name} has generated files; only empty projects can be discarded")
+    was_active = active_slug() == path.name
+    shutil.rmtree(path)
+    if was_active:
+        (root() / ACTIVE_FILE).unlink(missing_ok=True)
 
 
 def steps_for(stage: str) -> tuple:

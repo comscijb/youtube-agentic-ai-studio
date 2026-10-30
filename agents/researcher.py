@@ -159,19 +159,23 @@ def research_topic(
         narrative_type = author["narrative_type"] if author.get("narrative_type") in NARRATIVE_TYPES \
             else narrative_type
         topic_override = topic_override.strip() or briefs.exact_premise(author)
-        target_duration_minutes = target_duration_minutes or author.get("target_minutes")
+        target_duration_minutes = briefs.target_minutes(author, target_duration_minutes)
     if narrative_type != "auto" and narrative_type not in NARRATIVE_TYPES:
         raise ValueError(f"Unsupported narrative type: {narrative_type}")
     exact = topic_override.strip()
     duration = float(target_duration_minutes or getattr(config, "TARGET_DURATION_MINUTES", 15))
     request = {"premise": exact, "theme": focus_angle.strip(), "narrative_type": narrative_type,
                "duration": duration}
+    accepted = []
     if author:
+        # Phase 3.7 hashed the saved record with its own "hash" key; that cache key stays valid.
+        accepted.append(stable_hash({**request, "brief": stable_hash(
+            {key: value for key, value in author.items() if key != "raw"})}))
         request["brief"] = briefs.brief_hash(author)
     request_hash = stable_hash(request)
     brief_path = os.path.join(config.OUTPUT_DIR, "story_brief.json")
     if reuse_cached:
-        cached = _cached_brief(brief_path, request_hash)
+        cached = _cached_brief(brief_path, [request_hash] + accepted)
         if cached:
             print("   -> Reusing cached story brief")
             return cached
@@ -420,9 +424,10 @@ def _apply_title_review(brief: dict, review: dict) -> None:
     brief["title_review"] = review
 
 
-def _cached_brief(path: str, request_hash: str) -> dict | None:
+def _cached_brief(path: str, request_hashes) -> dict | None:
     value = load_json(path)
-    if not value or value.get("request_hash") != request_hash:
+    hashes = [request_hashes] if isinstance(request_hashes, str) else list(request_hashes)
+    if not value or value.get("request_hash") not in hashes:
         return None
     try:
         return validate_story_brief(value)

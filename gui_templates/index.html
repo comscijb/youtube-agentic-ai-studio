@@ -1116,6 +1116,13 @@ function briefChanged() {
       box.textContent = d.brief
         ? `Briefing detalhado: ${d.fields.length ? d.fields.join(', ') : 'texto livre'}${d.notes ? ' + notas' : ''} — decisões do autor, preservadas.`
         : 'Uma frase: a história preserva esta premissa exata.';
+      if (d.target_minutes) {          // the brief's duration wins over the dropdown
+        const select = document.getElementById('target-duration');
+        const value = String(d.target_minutes);
+        if (![...select.options].some(o => o.value === value)) select.add(new Option(`${value} minutes`, value));
+        select.value = value;
+        box.textContent += ` Duração: ${value} min (do briefing).`;
+      }
     }), 400);
 }
 
@@ -1220,7 +1227,15 @@ function setFormat(type) {
   document.getElementById('target-duration').disabled = type === 'shorts';
 }
 
-function startGeneration() {
+function confirmRegenerate(d) {
+  // Re-running the Story Brief discards the screenplay and what was built on it.
+  const items = list => list.map(item => '• ' + item).join('\n');
+  return confirm('Regerar o Story Brief descarta:\n' + items(d.impact.discard) +
+    (d.impact.keep.length ? '\n\nContinuam válidos:\n' + items(d.impact.keep) : '') +
+    '\n\nRegerar mesmo assim?');
+}
+
+function startGeneration(extra) {
   const steps = [];
   if (document.getElementById('step-research').checked)  steps.push('research');
   if (document.getElementById('step-script').checked)    steps.push('script');
@@ -1255,9 +1270,15 @@ function startGeneration() {
   fetch('/api/run', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({steps, topic, focus_angle, video_type: _videoType,
-                          narrative_type, target_duration, narrative_review})
+    body: JSON.stringify(Object.assign({steps, topic, focus_angle, video_type: _videoType,
+                          narrative_type, target_duration, narrative_review}, extra || {}))
   }).then(r => r.json()).then(d => {
+    if (d.needs_regenerate_confirmation) {
+      setRunning(false);
+      if (confirmRegenerate(d)) startGeneration({confirm_regenerate: true});
+      else _log('Story Brief mantido — nada foi descartado.');
+      return;
+    }
     if (!d.ok) { _log('Error: '+d.error, 'log-error'); setRunning(false); return; }
     _log('Pipeline started…');
     startSSE();
@@ -3104,6 +3125,7 @@ function homeShowProjects() {
           <button class="btn btn-primary" onclick="openProject('${_esc(p.slug)}')">Abrir</button>
           ${p.published_video_id && !p.archived
               ? `<button class="btn btn-ghost" onclick="archiveProject('${_esc(p.slug)}')">Arquivar</button>` : ''}
+          ${p.empty ? `<button class="btn btn-ghost" onclick="discardProject('${_esc(p.slug)}')">Descartar projeto</button>` : ''}
         </div>
       </div>`).join('');
   });
@@ -3132,6 +3154,16 @@ function archiveProject(slug) {
       setTimeout(homeShowProjects, 4000);
     });
   });
+}
+
+function discardProject(slug) {
+  if (!confirm(`Descartar ${slug}? O projeto está vazio (só project.json); a pasta é apagada.`)) return;
+  fetch('/api/projects/discard', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({slug})}).then(r => r.json()).then(d => {
+      if (!d.ok) { alert(d.error); return; }
+      _log(`Projeto vazio descartado: ${slug}`);
+      homeShowProjects(); refreshProject();
+    });
 }
 
 function setProjectChip(d) {
@@ -3169,6 +3201,10 @@ function runStage(stage, action, extra) {
   fetch(`/api/projects/stage/${stage}`, {method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify(Object.assign({action}, extra || {}))})
     .then(r => r.json().then(d => [r.status, d])).then(([status, d]) => {
+      if (d.needs_regenerate_confirmation) {
+        if (confirmRegenerate(d)) runStage(stage, action, Object.assign({}, extra || {}, {confirm_regenerate: true}));
+        return;
+      }
       if (d.needs_confirmation) {
         const names = d.upstream.map(u => `${u.label} (${STATUS_PT[u.status]})`).join(', ');
         if (confirm(`${names} precisa(m) de trabalho antes.\n\nOK = refazer esses passos antes\nCancelar = escolher rodar mesmo assim`)) {

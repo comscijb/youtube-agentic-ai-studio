@@ -27,9 +27,11 @@ def new_from_brief(path: str, minutes: float | None = None) -> int:
     except (OSError, premise_brief.BriefError) as exc:
         print(f"Brief not usable: {exc}", file=sys.stderr)
         return 1
-    target = float(minutes or brief.get("target_minutes") or 12)
+    if brief.get("target_minutes") and minutes and float(minutes) != brief["target_minutes"]:
+        print(f"The brief asks for {brief['target_minutes']:g} minutes; it wins over --minutes {minutes:g}.")
+    target = float(brief.get("target_minutes") or minutes or 12)          # the brief has priority
     if not 12 <= target <= 20:
-        print("Episodes target 12-20 minutes (--minutes).", file=sys.stderr)
+        print("Episodes target 12-20 minutes (Target minutes in the brief, or --minutes).", file=sys.stderr)
         return 1
     brief["target_minutes"] = target
     folder = projects.create(brief.get("working_title", ""), video_type="normal", target_duration=target)

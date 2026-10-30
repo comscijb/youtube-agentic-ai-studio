@@ -178,12 +178,16 @@ def _author_rule(brief: dict, stage: str) -> str:
                  "name, age and relationship given there; add at most what the story needs.",
         "outline": "The STORY BRIEF's author_brief is authoritative: map each of its beats to the scene(s) that "
                    "express it (arc_movements: hook, mechanism/escalation_success, hidden_cost, reversal, "
-                   "philosophical_layer, ending); plan every must_include item into a scene; never use a "
-                   "must_avoid item; keep its setting and tone.",
+                   "philosophical_layer, ending); plan every must_include item, every line its beats quote "
+                   "and every detail of its ending beat into a scene; never use a must_avoid item; keep its "
+                   "setting and tone.",
         "scenes": "Honour the STORY BRIEF's author_brief: its tone, every must_include item placed in its "
-                  "planned scene, never a must_avoid item, names and ages exactly as given.",
+                  "planned scene, never a must_avoid item, names and ages exactly as given. Every line quoted "
+                  "in its beats is spoken verbatim, as direct speech in double quotes, in the scene that "
+                  "delivers that beat; every detail of its ending beat appears on the page in the final scenes.",
         "review": "The STORY BRIEF has an author_brief: also check faithfulness to it (must_include present, "
-                  "must_avoid absent, beats mapped, names/ages/relationships unchanged); report each violation "
+                  "must_avoid absent, beats mapped, the beats' quoted lines spoken as direct dialogue, every "
+                  "ending detail on the page, names/ages/relationships unchanged); report each violation "
                   "with issue_type brief_faithfulness and the scene_ids to change.",
     }
     return "\n" + rules[stage]
@@ -197,7 +201,9 @@ original cinematic story; never explains psychology to the audience. Preserve ch
 chronology, speculative rules, causality and EACH allocated word count (85%-115%). Dramatize
 objectives, obstacles, decisions, consequences and discoveries through action. The protagonist
 must make consequential choices. Never pad with repeated atmosphere, restated feelings, generic
-transitions or summary. Make sentences natural for spoken audio. When a scene's outline lists
+transitions or summary. Make sentences natural for spoken audio. Words a character says aloud
+are direct speech in double quotes ("I'll be here tomorrow, Walter."), never reported speech.
+When a scene's outline lists
 arc_movements, the narration must deliver those movements on the page (for character_wound, the
 wound itself must appear in the screenplay).
 
@@ -349,79 +355,112 @@ def _expand_underlength_scenes(script: dict, brief: dict, bible: dict,
     ]
     batch_size = max(1, int(getattr(config, "NARRATIVE_EXPANSION_BATCH_SIZE", 3)))
     max_calls = max(0, int(getattr(config, "NARRATIVE_EXPANSION_MAX_CALLS", 3)))
+    single_calls = max(0, int(getattr(config, "NARRATIVE_EXPANSION_SINGLE_RETRIES", 3)))
     revised = script
     attempts = []
-    for offset in range(0, len(deficient), batch_size):
-        if len(attempts) >= max_calls:
-            break
-        batch = deficient[offset:offset + batch_size]
-        ids = [item["scene_id"] for item in batch]
-        selected = [scene for scene in revised["sections"] if scene["id"] in ids]
-        neighbors = [
-            {"id": scene["id"], "title": scene["title"],
-             "ending": scene["narration"][-350:]}
-            for scene in revised["sections"]
-            if any(abs(scene["id"] - scene_id) == 1 for scene_id in ids)
-        ]
-        contract = f"""You are performing one bounded screenplay expansion pass. Return ONLY the
+    batches = [deficient[offset:offset + batch_size] for offset in range(0, len(deficient), batch_size)]
+    for batch in batches[:max_calls]:
+        revised, attempt = _expansion_pass(revised, batch, brief, bible, outline)
+        attempts.append(attempt)
+        if len(batch) > 1 and not attempt["success"]:        # retry the scenes still short, one by one
+            for item in batch:
+                if item["scene_id"] in attempt["accepted"] or single_calls <= 0:
+                    continue
+                single_calls -= 1
+                revised, single = _expansion_pass(revised, [item], brief, bible, outline)
+                single["kind"] = "single_scene_expansion"
+                attempts.append(single)
+    return revised, attempts
+
+
+def _band_distance(ratio: float) -> float:
+    """How far a scene's words/target ratio is from the 85%-115% band (0 inside it)."""
+    return max(0.0, .85 - ratio, ratio - 1.15)
+
+
+def _expansion_pass(revised: dict, batch: list[dict], brief: dict, bible: dict,
+                    outline: dict) -> tuple[dict, dict]:
+    """One expansion call for ``batch``. Code owns scene ids and order (mapped by position).
+    A scene is accepted inside 85%-115%, or when it improved and is within 2 points of the band;
+    in any case the version closest to the band is kept instead of being discarded."""
+    ids = [item["scene_id"] for item in batch]
+    attempt = {"scene_ids": ids, "kind": "targeted_substantive_expansion", "success": False,
+               "accepted": [], "kept_best": []}
+    selected = [scene for scene in revised["sections"] if scene["id"] in ids]
+    neighbors = [
+        {"id": scene["id"], "title": scene["title"],
+         "ending": scene["narration"][-350:]}
+        for scene in revised["sections"]
+        if any(abs(scene["id"] - scene_id) == 1 for scene_id in ids)
+    ]
+    contract = f"""You are performing one bounded screenplay expansion pass. Return ONLY the
 SELECTED SCENES supplied after this contract, in order, as {{"scenes": [...]}}. Preserve every scene
 ID, canonical section_type, narrative_function, established fact, chronology, character identity,
 causal outcome and useful line already present. Add substantive dramatic action, consequential
-choice, credible discovery, specific dialogue and subtext until each scene reaches 85%-115% of its
+choice, credible discovery, specific dialogue (spoken lines in double quotes) and subtext until each scene reaches 85%-115% of its
 target. Do not add filler, repeated atmosphere, exposition summaries, new characters, new rules or
 unsupported twists. {STACKED_MODIFIER_RULE}
 
 EXACT DEFICITS: {compact_json(batch)}"""
-        context = f"""SELECTED SCENES: {compact_json(selected)}
+    context = f"""SELECTED SCENES: {compact_json(selected)}
 NEIGHBOR CONTEXT: {compact_json(neighbors)}
 STORY BRIEF: {compact_json(brief)}
 CHARACTER BIBLE: {compact_json(bible)}
 OUTLINE: {compact_json(outline)}"""
 
-        def validate_expansion(value):
-            scenes = value.get("scenes")
-            if not isinstance(scenes, list) or [scene.get("id") for scene in scenes] != ids:
-                raise NarrativeValidationError("targeted expansion changed scene IDs or order")
-            targets = {item["scene_id"]: item["target_words"] for item in batch}
-            for scene in scenes:
-                if not isinstance(scene.get("narration"), str):
-                    raise NarrativeValidationError("targeted expansion requires narration")
-                ratio = len(scene["narration"].split()) / targets[scene["id"]]
-                if ratio < .85 or ratio > 1.15:
-                    raise NarrativeValidationError(
-                        f"expanded scene {scene['id']} remains outside 85%-115% ({ratio:.1%})"
-                    )
-            return scenes
+    def validate_expansion(value):
+        scenes = value.get("scenes") if isinstance(value, dict) else value
+        if not isinstance(scenes, list) or len(scenes) != len(ids):
+            raise NarrativeValidationError(
+                f"targeted expansion must return exactly {len(ids)} scene(s), in the given order")
+        for scene in scenes:
+            if not isinstance(scene, dict) or not isinstance(scene.get("narration"), str) \
+                    or not scene["narration"].strip():
+                raise NarrativeValidationError("targeted expansion requires narration")
+        return scenes
 
-        attempt = {"scene_ids": ids, "kind": "targeted_substantive_expansion", "success": False}
+    try:
+        replacements = _generate_json(
+            contract, "targeted scene expansion", validate_expansion, context=context,
+            stage=f"expansion {'-'.join(str(scene_id) for scene_id in ids)}",
+            temperature_key="expansion",
+        )
+    except NarrativeValidationError as exc:
+        attempt["error"] = str(exc)
+        return revised, attempt
+    notes = []
+    for item, replacement in zip(batch, replacements):       # by position: the code owns ids
+        original = next(scene for scene in revised["sections"] if scene["id"] == item["scene_id"])
+        before = _band_distance(len(original["narration"].split()) / item["target_words"])
+        ratio = len(replacement["narration"].split()) / item["target_words"]
+        after = _band_distance(ratio)
+        if after >= before:
+            notes.append(f"scene {item['scene_id']} did not improve ({ratio:.1%})")
+            continue
+        merged = dict(original)
+        merged.update(replacement)
+        for field in ("id", "outline_scene_id", "section_type", "narrative_function",
+                      "target_words"):
+            merged[field] = original.get(field)
+        merged["bullet_points"] = []
+        candidate = dict(revised)
+        candidate["sections"] = [merged if scene["id"] == item["scene_id"] else scene
+                                 for scene in revised["sections"]]
         try:
-            replacements = _generate_json(
-                contract, "targeted scene expansion", validate_expansion, context=context,
-                stage=f"expansion {'-'.join(str(scene_id) for scene_id in ids)}",
-                temperature_key="expansion",
-            )
-            by_id = {scene["id"]: scene for scene in replacements}
-            updated = []
-            for original in revised["sections"]:
-                replacement = by_id.get(original["id"])
-                if replacement is None:
-                    updated.append(original)
-                    continue
-                merged = dict(original)
-                merged.update(replacement)
-                for field in ("id", "outline_scene_id", "section_type", "narrative_function",
-                              "target_words"):
-                    merged[field] = original.get(field)
-                merged["bullet_points"] = []
-                updated.append(merged)
-            candidate = dict(revised)
-            candidate["sections"] = updated
             revised = validate_script(candidate, bible, outline)
-            attempt["success"] = True
         except NarrativeValidationError as exc:
-            attempt["error"] = str(exc)
-        attempts.append(attempt)
-    return revised, attempts
+            notes.append(f"scene {item['scene_id']}: {exc}")
+            continue
+        if after <= .02:
+            attempt["accepted"].append(item["scene_id"])
+        else:
+            attempt["kept_best"].append(item["scene_id"])
+            notes.append(f"scene {item['scene_id']} improved but remains outside 85%-115% "
+                         f"({ratio:.1%}); the better version is kept")
+    attempt["success"] = len(attempt["accepted"]) == len(ids)
+    if notes:
+        attempt["error"] = "; ".join(notes)
+    return revised, attempt
 
 
 SEMANTIC_REVISION_TYPES = (

@@ -71,8 +71,7 @@ def _run(resume: bool):
         config.CHANNEL_DESCRIPTION,
         narrative_type=getattr(config, "NARRATIVE_TYPE", "auto"),
         focus_angle=getattr(config, "PSYCHOLOGICAL_THEME", ""),
-        target_duration_minutes=(author or {}).get("target_minutes")
-        or getattr(config, "TARGET_DURATION_MINUTES", 15),
+        target_duration_minutes=premise_brief.target_minutes(author, getattr(config, "TARGET_DURATION_MINUTES", 15)),
         reuse_cached=resume,
         premise_brief=author,
     )
@@ -88,7 +87,7 @@ def _run(resume: bool):
     banner("2 / 6  ·  Character bible → outline → screenplay  [Gemini]")
     script = write_script(
         research,
-        target_duration_minutes=getattr(config, "TARGET_DURATION_MINUTES", 15),
+        target_duration_minutes=premise_brief.target_minutes(author, getattr(config, "TARGET_DURATION_MINUTES", 15)),
         narrative_review=getattr(config, "NARRATIVE_REVIEW_ENABLED", True),
     )
     print(f"\n  ✅  {len(script['sections'])} scenes written")

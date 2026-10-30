@@ -156,10 +156,13 @@ class ProjectTests(unittest.TestCase):
             brief_file.write_text(premise_brief.TEMPLATE, encoding="utf-8")
             with patch.object(projects, "root", return_value=root), redirect_stdout(io.StringIO()) as out:
                 self.assertEqual(cli.main(["new", "--brief-file", str(brief_file), "--minutes", "14"]), 0)
-                self.assertEqual(cli.main(["new", "--brief-file", str(brief_file), "--minutes", "3"]), 1)
                 folder = root / projects.active_slug()
+                no_target = Path(temp, "no-target.md")
+                no_target.write_text(premise_brief.TEMPLATE.replace("# Target minutes\n12", ""), encoding="utf-8")
+                self.assertEqual(cli.main(["new", "--brief-file", str(no_target), "--minutes", "3"]), 1)
                 saved = premise_brief.load(folder)
-                self.assertEqual(saved["target_minutes"], 14.0)
+                self.assertEqual(saved["target_minutes"], 12.0)                  # the brief wins over --minutes
+                self.assertEqual(projects.load(folder)["target_duration_minutes"], 12.0)
                 self.assertIn("the-only-one-who-never-got-tired-of-him", folder.name)
                 status = {item["stage"]: item for item in projects.stage_status(folder)}
                 self.assertEqual(status["story_brief"]["detail"], "premise brief ready")
@@ -171,6 +174,7 @@ class ProjectTests(unittest.TestCase):
                 self.assertEqual({item["stage"]: item["status"] for item in projects.stage_status(folder)}["story_brief"],
                                  "stale")
         self.assertIn("Brief fields:", out.getvalue())
+        self.assertIn("it wins over --minutes 14", out.getvalue())
         self.assertEqual(archive.FILES["premise_brief.md"], "text")
         self.assertEqual(archive.FILES["premise_brief.json"], "text")
 
