@@ -103,11 +103,15 @@ def portrait_prompt(vb: dict, character_id: str, view: str) -> str:
             f"{identity.sheet_style_suffix()}")
 
 
-def location_prompt(vb: dict, location_id: str) -> str:
+def location_prompt(vb: dict, location_id: str, *, anchor: bool = False) -> str:
+    """Only positive wording and the figure-free suffix: the negative is zeroed, so "no people"
+    (or "small figures" in the style) draws people, who would then be copied into every shot."""
     entry = vbible.location(vb, location_id) or {}
     noun = identity.image_noun()
-    return (f"{_article(noun).capitalize()} {noun}: establishing wide view of "
-            f"{entry.get('descriptor', location_id)}, empty, no people. {identity.style_suffix()}")
+    style = "Rendered in the drawing style of the first image. " if anchor else ""
+    return (f"{_article(noun).capitalize()} {noun}: establishing wide view of a deserted, unoccupied "
+            f"{entry.get('descriptor', location_id)}; only architecture, furniture and objects; perfectly "
+            f"still. {style}{identity.style_suffix(figures=False)}")
 
 
 def candidate_is_current(key: str, item: dict) -> bool:
@@ -170,13 +174,41 @@ def recurring_locations(vb: dict, shot_list: dict | None = None, output_dir=None
             or shots.get(item["location_id"], 0) >= RECURRING_MIN_SHOTS]
 
 
+LOCATION_PEOPLE_RETRIES = 3        # new seeds for a location candidate with someone in it
+BATCH_SIZES = {"character": len(PORTRAIT_VIEWS), "location": 2}
+
+
 def _location_job(vb: dict, lid: str, number: int, output: Path) -> ImageJob:
+    """Establishing image of a location; style-anchored only by an anchor with nobody in it."""
+    from agents import style_refs
     location = vbible.location(vb, lid) or {}
+    anchors = style_refs.empty_paths()
     return ImageJob(
-        job_id=f"loc_{lid}_{number}", prompt=location_prompt(vb, lid),
+        job_id=f"loc_{lid}_{number}", prompt=location_prompt(vb, lid, anchor=bool(anchors)),
         seed=location.get("seed", vbible.seed_for("location", lid)) + number,
         output_path=str(output / "location_refs" / "candidates" / f"{safe_filename(lid)}_{number}.jpg"),
-        size=native_size())
+        size=native_size(), **({"kind": "ref", "references": anchors[:1]} if anchors else {}))
+
+
+def _character_job(vb: dict, cid: str, number: int, output: Path) -> ImageJob:
+    base = (vbible.character(vb, cid) or {}).get("seed", vbible.seed_for("character", cid))
+    return ImageJob(
+        job_id=f"ref_{cid}_{number}", prompt=portrait_prompt(vb, cid, PORTRAIT_VIEWS[(number - 1) % len(PORTRAIT_VIEWS)]),
+        seed=base + number,
+        output_path=str(output / "character_refs" / "candidates" / f"{safe_filename(cid)}_{number}.jpg"),
+        size=PORTRAIT_SIZE, final_size=PORTRAIT_SIZE)
+
+
+def people_in(path) -> int | None:
+    """People the layer-1 detector finds in an image (None when the detector is unavailable)."""
+    detector = fixes._detector()
+    if detector is None:
+        return None
+    from video.qa.deterministic import DetectorUnavailable
+    try:
+        return len(detector.detect(path).get("persons", []))
+    except DetectorUnavailable:          # unreadable image: not checked
+        return None
 
 
 def generate_location_candidates(vb: dict, output_dir, generator: ImageGenerator, location_ids: list[str], *,
@@ -201,15 +233,8 @@ def generate_reference_candidates(vb: dict, output_dir, generator: ImageGenerato
         progress(f"   → Stale references archived in {archived} (another style or an older character sheet)")
     drawn = [item["character_id"] for item in vbible.on_screen(vb)]
     wanted = [cid for cid in characters or drawn if cid in drawn]       # never a portrait of a voice / no body
-    jobs = []
-    for cid in wanted:
-        base = (vbible.character(vb, cid) or {}).get("seed", vbible.seed_for("character", cid))
-        for number, view in enumerate(PORTRAIT_VIEWS, 1):
-            jobs.append(("character", cid, number, ImageJob(
-                job_id=f"ref_{cid}_{number}", prompt=portrait_prompt(vb, cid, view),
-                seed=base + number,
-                output_path=str(output / "character_refs" / "candidates" / f"{safe_filename(cid)}_{number}.jpg"),
-                size=PORTRAIT_SIZE, final_size=PORTRAIT_SIZE)))
+    jobs = [("character", cid, number, _character_job(vb, cid, number, output))
+            for cid in wanted for number in range(1, len(PORTRAIT_VIEWS) + 1)]
     if locations:
         for location in recurring_locations(vb, output_dir=output):
             lid = location["location_id"]
@@ -219,17 +244,49 @@ def generate_reference_candidates(vb: dict, output_dir, generator: ImageGenerato
     return _run_reference_jobs(jobs, output, generator, progress)
 
 
+def generate_new_batch(vb: dict, output_dir, generator: ImageGenerator, kind: str, ident: str, *,
+                       progress: Callable[[str], None] = print) -> dict:
+    """"Gerar novos candidatos": a new batch with new seeds (new numbers); earlier ones stay in the history."""
+    output = Path(output_dir)
+    if kind == "character" and ident not in [item["character_id"] for item in vbible.on_screen(vb)]:
+        raise ValueError(f"no reference for {ident!r} (unknown, voice only or no body)")
+    if kind == "location" and not vbible.location(vb, ident):
+        raise ValueError(f"unknown location {ident!r}")
+    if kind not in BATCH_SIZES:
+        raise ValueError("kind must be character or location")
+    existing = (load_json(output / CANDIDATES_FILE) or {}).get(vbible.reference_key(kind, ident), [])
+    start = max([int(item["number"]) for item in existing] or [0]) + 1
+    batch = max([int(item.get("batch", 1)) for item in existing] or [0]) + 1
+    make = _character_job if kind == "character" else _location_job
+    jobs = [(kind, ident, number, make(vb, ident, number, output))
+            for number in range(start, start + BATCH_SIZES[kind])]
+    return _run_reference_jobs(jobs, output, generator, progress, batch=batch)
+
+
 def _run_reference_jobs(jobs: list, output: Path, generator: ImageGenerator,
-                        progress: Callable[[str], None]) -> dict:
+                        progress: Callable[[str], None], *, batch: int = 1) -> dict:
+    """Generate and record candidates. A location candidate with someone in it is generated again
+    with another seed (LOCATION_PEOPLE_RETRIES times) before it is shown; if someone is still
+    there, the candidate is kept and marked (``people``) for the GUI."""
     record = load_json(output / CANDIDATES_FILE) or {}
     for index, (kind, ident, number, job) in enumerate(jobs, 1):
         progress(f"   → Reference candidate {index}/{len(jobs)}: {kind} {ident} #{number}")
         result = generator.generate_with_retry(job)
+        people, attempts = None, 1
+        if kind == "location":
+            people = people_in(job.output_path)
+            while people and attempts <= LOCATION_PEOPLE_RETRIES:
+                progress(f"     {people} person(s) in {ident} #{number}: new seed ({attempts}/{LOCATION_PEOPLE_RETRIES})")
+                job = replace(job, seed=job.seed + 7919 * attempts)
+                result = generator.generate_with_retry(job)
+                people = people_in(job.output_path)
+                attempts += 1
         entries = record.setdefault(vbible.reference_key(kind, ident), [])
         entries[:] = [item for item in entries if item["number"] != number]
         entries.append({"number": number, "path": str(Path(job.output_path).relative_to(output)),
-                        "seed": result["seed"], "prompt": job.prompt,
+                        "seed": result["seed"], "prompt": job.prompt, "batch": batch,
                         "style_hash": identity.style_hash(),
+                        **({"people": people, "attempts": attempts} if kind == "location" else {}),
                         **({"sheet_version": vbible.CHARACTER_SHEET_VERSION} if kind == "character" else {})})
         atomic_write_json(output / CANDIDATES_FILE, record)
     return record
@@ -348,12 +405,15 @@ def shot_job(shot: dict, vb: dict, output: Path, seed_offset: int = 0) -> tuple[
     return job, composed
 
 
-def _in_scope(shot: dict, only: str | None) -> bool:
+def _in_scope(shot: dict, only) -> bool:
+    """``only``: a scene id, a shot id, or a list of them (batch regeneration)."""
+    if isinstance(only, (list, tuple, set)):
+        return shot["scene_id"] in only or shot["shot_id"] in only
     return not only or shot["scene_id"] == only or shot["shot_id"] == only
 
 
 def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None = None,
-                   only: str | None = None, progress: Callable[[str], None] = print,
+                   only: str | list | None = None, progress: Callable[[str], None] = print,
                    clock: Callable[[], float] = time.monotonic, qa=None, fix_only: bool = False,
                    qa_mode: str | None = None) -> dict:
     """Phase-batched so Klein and the QA VLM never share the 8 GB of VRAM (Phase 3.5-E):

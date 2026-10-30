@@ -687,7 +687,14 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
         slots.append({"slot": len(references) - 1, "kind": "location", "id": location.get("location_id")})
         location_text = f"in the room from the {ORDINALS[len(references) - 1]} image"
     location_text = _setting_text(location_text, shot.get("setting_condition", ""))
-    anchors = style_refs.approved_paths()
+    others = shot.get("others_present")
+    if others is None:      # shot lists before version 2 have no others_present
+        others = bool(unnamed_people(shot.get("action", ""), len(characters)))
+    # Small figures only in shots with people; objects, inserts and empty rooms get the figure-free
+    # suffix and only anchors with nobody in them.
+    figures = bool(characters or others) and shot.get("shot_type") != "insert"
+    style = identity.style_suffix(figures=figures)
+    anchors = style_refs.approved_paths() if figures else style_refs.empty_paths()
     style_text = ""
     if anchors and len(references) < 4:
         references.append(anchors[0])
@@ -699,9 +706,6 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
                                    ref_names.get(cid, "")) for cid in characters]
     action = _cap(str(shot.get("action", "")).rstrip("."), ACTION_TEXT_MAX)
     article = "an" if noun[0] in "aeiou" else "a"
-    others = shot.get("others_present")
-    if others is None:      # shot lists before version 2 have no others_present
-        others = bool(unnamed_people(shot.get("action", ""), len(characters)))
     # Explicit headcount; a 4th+ listed character (no slot left) stays far and indistinct.
     crowd = headcount([short_name(cid, vb, ref_names) for cid in characters], bool(others), len(background))
     if shot.get("shot_type") == "over_the_shoulder" and characters:

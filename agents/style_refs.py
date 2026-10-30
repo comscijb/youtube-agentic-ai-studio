@@ -20,7 +20,7 @@ APPROVED_FILE = "approved.json"
 MAX_ANCHORS = 2
 BOARD_SUBJECTS = (
     "a vast empty hall with towering doorways and a single lamp on a long table",
-    "an endless staircase descending into fog, one small figure-less landing lit by a candle",
+    "an endless staircase descending into fog, a small landing lit by a candle",
     "a corridor that is far too long, doors receding into darkness, cold light from one window",
     "a high-ceilinged dining room lost in shadow, smoked glass decanters catching a warm glint",
     "a rain-dark window over a sleeping city, fog tendrils curling along the glass",
@@ -77,8 +77,31 @@ def approve(number: int, *, seed: int | None = None, prompt: str = "") -> list[d
 
 
 def board_prompt(index: int) -> str:
+    """Worded positively (the negative is zeroed: "no people" draws people), figure-free suffix."""
     subject = BOARD_SUBJECTS[index % len(BOARD_SUBJECTS)]
-    return f"An {identity.image_noun()} of {subject}, no people. {identity.style_suffix()}"
+    return (f"An {identity.image_noun()} of {subject}; deserted and unoccupied, only architecture, furniture "
+            f"and objects, perfectly still. {identity.style_suffix(figures=False)}")
+
+
+def empty_paths(style_hash: str | None = None) -> list[str]:
+    """Approved anchors with nobody in them (layer-1 detector, result kept in approved.json): the only
+    anchors used for location references and shots without characters. Unchecked anchors are not used."""
+    style_hash = style_hash or identity.style_hash()
+    data = _load()
+    entries = [entry for entry in data.get(style_hash, []) if (root() / entry["path"]).is_file()]
+    changed = False
+    for entry in entries:
+        if "people" in entry:
+            continue
+        from video.qa import fixes
+        detector = fixes._detector()
+        if detector is None:
+            continue
+        entry["people"] = len(detector.detect(root() / entry["path"]).get("persons", []))
+        changed = True
+    if changed:
+        (root() / APPROVED_FILE).write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    return [str(root() / entry["path"]) for entry in entries if entry.get("people") == 0]
 
 
 def clear_candidates(style_hash: str | None = None) -> None:

@@ -170,7 +170,8 @@ class StyleAnchorTests(StyleTestCase):
         self.assertEqual((code, approve), (0, 0))
         self.assertEqual(len(fake.prompts), 6)
         prompt = fake.prompts[0]["4"]["inputs"]["text"]
-        self.assertIn("no people", prompt)
+        self.assertIn("deserted and unoccupied", prompt)                       # positive wording only
+        self.assertNotIn("people", prompt)
         self.assertNotIn("17", fake.prompts[0])                                 # no third-party references
         self.assertEqual(style_refs.approved()[0]["number"], 4)
 

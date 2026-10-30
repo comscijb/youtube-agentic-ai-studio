@@ -6,6 +6,8 @@ movements, craft rules and title policy are stated once.
 """
 from __future__ import annotations
 
+import re
+
 CHANNEL_PROMISE = (
     "Private Gravity is an English-language anthology of original cinematic fiction in which "
     "psychological and philosophical ideas emerge through character choice, consequence, image "
@@ -154,6 +156,14 @@ DARK_ILLUSTRATION = {
                    "occult symbols", "text", "letters", "watermark", "signature", "photorealism",
                    "3D render", "glossy CGI", "anime", "cartoon", "bright saturated colour"),
 }
+# The same atmosphere with no figure, person or presence in it: with zeroed negative conditioning,
+# naming figures (even "small figures") draws them. Used for location references, style anchors and
+# shots without characters; figures stay only in shots that have characters.
+FIGURE_FREE_ATMOSPHERE = ("cosmic dread carried only by space and light: oppressive scale of vast rooms, "
+                          "towering doorways and endless staircases, deep pooled shadows, a single dominant "
+                          "light source, smoke and fog tendrils and formless shadows, subtly wrong geometry "
+                          "(corridors too long, ceilings lost in darkness), stillness, isolation")
+_FIGURE_WORDS = re.compile(r"\b(?:figures?|people|persons?|faces?|presence|silhouettes?)\b", re.I)
 CINEMATIC_PHOTO = {
     "medium": "cinematic still, low-key lighting, muted palette, 35 mm film grain, shallow depth of "
               "field, photorealistic",
@@ -210,7 +220,7 @@ def negative_terms(style: str | None = None) -> tuple:
 
 
 def style_suffix(style: str | None = None, variant: str | None = None, *,
-                 crimson_examples: str = CRIMSON_EXAMPLES) -> str:
+                 crimson_examples: str = CRIMSON_EXAMPLES, figures: bool = True) -> str:
     """Appended to every image prompt.
 
     The FLUX graphs zero out the negative conditioning (cfg 1), so naming the
@@ -223,6 +233,10 @@ def style_suffix(style: str | None = None, variant: str | None = None, *,
         return f"{CINEMATIC_PHOTO['medium']}, no lettering, no watermark"
     variant = variant or style_variant()
     spec = DARK_ILLUSTRATION
+    if not figures:
+        technique = ", ".join(part for part in STYLE_VARIANTS[variant].split(", ") if not _FIGURE_WORDS.search(part))
+        return (f"{FULL_BLEED}. {spec['medium']}; {technique}. {FIGURE_FREE_ATMOSPHERE}. "
+                f"{palette_text(crimson_examples)}. Clean image without lettering or watermark.")
     return (f"{FULL_BLEED}. {spec['medium']}; {STYLE_VARIANTS[variant]}. {spec['atmosphere']}. "
             f"{spec['people']}. {palette_text(crimson_examples)}. Clean image without lettering or watermark.")
 

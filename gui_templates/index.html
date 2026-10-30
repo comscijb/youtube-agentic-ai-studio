@@ -1434,6 +1434,7 @@ function igSetPref(key, value) {
 let _igData = {shots: []};
 let _igOrder = [];             // shot ids of the cards shown, in order: ← → in the grid and the viewer
 let _igFocus = -1;
+const _igSelected = new Set();  // shots ticked for "Gerar de novo (lote)"
 let _igFilter = igPref('filter', 'all');
 let _igSize = IG_SIZES[igPref('size', 'S')] ? igPref('size', 'S') : 'S';
 let _igUnclear = igPref('unclear', '0') === '1';
@@ -1546,6 +1547,23 @@ function igRenderBar() {
   const run = document.getElementById('ig-run-queue');
   run.textContent = `Executar fila (${_igData.queued || 0})`;
   run.disabled = !_igData.queued || _igData.busy;
+  let batch = document.getElementById('ig-regenerate-batch');
+  if (!batch) {
+    batch = document.createElement('button');
+    batch.id = 'ig-regenerate-batch';
+    batch.className = 'btn btn-ghost';
+    batch.style.cssText = 'font-size:11px;padding:4px 10px;margin-left:6px';
+    batch.title = 'Sementes novas para os planos marcados, gerados numa só execução';
+    batch.onclick = () => {
+      const ids = [..._igSelected];
+      if (!ids.length || !confirm(`Gerar de novo ${ids.length} plano(s) com sementes novas?`)) return;
+      igPost('/api/imagegen/shots/regenerate', {shot_ids: ids});
+      _igSelected.clear();
+    };
+    run.after(batch);
+  }
+  batch.textContent = `Gerar de novo (lote) (${_igSelected.size})`;
+  batch.disabled = !_igSelected.size || _igData.busy;
 }
 
 function igRenderGrid() {
@@ -1590,6 +1608,16 @@ function igRenderGrid() {
     label.textContent = `${shot.shot_id} · ${igTime(shot.start)}–${igTime(shot.end)} · ${shot.shot_type || ''}`;
     meta.appendChild(label);
     if (shot.image_path && !shot.reuse_of) {
+      const pick = document.createElement('input');      // selection for "Gerar de novo (lote)"
+      pick.type = 'checkbox';
+      pick.checked = _igSelected.has(shot.shot_id);
+      pick.title = 'Marcar para “Gerar de novo (lote)”';
+      pick.onclick = event => {
+        event.stopPropagation();
+        if (pick.checked) _igSelected.add(shot.shot_id); else _igSelected.delete(shot.shot_id);
+        igRenderBar();
+      };
+      meta.insertBefore(pick, label);
       const [text, colour] = igBadge(shot);
       const badge = document.createElement('span');
       badge.style.cssText = `font-size:10px;padding:0 6px;border-radius:8px;border:1px solid ${colour};color:${colour}`;
@@ -2285,21 +2313,50 @@ function loadImagegen() {
         gen.onclick = () => igPost('/api/imagegen/location/candidates', {id: ref.id});
         label.appendChild(gen);
       }
+      if (ref.candidates.length) {             // none usable: a new batch with new seeds, the old ones kept
+        const more = document.createElement('button');
+        more.className = 'btn btn-ghost';
+        more.style.cssText = 'font-size:10px;padding:1px 6px;margin-left:6px';
+        more.textContent = 'Gerar novos candidatos';
+        more.title = 'Novo lote com sementes novas; os anteriores ficam no histórico';
+        more.onclick = () => igPost('/api/imagegen/references/new_batch', {kind: ref.kind, id: ref.id});
+        label.appendChild(more);
+      }
       block.appendChild(label);
-      const row = document.createElement('div');
-      row.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:4px';
-      ref.candidates.forEach(c => {
-        const cell = document.createElement('div');
-        cell.appendChild(igImg(c.path, c.prompt));
-        const btn = document.createElement('button');
-        btn.className = 'btn btn-ghost';
-        btn.style.cssText = 'font-size:10px;padding:2px 6px;width:100%;margin-top:2px';
-        btn.textContent = `Approve #${c.number}`;
-        btn.onclick = () => igPost('/api/imagegen/approve', {kind: ref.kind, id: ref.id, number: c.number});
-        cell.appendChild(btn);
-        row.appendChild(cell);
-      });
-      block.appendChild(row);
+      const latest = Math.max(1, ...ref.candidates.map(c => c.batch || 1));
+      const cells = list => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:4px';
+        list.forEach(c => {
+          const cell = document.createElement('div');
+          cell.appendChild(igImg(c.path, c.prompt));
+          if (c.people) {                      // still someone in it after the automatic retries
+            const warn = document.createElement('div');
+            warn.style.cssText = 'font-size:10px;color:var(--red)';
+            warn.textContent = `⚠ ${c.people} pessoa(s) detectada(s)`;
+            cell.appendChild(warn);
+          }
+          const btn = document.createElement('button');
+          btn.className = 'btn btn-ghost';
+          btn.style.cssText = 'font-size:10px;padding:2px 6px;width:100%;margin-top:2px';
+          btn.textContent = `Approve #${c.number}`;
+          btn.onclick = () => igPost('/api/imagegen/approve', {kind: ref.kind, id: ref.id, number: c.number});
+          cell.appendChild(btn);
+          row.appendChild(cell);
+        });
+        return row;
+      };
+      block.appendChild(cells(ref.candidates.filter(c => (c.batch || 1) === latest)));
+      const older = ref.candidates.filter(c => (c.batch || 1) !== latest);
+      if (older.length) {
+        const history = document.createElement('details');
+        const summary = document.createElement('summary');
+        summary.style.cssText = 'font-size:10px;color:var(--muted)';
+        summary.textContent = `Lotes anteriores (${older.length})`;
+        history.appendChild(summary);
+        history.appendChild(cells(older));
+        block.appendChild(history);
+      }
       refs.appendChild(block);
     });
 

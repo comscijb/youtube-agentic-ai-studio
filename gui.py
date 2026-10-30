@@ -1404,6 +1404,39 @@ def imagegen_location_candidates():
     return _imagegen_run(run)
 
 
+@app.route("/api/imagegen/references/new_batch", methods=["POST"])
+def imagegen_new_batch():
+    """"Gerar novos candidatos": a new batch (new seeds) for one character or location; older batches stay."""
+    from agents import visual_bible as vbible
+    from video import shot_generation as shotgen
+    from video.imagegen_comfyui import ImageGenerator
+    body = request.get_json(force=True) or {}
+    kind, ident = str(body.get("kind", "")), str(body.get("id", ""))
+    vb = load_json(Path(config.OUTPUT_DIR, vbible.FILE_NAME)) or {}
+    known = ([item["character_id"] for item in vbible.on_screen(vb)] if kind == "character"
+             else [item["location_id"] for item in vb.get("locations", [])] if kind == "location" else [])
+    if ident not in known:
+        return jsonify({"ok": False, "error": f"No reference for {kind} {ident!r}"}), 400
+    return _imagegen_run(lambda: shotgen.generate_new_batch(
+        vb, config.OUTPUT_DIR, ImageGenerator(config.OUTPUT_DIR), kind, ident, progress=_imagegen_progress))
+
+
+@app.route("/api/imagegen/shots/regenerate", methods=["POST"])
+def imagegen_regenerate_shots():
+    """"Gerar de novo (lote)": new seeds for several selected shots, generated in one run."""
+    from video import shot_generation as shotgen
+    from video.imagegen_comfyui import ImageGenerator
+    ids = [str(item) for item in (request.get_json(force=True) or {}).get("shot_ids") or []]
+    if not ids:
+        return jsonify({"ok": False, "error": "Select at least one shot"}), 400
+    unknown = [sid for sid in ids
+               if not _update_shot(sid, lambda shot: shot.update(seed_offset=int(shot.get("seed_offset", 0)) + 1))]
+    if unknown:
+        return jsonify({"ok": False, "error": f"Unknown shots: {unknown}"}), 404
+    return _imagegen_run(lambda: shotgen.generate_shots(
+        config.OUTPUT_DIR, ImageGenerator(config.OUTPUT_DIR), only=ids, progress=_imagegen_progress))
+
+
 @app.route("/api/imagegen/approve", methods=["POST"])
 def imagegen_approve():
     from agents import visual_bible as vbible
