@@ -79,7 +79,7 @@ def main(argv=None) -> int:
           f"words: {result['word_count']}; findings addressed by the edits: {result['addressed']}")
     if not args.dry_run:
         print(f"  previous script: {result['backup']}; invalidated files: {len(result['removed'])}")
-        print("Next: re-run Narration (GUI → Projeto), then the visual bible and shots if stale.")
+        print("Next: re-run Narration (GUI, Projeto tab), then the visual bible and shots if stale.")
     return 0
 
 

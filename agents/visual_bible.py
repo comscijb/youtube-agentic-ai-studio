@@ -240,6 +240,37 @@ def validate_visual_bible(value: dict, bible: dict, outline: dict, narration: st
     return value
 
 
+def known_location_ids(existing: dict, output_dir) -> list[str]:
+    """Location ids this project already used: the current visual bible, approvals and candidates."""
+    ids = [item.get("location_id") for item in existing.get("locations") or []]
+    keys = list(existing.get("references") or {}) + \
+        list(load_json(Path(output_dir) / "reference_candidates.json") or {})
+    ids += [key.split(":", 1)[1] for key in keys if key.startswith("location:")]
+    return sorted({item for item in ids if item})
+
+
+def keep_location_ids(value: dict, known: list[str]) -> dict:
+    """Give a renamed location its earlier id ("front_room" -> "terraced_house_front_room") when exactly
+    one known id shares all its words, so approved references and candidates still apply."""
+    used = {item["location_id"] for item in value.get("locations") or []}
+    renames = {}
+    for location in value.get("locations") or []:
+        new = location["location_id"]
+        if new in known:
+            continue
+        words = set(new.split("_"))
+        matches = [old for old in known if old not in used and old not in renames.values()
+                   and (words <= set(old.split("_")) or set(old.split("_")) <= words)]
+        if len(matches) == 1:
+            renames[new] = matches[0]
+    for location in value.get("locations") or []:
+        location["location_id"] = renames.get(location["location_id"], location["location_id"])
+    thumb = value.get("thumbnail_shot") or {}
+    if thumb.get("location_id") in renames:
+        thumb["location_id"] = renames[thumb["location_id"]]
+    return renames
+
+
 def source_hash_for(script: dict, bible: dict, outline: dict) -> str:
     """What the visual bible depends on (also used to report a stale one)."""
     from agents import identity
@@ -263,6 +294,7 @@ def build_visual_bible(script: dict, brief: dict, bible: dict, outline: dict, ou
         return existing
     overrides = existing.get("presence_overrides") or {}
     fixed = presences(bible, brief, overrides)
+    known = known_location_ids(existing, output)
     contract = f"""You are the production designer of Private Gravity, an anthology of dark
 psychological fiction. From the CHARACTER BIBLE, OUTLINE and SCREENPLAY supplied after this
 contract, write the episode's VISUAL BIBLE used to prompt the image model. The drawing style itself
@@ -309,6 +341,8 @@ Rules:
   "the warm gold glow of Walter's phone screen"). A "voice_only" character is only heard (a voice on
   the phone): descriptor "", wardrobe [], signature_markers []; visual_proxy = what the frame shows
   while they speak (the listener holding the phone). visual_proxy is "" for on_screen characters.
+- EXISTING location_ids (approved reference images depend on them): {json.dumps(known)}. Reuse the
+  same location_id for the same place; invent a new id only for a new place.
 - thumbnail_shot: the strongest emotional image of the episode, a human focal point (a partial
   face is fine), with negative space on the left for a short line of text; its characters are
   on_screen characters only."""
@@ -334,11 +368,13 @@ SCREENPLAY: {compact_json([{"scene_id": scene.get("outline_scene_id"), "narratio
             character.pop("visual_proxy", None)
     if overrides:
         value["presence_overrides"] = overrides
+    keep_location_ids(value, known)
     for location in value["locations"]:
         location["seed"] = seed_for("location", location["location_id"])
     value["thumbnail_shot"]["seed"] = seed_for("thumbnail", "episode")
     previous = existing.get("references") or {}
-    ids = {("character", c["character_id"]) for c in value["characters"] if c["presence"] == "on_screen"} | \
+    # A bodiless character never keeps a portrait; a voice-only one keeps its approval (unused in shots).
+    ids = {("character", c["character_id"]) for c in value["characters"] if c["presence"] != "none"} | \
           {("location", l["location_id"]) for l in value["locations"]}
     value["references"] = {key: ref for key, ref in previous.items()
                            if tuple(key.split(":", 1)) in ids}

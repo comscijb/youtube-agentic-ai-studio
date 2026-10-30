@@ -185,6 +185,19 @@ class PresenceTests(unittest.TestCase):
             self.assertTrue((refs / "june_hale.png").is_file())                  # voice_only: left alone
             rebuilt, _ = build(visual_bible(), temp)
         self.assertNotIn("character:ada", rebuilt["references"])
+        self.assertIn("character:june_hale", rebuilt["references"])               # voice_only keeps its approval
+
+    def test_a_renamed_location_keeps_its_earlier_id(self):
+        with tempfile.TemporaryDirectory() as temp:
+            atomic_write_json(Path(temp, "reference_candidates.json"), {"location:terraced_house_front_room": []})
+            vb, call = build(visual_bible(), temp)
+        self.assertIn('"terraced_house_front_room"', call.call_args.args[0])       # asked to reuse it
+        self.assertEqual(vb["locations"][0]["location_id"], "terraced_house_front_room")
+        self.assertEqual(vb["thumbnail_shot"]["location_id"], "terraced_house_front_room")
+        value = {"locations": [{"location_id": "kitchen"}, {"location_id": "cemetery"}], "thumbnail_shot": {}}
+        self.assertEqual(vbible.keep_location_ids(value, ["terraced_house_kitchen", "kitchen_garden_shed"]), {})
+        self.assertEqual(vbible.keep_location_ids(value, ["terraced_house_kitchen"]),
+                         {"kitchen": "terraced_house_kitchen"})
 
     def test_presence_override_survives_a_rebuild(self):
         with tempfile.TemporaryDirectory() as temp:
