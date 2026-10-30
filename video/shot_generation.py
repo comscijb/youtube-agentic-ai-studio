@@ -126,15 +126,18 @@ def archive_stale_references(output, vb: dict | None = None) -> Path | None:
     """
     output = Path(output)
     record = load_json(output / CANDIDATES_FILE) or {}
+    bodiless = {vbible.reference_key("character", item["character_id"])
+                for item in (vb or {}).get("characters", []) if item.get("presence") == "none"}
     stale = [output / item["path"] for key, items in record.items() for item in items
-             if not candidate_is_current(key, item) and item.get("path")]
+             if (key in bodiless or not candidate_is_current(key, item)) and item.get("path")]
     if vb is not None:
         for kind, folder in (("character", "character_refs"), ("location", "location_refs")):
             for path in (output / folder).glob("*.png"):        # approved images without a current approval
                 if not vbible.approved_reference(vb, kind, path.stem, output):
                     stale.append(path)
     stale = [path for path in dict.fromkeys(stale) if path.is_file()]
-    current = {key: [item for item in items if candidate_is_current(key, item)] for key, items in record.items()}
+    current = {key: [item for item in items if candidate_is_current(key, item)] for key, items in record.items()
+               if key not in bodiless}
     if current != record:
         atomic_write_json(output / CANDIDATES_FILE, current)
     if not stale:
@@ -155,7 +158,8 @@ def generate_reference_candidates(vb: dict, output_dir, generator: ImageGenerato
     if archived:
         progress(f"   → Stale references archived in {archived} (another style or an older character sheet)")
     record = load_json(output / CANDIDATES_FILE) or {}
-    wanted = characters or [item["character_id"] for item in vb.get("characters", [])]
+    drawn = [item["character_id"] for item in vbible.on_screen(vb)]
+    wanted = [cid for cid in characters or drawn if cid in drawn]       # never a portrait of a voice / no body
     jobs = []
     for cid in wanted:
         base = (vbible.character(vb, cid) or {}).get("seed", vbible.seed_for("character", cid))
@@ -513,7 +517,7 @@ def thumbnail_shot(vb: dict, brief: dict, shot_list: dict | None = None) -> dict
     """The thumbnail as a shot: the protagonist (first visual-bible character) + the brief's
     thumbnail concept + a composition where the figure occupies at least half the height."""
     thumb = vb.get("thumbnail_shot") or {}
-    protagonist = [vb["characters"][0]["character_id"]] if vb.get("characters") else []
+    protagonist = [vbible.on_screen(vb)[0]["character_id"]] if vbible.on_screen(vb) else []
     characters = protagonist + [cid for cid in thumb.get("characters") or [] if cid not in protagonist]
     concept = str(brief.get("thumbnail_concept") or thumb.get("description") or "").strip().rstrip(".")
     settings = {item.get("location"): item.get("setting_condition") for item in (shot_list or {}).get("shots", [])}

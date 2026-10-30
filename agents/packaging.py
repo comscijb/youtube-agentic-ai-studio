@@ -147,12 +147,13 @@ def generate_thumbnail_concepts(output_dir, *, brief: dict, script: dict, vb: di
     saved = load_json(path) or {}
     if saved.get("key") == key and not force:
         return saved
-    characters = [item["character_id"] for item in vb.get("characters", [])]
+    from agents import visual_bible as vbible
+    characters = [item["character_id"] for item in vbible.on_screen(vb)]      # only people who can be drawn
     story = {name: brief.get(name, "") for name in (
         "logline", "main_character_concept", "central_contradiction", "potential_turning_point",
         "philosophical_question", "thumbnail_concept", "psychological_theme")}
     story["characters"] = [{"id": item["character_id"], "descriptor": item.get("descriptor", "")}
-                           for item in vb.get("characters", [])]
+                           for item in vbible.on_screen(vb)]
     value = generate_json(
         concepts_contract(title, characters[1:]), "thumbnail concepts",
         lambda value: validate_concepts(value, brief, title, characters[1:]),
@@ -269,6 +270,7 @@ def save_titles(output_dir, scored: list[dict] | None, selected: str, *, reason:
         if record.get("selected"):
             record["history"].append({"title": record["selected"], "replaced_by": selected, "reason": reason})
         record["selected"] = selected
+        record["selected_reason"] = reason
     atomic_write_json(path, record)
     return record
 

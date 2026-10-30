@@ -102,7 +102,7 @@ class VisualBibleV3Tests(unittest.TestCase):
         self.assertIn("julian_vance: signature_markers must list 1 to 3", message)
         self.assertIn("elena_vance: grooming for ['s01'] mentions scene ids", message)
         self.assertIn("marcus_croft: scene_states has unknown scene ids ['s09']", message)
-        self.assertEqual(vbible.VISUAL_BIBLE_VERSION, 3)
+        self.assertEqual(vbible.VISUAL_BIBLE_VERSION, 4)          # 4: presence (voice only, no body)
 
     def test_descriptors_must_name_a_gender_noun(self):
         # The evidence descriptors ("35 years old, Caucasian, ...") made shots say "the person

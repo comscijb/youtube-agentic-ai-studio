@@ -192,7 +192,8 @@ def shot_issues(value: dict, segments: list[dict], vb: dict) -> tuple[dict[str, 
         value = attach_skeleton(value, segments)
     except NarrativeValidationError as exc:
         return {}, [str(exc)]
-    characters = {item["character_id"] for item in vb.get("characters", [])}
+    characters = {item["character_id"] for item in vbible.on_screen(vb)}
+    absent = {item["character_id"]: item for item in vbible.absent(vb)}
     locations = {item["location_id"] for item in vb.get("locations", [])}
     by_shot: dict[str, list[str]] = {}
     seen = set()
@@ -216,7 +217,14 @@ def shot_issues(value: dict, segments: list[dict], vb: dict) -> tuple[dict[str, 
             problems.append(f"shot_type must be one of {SHOT_TYPES}")
         if shot.get("face_visibility") not in FACE_VISIBILITY:
             problems.append(f"face_visibility must be one of {FACE_VISIBILITY}")
-        unknown = [cid for cid in cast if cid not in characters]
+        for cid in [cid for cid in cast if cid in absent]:
+            problems.append(f"{cid} is {absent[cid]['presence']} and never in a frame; remove it from "
+                            f"characters and show {absent[cid].get('visual_proxy') or 'the listener'} instead")
+        named = absent_named(shot.get("action", ""), absent)
+        if named:
+            problems.append(f"the action describes {named}, who never appear on screen; show their "
+                            "visual_proxy (or who is listening) without naming or describing them")
+        unknown = [cid for cid in cast if cid not in characters and cid not in absent]
         if unknown or not isinstance(shot.get("characters", []), list):
             problems.append(f"unknown characters {unknown}")
         if shot.get("location_id") not in locations:
@@ -228,6 +236,17 @@ def shot_issues(value: dict, segments: list[dict], vb: dict) -> tuple[dict[str, 
             problems.append("reuse_of must name an earlier shot")
         seen.add(sid)
     return {sid: problems for sid, problems in by_shot.items() if problems}, []
+
+
+def absent_named(action: str, absent: dict) -> list[str]:
+    """Absent characters (voice_only / none) the shot text names: they would be drawn as people."""
+    text = str(action or "")
+    named = []
+    for cid, item in absent.items():
+        words = {cid.split("_")[0]} | {part for part in str(item.get("name", "")).split()[:1]}
+        if any(re.search(rf"\b{re.escape(word)}\b", text, re.I) for word in words if len(word) > 1):
+            named.append(cid)
+    return named
 
 
 def advice_for(shot: dict, scene_narration: str) -> list[str]:
@@ -368,7 +387,11 @@ allows it (a target, not a quota); close-ups keep a dark background with a singl
 When a shot shows only the listed characters, describing them as "two figures" is fine; any person
 beyond them (guests, staff, a crowd) requires others_present true. An over_the_shoulder shot lists
 first the character whose shoulder we see and then the character facing the camera; both are listed
-characters, never a third person. {policy_rule}
+characters, never a third person. Characters whose presence (VISUAL BIBLE) is "none" or
+"voice_only" are never in characters, never named and never described as a person in action: a
+"none" character (an AI with no body) appears only as its visual_proxy (e.g. the gold glow of the
+phone screen); while a "voice_only" character speaks (a voice on the phone), the shot shows who is
+listening, with the phone. {policy_rule}
 {identity.image_prompt_rules()}"""
 
 
@@ -584,7 +607,8 @@ def _setting_notes(settings: dict, planned: list[dict], segments: list[dict]) ->
 
 def _entry(segment: dict, shot: dict, settings: dict, vb: dict, output: Path, flags: list | None,
            notes: list | None = None) -> dict:
-    cast = [cid for cid in (shot.get("characters") or []) if isinstance(cid, str)]
+    drawn = {item["character_id"] for item in vbible.on_screen(vb)}
+    cast = [cid for cid in (shot.get("characters") or []) if isinstance(cid, str) and cid in drawn]
     entry = {
         "shot_id": segment["shot_id"], "scene_id": segment["scene_id"],
         "section_id": segment["section_id"], "start": segment["start"], "end": segment["end"],
@@ -640,7 +664,8 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
     style = identity.style_suffix()
     noun = identity.image_noun()
     framing = FRAMING.get(shot.get("shot_type"), "")
-    listed = list(shot.get("characters") or [])
+    drawn = [item["character_id"] for item in vbible.on_screen(vb)]
+    listed = [cid for cid in shot.get("characters") or [] if cid in drawn or not vb.get("characters")]
     order = [item["character_id"] for item in vb.get("characters", [])]
     by_importance = sorted(listed, key=lambda cid: order.index(cid) if cid in order else len(order))
     characters = [cid for cid in listed if cid in by_importance[:MAX_CHARACTER_REFS]]

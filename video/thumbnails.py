@@ -332,10 +332,10 @@ def generate_variants(output_dir, generator, *, concepts: dict | None = None, de
 
 
 def _expected(vb: dict, concept: dict) -> dict:
-    characters = [item for item in vb.get("characters", [])][:1]
-    if concept["composition"] == "two_person":
-        characters += [item for item in vb.get("characters", []) if item["character_id"] == concept.get("other_character")]
     from agents import visual_bible as vbible
+    characters = vbible.on_screen(vb)[:1]
+    if concept["composition"] == "two_person":
+        characters += [item for item in vbible.on_screen(vb) if item["character_id"] == concept.get("other_character")]
     return {"people": len(characters), "background": 0, "others_present": concept["composition"] == "small_vs_presence",
             "characters": [{"id": item["character_id"], "who": item.get("descriptor", ""),
                             "markers": vbible.signature_markers(vb, item["character_id"])} for item in characters],

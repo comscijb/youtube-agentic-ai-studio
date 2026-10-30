@@ -300,7 +300,7 @@ def stage_status(path) -> list[dict]:
     if not vb:
         result.append(_entry("references", "missing"))
     else:
-        wanted = [item["character_id"] for item in vb.get("characters", [])]
+        wanted = [item["character_id"] for item in vbible.on_screen(vb)]
         if shot_list.get("shots"):
             in_shots = {cid for shot in shot_list["shots"] for cid in shot.get("characters") or []}
             wanted = [cid for cid in wanted if cid in in_shots] or wanted

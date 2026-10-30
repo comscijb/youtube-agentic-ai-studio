@@ -27,25 +27,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import config
+from agents.human_edits import EDIT_AUTHOR, apply_edits, rereview  # noqa: F401  (shared with apply_edits)
+from agents.human_edits import EditError as PromotionError
 from agents.narrative import (
     atomic_write_json,
-    deterministic_review,
     invalidate_downstream,
     load_json,
-    merge_editorial_review,
-    screen_editorial_findings,
-    stable_hash,
     validate_script,
 )
 
 ARTIFACTS = ("story_brief.json", "character_bible.json", "story_outline.json", "script.json",
              "narrative_review.json")
-EDIT_AUTHOR = "human_editorial"
 ARCHIVE_MANIFEST = "archive_manifest.json"
-
-
-class PromotionError(RuntimeError):
-    pass
 
 
 def _now() -> str:
@@ -98,83 +91,6 @@ def archive_output(output: Path) -> Path | None:
     return archive
 
 
-def _scene_index(script: dict) -> dict:
-    index = {}
-    for position, scene in enumerate(script.get("sections", [])):
-        index[scene.get("outline_scene_id")] = position
-        index[str(scene.get("id"))] = position
-        index[scene.get("id")] = position
-    return index
-
-
-def apply_edits(script: dict, edits: list[dict]) -> tuple[dict, list[dict]]:
-    """Return an edited copy and the applied-edit records; raise before any change."""
-    if not isinstance(edits, list):
-        raise PromotionError("edits file must contain a JSON list of {scene_id, find, replace}")
-    edited = json.loads(json.dumps(script))
-    index = _scene_index(edited)
-    applied, problems = [], []
-    for number, edit in enumerate(edits, 1):
-        scene_id = edit.get("scene_id") if isinstance(edit, dict) else None
-        find = edit.get("find") if isinstance(edit, dict) else None
-        replace = edit.get("replace") if isinstance(edit, dict) else None
-        if scene_id not in index or not isinstance(find, str) or not find \
-                or not isinstance(replace, str):
-            problems.append(f"edit {number}: needs a known scene_id and string find/replace")
-            continue
-        scene = edited["sections"][index[scene_id]]
-        occurrences = scene["narration"].count(find)
-        if occurrences != 1:
-            problems.append(f"edit {number} ({scene_id}): find occurs {occurrences} times "
-                            f"(must be exactly once): {find[:60]!r}")
-            continue
-        scene["narration"] = scene["narration"].replace(find, replace)
-        applied.append({"scene_id": scene_id, "section_id": scene["id"], "find": find,
-                        "replace": replace, "author": EDIT_AUTHOR, "applied_at": _now()})
-    if problems:
-        raise PromotionError("no change made; " + "; ".join(problems))
-    return edited, applied
-
-
-def rereview(script: dict, brief: dict, bible: dict, outline: dict, previous: dict,
-             edits: list[dict], live_editorial: bool = False) -> dict:
-    """Deterministic review again, re-merged with the existing (or a fresh) editorial review."""
-    target = float(script.get("target_duration_minutes") or brief.get("target_duration_minutes") or 15)
-    report = deterministic_review(script, target, outline, previous.get("repair_attempts"), brief)
-    edited_ids = {edit["section_id"] for edit in edits}
-    if live_editorial:
-        from agents.scriptwriter import _editorial_review
-        print("   -> Running a live editorial review of the promoted screenplay...")
-        merged = merge_editorial_review(
-            report, _editorial_review(script, brief, bible, outline, report), bible)
-    else:
-        assessment = json.loads(json.dumps(previous.get("editorial_assessment") or {})) or None
-        addressed = []
-        if assessment:
-            # Discard findings contradicting deterministic facts first, so they
-            # are never reported as addressed by an edit.
-            kept, discarded = screen_editorial_findings(assessment.get("findings", []), report, bible)
-            remaining = []
-            for finding in kept:
-                if edited_ids & set(finding.get("scene_ids") or []):
-                    finding["addressed_by_human_edit"] = True
-                    addressed.append(finding)
-                else:
-                    remaining.append(finding)
-            # Addressed findings stay visible but no longer drive the status.
-            merged = merge_editorial_review(report, dict(assessment, findings=remaining), bible)
-            merged["editorial_assessment"]["findings"] = remaining + addressed
-            merged["discarded_editorial_findings"] = discarded
-        else:
-            merged = merge_editorial_review(report, None)
-        merged["addressed_editorial_findings"] = addressed
-        merged["editorial_review_stale"] = bool(edits)
-    merged["editorial_edits"] = edits
-    merged["promoted_from_benchmark"] = previous.get("source_hash")
-    merged["source_hash"] = stable_hash(script)
-    return merged
-
-
 def promote(source, *, output=None, edits_path=None, live_editorial: bool = False) -> dict:
     source = Path(source)
     output = Path(output or config.OUTPUT_DIR)
@@ -196,6 +112,7 @@ def promote(source, *, output=None, edits_path=None, live_editorial: bool = Fals
         script["editorial_edits"] = applied
     review = rereview(script, artifacts["story_brief.json"], bible, outline,
                       artifacts["narrative_review.json"], applied, live_editorial)
+    review["promoted_from_benchmark"] = artifacts["narrative_review.json"].get("source_hash")
 
     output.mkdir(parents=True, exist_ok=True)
     archive = archive_output(output)

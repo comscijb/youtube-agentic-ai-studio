@@ -1292,7 +1292,7 @@ def imagegen_status():
     shot_list = load_json(output / "shot_list.json") or {}
     candidates = load_json(output / shotgen.CANDIDATES_FILE) or {}
     references = []
-    for kind, items in (("character", vb.get("characters", [])),
+    for kind, items in (("character", vbible.on_screen(vb)),          # no portrait for voice-only / bodiless
                         ("location", vbible.recurring_locations(vb))):
         for item in items:
             ident = item[f"{kind}_id"]
@@ -1312,7 +1312,7 @@ def imagegen_status():
     estimate = shotgen.estimate_gpu_seconds(shot_list, output) if shot_list else None
     characters = [{"id": item["character_id"], "markers": vbible.signature_markers(vb, item["character_id"]),
                    "approved": bool(vbible.approved_reference(vb, "character", item["character_id"], output))}
-                  for item in vb.get("characters", [])]
+                  for item in vbible.on_screen(vb)]
     return jsonify({
         "comfyui": ComfyClient(timeout=3).available(),
         "visual_bible": bool(vb), "shot_list": bool(shot_list),

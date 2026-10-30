@@ -381,6 +381,8 @@ def _apply_author_brief(brief: dict, author: dict, published: list[dict]) -> Non
     ideas = [{"title": title, "rationale": "author's title idea"} for title in author.get("title_ideas") or []]
     if author.get("working_title"):
         ideas.insert(0, {"title": author["working_title"], "rationale": "author's working title"})
+        brief["author_title"] = author["working_title"]          # kept as video_title (Phase 3.7 fix)
+        brief["video_title"] = author["working_title"]
     existing = {str(item.get("title") if isinstance(item, dict) else item) for item in brief.get("title_candidates") or []}
     brief["title_candidates"] = [item for item in ideas if item["title"] not in existing] + \
         list(brief.get("title_candidates") or [])
@@ -410,15 +412,37 @@ def _score_titles(brief: dict) -> None:
         return
     brief["title_scores"] = scored
     best = next((row for row in scored if row["passes"]), None)
-    if best:
+    kept = _kept_title(brief)
+    if kept:
+        # The author's (or the user's) title stays until the user switches; the best is a suggestion.
+        brief["video_title"] = kept
+        if best and best["title"] != kept:
+            brief["suggested_title"] = best["title"]
+    elif best:
         brief["video_title"] = best["title"]
         review["selected_title"] = best["title"]
         review["selected_title_findings"] = best["findings"]
-    packaging.save_titles(config.OUTPUT_DIR, scored, brief.get("video_title", ""))
+    packaging.save_titles(config.OUTPUT_DIR, scored, brief.get("video_title", ""),
+                          reason="kept" if kept else "scored")
+
+
+def _kept_title(brief: dict) -> str:
+    """A title nobody may replace without confirmation: the premise brief's working title, else one the
+    user chose in the GUI (titles.json)."""
+    from agents import packaging
+    if brief.get("author_title"):
+        return brief["author_title"]
+    record = load_json(os.path.join(config.OUTPUT_DIR, packaging.TITLES_FILE)) or {}
+    return record.get("selected", "") if record.get("selected_reason") in ("user", "edited") else ""
 
 
 def _apply_title_review(brief: dict, review: dict) -> None:
-    if review.get("selected_title"):
+    kept = _kept_title(brief)
+    if kept:
+        if review.get("selected_title") and review["selected_title"] != kept:
+            brief["suggested_title"] = review["selected_title"]
+        brief["video_title"] = kept
+    elif review.get("selected_title"):
         brief["video_title"] = review["selected_title"]
     brief["thumbnail_text"] = review.get("selected_thumbnail_text", "")
     brief["title_review"] = review

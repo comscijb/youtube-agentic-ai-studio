@@ -2385,6 +2385,13 @@ ${c.note}` : '');
       row.appendChild(use);
       box.appendChild(row);
     });
+    const best = d.candidates.filter(c => c.passes).sort((a, b) => (b.total || 0) - (a.total || 0))[0];
+    if (best && d.selected && best.title !== d.selected) {
+      const hint = document.createElement('div');
+      hint.style.marginTop = '4px';
+      hint.textContent = `Maior nota: “${best.title}” (${best.total}). O título atual “${d.selected}” é mantido até você clicar em Usar.`;
+      box.appendChild(hint);
+    }
     if (d.thumbnail_text) {
       const note = document.createElement('div');
       note.style.marginTop = '4px';

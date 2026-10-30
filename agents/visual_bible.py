@@ -12,6 +12,14 @@ turns the Character Bible, outline and screenplay into ``visual_bible.json``:
 * ``thumbnail_shot`` — the episode's strongest emotional image, with negative
   space for the thumbnail text.
 
+Every character has a ``presence`` decided in code from the premise
+(``on_screen`` | ``voice_only`` | ``none``) and, when not on screen, a
+``visual_proxy``. A ``none`` character (an AI with no body) never gets a portrait
+or a person descriptor; frames show its proxy (the phone's glow). A
+``voice_only`` character (a voice on the phone) never appears in a shot; the
+frame shows who is listening. Shots, references and head counts use only
+``on_screen`` characters.
+
 Seeds per character and location are derived deterministically in code.
 Approved reference images (character portraits, location establishing shots)
 live under ``references`` and survive regeneration while their ids still exist.
@@ -29,7 +37,19 @@ from agents.gemini_client import generate
 from agents.narrative import NarrativeValidationError, atomic_write_json, load_json, stable_hash
 from agents.structured import compact_json
 
-VISUAL_BIBLE_VERSION = 3   # 2: identity-only descriptors, clothing-only outfits (3.3.2); 3: signature markers, scene states (3.4)
+VISUAL_BIBLE_VERSION = 4   # 2: identity-only descriptors, clothing-only outfits (3.3.2); 3: signature markers, scene states (3.4); 4: presence
+PRESENCES = ("on_screen", "voice_only", "none")
+# What the premise says about a character's body: "no body", "never drawn" -> none; "only a voice" -> voice_only.
+_NO_BODY = re.compile(
+    r"\b(?:no|without|lacking(?: any)?|has no)\s+(?:a\s+)?(?:physical\s+)?(?:body|form|avatar)\b|"
+    r"\bnever (?:drawn|shown|depicted|seen)\b|\bbodiless\b|\bdisembodied\b|\bnon-?corporeal\b", re.I)
+_VOICE_ONLY = re.compile(
+    r"\bonly (?:as )?a voice\b|\bjust a voice\b|\bonly heard\b|\b(?:a )?voice on the (?:phone|line)\b|"
+    r"\bnever (?:appears|seen) on screen\b|\boff-?screen\b", re.I)
+# A person described: age, gender, body. Never allowed for a "none" character, nor in a shot of an absent one.
+PERSON_TERMS = re.compile(
+    r"\b\d+-year-old\b|\b(?:man|woman|girl|boy|lady|gentleman|person|robot|hologram|android|humanoid|"
+    r"avatar)\b", re.I)
 FILE_NAME = "visual_bible.json"
 # Character reference sheets: bump when the portrait prompt changes; approvals of an older
 # sheet version are not returned, so every character must be re-approved (locations stay valid).
@@ -53,19 +73,55 @@ def seed_for(kind: str, identifier: str) -> int:
     return int(digest[:8], 16) & 0x7FFFFFFF
 
 
+def _author_text(name: str, brief: dict | None) -> str:
+    """The author brief's line about this character ("Ada, the AI companion app: ...")."""
+    first = str(name or "").split()[0].lower() if str(name or "").split() else ""
+    author = (brief or {}).get("author_brief") or {}
+    for text in [author.get("protagonist", "")] + list(author.get("other_characters") or []):
+        lead = re.match(r"\s*([A-Za-z][\w'-]*)", str(text))
+        if first and lead and lead.group(1).lower() == first:
+            return str(text)
+    return ""
+
+
+def deduce_presence(character: dict, brief: dict | None = None) -> str:
+    """on_screen | voice_only | none from the premise (author brief first) and the character's own
+    Character Bible fields (never its relationships, which describe other people)."""
+    own = " ".join(str(value) for key, value in character.items()
+                   if isinstance(value, str) and "relationship" not in key)
+    for text in (_author_text(character.get("name", ""), brief), own):
+        if _NO_BODY.search(text):
+            return "none"
+        if _VOICE_ONLY.search(text):
+            return "voice_only"
+    return "on_screen"
+
+
+def presences(bible: dict, brief: dict | None = None, overrides: dict | None = None) -> dict:
+    """character_id -> presence; ``overrides`` (kept in the visual bible) win over the deduction."""
+    result = {item["character_id"]: deduce_presence(item, brief) for item in bible.get("characters", [])}
+    result.update({cid: value for cid, value in (overrides or {}).items() if cid in result and value in PRESENCES})
+    return result
+
+
 def _scene_ids(outline: dict) -> list[str]:
     return [scene["scene_id"] for scene in outline.get("scenes", []) if scene.get("scene_id")]
 
 
-def identity_problems(value: dict, narration: str = "", scenes: set | None = None) -> list[str]:
+def identity_problems(value: dict, narration: str = "", scenes: set | None = None,
+                      presence: dict | None = None) -> list[str]:
     """Mood/state words in descriptors and body/dirt words in outfits (Phase 3.3.2).
 
-    A scar is allowed in a descriptor only when the screenplay establishes one.
+    A scar is allowed in a descriptor only when the screenplay establishes one. Characters that are
+    not on screen have no physical identity: only their proxy is checked (``absent_problems``).
     """
     problems = []
     permanent_scar = bool(re.search(r"\bscar(?:s|red)?\b", str(narration or "").lower()))
     for character in value.get("characters") or []:
         if not isinstance(character, dict):
+            continue
+        if _presence_of(character, presence) != "on_screen":
+            problems += absent_problems(character, _presence_of(character, presence))
             continue
         cid = character.get("character_id")
         states = [word for word in dict.fromkeys(_DESCRIPTOR_STATES.findall(
@@ -100,7 +156,25 @@ def identity_problems(value: dict, narration: str = "", scenes: set | None = Non
     return problems
 
 
-def validate_visual_bible(value: dict, bible: dict, outline: dict, narration: str = "") -> dict:
+def _presence_of(character: dict, presence: dict | None) -> str:
+    return (presence or {}).get(character.get("character_id")) or character.get("presence") or "on_screen"
+
+
+def absent_problems(character: dict, kind: str) -> list[str]:
+    """A voice_only / none character needs a visual_proxy; a none character's is never a person
+    (descriptors of absent characters are cleared in code)."""
+    cid = character.get("character_id")
+    problems = []
+    if not str(character.get("visual_proxy", "")).strip():
+        problems.append(f"character {cid} ({kind}): visual_proxy is required (what the frame shows instead)")
+    found = sorted({match.lower() for match in PERSON_TERMS.findall(str(character.get("visual_proxy") or ""))})
+    if kind == "none" and found:
+        problems.append(f"character {cid} (none): visual_proxy must not describe a person {found}")
+    return problems
+
+
+def validate_visual_bible(value: dict, bible: dict, outline: dict, narration: str = "",
+                          presence: dict | None = None) -> dict:
     from agents import identity
     if not isinstance(value, dict):
         raise NarrativeValidationError("visual bible must be an object")
@@ -119,6 +193,9 @@ def validate_visual_bible(value: dict, bible: dict, outline: dict, narration: st
         cid = character.get("character_id") if isinstance(character, dict) else None
         if cid not in known_characters:
             raise NarrativeValidationError(f"characters[{index}].character_id {cid!r} is not in the Character Bible")
+        if _presence_of(character, presence) != "on_screen":
+            described.add(cid)
+            continue
         if not str(character.get("descriptor", "")).strip():
             raise NarrativeValidationError(f"character {cid}: descriptor is required")
         wardrobe = character.get("wardrobe")
@@ -132,7 +209,7 @@ def validate_visual_bible(value: dict, bible: dict, outline: dict, narration: st
                     f"character {cid}: wardrobe entries need an outfit and known scene_ids; "
                     f"unknown: {unknown}")
         described.add(cid)
-    problems = identity_problems(value, narration, scenes)
+    problems = identity_problems(value, narration, scenes, presence)
     if problems:
         raise NarrativeValidationError("visual bible: " + "; ".join(problems))
     missing = sorted(known_characters - described)
@@ -156,6 +233,10 @@ def validate_visual_bible(value: dict, bible: dict, outline: dict, narration: st
     thumb = value.get("thumbnail_shot")
     if not isinstance(thumb, dict) or not str(thumb.get("description", "")).strip():
         raise NarrativeValidationError("visual bible requires thumbnail_shot.description")
+    absent = sorted(cid for cid in thumb.get("characters") or []
+                    if (presence or {}).get(cid, "on_screen") != "on_screen")
+    if absent:
+        raise NarrativeValidationError(f"thumbnail_shot.characters lists characters who are never on screen: {absent}")
     return value
 
 
@@ -180,13 +261,15 @@ def build_visual_bible(script: dict, brief: dict, bible: dict, outline: dict, ou
     existing = load_json(path) or {}
     if not force and existing.get("source_hash") == source_hash:
         return existing
+    overrides = existing.get("presence_overrides") or {}
+    fixed = presences(bible, brief, overrides)
     contract = f"""You are the production designer of Private Gravity, an anthology of dark
 psychological fiction. From the CHARACTER BIBLE, OUTLINE and SCREENPLAY supplied after this
 contract, write the episode's VISUAL BIBLE used to prompt the image model. The drawing style itself
 is fixed elsewhere; describe only people, clothes, places and the thumbnail moment.
 
 Return ONLY JSON:
-{{"characters": [{{"character_id": "...", "descriptor": "...", "signature_markers": ["..."],
+{{"characters": [{{"character_id": "...", "descriptor": "...", "visual_proxy": "", "signature_markers": ["..."],
                    "wardrobe": [{{"scene_ids": ["s01"], "outfit": "...", "grooming": "..."}}],
                    "scene_states": {{"s05": "..."}}}}],
   "locations": [{{"location_id": "...", "name": "...", "descriptor": "...", "scene_ids": ["s01"]}}],
@@ -219,15 +302,23 @@ Rules:
   light, scale, objects), keeping the social status the story gives it (an expensive minimal loft
   is immaculate: polished surfaces, precise objects, pristine walls; never raw, grimy, stained,
   rusted or ruined unless the screenplay says so). Every outline scene_id must belong to a location.
+- PRESENCE is fixed by the premise and is not yours to change: {json.dumps(fixed)}.
+  on_screen characters follow the rules above. A "none" character has no body (e.g. an AI app):
+  descriptor "", no person, age, gender, face, robot or hologram anywhere; wardrobe [] and
+  signature_markers []; visual_proxy = the object or light that stands for it in a frame (e.g.
+  "the warm gold glow of Walter's phone screen"). A "voice_only" character is only heard (a voice on
+  the phone): descriptor "", wardrobe [], signature_markers []; visual_proxy = what the frame shows
+  while they speak (the listener holding the phone). visual_proxy is "" for on_screen characters.
 - thumbnail_shot: the strongest emotional image of the episode, a human focal point (a partial
-  face is fine), with negative space on the left for a short line of text."""
+  face is fine), with negative space on the left for a short line of text; its characters are
+  on_screen characters only."""
     context = f"""CHARACTER BIBLE: {compact_json(bible)}
 OUTLINE: {compact_json([{key: scene.get(key) for key in ("scene_id", "title", "setting",
                          "characters_present", "summary")} for scene in outline.get("scenes", [])])}
 SCREENPLAY: {compact_json([{"scene_id": scene.get("outline_scene_id"), "narration": scene.get("narration")}
                            for scene in script.get("sections", [])])}"""
     value = structured.generate_json(
-        contract, "visual bible", lambda data: validate_visual_bible(data, bible, outline, narration),
+        contract, "visual bible", lambda data: validate_visual_bible(data, bible, outline, narration, fixed),
         generator=generate, context=context, stage="visual_bible",
         temperature_key="character_bible", run_dir=str(output),
     )
@@ -236,11 +327,18 @@ SCREENPLAY: {compact_json([{"scene_id": scene.get("outline_scene_id"), "narratio
                              "exclusions": list(identity.negative_terms())}
     for character in value["characters"]:
         character["seed"] = seed_for("character", character["character_id"])
+        character["presence"] = fixed.get(character["character_id"], "on_screen")
+        if character["presence"] != "on_screen":
+            character.update(descriptor="", wardrobe=[], signature_markers=[], scene_states={})
+        else:
+            character.pop("visual_proxy", None)
+    if overrides:
+        value["presence_overrides"] = overrides
     for location in value["locations"]:
         location["seed"] = seed_for("location", location["location_id"])
     value["thumbnail_shot"]["seed"] = seed_for("thumbnail", "episode")
     previous = existing.get("references") or {}
-    ids = {("character", c["character_id"]) for c in value["characters"]} | \
+    ids = {("character", c["character_id"]) for c in value["characters"] if c["presence"] == "on_screen"} | \
           {("location", l["location_id"]) for l in value["locations"]}
     value["references"] = {key: ref for key, ref in previous.items()
                            if tuple(key.split(":", 1)) in ids}
@@ -253,6 +351,32 @@ SCREENPLAY: {compact_json([{"scene_id": scene.get("outline_scene_id"), "narratio
 
 def character(vb: dict, character_id: str) -> dict | None:
     return next((item for item in vb.get("characters", []) if item["character_id"] == character_id), None)
+
+
+def presence(vb: dict, character_id: str) -> str:
+    return (character(vb, character_id) or {}).get("presence") or "on_screen"
+
+
+def on_screen(vb: dict) -> list[dict]:
+    """Characters that can be drawn (references, shots, head counts, thumbnails)."""
+    return [item for item in vb.get("characters", []) if (item.get("presence") or "on_screen") == "on_screen"]
+
+
+def absent(vb: dict) -> list[dict]:
+    """voice_only and none characters: never in a frame."""
+    return [item for item in vb.get("characters", []) if (item.get("presence") or "on_screen") != "on_screen"]
+
+
+def set_presence(output_dir, character_id: str, value: str) -> dict:
+    """Override the deduced presence (kept across visual-bible rebuilds); the visual bible is rebuilt next."""
+    if value not in PRESENCES:
+        raise ValueError(f"presence must be one of {PRESENCES}")
+    path = Path(output_dir) / FILE_NAME
+    vb = load_json(path) or {}
+    vb.setdefault("presence_overrides", {})[character_id] = value
+    vb["source_hash"] = None                      # rebuild with the new presence
+    atomic_write_json(path, vb)
+    return vb
 
 
 def wardrobe(vb: dict, character_id: str, scene_id: str) -> str:
@@ -310,6 +434,8 @@ def approved_reference(vb: dict, kind: str, identifier: str, output_dir) -> str 
     entry = (vb.get("references") or {}).get(reference_key(kind, identifier))
     if not entry:
         return None
+    if kind == "character" and presence(vb, identifier) == "none":
+        return None          # a character with no body never has a portrait
     if entry.get("style_hash", identity.style_hash("cinematic_photo")) != identity.style_hash():
         return None
     if kind == "character" and entry.get("sheet_version", 1) != CHARACTER_SHEET_VERSION:
