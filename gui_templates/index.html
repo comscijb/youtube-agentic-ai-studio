@@ -2274,7 +2274,17 @@ function loadImagegen() {
       block.style.cssText = 'margin-bottom:8px';
       const label = document.createElement('div');
       label.style.cssText = 'font-size:11px;margin-bottom:4px;color:' + (ref.approved ? 'var(--green)' : 'var(--dim)');
-      label.textContent = `${ref.kind} · ${ref.id} ${ref.approved ? '✓ approved' : '— choose one'}`;
+      label.textContent = `${ref.kind} · ${ref.id} ${ref.approved ? '✓ approved'
+        : ref.optional ? '— opcional (1 cena, menos de 3 planos)' : '— choose one'}`;
+      if (ref.kind === 'location') {           // optional for any location; recurring ones get it automatically
+        const gen = document.createElement('button');
+        gen.className = 'btn btn-ghost';
+        gen.style.cssText = 'font-size:10px;padding:1px 6px;margin-left:6px';
+        gen.textContent = 'Gerar referência';
+        gen.title = 'Duas candidatas para este cenário (ComfyUI)';
+        gen.onclick = () => igPost('/api/imagegen/location/candidates', {id: ref.id});
+        label.appendChild(gen);
+      }
       block.appendChild(label);
       const row = document.createElement('div');
       row.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:4px';

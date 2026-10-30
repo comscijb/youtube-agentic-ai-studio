@@ -150,6 +150,48 @@ def archive_stale_references(output, vb: dict | None = None) -> Path | None:
     return archive
 
 
+# A location gets a reference (and is part of "References") when it recurs: in 2+ scenes, or in
+# 3+ shots of the shot list (a single long scene, e.g. the cemetery). Any other location can get one
+# on request ("Gerar referência" in the GUI).
+RECURRING_MIN_SCENES = 2
+RECURRING_MIN_SHOTS = 3
+
+
+def recurring_locations(vb: dict, shot_list: dict | None = None, output_dir=None) -> list[dict]:
+    """Locations in 2+ scenes or 3+ planned shots (reused images not counted)."""
+    if shot_list is None and output_dir is not None:
+        shot_list = load_json(Path(output_dir) / shots_module.FILE_NAME) or {}
+    shots = {}
+    for shot in (shot_list or {}).get("shots", []):
+        if not shot.get("reuse_of"):
+            shots[shot.get("location")] = shots.get(shot.get("location"), 0) + 1
+    return [item for item in vb.get("locations", [])
+            if len(item.get("scene_ids", [])) >= RECURRING_MIN_SCENES
+            or shots.get(item["location_id"], 0) >= RECURRING_MIN_SHOTS]
+
+
+def _location_job(vb: dict, lid: str, number: int, output: Path) -> ImageJob:
+    location = vbible.location(vb, lid) or {}
+    return ImageJob(
+        job_id=f"loc_{lid}_{number}", prompt=location_prompt(vb, lid),
+        seed=location.get("seed", vbible.seed_for("location", lid)) + number,
+        output_path=str(output / "location_refs" / "candidates" / f"{safe_filename(lid)}_{number}.jpg"),
+        size=native_size())
+
+
+def generate_location_candidates(vb: dict, output_dir, generator: ImageGenerator, location_ids: list[str], *,
+                                 progress: Callable[[str], None] = print) -> dict:
+    """Two candidates for each given location, recurring or not (optional "Gerar referência")."""
+    output = Path(output_dir)
+    known = {item["location_id"] for item in vb.get("locations", [])}
+    unknown = [lid for lid in location_ids if lid not in known]
+    if unknown:
+        raise ValueError(f"unknown locations: {unknown}")
+    jobs = [("location", lid, number, _location_job(vb, lid, number, output))
+            for lid in location_ids for number in (1, 2)]
+    return _run_reference_jobs(jobs, output, generator, progress)
+
+
 def generate_reference_candidates(vb: dict, output_dir, generator: ImageGenerator, *,
                                   characters: list[str] | None = None, locations: bool = True,
                                   progress: Callable[[str], None] = print) -> dict:
@@ -157,7 +199,6 @@ def generate_reference_candidates(vb: dict, output_dir, generator: ImageGenerato
     archived = archive_stale_references(output, vb)
     if archived:
         progress(f"   → Stale references archived in {archived} (another style or an older character sheet)")
-    record = load_json(output / CANDIDATES_FILE) or {}
     drawn = [item["character_id"] for item in vbible.on_screen(vb)]
     wanted = [cid for cid in characters or drawn if cid in drawn]       # never a portrait of a voice / no body
     jobs = []
@@ -170,16 +211,17 @@ def generate_reference_candidates(vb: dict, output_dir, generator: ImageGenerato
                 output_path=str(output / "character_refs" / "candidates" / f"{safe_filename(cid)}_{number}.jpg"),
                 size=PORTRAIT_SIZE, final_size=PORTRAIT_SIZE)))
     if locations:
-        for location in vbible.recurring_locations(vb):
+        for location in recurring_locations(vb, output_dir=output):
             lid = location["location_id"]
             if vbible.approved_reference(vb, "location", lid, output):
                 continue                     # still valid: no new candidates needed
-            for number in (1, 2):
-                jobs.append(("location", lid, number, ImageJob(
-                    job_id=f"loc_{lid}_{number}", prompt=location_prompt(vb, lid),
-                    seed=location.get("seed", vbible.seed_for("location", lid)) + number,
-                    output_path=str(output / "location_refs" / "candidates" / f"{safe_filename(lid)}_{number}.jpg"),
-                    size=native_size())))
+            jobs += [("location", lid, number, _location_job(vb, lid, number, output)) for number in (1, 2)]
+    return _run_reference_jobs(jobs, output, generator, progress)
+
+
+def _run_reference_jobs(jobs: list, output: Path, generator: ImageGenerator,
+                        progress: Callable[[str], None]) -> dict:
+    record = load_json(output / CANDIDATES_FILE) or {}
     for index, (kind, ident, number, job) in enumerate(jobs, 1):
         progress(f"   → Reference candidate {index}/{len(jobs)}: {kind} {ident} #{number}")
         result = generator.generate_with_retry(job)

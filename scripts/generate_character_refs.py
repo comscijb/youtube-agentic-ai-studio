@@ -27,7 +27,7 @@ def status(output: Path) -> int:
         print("No visual_bible.json yet.")
         return 1
     candidates = load_json(output / gen.CANDIDATES_FILE) or {}
-    for kind, items in (("character", vbible.on_screen(vb)), ("location", vbible.recurring_locations(vb))):
+    for kind, items in (("character", vbible.on_screen(vb)), ("location", gen.recurring_locations(vb, output_dir=output))):
         for item in items:
             ident = item[f"{kind}_id"]
             approved = vbible.approved_reference(vb, kind, ident, output)

@@ -1292,12 +1292,14 @@ def imagegen_status():
     shot_list = load_json(output / "shot_list.json") or {}
     candidates = load_json(output / shotgen.CANDIDATES_FILE) or {}
     references = []
+    recurring = {item["location_id"] for item in shotgen.recurring_locations(vb, shot_list)}
+    # Every location is listed: recurring ones need a reference, the others may get one ("Gerar referência").
     for kind, items in (("character", vbible.on_screen(vb)),          # no portrait for voice-only / bodiless
-                        ("location", vbible.recurring_locations(vb))):
+                        ("location", vb.get("locations", []))):
         for item in items:
             ident = item[f"{kind}_id"]
             references.append({
-                "kind": kind, "id": ident,
+                "kind": kind, "id": ident, "optional": kind == "location" and ident not in recurring,
                 "approved": bool(vbible.approved_reference(vb, kind, ident, output)),
                 "approved_path": (vb.get("references") or {}).get(vbible.reference_key(kind, ident), {}).get("path"),
                 "candidates": [item for item in candidates.get(vbible.reference_key(kind, ident), [])
@@ -1382,6 +1384,23 @@ def imagegen_candidates():
         vb = shotgen.ensure_visual_bible(config.OUTPUT_DIR)
         shotgen.generate_reference_candidates(vb, config.OUTPUT_DIR, ImageGenerator(config.OUTPUT_DIR),
                                               progress=_imagegen_progress)
+    return _imagegen_run(run)
+
+
+@app.route("/api/imagegen/location/candidates", methods=["POST"])
+def imagegen_location_candidates():
+    """"Gerar referência": two candidates for one location, recurring or not (optional)."""
+    from agents import visual_bible as vbible
+    from video import shot_generation as shotgen
+    from video.imagegen_comfyui import ImageGenerator
+    lid = str((request.get_json(force=True) or {}).get("id", ""))
+    vb = load_json(Path(config.OUTPUT_DIR, vbible.FILE_NAME)) or {}
+    if not vbible.location(vb, lid):
+        return jsonify({"ok": False, "error": f"Unknown location {lid!r}"}), 400
+
+    def run():
+        shotgen.generate_location_candidates(vb, config.OUTPUT_DIR, ImageGenerator(config.OUTPUT_DIR), [lid],
+                                             progress=_imagegen_progress)
     return _imagegen_run(run)
 
 
