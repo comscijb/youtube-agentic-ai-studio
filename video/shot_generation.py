@@ -19,8 +19,12 @@ Order of work (each step resumable, every image cached by content hash):
 from __future__ import annotations
 
 import json
+import math
+import queue
 import shutil
+import threading
 import time
+from contextlib import nullcontext
 from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
@@ -415,7 +419,7 @@ def _in_scope(shot: dict, only) -> bool:
 def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None = None,
                    only: str | list | None = None, progress: Callable[[str], None] = print,
                    clock: Callable[[], float] = time.monotonic, qa=None, fix_only: bool = False,
-                   qa_mode: str | None = None) -> dict:
+                   qa_mode: str | None = None, prepared: dict | None = None) -> dict:
     """Phase-batched so Klein and the QA VLM never share the 8 GB of VRAM (Phase 3.5-E):
 
     1. generate every pending shot (Klein loaded), layer-1 QA inline on the CPU;
@@ -465,7 +469,7 @@ def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None =
         qa = LayeredQA(comfy=generator.client, progress=progress, mode=qa_mode)
     if use_qa:
         progress(f"   {policy.summary_line(qa.mode)}")
-    items, pendings = {}, {}
+    items, pendings = {}, dict(prepared or {})          # prepared: layer 1 already run by the render lane
 
     def expected(shot):
         return visual_qa.expected_for(shot, vb, narration.get(shot.get("scene_id", ""), ""))
@@ -478,48 +482,14 @@ def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None =
     if queue:
         progress(f"   Phase 1/3 — generating {len(queue)} shot(s)"
                  + (f", ~{len(queue) * per / 60:.0f} min" if per else "") + (" + layer-1 QA (CPU)" if use_qa else ""))
+    save = lambda: atomic_write_json(output / shots_module.FILE_NAME, shot_list)
     for index, shot in enumerate(queue, 1):
-        job, composed = shot_job(shot, vb, output)
-        for note in shots_module.prompt_advice(composed["prompt"], narration.get(shot.get("scene_id", ""), "")):
-            progress(f"   ⚠ {shot['shot_id']}: {note} (advisory; generating anyway)")
         remaining = (len(queue) - index + 1) * per if per else None
-        progress(f"   → Shot {index}/{len(queue)} {shot['shot_id']} ({composed['kind']}, "
-                 f"{len(composed['references'])} refs)"
-                 + (f" — ETA {remaining / 60:.0f} min" if remaining else ""))
-        illustration = identity.is_illustration()
-        try:
-            # In the illustration style a failed shot gets two new seeds, then (only with
-            # STOCK_ENABLED, environment/object shots only) stock, then holds the previous shot.
-            record = generator.generate_with_retry(
-                job, fallback=stock_fallback(output, vb, shot) if stock_allowed(shot) else None,
-                new_seeds=2 if illustration else 1)
-        except ComfyUnavailable:
-            raise
-        except GenerationFailed as exc:
-            if illustration and index > 0:
-                shot["hold_previous"] = True
-                shot["generated_at"] = _now()
-                summary["held"].append(shot["shot_id"])
-                _record_provenance(output, [{"job_id": shot["shot_id"], "provider": "none",
-                                             "fallback": "hold_previous", "synthetic": False,
-                                             "generation_errors": [str(exc)]}])
-                atomic_write_json(output / shots_module.FILE_NAME, shot_list)
-                progress(f"   ⚠ {shot['shot_id']}: generation failed; holding the previous shot longer")
-            else:
-                summary["failed"].append(shot["shot_id"])
-                progress(f"   ⚠ {shot['shot_id']}: {exc}")
+        record = _render_shot(generator, output, vb, shot, label=f"{index}/{len(queue)}", narration=narration,
+                              summary=summary, save=save, progress=progress,
+                              eta=f" — ETA {remaining / 60:.0f} min" if remaining else "")
+        if record is None:
             continue
-        shot["prompt"] = composed["prompt"]
-        shot["reference_slots"] = composed["slots"]
-        shot.pop("hold_previous", None)
-        shot["image_path"] = str(Path(job.output_path).relative_to(output))
-        shot["provider"] = record.get("provider", "comfyui")
-        shot["generated_at"] = _now()
-        shot.pop("qa", None)                              # a new image starts a new QA budget
-        key = "fallback" if record.get("fallback_from") else ("cached" if record.get("cache_hit") else "generated")
-        summary[key] += 1
-        _record_provenance(output, [record])
-        atomic_write_json(output / shots_module.FILE_NAME, shot_list)
         if use_qa and not record.get("fallback_from"):
             entry = track(shot)
             pendings[shot["shot_id"]] = qa.prepare(entry["image"], entry["expected"])     # layer 1, CPU
@@ -535,7 +505,6 @@ def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None =
             fixes.reapply_policy(shot, qa)               # results stored under another mode
             if fixes.needs_qa(shot) or fixes.needs_fix(shot):
                 track(shot)
-        save = lambda: atomic_write_json(output / shots_module.FILE_NAME, shot_list)
         outcome = qa_rounds(generator, output, vb, list(items.values()), qa, save, progress=progress,
                             pendings=pendings, per=per)
         summary.update(outcome)
@@ -545,6 +514,230 @@ def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None =
         save()
     summary["seconds"] = round(clock() - started, 1)
     return summary
+
+
+def _render_shot(generator: ImageGenerator, output: Path, vb: dict, shot: dict, *, label: str, narration: dict,
+                 summary: dict, save: Callable[[], None], progress: Callable[[str], None], eta: str = "",
+                 lock=None) -> dict | None:
+    """Generate one shot's image and record it on ``shot`` (under ``lock`` when another thread reads the
+    shot list). Returns the generation record, or None when it failed (held or listed in summary)."""
+    guard = lock or nullcontext()
+    job, composed = shot_job(shot, vb, output)
+    for note in shots_module.prompt_advice(composed["prompt"], narration.get(shot.get("scene_id", ""), "")):
+        progress(f"   ⚠ {shot['shot_id']}: {note} (advisory; generating anyway)")
+    progress(f"   → Shot {label} {shot['shot_id']} ({composed['kind']}, {len(composed['references'])} refs){eta}")
+    illustration = identity.is_illustration()
+    try:
+        # In the illustration style a failed shot gets two new seeds, then (only with
+        # STOCK_ENABLED, environment/object shots only) stock, then holds the previous shot.
+        record = generator.generate_with_retry(
+            job, fallback=stock_fallback(output, vb, shot) if stock_allowed(shot) else None,
+            new_seeds=2 if illustration else 1)
+    except ComfyUnavailable:
+        raise
+    except GenerationFailed as exc:
+        if illustration:
+            with guard:
+                shot["hold_previous"] = True
+                shot["generated_at"] = _now()
+                summary["held"].append(shot["shot_id"])
+                _record_provenance(output, [{"job_id": shot["shot_id"], "provider": "none",
+                                             "fallback": "hold_previous", "synthetic": False,
+                                             "generation_errors": [str(exc)]}])
+                save()
+            progress(f"   ⚠ {shot['shot_id']}: generation failed; holding the previous shot longer")
+        else:
+            summary["failed"].append(shot["shot_id"])
+            progress(f"   ⚠ {shot['shot_id']}: {exc}")
+        return None
+    with guard:
+        shot["prompt"] = composed["prompt"]
+        shot["reference_slots"] = composed["slots"]
+        shot.pop("hold_previous", None)
+        shot["image_path"] = str(Path(job.output_path).relative_to(output))
+        shot["provider"] = record.get("provider", "comfyui")
+        shot["generated_at"] = _now()
+        shot.pop("qa", None)                              # a new image starts a new QA budget
+        key = "fallback" if record.get("fallback_from") else ("cached" if record.get("cache_hit") else "generated")
+        summary[key] += 1
+        _record_provenance(output, [record])
+        save()
+    return record
+
+
+def _summary(total: int = 0) -> dict:
+    return {"generated": 0, "cached": 0, "fallback": 0, "failed": [], "held": [], "total": total,
+            "flagged": [], "warned": [], "qa_failed": [], "qa_flagged": [], "qa_edits": 0,
+            "qa_regenerations": 0}
+
+
+def characters_to_approve(vb: dict, outline: dict, output_dir) -> list[str]:
+    """On-screen characters the outline puts in a scene without an approved portrait (checked before
+    planning, since the shots that will list them don't exist yet)."""
+    cast = {cid for scene in outline.get("scenes", []) for cid in scene.get("characters_present") or []}
+    return [item["character_id"] for item in vbible.on_screen(vb)
+            if item["character_id"] in cast and not vbible.approved_reference(vb, "character", item["character_id"],
+                                                                               output_dir)]
+
+
+def plan_and_render(output_dir, generator: ImageGenerator, *, progress: Callable[[str], None] = print,
+                    stop: threading.Event | None = None, concurrency: int | None = None, qa=None,
+                    qa_mode: str | None = None, force: bool = False, on_status: Callable[[dict], None] | None = None,
+                    clock: Callable[[], float] = time.monotonic) -> dict:
+    """Phase 3.8: plan the shot list and render it at the same time.
+
+    * Planner lane (a thread, network): scene by scene, Gemini plans the shots (checkpointed); each
+      scene's shots go into the render queue as soon as it is ready.
+    * Render lane (this thread, GPU — the only ComfyUI caller): renders the queue lowest scene/shot
+      first, layer-1 QA inline on the CPU; it never waits for later scenes and keeps working while the
+      planner sits in a Gemini backoff wait.
+    * Then, as in 3.5, the local VLM QA runs once over the batch, followed by edits/new seeds
+      (``generate_shots`` with the layer-1 results), and anything still pending is rendered.
+
+    A scene the planner cannot plan is flagged and reported (``failed_scenes``); the rest goes on.
+    ``stop`` drains cleanly: the current image is finished, checkpoints and the image cache make a
+    rerun resume both lanes. ``on_status`` receives {"planning", "images", "eta_seconds"} updates.
+    """
+    from agents import gemini_client
+    output = Path(output_dir)
+    script, _, _, outline = _artifacts(output)
+    vb = ensure_visual_bible(output)
+    missing = characters_to_approve(vb, outline, output)
+    if missing:
+        raise ApprovalRequired("Approve a reference portrait for: " + ", ".join(missing)
+                               + " before the shots (Review & Edit → References).")
+    current = load_json(output / shots_module.FILE_NAME) or {}
+    if not force and current.get("source_hash") and \
+            current["source_hash"] == shots_module.expected_source_hash(script, vb, output):
+        return generate_shots(output, generator, progress=progress, qa=qa, qa_mode=qa_mode, clock=clock)
+
+    lock = threading.RLock()
+    said = threading.Lock()
+    stop = stop or threading.Event()
+
+    def say(message: str) -> None:
+        with said:
+            progress(message)
+
+    segments_total = len({segment["scene_id"] for segment in shots_module._segments_and_hash(script, vb, output)[0]})
+    per = seconds_per_image("ref") or seconds_per_image("t2i")
+    started = clock()
+    status = {"planning": {"done": 0, "total": segments_total, "waiting_seconds": 0},
+              "images": {"done": 0, "total": 0}, "eta_seconds": None}
+
+    def publish() -> None:
+        with said:
+            planning, images = status["planning"], status["images"]
+            elapsed = clock() - started
+            per_scene = elapsed / planning["done"] if planning["done"] else None
+            left_images = (images["total"] - images["done"]) * per if per else None
+            left_scenes = (planning["total"] - planning["done"]) * per_scene if per_scene else None
+            status["eta_seconds"] = round(max(left_images or 0, left_scenes or 0)) if per else None
+            snapshot = json.loads(json.dumps(status))
+        if on_status:
+            on_status(snapshot)
+
+    work: queue.PriorityQueue = queue.PriorityQueue()
+    outcome: dict = {}
+    narration: dict = {}                                 # scene id -> its narration (prompt advice, QA)
+
+    def on_scene(index: int, scene_id: str, entries: list[dict]) -> None:
+        narration[scene_id] = " ".join(str(shot.get("narration_excerpt", "")) for shot in entries)
+        added = 0
+        for number, shot in enumerate(entries):
+            if not shot.get("reuse_of") and not shot.get("flags") and not _done(shot, output):
+                work.put((index, number, shot["shot_id"], shot))
+                added += 1
+        with said:
+            status["planning"]["done"] += 1
+            status["planning"]["waiting_seconds"] = 0
+            status["images"]["total"] += added
+        say(f"   Planejamento: {status['planning']['done']}/{status['planning']['total']} cenas "
+            f"({scene_id}: {added} imagem(ns) na fila)")
+        publish()
+
+    def waiting(seconds: float, reason: str, stage: str) -> None:
+        if threading.current_thread() is planner:
+            with said:
+                status["planning"]["waiting_seconds"] = round(seconds)
+            say(f"   Planejamento aguardando o Gemini ({reason}, {seconds:.0f} s); as imagens continuam")
+            publish()
+
+    def plan() -> None:
+        try:
+            outcome["shot_list"] = shots_module.build_shot_list(script, outline, vb, output, force=force,
+                                                               on_scene=on_scene, concurrency=concurrency,
+                                                               stop=stop, lock=lock)
+        except BaseException as exc:                     # noqa: BLE001 — reported by the render lane
+            outcome["error"] = exc
+        finally:
+            work.put((math.inf, 0, "", None))            # after every queued shot
+
+    planner = threading.Thread(target=plan, name="shot-planner", daemon=True)
+    gemini_client.wait_listeners.append(waiting)
+    summary = _summary()
+    use_qa = visual_qa.enabled() and policy.mode(qa_mode) != "off"
+    if use_qa and qa is None:
+        from video.qa.layered import LayeredQA
+        qa = LayeredQA(comfy=generator.client, progress=say, mode=qa_mode)
+    prepared = {}
+    every = max(1, int(getattr(config, "IMAGEGEN_FREE_MEMORY_EVERY", 10)))
+
+    def save() -> None:
+        if "shot_list" in outcome:                       # the file exists once planning is complete
+            atomic_write_json(output / shots_module.FILE_NAME, outcome["shot_list"])
+
+    planner.start()
+    rendered = 0
+    try:
+        while True:
+            _, _, _, shot = work.get()
+            if shot is None:
+                break
+            if stop.is_set():
+                continue                                 # drain without rendering
+            left = (status["images"]["total"] - status["images"]["done"]) * per if per else None
+            record = _render_shot(generator, output, vb, shot,
+                                  label=f"{status['images']['done'] + 1}/{status['images']['total']}",
+                                  narration=narration, summary=summary, save=lambda: None, progress=say,
+                                  eta=f" — ETA {left / 60:.0f} min" if left else "", lock=lock)
+            with said:
+                status["images"]["done"] += 1
+            say(f"   Imagens: {status['images']['done']}/{status['images']['total']}")
+            publish()
+            rendered += 1
+            if record is not None and use_qa and not record.get("fallback_from"):
+                expected = visual_qa.expected_for(shot, vb, narration.get(shot["scene_id"], ""))
+                prepared[shot["shot_id"]] = qa.prepare(output / shot["image_path"], expected)   # layer 1, CPU
+            if rendered % every == 0:
+                generator.client.free_memory()
+    except BaseException:                                # Ctrl+C / ComfyUI down: let the planner stop too
+        stop.set()
+        raise
+    finally:
+        planner.join()
+        gemini_client.wait_listeners.remove(waiting)
+    error = outcome.get("error")
+    if isinstance(error, shots_module.PlanningStopped) or stop.is_set():
+        say("   Interrompido: a imagem atual foi concluída; checkpoints e cache retomam na próxima execução.")
+        return {**summary, "stopped": True, "seconds": round(clock() - started, 1)}
+    if error is not None:
+        raise error
+    with lock:
+        save()
+    failed_scenes = outcome["shot_list"].get("failed_scenes") or {}
+    rest = generate_shots(output, generator, progress=say, qa=qa, qa_mode=qa_mode, clock=clock, prepared=prepared)
+    for key in ("generated", "cached", "fallback"):
+        rest[key] = rest.get(key, 0) + summary[key]
+    for key in ("failed", "held"):
+        rest[key] = summary[key] + rest.get(key, [])
+    rest["total"] = rest.get("total", 0) + status["images"]["total"]
+    rest["failed_scenes"] = failed_scenes
+    rest["planned_scenes"] = status["planning"]["done"]
+    rest["seconds"] = round(clock() - started, 1)
+    if failed_scenes:
+        say("   ⛔ Cenas que o planejamento não conseguiu fazer (planos marcados): " + ", ".join(sorted(failed_scenes)))
+    return rest
 
 
 def qa_rounds(generator: ImageGenerator, output: Path, vb: dict, items: list[dict], qa, save: Callable[[], None],

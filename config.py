@@ -109,6 +109,9 @@ NARRATIVE_AUTO_REVISION_ENABLED = os.getenv(
 ).lower() in ("1", "true", "yes", "on")
 NARRATIVE_EXPANSION_MAX_CALLS = int(os.getenv("NARRATIVE_EXPANSION_MAX_CALLS", "3"))
 NARRATIVE_EXPANSION_BATCH_SIZE = int(os.getenv("NARRATIVE_EXPANSION_BATCH_SIZE", "3"))
+# Phase 3.8: scenes Gemini plans at once while ComfyUI renders (1 keeps strict scene-to-scene
+# continuity; 2 starts the next scene early with the latest finished scene as continuity; never more).
+SHOT_PLANNER_CONCURRENCY = int(os.getenv("SHOT_PLANNER_CONCURRENCY", "1"))
 # A batch that is not fully accepted is retried scene by scene (at most this many extra calls).
 NARRATIVE_EXPANSION_SINGLE_RETRIES = int(os.getenv("NARRATIVE_EXPANSION_SINGLE_RETRIES", "3"))
 # One bounded rewrite of scenes cited by confirmed/probable major or blocking

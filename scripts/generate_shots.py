@@ -1,7 +1,7 @@
 """Generate the episode's shot images with ComfyUI (resumable, cached).
 
 Run:  python -m scripts.generate_shots --limit 5     # quick look at style/consistency
-      python -m scripts.generate_shots               # full episode (long; resumable)
+      python -m scripts.generate_shots               # full episode: Gemini plans while ComfyUI renders (3.8)
       python -m scripts.generate_shots --only s04    # one scene (or one shot id)
       python -m scripts.generate_shots --qa advisory # QA stores hints; only reliable checks fix (default)
       python -m scripts.generate_shots --fix-only    # edit/regenerate only what failed QA
@@ -30,6 +30,56 @@ from video.qa import policy
 from video.imagegen_comfyui import ComfyUnavailable, ImageGenerator
 
 
+def _thumbnails(output, generator) -> None:
+    print("   → Thumbnail image…")
+    gen.generate_thumbnail_image(output, generator)
+    print("   → Thumbnail variants (3 concepts)…")
+    try:
+        from video import thumbnails
+        from video.qa.layered import LayeredQA
+        index = thumbnails.generate_variants(output, generator,
+                                             qa=LayeredQA(comfy=generator.client, mode="advisory"))
+        print(f"     variant {index['selected']} is thumbnail.jpg; pick another in the GUI "
+              "(Review → Thumbnails) or with python -m scripts.thumbnails --select N")
+    except Exception as exc:                      # noqa: BLE001 — the single fallback thumbnail stays
+        print(f"     ⚠ thumbnail variants skipped: {exc}")
+
+
+def _pipelined(output, args) -> int:
+    """Phase 3.8: Gemini plans scene by scene while ComfyUI renders the scenes already planned."""
+    generator = ImageGenerator(output)
+    try:
+        summary = gen.plan_and_render(output, generator, qa_mode=args.qa, force=args.rebuild_shot_list)
+        if summary.get("stopped"):
+            return 130
+        if not args.no_thumbnail:
+            _thumbnails(output, generator)
+    except gen.ApprovalRequired as exc:
+        print(exc, file=sys.stderr)
+        return 3
+    except ComfyUnavailable as exc:
+        print(exc, file=sys.stderr)
+        print("Progress so far is saved; re-run the same command to resume.", file=sys.stderr)
+        return 2
+    except KeyboardInterrupt:
+        print("Stopped: the current image was finished; re-run to resume.", file=sys.stderr)
+        return 130
+    print(f"Done: {summary['generated']} generated, {summary['cached']} from cache, "
+          f"{len(summary['failed'])} failed, {summary.get('planned_scenes', 0)} scene(s) planned "
+          f"in {summary['seconds'] / 60:.1f} min.")
+    if summary.get("failed_scenes"):
+        print("Scenes the planner could not plan (shots flagged; re-run to retry): "
+              + ", ".join(sorted(summary["failed_scenes"])))
+    if summary.get("qa_hints"):
+        print(f"QA hints to review ({len(summary['qa_hints'])} shot(s)): {', '.join(summary['qa_hints'])}")
+        print("Review them in the GUI: python gui.py → Continuar projeto → Shots "
+              "(one-click edits, 'Ignorar aviso', keyboard ← → and O to mark OK)")
+    if summary.get("flagged"):
+        print("Flagged shots (skipped until edited in the GUI, or re-planned with --rebuild-shot-list): "
+              + ", ".join(summary["flagged"]))
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Generate shot images with ComfyUI.")
     parser.add_argument("--output-dir", default=None, help="explicit folder (overrides the project)")
@@ -44,6 +94,8 @@ def main(argv=None) -> int:
                         help="advisory (default: hints only, reliable checks fix), auto, or off")
     args = parser.parse_args(argv)
     output = projects.cli_output(args)
+    if not (args.fix_only or args.only or args.limit):
+        return _pipelined(output, args)
     shot_list = gen.ensure_shot_list(output, force=args.rebuild_shot_list and not args.fix_only)
     estimate = gen.estimate_gpu_seconds(shot_list, output)
     print(f"Shot list: {len(shot_list['shots'])} shots, {shot_list['unique_shots']} unique"
@@ -60,18 +112,7 @@ def main(argv=None) -> int:
         summary = gen.generate_shots(output, generator, limit=args.limit, only=args.only, fix_only=args.fix_only,
                                      qa_mode=args.qa)
         if not args.no_thumbnail and not args.only and not args.limit and not args.fix_only:
-            print("   → Thumbnail image…")
-            gen.generate_thumbnail_image(output, generator)
-            print("   → Thumbnail variants (3 concepts)…")
-            try:
-                from video import thumbnails
-                from video.qa.layered import LayeredQA
-                index = thumbnails.generate_variants(output, generator,
-                                                     qa=LayeredQA(comfy=generator.client, mode="advisory"))
-                print(f"     variant {index['selected']} is thumbnail.jpg; pick another in the GUI "
-                      "(Review → Thumbnails) or with python -m scripts.thumbnails --select N")
-            except Exception as exc:                      # noqa: BLE001 — the single fallback thumbnail stays
-                print(f"     ⚠ thumbnail variants skipped: {exc}")
+            _thumbnails(output, generator)
     except gen.ApprovalRequired as exc:
         print(exc, file=sys.stderr)
         return 3

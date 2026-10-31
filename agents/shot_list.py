@@ -514,7 +514,29 @@ def plan_scene(scene_id: str, scene_segments: list[dict], vb: dict, outline: dic
             "calls": calls, "general": general}
 
 
-def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bool = False) -> dict:
+class PlanningStopped(InterruptedError):
+    """Stop was requested while scenes were still being planned (completed checkpoints are kept)."""
+
+
+def planner_concurrency(value=None) -> int:
+    """SHOT_PLANNER_CONCURRENCY: 1 (default, strict continuity) or 2; never more."""
+    try:
+        wanted = int(value if value is not None else getattr(config, "SHOT_PLANNER_CONCURRENCY", 1))
+    except (TypeError, ValueError):
+        wanted = 1
+    return max(1, min(2, wanted))
+
+
+def _failed_scene(scene_segments: list[dict], exc: BaseException) -> dict:
+    """A scene whose planning raised (e.g. Gemini unavailable after its retries): every shot flagged."""
+    message = f"planning failed: {exc}"[:300]
+    shots = attach_skeleton(_fit_count({"settings": {}, "shots": []}, scene_segments), scene_segments)["shots"]
+    return {"settings": {}, "shots": shots, "advice": {}, "calls": 0, "general": [message],
+            "flags": {segment["shot_id"]: [message] for segment in scene_segments}}
+
+
+def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bool = False, *,
+                    on_scene=None, concurrency: int | None = None, stop=None, lock=None) -> dict:
     """Plan the shot list scene by scene (one Gemini call each, checkpointed).
 
     The skeleton (ids, timings, excerpts) comes from the narration timeline; each
@@ -522,7 +544,17 @@ def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bo
     blocking rule keeps its best attempt with those shots flagged, never
     aborting the others. A rerun reuses every completed scene's checkpoint
     (``.checkpoints/shot_list/<scene>.json``) and redoes missing or flagged ones.
+
+    Phase 3.8: ``on_scene(index, scene_id, entries)`` receives each scene's composed shots as soon as
+    it is planned (the renderer starts on them while later scenes are still with Gemini). Scenes are
+    planned in order; with ``concurrency`` 2 the next scene starts before the current one ends and
+    gets the latest finished scene's last shot as continuity. A scene whose planning raises is flagged
+    (``failed_scenes``) and the others go on. ``stop`` (an Event) ends planning after the current scene
+    (PlanningStopped). ``lock`` guards the composed shots, which the renderer updates.
     """
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+    from contextlib import nullcontext
     output = Path(output_dir)
     path = output / FILE_NAME
     segments, source_hash, policy = _segments_and_hash(script, vb, output)
@@ -531,8 +563,15 @@ def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bo
         return existing
     scene_ids = list(dict.fromkeys(segment["scene_id"] for segment in segments))
     contract = _scene_contract(policy)
-    previous, settings, planned, flags, advice, calls, reused = None, {}, [], {}, {}, 0, []
-    for scene_id in scene_ids:
+    guard = lock or nullcontext()
+    state = threading.Lock()
+    results, by_scene, settings, flags, advice = {}, {}, {}, {}, {}
+    totals = {"calls": 0, "reused": [], "failed": {}}
+
+    def plan(index: int) -> None:
+        if stop is not None and stop.is_set():
+            return
+        scene_id = scene_ids[index]
         scene_segments = [segment for segment in segments if segment["scene_id"] == scene_id]
         key = stable_hash({"version": SHOT_LIST_VERSION, "contract": contract,
                            "context": _scene_context(scene_id, scene_segments, vb, outline)})
@@ -540,25 +579,53 @@ def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bo
         saved = load_json(checkpoint) or {}
         if saved.get("key") == key and not saved.get("flags"):
             result = saved
-            reused.append(scene_id)
+            with state:
+                totals["reused"].append(scene_id)
         else:
+            with state:
+                earlier = [i for i in results if i < index and results[i]["shots"]]
+                previous = results[max(earlier)]["shots"][-1] if earlier else None
             print(f"   -> Shot list {scene_id}: {len(scene_segments)} shots")
-            result = plan_scene(scene_id, scene_segments, vb, outline, policy, previous, run_dir=str(output))
-            calls += result["calls"]
-            atomic_write_json(checkpoint, {"key": key, **result})
-            if result["flags"]:
-                print(f"   ⚠ {scene_id}: {len(result['flags'])} shot(s) still break a rule after "
-                      f"{SCENE_REPAIRS} repairs; they are flagged and skipped until edited")
-        for lid, condition in (result.get("settings") or {}).items():
-            settings.setdefault(lid, str(condition or "").strip())
-        flags.update(result.get("flags") or {})
-        advice.update(result.get("advice") or {})
-        for segment, shot in zip(scene_segments, result["shots"]):
-            planned.append(_entry(segment, shot, settings, vb, output, flags.get(segment["shot_id"]),
-                                  advice.get(segment["shot_id"])))
-        previous = result["shots"][-1] if result["shots"] else previous
-    if reused:
-        print(f"   -> Reused checkpoints for {', '.join(reused)}")
+            try:
+                result = plan_scene(scene_id, scene_segments, vb, outline, policy, previous, run_dir=str(output))
+            except Exception as exc:                     # noqa: BLE001 — flag this scene, plan the others
+                result = _failed_scene(scene_segments, exc)
+                with state:
+                    totals["failed"][scene_id] = str(exc)[:300]
+                print(f"   ⛔ {scene_id}: planning failed ({exc}); its shots are flagged, the other scenes go on")
+            else:
+                atomic_write_json(checkpoint, {"key": key, **result})
+                if result["flags"]:
+                    print(f"   ⚠ {scene_id}: {len(result['flags'])} shot(s) still break a rule after "
+                          f"{SCENE_REPAIRS} repairs; they are flagged and skipped until edited")
+            with state:
+                totals["calls"] += result["calls"]
+        with state, guard:
+            results[index] = result
+            for lid, condition in (result.get("settings") or {}).items():
+                settings.setdefault(lid, str(condition or "").strip())
+            flags.update(result.get("flags") or {})
+            advice.update(result.get("advice") or {})
+            entries = [_entry(segment, shot, settings, vb, output, flags.get(segment["shot_id"]),
+                              advice.get(segment["shot_id"]))
+                       for segment, shot in zip(scene_segments, result["shots"])]
+            by_scene[index] = entries
+        if on_scene is not None:
+            on_scene(index, scene_id, entries)
+
+    workers = planner_concurrency(concurrency)
+    if workers == 1:
+        for index in range(len(scene_ids)):
+            plan(index)
+    else:
+        with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="shot-planner") as pool:
+            list(pool.map(plan, range(len(scene_ids))))
+    if len(by_scene) < len(scene_ids):
+        raise PlanningStopped(f"planning stopped after {len(by_scene)}/{len(scene_ids)} scenes; "
+                              "the completed scenes are checkpointed")
+    planned = [entry for index in sorted(by_scene) for entry in by_scene[index]]
+    if totals["reused"]:
+        print(f"   -> Reused checkpoints for {', '.join(sorted(totals['reused']))}")
     warnings = shot_warnings(planned, policy) + _setting_notes(settings, planned, segments)
     for warning in warnings:
         print(f"   ⚠ shot list: {warning} (a target, not a failure)")
@@ -569,9 +636,11 @@ def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bo
         "version": SHOT_LIST_VERSION, "source_hash": source_hash, "policy": policy,
         "budget": int(getattr(config, "IMAGEGEN_MAX_UNIQUE_SHOTS", 50)),
         "unique_shots": sum(1 for shot in planned if not shot["reuse_of"]),
-        "warnings": warnings, "flagged": sorted(flags), "gemini_calls": calls, "shots": planned,
+        "warnings": warnings, "flagged": sorted(flags), "gemini_calls": totals["calls"], "shots": planned,
+        **({"failed_scenes": totals["failed"]} if totals["failed"] else {}),
     }
-    atomic_write_json(path, result)
+    with guard:
+        atomic_write_json(path, result)
     write_report(output, result)
     return result
 

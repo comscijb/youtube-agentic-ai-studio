@@ -159,7 +159,7 @@ class AdvisoryPipelineTests(unittest.TestCase):
         with redirect_stdout(printed), patch.object(cli.projects, "cli_output", return_value=self.output), \
                 patch.object(cli.gen, "ensure_shot_list", return_value={"shots": [], "unique_shots": 0}), \
                 patch.object(cli.gen, "estimate_gpu_seconds", return_value=0), \
-                patch.object(cli.gen, "generate_shots", return_value=summary) as run, \
+                patch.object(cli.gen, "plan_and_render", return_value=summary) as run, \
                 patch.object(cli, "ImageGenerator"):
             cli.main(["--qa", "advisory", "--no-thumbnail"])
         self.assertEqual(run.call_args.kwargs["qa_mode"], "advisory")

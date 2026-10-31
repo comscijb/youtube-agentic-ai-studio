@@ -174,7 +174,10 @@ class ShotTests(GenerationTestCase):
 
     def test_scripts_report_gate_and_offline_comfyui(self):
         from scripts import generate_shots
+        outline = {"scenes": [{"scene_id": "s01", "characters_present": ["julian_vance"]}]}
         with patch.object(gen, "ensure_shot_list", return_value=load_json(self.output / "shot_list.json")), \
+                patch.object(gen, "_artifacts", return_value=({}, {}, {}, outline)), \
+                patch.object(gen, "ensure_visual_bible", return_value=load_json(self.output / "visual_bible.json")), \
                 redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()) as err:
             code = generate_shots.main(["--output-dir", str(self.output)])
         self.assertEqual(code, 3)

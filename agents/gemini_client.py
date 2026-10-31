@@ -425,11 +425,21 @@ def _backoff_delay(info: GeminiErrorInfo, attempt: int) -> float:
     return min(cap, delay + random.uniform(0, delay * 0.1))
 
 
+# Called with (seconds, reason, stage) before every backoff wait (Phase 3.8: the GUI shows that the
+# shot planner is waiting on Gemini while the GPU keeps rendering).
+wait_listeners: list = []
+
+
 def _wait(seconds: float, stage: str, model: str, reason: str) -> None:
     """Sleep between retries (Ctrl+C interrupts it) and account for it."""
     _usage["retries"] += 1
     _usage["wait_seconds"] += seconds
     print(f"   [gemini] stage={stage} model={model} wait={seconds:.0f}s reason={reason}")
+    for listener in list(wait_listeners):
+        try:
+            listener(seconds, reason, stage)
+        except Exception:                                # noqa: BLE001 — a display hook never breaks a call
+            pass
     _sleep(seconds)
 
 

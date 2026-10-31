@@ -95,7 +95,7 @@ class GuiStockTests(unittest.TestCase):
                     patch("video.stock.download_images", side_effect=AssertionError("no stock download")), \
                     patch.object(gen, "ensure_visual_bible", return_value=VISUAL_BIBLE) as bible, \
                     patch.object(gen, "ensure_shot_list"), \
-                    patch.object(gen, "generate_shots", side_effect=gen.ApprovalRequired("Approve julian_vance")) as shots, \
+                    patch.object(gen, "plan_and_render", side_effect=gen.ApprovalRequired("Approve julian_vance")) as shots, \
                     patch("video.imagegen_comfyui.ImageGenerator"), redirect_stdout(io.StringIO()):
                 gui._run_pipeline(["images", "video"])
         self.assertTrue(bible.called)

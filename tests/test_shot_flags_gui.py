@@ -56,7 +56,7 @@ class GenerationTests(FlagTestCase):
     def test_cli_lists_flagged_shots_at_the_end(self):
         from scripts import generate_shots
         with patch.object(gen, "ensure_shot_list", return_value=load_json(self.output / "shot_list.json")), \
-                patch.object(gen, "generate_shots", return_value={
+                patch.object(gen, "plan_and_render", return_value={
                     "generated": 2, "cached": 0, "fallback": 0, "failed": [], "seconds": 1.0,
                     "flagged": ["s01_01"], "warned": []}), \
                 patch.object(generate_shots, "ImageGenerator"), redirect_stdout(io.StringIO()) as out:
@@ -111,7 +111,7 @@ class GuiTests(FlagTestCase):
                                                           script={"sections": []})), \
                     patch.object(gen, "ensure_visual_bible", return_value=VISUAL_BIBLE) as bible, \
                     patch.object(gen, "ensure_shot_list"), \
-                    patch.object(gen, "generate_shots", return_value={"failed": [], "flagged": []}) as shots, \
+                    patch.object(gen, "plan_and_render", return_value={"failed": [], "flagged": []}) as shots, \
                     patch.object(gen, "generate_thumbnail_image"), \
                     patch.object(self.gui, "_make_thumbnail", return_value=None), \
                     patch("video.imagegen_comfyui.ImageGenerator"), redirect_stdout(io.StringIO()):

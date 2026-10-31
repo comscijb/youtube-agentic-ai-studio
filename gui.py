@@ -406,10 +406,14 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
                 _stage("visual_bible", "done")
             if "shots" in steps:
                 _stage("shots", "running")
-                shotgen.ensure_shot_list(config.OUTPUT_DIR)
                 try:
                     generator = ImageGenerator(config.OUTPUT_DIR)
-                    summary = shotgen.generate_shots(config.OUTPUT_DIR, generator, progress=_imagegen_progress)
+                    # Phase 3.8: Gemini plans scene by scene while ComfyUI renders what is planned.
+                    summary = shotgen.plan_and_render(config.OUTPUT_DIR, generator, progress=_imagegen_progress,
+                                                      stop=_stop_event,
+                                                      on_status=lambda lanes: _state.update(lanes=lanes))
+                    if summary.get("stopped"):
+                        raise InterruptedError("Stopped by user during shots")
                     if not summary["failed"]:
                         shotgen.generate_thumbnail_image(config.OUTPUT_DIR, generator)
                 except shotgen.ApprovalRequired as exc:
@@ -905,6 +909,7 @@ def status():
         "upload_pct":     _state.get("upload_pct", 0),
         "uploading":      _state.get("uploading", False),
         "video_type":     _state.get("video_type", "normal"),
+        "lanes":          _state.get("lanes"),          # Phase 3.8: planning / images progress
     })
 
 

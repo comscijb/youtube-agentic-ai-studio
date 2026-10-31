@@ -202,7 +202,7 @@ class GuiImagegenTests(unittest.TestCase):
         with patch.object(self.gui, "_state", dict(self.gui._state, research={"x": 1}, script=script)), \
                 patch.object(gen, "ensure_visual_bible", return_value=VISUAL_BIBLE), \
                 patch.object(gen, "ensure_shot_list"), \
-                patch.object(gen, "generate_shots", side_effect=gen.ApprovalRequired("Approve julian_vance")), \
+                patch.object(gen, "plan_and_render", side_effect=gen.ApprovalRequired("Approve julian_vance")), \
                 patch("video.imagegen_comfyui.ImageGenerator"):
             stages = self.gui._state["stages"]
             self.gui._run_pipeline(["visual_bible", "shots", "video"])
