@@ -113,7 +113,7 @@ class GuiTests(FlagTestCase):
                     patch.object(gen, "ensure_shot_list"), \
                     patch.object(gen, "plan_and_render", return_value={"failed": [], "flagged": []}) as shots, \
                     patch.object(gen, "generate_thumbnail_image"), \
-                    patch.object(self.gui, "_make_thumbnail", return_value=None), \
+\
                     patch("video.imagegen_comfyui.ImageGenerator"), redirect_stdout(io.StringIO()):
                 self.gui._run_pipeline(steps)
             logs = []

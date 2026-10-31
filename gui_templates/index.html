@@ -509,17 +509,22 @@ input[type=range]{width:100%;accent-color:var(--primary)}
           <div>
             <div class="flex-row" style="margin-bottom:8px">
               <div class="field-label" style="margin:0">Thumbnail</div>
-              <button class="btn btn-ghost" style="padding:5px 12px;font-size:11px" onclick="regenThumbnail()">↻ Regenerate</button>
+              <a href="#thumb-gallery" class="btn btn-ghost" style="padding:5px 12px;font-size:11px"
+                 onclick="document.getElementById('thumb-gallery').scrollIntoView({block:'start'});return false">Escolher outra miniatura</a>
+              <button class="btn btn-ghost" style="padding:5px 12px;font-size:11px" onclick="regenThumbnail()">↻ Mais opções</button>
             </div>
             <div class="thumb-wrap" id="thumb-wrap">
               <div class="no-thumb">No thumbnail yet</div>
             </div>
-            <div class="help-text" style="margin-top:6px">Thumbnail is auto-generated from your title + stock image. Edit the title on the right and click ↻ Regenerate to update it.</div>
-            <div class="flex-row" style="margin:10px 0 6px">
-              <div class="field-label" style="margin:0">Thumbnails — 3 variantes</div>
-              <button class="btn btn-ghost" style="padding:5px 12px;font-size:11px" onclick="igPost('/api/thumbnails/generate', {})">Gerar variantes</button>
-              <button class="btn btn-ghost" style="padding:5px 12px;font-size:11px" onclick="igPost('/api/thumbnails/generate', {new_concepts: true})">Novos conceitos</button>
+            <div class="help-text" style="margin-top:6px">A miniatura selecionada na galeria abaixo (vai no upload). O texto dela é independente do título.</div>
+            <div class="flex-row" style="margin:10px 0 6px" id="thumb-gallery">
+              <div class="field-label" style="margin:0">Miniaturas</div>
+              <button class="btn btn-ghost" style="padding:5px 12px;font-size:11px" onclick="thumbAction('/api/thumbnails/generate', {})"
+                      title="3 novas variantes com sementes novas; as atuais ficam">Mais opções</button>
+              <button class="btn btn-ghost" style="padding:5px 12px;font-size:11px" onclick="thumbAction('/api/thumbnails/generate', {new_concepts: true})"
+                      title="Novos conceitos do Gemini, depois 3 variantes novas">Novos conceitos</button>
             </div>
+            <div id="thumb-status" style="font-size:12px;margin-bottom:6px"></div>
             <div id="thumb-variants" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:11px;color:var(--muted)"></div>
             <div class="help-text" style="margin-top:4px">A escolhida vai no upload pela API. As outras: baixe e envie à mão em YouTube Studio → Test &amp; compare.</div>
           </div>
@@ -2336,13 +2341,56 @@ function loadImagegen() {
   });
 }
 
+let _thumbTimer = null;
+
+function thumbAction(url, body) {
+  // Every thumbnail button: start the job, then poll /api/thumbnails every 3 s until it is done.
+  fetch(url, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body || {})})
+    .then(r => r.json().then(d => [r.status, d])).then(([status, d]) => {
+      const box = document.getElementById('thumb-status');
+      if (status === 409) { box.textContent = '⏳ Outra geração em andamento — tente de novo quando ela terminar.'; return; }
+      if (!d.ok) { box.textContent = '⚠ ' + (d.error || 'Erro'); return; }
+      box.textContent = '⏳ Começando…';
+      clearTimeout(_thumbTimer);
+      _thumbTimer = setTimeout(loadThumbVariants, 1000);
+    });
+}
+
+function thumbButton(label, onclick, title) {
+  const button = document.createElement('button');
+  button.className = 'btn btn-ghost';
+  button.style.cssText = 'font-size:11px;padding:3px 8px';
+  button.textContent = label;
+  if (title) button.title = title;
+  button.onclick = onclick;
+  return button;
+}
+
 function loadThumbVariants() {
-  // Phase 3.6-A: the 3 variants side by side, each with its phone-feed preview (168×94) and checks.
+  // Phase 3.8-E: the whole gallery (newest first), progress while a job runs, the last error.
   fetch('/api/thumbnails').then(r => r.json()).then(d => {
     const box = document.getElementById('thumb-variants');
+    const status = document.getElementById('thumb-status');
     if (!box) return;
+    clearTimeout(_thumbTimer);
+    if (d.busy) _thumbTimer = setTimeout(loadThumbVariants, 3000);
+    status.innerHTML = '';
+    if (d.busy) status.textContent = '⏳ ' + (d.progress || 'Outra geração em andamento');
+    else if (d.last_error) {
+      status.textContent = '⚠ ' + d.last_error.message + ' ';
+      if (d.last_error.approval) {
+        const link = document.createElement('a');
+        link.href = '#';
+        link.textContent = 'Aprovar referências';
+        link.onclick = event => { event.preventDefault(); openApproval('ig-refs'); };
+        status.appendChild(link);
+      }
+    }
+    const tw = document.getElementById('thumb-wrap');
+    if (tw && d.selected) tw.innerHTML = `<img id="thumb-img" src="/thumbnail?t=${Date.now()}" alt="Thumbnail">`;
     box.innerHTML = '';
-    (d.variants || []).forEach(v => {
+    const shown = (d.variants || []).filter(v => !v.archived).sort((a, b) => b.number - a.number);
+    shown.forEach(v => {
       const cell = document.createElement('div');
       cell.style.cssText = 'border-radius:6px;padding:4px;outline:' + (v.number === d.selected ? '2px solid var(--green)' : 'none');
       const img = document.createElement('img');
@@ -2360,20 +2408,23 @@ function loadThumbVariants() {
       const c = v.checks || {};
       const bad = ['contrast_ok', 'cap_height_ok', 'text_clear_of_faces', 'head_in_frame'].filter(k => c[k] === false);
       const hints = ((v.qa || {}).issues || []).filter(i => i.hint).map(i => i.type);
-      info.textContent = `${v.concept.composition} · “${v.concept.text}” · contraste ${c.contrast}:1` +
+      info.textContent = `#${v.number}${v.parent ? ' (de #' + v.parent + ')' : ''} · ${v.concept.composition} · “${v.concept.text}” · contraste ${c.contrast}:1` +
         (bad.length ? ` · ⚠ ${bad.join(', ')}` : ' · checagens OK') + (hints.length ? ` · QA: ${hints.join(', ')}` : '');
       info.title = v.concept.curiosity || '';
       row.appendChild(info);
       cell.appendChild(row);
       const actions = document.createElement('div');
-      actions.style.cssText = 'display:flex;gap:4px;margin-top:4px';
-      const pick = document.createElement('button');
-      pick.className = 'btn btn-ghost';
-      pick.style.cssText = 'font-size:11px;padding:3px 8px';
-      pick.textContent = v.number === d.selected ? '✓ vai no upload' : 'Usar esta';
-      pick.onclick = () => fetch('/api/thumbnails/select', {method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({number: v.number})}).then(r => r.json()).then(x => { if (!x.ok) alert(x.error); loadReviewData(); });
-      actions.appendChild(pick);
+      actions.style.cssText = 'display:flex;gap:4px;margin-top:4px;flex-wrap:wrap';
+      const selected = v.number === d.selected;
+      actions.appendChild(thumbButton(selected ? '✓ vai no upload' : 'Usar esta', () =>
+        fetch('/api/thumbnails/select', {method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({number: v.number})}).then(r => r.json()).then(x => { if (!x.ok) alert(x.error); loadThumbVariants(); })));
+      actions.appendChild(thumbButton('Gerar de novo', () => thumbAction('/api/thumbnails/regenerate', {number: v.number}),
+                                      'Mesmo conceito, semente nova (fica ao lado)'));
+      if (!selected) actions.appendChild(thumbButton('Arquivar', () =>
+        fetch('/api/thumbnails/archive', {method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({number: v.number})}).then(r => r.json()).then(x => { if (!x.ok) alert(x.error); loadThumbVariants(); }),
+        'Esconde da galeria; os arquivos ficam'));
       const download = document.createElement('a');
       download.className = 'btn btn-ghost';
       download.style.cssText = 'font-size:11px;padding:3px 8px';
@@ -2384,7 +2435,7 @@ function loadThumbVariants() {
       cell.appendChild(actions);
       box.appendChild(cell);
     });
-    if (!(d.variants || []).length) box.textContent = 'Nenhuma variante ainda — clique em “Gerar variantes” (precisa do ComfyUI).';
+    if (!shown.length && !d.busy) box.textContent = 'Nenhuma miniatura ainda — clique em “Mais opções” (precisa do ComfyUI).';
   });
 }
 
@@ -2595,7 +2646,7 @@ function loadReviewData() {
       vw.innerHTML = `<video controls><source src="/video?t=${Date.now()}" type="video/mp4"></video>`;
     }
     if (d.has_thumb) {
-      tw.innerHTML = `<img id="thumb-img" src="/thumbnail/${Date.now()}" alt="Thumbnail">`;
+      tw.innerHTML = `<img id="thumb-img" src="/thumbnail?t=${Date.now()}" alt="Thumbnail">`;
     }
   });
   // Script data
@@ -2722,17 +2773,8 @@ function regenDescription() {
 }
 
 function regenThumbnail() {
-  const title = document.getElementById('edit-title').value.trim();
-  fetch('/api/regenerate-thumbnail', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({title})
-  }).then(r=>r.json()).then(d => {
-    if (d.ok) {
-      const tw = document.getElementById('thumb-wrap');
-      const ts = d.ts || Date.now();
-      tw.innerHTML = `<img src="/thumbnail/${ts}" alt="Thumbnail" style="width:100%;height:100%;object-fit:cover">`;
-    } else alert('Thumbnail error: '+d.error);
-  });
+  // Legacy name: the variant system's "Mais opções" (the thumbnail text never follows the title).
+  thumbAction('/api/regenerate-thumbnail', {title: document.getElementById('edit-title').value.trim()});
 }
 
 function switchUploadMode(mode) {

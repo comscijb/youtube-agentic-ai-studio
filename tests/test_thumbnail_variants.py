@@ -207,7 +207,6 @@ class GuiTests(unittest.TestCase):
                 self.assertTrue(client.post("/api/thumbnails/select", json={"number": 2}).get_json()["ok"])
                 self.assertEqual(gui._state["thumb_path"], str(output / "thumbnail.jpg"))
                 self.assertEqual(client.post("/api/thumbnails/select", json={"number": 7}).status_code, 400)
-                self.assertEqual(gui._make_thumbnail({}, {}, str(output)), str(output / "thumbnail.jpg"))
 
 
 if __name__ == "__main__":

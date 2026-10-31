@@ -103,24 +103,6 @@ def _stage(name, status):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  THUMBNAIL GENERATOR  (built-in — no separate file needed)
-# ══════════════════════════════════════════════════════════════════════════════
-
-def _make_thumbnail(script, image_map, output_dir):
-    """The selected Phase 3.6 variant when there is one, else the single fallback layout."""
-    from video import thumbnails
-    from video.thumbnail import make_thumbnail
-    index = load_json(Path(output_dir, thumbnails.FOLDER, thumbnails.INDEX)) or {}
-    if index.get("variants") and index.get("selected"):
-        try:
-            return thumbnails.select(output_dir, index["selected"])
-        except FileNotFoundError:
-            pass
-    brief = _state.get("research") or load_json(Path(output_dir, "story_brief.json")) or {}
-    return make_thumbnail(script, image_map, output_dir, brief)
-
-
-# ══════════════════════════════════════════════════════════════════════════════
 #  DESCRIPTION / CHAPTERS BUILDER
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -422,6 +404,7 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
                     raise InterruptedError("Stopped by user during shots")
                 if not summary["failed"]:
                     shotgen.generate_thumbnail_image(out, generator)
+                    _first_thumbnails(out, generator)
             except shotgen.ApprovalRequired as exc:
                 _stage("shots", "pending")
                 raise stage_graph.Blocked(str(exc)) from None
@@ -434,12 +417,8 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
             audio = narration_file()
             if os.path.exists(mixed_path) and os.path.getmtime(mixed_path) >= os.path.getmtime(audio):
                 audio = mixed_path                   # the current music mix
-            _log("Generating thumbnail…")
-            try:
-                image_map_int = {int(k): v for k, v in _state["image_map"].items()}
-                _state["thumb_path"] = _make_thumbnail(script, image_map_int, out)
-            except Exception as e:
-                _log(f"Thumbnail failed (non-fatal): {e}", "warn")
+            thumb = os.path.join(out, "thumbnail.jpg")          # the selected variant (Review → Thumbnails)
+            _state["thumb_path"] = thumb if os.path.exists(thumb) else None
             _stage("video", "running")
             image_map_int = {int(k): v for k, v in _state["image_map"].items()}
             _state["video_path"] = create_video(script, audio, out, image_map_int, video_type=video_type)
@@ -967,7 +946,7 @@ def status():
         "stop_requested": _state.get("stop_requested", False),
         "stages":         _state["stages"],
         "has_video":      bool(_state.get("video_path") and os.path.exists(_state["video_path"])),
-        "has_thumb":      bool(_state.get("thumb_path") and os.path.exists(_state["thumb_path"])),
+        "has_thumb":      os.path.exists(os.path.join(config.OUTPUT_DIR, "thumbnail.jpg")),
         "has_script":     bool(_state.get("script")),
         "yt_url":         _state.get("yt_url"),
         "error":          _state.get("error"),
@@ -989,8 +968,9 @@ def serve_video():
 
 @app.route("/thumbnail")
 def serve_thumb():
-    p = _state.get("thumb_path")
-    if p and os.path.exists(p): return send_file(p, mimetype="image/jpeg")
+    """The open project's thumbnail.jpg (the selected variant), never another project's."""
+    p = os.path.join(config.OUTPUT_DIR, "thumbnail.jpg")
+    if os.path.exists(p): return send_file(p, mimetype="image/jpeg", max_age=0)
     abort(404)
 
 @app.route("/thumbnail/<int:ts>")  # cache-busting route
@@ -1262,36 +1242,101 @@ Return ONLY the description text, no explanation."""
 
 @app.route("/api/thumbnails")
 def thumbnails_status():
-    """The 3 thumbnail variants (Phase 3.6-A): paths, 168×94 previews, checks, QA hints, the selected one."""
+    """The thumbnail gallery (Phase 3.8-E): every variant (newest first in the GUI), the selected one, the
+    running generation's progress and the last error of the background job."""
     from agents import packaging
     from video import thumbnails
     output = Path(config.OUTPUT_DIR)
     index = load_json(output / thumbnails.FOLDER / thumbnails.INDEX) or {"variants": [], "selected": None}
     concepts = load_json(output / packaging.CONCEPTS_FILE) or {}
     return jsonify({"ok": True, **index, "concepts": concepts.get("concepts", []),
-                    "busy": _state.get("imagegen_busy", False)})
+                    "busy": _state.get("imagegen_busy", False), "progress": _state.get("thumb_progress", ""),
+                    "last_error": _state.get("thumb_error"), "project": output.name})
+
+
+def _first_thumbnails(output, generator) -> None:
+    """After the shots: the first thumbnail variants when the project has none (non-fatal)."""
+    from video import thumbnails
+    if (load_json(Path(output) / thumbnails.FOLDER / thumbnails.INDEX) or {}).get("variants"):
+        return
+    try:
+        from video.qa.layered import LayeredQA
+        thumbnails.generate_variants(output, generator, progress=_imagegen_progress,
+                                     qa=LayeredQA(comfy=generator.client, mode="advisory"))
+        _state["thumb_path"] = str(Path(output) / "thumbnail.jpg")
+    except Exception as exc:                         # noqa: BLE001 — "Mais opções" in Review makes them later
+        _log(f"Thumbnail variants skipped: {exc}", "warn")
+
+
+def _thumbnail_job(work):
+    """Run a thumbnail generation in the background; its progress and any error reach /api/thumbnails."""
+    from video import shot_generation as shotgen
+
+    def progress(message: str):
+        _state["thumb_progress"] = message.strip()
+        _imagegen_progress(message)
+
+    def run():
+        _state["thumb_error"] = None
+        _state["thumb_progress"] = "Começando…"
+        try:
+            work(progress)
+        except Exception as exc:
+            _state["thumb_error"] = {"message": str(exc), "approval": isinstance(exc, shotgen.ApprovalRequired)}
+            raise
+        finally:
+            _state["thumb_progress"] = ""
+    return _imagegen_run(run)
+
+
+def _thumbnail_more(output: Path, new_concepts: bool = False, count: int | None = None):
+    """"Mais opções" / "Novos conceitos" for ``output`` (the project open when the button was pressed)."""
+    from video import thumbnails
+    from video.imagegen_comfyui import ImageGenerator
+    from video.qa.layered import LayeredQA
+
+    def work(progress):
+        generator = ImageGenerator(output)
+        thumbnails.generate_variants(output, generator, progress=progress, new_concepts=new_concepts, count=count,
+                                     qa=LayeredQA(comfy=generator.client, mode="advisory", progress=progress))
+    return _thumbnail_job(work)
 
 
 @app.route("/api/thumbnails/generate", methods=["POST"])
 def thumbnails_generate():
+    body = request.get_json(force=True) or {}
+    count = body.get("count")
+    return _thumbnail_more(Path(config.OUTPUT_DIR), bool(body.get("new_concepts")),
+                           int(count) if count else None)
+
+
+@app.route("/api/thumbnails/regenerate", methods=["POST"])
+def thumbnails_regenerate():
+    """"Gerar de novo" on one card: same concept, new seed, appended and linked to its parent."""
     from video import thumbnails
     from video.imagegen_comfyui import ImageGenerator
     from video.qa.layered import LayeredQA
-    new = bool((request.get_json(force=True) or {}).get("new_concepts"))
+    output = Path(config.OUTPUT_DIR)
+    number = int((request.get_json(force=True) or {}).get("number", 0))
+    index = load_json(output / thumbnails.FOLDER / thumbnails.INDEX) or {}
+    if not any(item["number"] == number for item in index.get("variants", [])):
+        return jsonify({"ok": False, "error": f"No thumbnail variant {number}"}), 404
 
-    def run():
-        from agents import packaging
-        from agents import visual_bible as vbible
-        output = Path(config.OUTPUT_DIR)
-        brief = load_json(output / "story_brief.json") or load_json(output / "research.json") or {}
-        concepts = packaging.generate_thumbnail_concepts(
-            output, brief=brief, script=_state.get("script") or load_json(output / "script.json") or {},
-            vb=load_json(output / vbible.FILE_NAME) or {}, force=new)
+    def work(progress):
         generator = ImageGenerator(output)
-        thumbnails.generate_variants(output, generator, concepts=concepts, progress=_imagegen_progress,
-                                     qa=LayeredQA(comfy=generator.client, mode="advisory", progress=_imagegen_progress))
-        _state["thumb_path"] = str(output / "thumbnail.jpg")
-    return _imagegen_run(run)
+        thumbnails.regenerate_variant(output, generator, number, progress=progress,
+                                      qa=LayeredQA(comfy=generator.client, mode="advisory", progress=progress))
+    return _thumbnail_job(work)
+
+
+@app.route("/api/thumbnails/archive", methods=["POST"])
+def thumbnails_archive():
+    from video import thumbnails
+    try:
+        thumbnails.archive_variant(config.OUTPUT_DIR, int((request.get_json(force=True) or {}).get("number", 0)))
+    except (FileNotFoundError, TypeError, ValueError) as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    return jsonify({"ok": True})
 
 
 @app.route("/api/thumbnails/select", methods=["POST"])
@@ -1307,21 +1352,12 @@ def thumbnails_select():
 
 @app.route("/api/regenerate-thumbnail", methods=["POST"])
 def regen_thumbnail():
-    if not _state.get("script"):
-        return jsonify({"ok": False, "error": "No script loaded"})
+    """Legacy upload-panel button: now "Mais opções" in the variant system. A title change never
+    re-letters the thumbnail: its text is independent and must not repeat the title."""
     body = request.get_json(force=True) or {}
-
-    # Allow title override for thumbnail
-    if "title" in body and _state["script"]:
+    if body.get("title") and _state.get("script"):
         _state["script"]["title"] = body["title"]
-
-    try:
-        image_map_int = {int(k): v for k, v in _state.get("image_map", {}).items()}
-        thumb = _make_thumbnail(_state["script"], image_map_int, config.OUTPUT_DIR)
-        _state["thumb_path"] = thumb
-        return jsonify({"ok": True, "ts": int(time.time())})
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)})
+    return _thumbnail_more(Path(config.OUTPUT_DIR))
 
 
 # ── Image generation (ComfyUI) ───────────────────────────────────────────────

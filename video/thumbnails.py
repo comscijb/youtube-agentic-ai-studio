@@ -18,6 +18,11 @@ variant now:
 No wordmark (``THUMBNAIL_LOGO`` adds a tiny corner mark, default off). The user
 picks the variant that is uploaded (``select``); the others are kept for
 YouTube Studio's Test & compare (manual upload there — not available in the API).
+
+Phase 3.8-E: every generation **appends** (variant_<n>, n continues) with fresh
+seeds — a per-project ``round`` counter is mixed into the seed, so "Mais opções"
+never returns the cached images of the previous round; ``regenerate_variant``
+re-rolls one concept (``parent``) and ``archive_variant`` hides one (files kept).
 """
 from __future__ import annotations
 
@@ -278,56 +283,137 @@ def render_variant(background: Image.Image, concept: dict, detection: dict | Non
             "text_box": layout["box"], "side": layout["side"], "accent": accent}
 
 
-def generate_variants(output_dir, generator, *, concepts: dict | None = None, detector=None, qa=None,
-                      progress: Callable[[str], None] = print, generator_concepts=None) -> dict:
-    """Concepts (Gemini, cached) → one ComfyUI background each with the references → graded,
-    lettered, checked variants in thumbnails/. Variant 1 is selected until the user picks."""
+VARIANTS_PER_ROUND = 3
+ROUND_SEED = 104_729                 # mixed with the per-project round counter: every round gets new seeds
+
+
+def _index(output: Path) -> dict:
+    index = load_json(output / FOLDER / INDEX) or {}
+    index.setdefault("variants", [])
+    return index
+
+
+def _render(output: Path, generator, *, vb: dict, brief: dict, shot_list, concept: dict, number: int,
+            round_number: int, detector, progress, label: str, seed_offset: int = 0, parent: int | None = None) -> dict:
+    """One variant: a ComfyUI background (the concept as a shot, with the references) graded,
+    lettered and checked as thumbnails/variant_<number>.jpg. Never overwrites another variant."""
     from agents import shot_list as shots_module
     from agents import visual_bible as vbible
+    from agents.narrative import stable_hash
     from video import shot_generation as gen
     from video.imagegen_comfyui import ImageJob
-    output = Path(output_dir)
+    shot = concept_shot(concept, vb, brief, shot_list)
+    if shot["characters"] and not vbible.approved_reference(vb, "character", shot["characters"][0], output):
+        raise gen.ApprovalRequired(f"Approve {shot['characters'][0]}'s character sheet before the thumbnails.")
+    composed = shots_module.compose_shot(shot, vb, output)
+    background = output / FOLDER / f"background_{number}.jpg"
+    seed = composed["seed"] + 7919 * number + ROUND_SEED * round_number + seed_offset
+    job = ImageJob(job_id=f"thumbnail_v{number}", prompt=composed["prompt"], seed=seed, output_path=str(background),
+                   kind=composed["kind"], references=composed["references"], size=gen.native_size(), final_size=(TW, TH))
+    progress(f"   → Gerando miniatura {label}: {concept['composition']} — {concept['text']!r}")
+    record = generator.generate_with_retry(job, new_seeds=1)
+    detection = detector.detect(background) if detector else None
+    with Image.open(background) as opened:
+        variant = render_variant(opened, concept, detection, output / FOLDER / f"variant_{number}.jpg",
+                                 accent="crimson" if number % 3 == 2 else "gold")
+    variant.update(number=number, concept=concept, seed=record.get("seed", seed), prompt=composed["prompt"],
+                   background=str(background.relative_to(output)), round=round_number,
+                   concept_key=stable_hash(concept), parent=parent, archived=False)
+    variant["path"] = str(Path(variant["path"]).relative_to(output))
+    variant["preview"] = str(Path(variant["preview"]).relative_to(output))
+    return variant
+
+
+def _context(output: Path) -> tuple[dict, dict, dict, dict | None]:
+    from agents import shot_list as shots_module
+    from agents import visual_bible as vbible
     vb = load_json(output / vbible.FILE_NAME) or {}
     brief = load_json(output / "story_brief.json") or load_json(output / "research.json") or {}
     script = load_json(output / "script.json") or {}
-    shot_list = load_json(output / shots_module.FILE_NAME)
-    if concepts is None:
-        concepts = packaging.generate_thumbnail_concepts(output, brief=brief, script=script, vb=vb,
-                                                         generator=generator_concepts)
-    if detector is None:
-        from video.qa import fixes
-        detector = fixes._detector()
-    previous = load_json(output / FOLDER / INDEX) or {}
-    (output / FOLDER).mkdir(parents=True, exist_ok=True)
-    variants = []
-    for number, concept in enumerate(concepts["concepts"], 1):
-        shot = concept_shot(concept, vb, brief, shot_list)
-        if shot["characters"] and not vbible.approved_reference(vb, "character", shot["characters"][0], output):
-            raise gen.ApprovalRequired(f"Approve {shot['characters'][0]}'s character sheet before the thumbnails.")
-        composed = shots_module.compose_shot(shot, vb, output)
-        background = output / FOLDER / f"background_{number}.jpg"
-        job = ImageJob(job_id=f"thumbnail_v{number}", prompt=composed["prompt"], seed=composed["seed"] + 7919 * number,
-                       output_path=str(background), kind=composed["kind"], references=composed["references"],
-                       size=gen.native_size(), final_size=(TW, TH))
-        progress(f"   → Thumbnail {number}/{len(concepts['concepts'])}: {concept['composition']} — {concept['text']!r}")
-        record = generator.generate_with_retry(job, new_seeds=1)
-        detection = detector.detect(background) if detector else None
-        with Image.open(background) as opened:
-            variant = render_variant(opened, concept, detection, output / FOLDER / f"variant_{number}.jpg",
-                                     accent="crimson" if number == 2 else "gold")
-        variant.update(number=number, concept=concept, seed=record.get("seed"), prompt=composed["prompt"],
-                       background=str(background.relative_to(output)))
-        variant["path"] = str(Path(variant["path"]).relative_to(output))
-        variant["preview"] = str(Path(variant["preview"]).relative_to(output))
-        variants.append(variant)
-    if qa is not None:                                   # the existing QA, advisory: hints only
+    return vb, brief, script, load_json(output / shots_module.FILE_NAME)
+
+
+def _review(output: Path, vb: dict, variants: list[dict], qa) -> None:
+    if qa is not None and variants:                      # the existing QA, advisory: hints only
         results = qa.review_batch([(output / item["background"], _expected(vb, item["concept"])) for item in variants])
         for item, result in zip(variants, results):
             item["qa"] = {"issues": result.get("issues", []), "layers": result.get("layers", [])}
-    index = {"variants": variants, "selected": previous.get("selected") if previous.get("selected") in
-             range(1, len(variants) + 1) else 1, "concepts_key": concepts.get("key")}
+
+
+def generate_variants(output_dir, generator, *, concepts: dict | None = None, detector=None, qa=None,
+                      progress: Callable[[str], None] = print, generator_concepts=None, count: int | None = None,
+                      new_concepts: bool = False) -> dict:
+    """"Mais opções" (Phase 3.8-E): ``count`` new variants (one per concept, default 3) with fresh seeds
+    (a per-project ``round`` counter is mixed into the seed), **appended** as variant_<n> (n continues);
+    nothing is overwritten. ``new_concepts`` asks Gemini for new concepts first ("Novos conceitos").
+    The first variant ever made is selected until the user picks another."""
+    output = Path(output_dir)
+    vb, brief, script, shot_list = _context(output)
+    if concepts is None:
+        concepts = packaging.generate_thumbnail_concepts(output, brief=brief, script=script, vb=vb,
+                                                         generator=generator_concepts, force=new_concepts)
+    if detector is None:
+        from video.qa import fixes
+        detector = fixes._detector()
+    (output / FOLDER).mkdir(parents=True, exist_ok=True)
+    index = _index(output)
+    round_number = int(index.get("round", 0)) + 1
+    chosen = concepts["concepts"]
+    total = count or min(VARIANTS_PER_ROUND, len(chosen)) or VARIANTS_PER_ROUND
+    start = max([item["number"] for item in index["variants"]] or [0]) + 1
+    made = []
+    for offset in range(total):
+        concept = chosen[offset % len(chosen)]
+        variant = _render(output, generator, vb=vb, brief=brief, shot_list=shot_list, concept=concept,
+                          number=start + offset, round_number=round_number, detector=detector, progress=progress,
+                          label=f"{offset + 1}/{total}")
+        made.append(variant)
+        index["variants"].append(variant)
+        index["round"] = round_number
+        atomic_write_json(output / FOLDER / INDEX, index)   # the gallery shows each one as it lands
+    _review(output, vb, made, qa)
+    index.update(round=round_number, concepts_key=concepts.get("key"))
+    if not index.get("selected"):
+        index["selected"] = made[0]["number"]
     atomic_write_json(output / FOLDER / INDEX, index)
     select(output, index["selected"])
+    return index
+
+
+def regenerate_variant(output_dir, generator, number: int, *, detector=None, qa=None,
+                       progress: Callable[[str], None] = print) -> dict:
+    """"Gerar de novo" on one card: the same concept with a new seed, appended and linked (``parent``)."""
+    output = Path(output_dir)
+    index = _index(output)
+    parent = next((item for item in index["variants"] if item["number"] == int(number)), None)
+    if parent is None:
+        raise FileNotFoundError(f"no thumbnail variant {number}")
+    if detector is None:
+        from video.qa import fixes
+        detector = fixes._detector()
+    vb, brief, _, shot_list = _context(output)
+    round_number = int(index.get("round", 0)) + 1
+    variant = _render(output, generator, vb=vb, brief=brief, shot_list=shot_list, concept=parent["concept"],
+                      number=max(item["number"] for item in index["variants"]) + 1, round_number=round_number,
+                      detector=detector, progress=progress, label="1/1", parent=parent["number"])
+    _review(output, vb, [variant], qa)
+    index["variants"].append(variant)
+    index["round"] = round_number
+    atomic_write_json(output / FOLDER / INDEX, index)
+    return index
+
+
+def archive_variant(output_dir, number: int) -> dict:
+    """"Arquivar": hide a variant from the gallery (its files stay); the selected one cannot be hidden."""
+    output = Path(output_dir)
+    index = _index(output)
+    variant = next((item for item in index["variants"] if item["number"] == int(number)), None)
+    if variant is None:
+        raise FileNotFoundError(f"no thumbnail variant {number}")
+    if index.get("selected") == variant["number"]:
+        raise ValueError("the selected thumbnail cannot be archived; choose another one first")
+    variant["archived"] = True
+    atomic_write_json(output / FOLDER / INDEX, index)
     return index
 
 
