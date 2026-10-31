@@ -29,32 +29,17 @@ from pathlib import Path
 
 import config
 from agents.narrative import atomic_write_json, load_json, stable_hash
+from studio import stages
 
 PROJECT_FILE = "project.json"
 ACTIVE_FILE = ".active"
 LEGACY_DIR = "output"
 MTIME_SLACK = 1.0          # seconds; artifacts written in one run may share a timestamp
 
-# (stage, label, GUI pipeline steps that (re)build it, optional)
-STAGES = (
-    ("story_brief", "Story Brief", ("research",), False),
-    ("script", "Script", ("script",), False),
-    ("narration", "Narration", ("narration",), False),
-    ("music", "Music", ("music",), True),
-    ("visual_bible", "Visual bible", ("visual_bible",), False),
-    ("references", "References", (), False),
-    ("shots", "Shots", ("shots",), False),
-    ("video", "Video", ("video",), False),
-    ("shorts", "Shorts", ("shorts",), True),
-    ("publish", "Publish", (), True),
-)
-STAGE_KEYS = tuple(stage for stage, *_ in STAGES)
-UPSTREAM = {
-    "script": ("story_brief",), "narration": ("script",), "music": ("narration",),
-    "visual_bible": ("script",), "references": ("visual_bible",),
-    "shots": ("narration", "visual_bible", "references"),
-    "video": ("narration", "shots"), "shorts": ("narration", "shots"), "publish": ("video",),
-}
+# (stage, label, GUI pipeline steps that (re)build it, optional) — from the one graph in studio/stages.py.
+STAGES = tuple((stage.id, stage.label, stage.steps, stage.optional) for stage in stages.STAGES)
+STAGE_KEYS = stages.STAGE_IDS
+UPSTREAM = {stage.id: stage.depends_on for stage in stages.STAGES if stage.depends_on}
 
 
 class ProjectNotFound(LookupError):
@@ -319,6 +304,14 @@ def stage_status(path) -> list[dict]:
     else:
         status = "done" if len(done) == len(shots) else "partial" if done else "missing"
         result.append(_entry("shots", status, f"{len(done)}/{len(shots)} images"))
+
+    generated = [shot for shot in done if shot.get("image_path")]
+    reviewed = [shot for shot in generated if (shot.get("qa") or {}).get("reviewed")]
+    if not generated:
+        result.append(_entry("shot_review", "missing", "no shot images yet"))
+    else:
+        status = "done" if len(reviewed) == len(generated) else "partial" if reviewed else "missing"
+        result.append(_entry("shot_review", status, f"{len(reviewed)}/{len(generated)} reviewed"))
 
     video = files["final_short.mp4"] if files["final_short.mp4"].is_file() else files["final_video.mp4"]
     if not video.is_file():

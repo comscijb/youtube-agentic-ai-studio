@@ -363,113 +363,141 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
             _complete_partial("Stock Assets")
             return
 
-        # ── Narration ─────────────────────────────────────────
-        if "narration" in steps:
+        # ── Media stages on the graph (Phase 3.8-B) ───────────
+        # Narration (Edge TTS) and the visual bible (Gemini) run together; reference candidates
+        # start once the visual bible exists; music (CPU) mixes next to the shots (GPU); one GPU job.
+        from studio import stages as stage_graph
+        from video import shot_generation as shotgen
+        from video.imagegen_comfyui import ComfyUnavailable, ImageGenerator
+        selected = [stage_graph.stage_for_step(step) for step in steps]
+        selected = [stage for stage in dict.fromkeys(selected) if stage and stage not in ("story_brief", "script")]
+        if "shots" in selected:
+            selected.append("references")            # candidates for unapproved characters, early
+        out = config.OUTPUT_DIR
+        mixed_path = os.path.join(out, "narration_mixed.mp3")
+
+        def narration_file() -> str:
+            path = os.path.join(out, "narration.mp3")
+            if not os.path.exists(path):
+                raise FileNotFoundError("narration.mp3 missing — run Narration step.")
+            _state["audio_path"] = path
+            return path
+
+        def job_narration():
             _stage("narration", "running")
-            audio_path = generate_narration(script, config.OUTPUT_DIR)
-            _state["audio_path"] = audio_path
+            _state["audio_path"] = generate_narration(script, out)
             _stage("narration", "done")
-        else:
-            ap = os.path.join(config.OUTPUT_DIR, "narration.mp3")
-            _state["audio_path"] = ap if os.path.exists(ap) else None
 
-        if not _state["audio_path"] or not os.path.exists(_state["audio_path"]):
-            raise FileNotFoundError("narration.mp3 missing — run Narration step.")
-
-        _check_stop("narration")
-
-        # ── Music  (optional, non-blocking) ───────────────────
-        final_audio_path = _state["audio_path"]
-        existing_mix = os.path.join(config.OUTPUT_DIR, "narration_mixed.mp3")
-        if "music" not in steps and "narration" not in steps and os.path.exists(existing_mix) \
-                and os.path.getmtime(existing_mix) >= os.path.getmtime(final_audio_path):
-            final_audio_path = existing_mix          # a later stage reuses the current music mix
-        if "music" in steps:
+        def job_music():
             _log("Preparing final audio (music, ducking, -14 LUFS loudness)…")
-            mixed_path = os.path.join(config.OUTPUT_DIR, "narration_mixed.mp3")
-            final_audio_path = prepare_final_audio(
-                _state["audio_path"], mixed_path,
-                episode={**(research or {}), **(script or {})},
-                output_dir=config.OUTPUT_DIR,
-            )
+            prepare_final_audio(narration_file(), mixed_path, episode={**(research or {}), **(script or {})},
+                                output_dir=out)
             _log("Audio ready")
 
-        _check_stop("music")
+        def job_visual_bible():
+            _stage("visual_bible", "running")
+            shotgen.ensure_visual_bible(out)
+            _stage("visual_bible", "done")
 
-        # ── Visual bible + generated shots (ComfyUI, optional) ─
-        if "visual_bible" in steps or "shots" in steps:
-            from video import shot_generation as shotgen
-            from video.imagegen_comfyui import ComfyUnavailable, ImageGenerator
-            if "visual_bible" in steps:
-                _stage("visual_bible", "running")
-                shotgen.ensure_visual_bible(config.OUTPUT_DIR)
-                _stage("visual_bible", "done")
-            if "shots" in steps:
-                _stage("shots", "running")
+        def job_references():
+            vb = load_json(os.path.join(out, "visual_bible.json"))      # read only: never builds it
+            if not vb:
+                return
+            outline = load_json(os.path.join(out, "story_outline.json")) or {}
+            missing = shotgen.characters_to_approve(vb, outline, out)
+            if not missing:
+                return
+            record = load_json(os.path.join(out, shotgen.CANDIDATES_FILE)) or {}
+            fresh = [cid for cid in missing if not [item for item in record.get(f"character:{cid}", [])
+                                                    if shotgen.candidate_is_current(f"character:{cid}", item)]]
+            if fresh:
                 try:
-                    generator = ImageGenerator(config.OUTPUT_DIR)
-                    # Phase 3.8: Gemini plans scene by scene while ComfyUI renders what is planned.
-                    summary = shotgen.plan_and_render(config.OUTPUT_DIR, generator, progress=_imagegen_progress,
-                                                      stop=_stop_event,
-                                                      on_status=lambda lanes: _state.update(lanes=lanes))
-                    if summary.get("stopped"):
-                        raise InterruptedError("Stopped by user during shots")
-                    if not summary["failed"]:
-                        shotgen.generate_thumbnail_image(config.OUTPUT_DIR, generator)
-                except shotgen.ApprovalRequired as exc:
-                    _log(str(exc), "warn")
-                    _stage("shots", "pending")
-                    _complete_partial("shot planning (approve the character references in Review & Edit)")
-                    return
+                    shotgen.generate_reference_candidates(vb, out, ImageGenerator(out), characters=fresh,
+                                                          progress=_imagegen_progress)
                 except ComfyUnavailable as exc:
-                    _log(str(exc), "error")
-                    _stage("shots", "error")
-                    _complete_partial("shot planning (ComfyUI is not running)")
-                    return
-                _stage("shots", "done")
-                if "images" in steps:
-                    _stage("images", "done")
-            _check_stop("shots")
+                    raise stage_graph.Blocked(str(exc)) from None
+            raise stage_graph.Blocked("Approve a reference portrait for: " + ", ".join(missing)
+                                      + " (Review & Edit → References), then run Shots")
 
-        # ── Thumbnail ─────────────────────────────────────────
-        _log("Generating thumbnail…")
-        try:
-            image_map_int = {int(k): v for k, v in _state["image_map"].items()}
-            thumb = _make_thumbnail(script, image_map_int, config.OUTPUT_DIR)
-            _state["thumb_path"] = thumb
-            _log(f"Thumbnail saved: {thumb}")
-        except Exception as e:
-            _log(f"Thumbnail failed (non-fatal): {e}", "warn")
+        def job_shots():
+            _stage("shots", "running")
+            try:
+                generator = ImageGenerator(out)
+                # Phase 3.8-A: Gemini plans scene by scene while ComfyUI renders what is planned.
+                summary = shotgen.plan_and_render(out, generator, progress=_imagegen_progress, stop=_stop_event,
+                                                  on_status=lambda lanes: _state.update(lanes=lanes))
+                if summary.get("stopped"):
+                    raise InterruptedError("Stopped by user during shots")
+                if not summary["failed"]:
+                    shotgen.generate_thumbnail_image(out, generator)
+            except shotgen.ApprovalRequired as exc:
+                _stage("shots", "pending")
+                raise stage_graph.Blocked(str(exc)) from None
+            except ComfyUnavailable as exc:
+                _stage("shots", "error")
+                raise stage_graph.Blocked(str(exc)) from None
+            _stage("shots", "done")
+            if "images" in steps:
+                _stage("images", "done")
 
-        _check_stop("thumbnail")
-
-        # ── Video ─────────────────────────────────────────────
-        if "video" in steps:
+        def job_video():
+            audio = narration_file()
+            if os.path.exists(mixed_path) and os.path.getmtime(mixed_path) >= os.path.getmtime(audio):
+                audio = mixed_path                   # the current music mix
+            _log("Generating thumbnail…")
+            try:
+                image_map_int = {int(k): v for k, v in _state["image_map"].items()}
+                _state["thumb_path"] = _make_thumbnail(script, image_map_int, out)
+            except Exception as e:
+                _log(f"Thumbnail failed (non-fatal): {e}", "warn")
             _stage("video", "running")
             image_map_int = {int(k): v for k, v in _state["image_map"].items()}
-            video_path = create_video(
-                script, final_audio_path, config.OUTPUT_DIR, image_map_int,
-                video_type=video_type
-            )
-            _state["video_path"] = video_path
+            _state["video_path"] = create_video(script, audio, out, image_map_int, video_type=video_type)
             _stage("video", "done")
-        else:
-            vp_short = os.path.join(config.OUTPUT_DIR, "final_short.mp4")
-            vp_norm  = os.path.join(config.OUTPUT_DIR, "final_video.mp4")
-            vp = vp_short if os.path.exists(vp_short) else vp_norm
-            _state["video_path"] = vp if os.path.exists(vp) else None
 
-        # ── Shorts cut from the episode (Phase 3.7-B) ─────────
-        if "shorts" in steps and video_type == "normal":
+        def job_shorts():
+            if video_type != "normal":
+                return
             from video import shorts, shorts_render
             _stage("shorts", "running")
-            plan = shorts.load(config.OUTPUT_DIR)
+            plan = shorts.load(out)
             if not plan or not plan.get("segments"):
-                plan = shorts.build_plan(config.OUTPUT_DIR, script=_state.get("script"), brief=_state.get("research"))
+                plan = shorts.build_plan(out, script=_state.get("script"), brief=_state.get("research"))
                 _log(f"Shorts: {len(plan['segments'])} cut(s) proposed — review them in Review & Edit")
-            done = shorts_render.render_all(config.OUTPUT_DIR, progress=lambda message: _log(message.strip()))
+            done = shorts_render.render_all(out, progress=lambda message: _log(message.strip()))
             _log(f"Shorts rendered: {len(done)}")
             _stage("shorts", "done")
+
+        def lane_event(stage, status, lane):
+            activity = _state.setdefault("lane_activity", {})
+            busy = set(activity.get(lane, []))
+            busy = busy | {stage} if status == "running" else busy - {stage}
+            activity[lane] = sorted(busy)
+            if status in ("running", "done", "blocked", "error", "skipped"):
+                _log(f"[{lane}] {stage_graph.get(stage).label}: {status}")
+
+        jobs = {"narration": job_narration, "music": job_music, "visual_bible": job_visual_bible,
+                "references": job_references, "shots": job_shots, "video": job_video, "shorts": job_shorts}
+        outcome = stage_graph.run([stage for stage in selected if stage in jobs], jobs, stop=_stop_event,
+                                  on_event=lane_event)
+        _state["lane_activity"] = {}
+        error = outcome.first_error()
+        if error is not None:
+            raise error
+        if _stop_event.is_set() or "stopped" in outcome.status.values():
+            raise InterruptedError("Stopped by user")
+        if not _state.get("video_path"):
+            vp_short = os.path.join(out, "final_short.mp4")
+            vp_norm = os.path.join(out, "final_video.mp4")
+            vp = vp_short if os.path.exists(vp_short) else vp_norm
+            _state["video_path"] = vp if os.path.exists(vp) else None
+        blocked = [stage for stage, status in outcome.status.items() if status == "blocked"]
+        if blocked:
+            for stage in blocked:
+                _log(str(outcome.errors[stage]), "warn")
+            _complete_partial(", ".join(stage_graph.get(stage).label for stage in blocked)
+                              + " (waiting for you: approve the references in Review & Edit, or start ComfyUI)")
+            return
 
         # ── Build description ─────────────────────────────────
         if _state["research"] and _state["script"]:
@@ -910,6 +938,7 @@ def status():
         "uploading":      _state.get("uploading", False),
         "video_type":     _state.get("video_type", "normal"),
         "lanes":          _state.get("lanes"),          # Phase 3.8: planning / images progress
+        "lane_activity":  _state.get("lane_activity") or {},   # stages running per lane
     })
 
 
