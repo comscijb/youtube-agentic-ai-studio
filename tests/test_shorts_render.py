@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from PIL import Image, ImageDraw
 
@@ -89,11 +90,12 @@ class CaptionTests(unittest.TestCase):
         self.assertEqual((style[15], style[19], style[20], style[21]), ("1", "60", str(margins["margin_right"]),
                                                                         str(margins["margin_bottom"])))
 
-    def test_filter_follows_the_episode_tape_setting(self):
-        self.assertTrue(render.video_filter("off", "C:\\x\\a.ass", [], 50, None, None).startswith("subtitles="))
-        graph = render.video_filter("subtle", "C:\\x\\a.ass", [5.0], 50, None, None)
-        self.assertIn("vignette", graph)
-        self.assertLess(graph.index("vignette"), graph.index("subtitles"))
+    def test_filter_follows_the_episode_film_setting(self):
+        self.assertTrue(render.video_filter("off", "C:\\x\\a.ass", None).startswith("subtitles="))
+        with patch.object(tape, "dust_layer", return_value=None):
+            graph = render.video_filter("grain", "C:\\x\\a.ass", None)
+        self.assertIn("blend=all_mode=grainmerge", graph)
+        self.assertLess(graph.index("[base][film]blend"), graph.index("subtitles"))
 
 
 @unittest.skipUnless(FFMPEG, "ffmpeg not available")

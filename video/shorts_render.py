@@ -14,7 +14,7 @@ Each Short reuses the episode exactly:
 * **captions** — Shorts style: large, 2–4 words per cue, word-timed, centred in
   the lower-middle third, clear of YouTube's UI (bottom ``SAFE_BOTTOM`` and right
   ``SAFE_RIGHT`` of the frame); burnt by ffmpeg after the tape effect (same
-  ``VIDEO_TAPE_EFFECT`` and photosensitivity guard as the episode);
+  ``VIDEO_FILM_EFFECT`` film look and photosensitivity guard as the episode);
 * ``hook_text`` in the top third for the first ~2 s, ``end_text`` card for the last ~2 s.
 
 Output: ``shorts/short_NN.mp4`` and ``shorts/short_NN.srt`` (sentence cues, for
@@ -252,14 +252,13 @@ def frame_at(prepared: list[dict], t: float) -> Image.Image:
     return frame
 
 
-def video_filter(level: str, ass_path: str, cuts: list[float], duration: float, fonts_dir: str | None,
-                 scanlines: str | None) -> str:
-    """The encode's -vf: the tape look (same setting as the episode) then the captions."""
+def video_filter(level: str, ass_path: str, fonts_dir: str | None, key: str = "") -> str:
+    """The encode's -vf: the film look (same setting as the episode, 9:16) then the captions."""
     if level == "off":
         return f"subtitles=filename={tape.escape_path(ass_path)}" + (
             f":fontsdir={tape.escape_path(fonts_dir)}" if fonts_dir else "")
-    windows = tape.glitch_windows(cuts, duration)
-    return tape.filter_graph(level, (W, H), FPS, windows, ass_path, fonts_dir, scanlines)
+    return tape.filter_graph(level, (W, H), FPS, ass_path, fonts_dir, tape.dust_layer(level, (W, H), FPS),
+                             tape.start_offset(key))
 
 
 def write_srt(cues: list[dict], path) -> str:
@@ -300,11 +299,8 @@ def render_short(output_dir, segment: dict, *, words: list[dict], shot_list: dic
     sentence_cues = [{"start": a / 1000, "end": b / 1000, "text": text}
                      for a, b, text in build_cues(local_words, end_limit=duration)]
     srt = write_srt(sentence_cues, folder / f"{segment['id']}.srt")
-    level = tape.intensity()
-    scanlines = tape.write_scanlines(folder / "tape_scanlines.png", (W, H), tape.LEVELS[level]["scanline_alpha"]) \
-        if level != "off" else None
-    cuts = [piece["start"] for piece in prepared[1:]]
-    vf = video_filter(level, ass, cuts, duration, str(Path(font_path).parent) if font_path else None, scanlines)
+    level = tape.look()
+    vf = video_filter(level, ass, str(Path(font_path).parent) if font_path else None, key=segment["id"])
 
     def make_frame(t):
         import numpy as np

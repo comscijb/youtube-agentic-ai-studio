@@ -861,6 +861,18 @@ input[type=range]{width:100%;accent-color:var(--primary)}
               </select>
             </div>
 
+            <div class="settings-field">
+              <div class="field-label">Efeito de filme</div>
+              <select id="s-film-effect">
+                <option value="off">Desligado</option>
+                <option value="grain">Grão de cinema</option>
+                <option value="super8">Super 8</option>
+                <option value="super8_strong">Super 8 forte</option>
+              </select>
+              <div class="help-text">Contínuo em todos os quadros; os cortes ficam limpos. Prévia:
+                python -m scripts.preview_tape_effect --look super8</div>
+            </div>
+
             <div class="settings-cols">
               <div class="settings-field">
                 <div class="field-label">Ken Burns Zoom Start</div>
@@ -2940,6 +2952,7 @@ function loadSettings() {
 
     // Render preset
     if (d.render_preset) document.getElementById('s-render-preset').value = d.render_preset;
+    if (d.film_effect) document.getElementById('s-film-effect').value = d.film_effect;
 
     // B-roll interval (stored as float seconds, slider is integer seconds)
     const bri = Math.round(parseFloat(d.broll_interval) || 10);
@@ -3054,6 +3067,7 @@ function saveSettings() {
       music_volume:  parseInt(document.getElementById('s-music-vol').value) / 100,
       privacy:      document.getElementById('quick-privacy').value,
       render_preset: document.getElementById('s-render-preset').value,
+      film_effect:   document.getElementById('s-film-effect').value,
       broll_interval: parseInt(document.getElementById('s-broll-interval').value),
       broll_xfade:    parseInt(document.getElementById('s-broll-xfade').value) / 10,
     })

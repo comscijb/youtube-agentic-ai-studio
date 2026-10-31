@@ -1000,9 +1000,9 @@ def create_video(script: dict, audio_path: str, output_dir: str,
         else:
             print("   → No SRT captions — subtitles will be disabled for this render.")
 
-        # Tape effect (Phase 3.6-F): ffmpeg applies it in the final encode, then burns the
-        # captions on top (ASS, same pill look) so they stay crisp; frames are drawn without them.
-        tape_level = tape.intensity()
+        # Film look (Phase 3.8-D): ffmpeg applies it to every frame in the final encode, then burns
+        # the captions on top (ASS, same pill look) so they stay crisp; frames are drawn without them.
+        tape_level = tape.look()
         frame_captions = captions if tape_level == "off" else []
         schedule = load_shot_schedule(output_dir, sections, durations)
         if schedule:
@@ -1058,14 +1058,12 @@ def create_video(script: dict, audio_path: str, output_dir: str,
 
         output_path = os.path.join(output_dir, "final_video.mp4")
         if tape_level != "off":
-            cuts = [sum(durations[:index]) for index in range(1, len(durations))]
             extra_params, tape_report = tape.ffmpeg_params(
-                tape_level, size=(W, H), fps=FPS, cuts=cuts, duration=audio.duration, captions=captions or None,
-                output_dir=output_dir, font_path=next((path for path in config.FONT_PATHS["bold"]
-                                                       if os.path.exists(path)), None),
-                font_size=NORMAL_CAP_FONT_SIZE, margin_bottom=NORMAL_CAP_MARGIN_B)
-            print(f"   → Tape effect '{tape_level}': {tape_report['glitches']} tracking glitch(es) on scene cuts, "
-                  f"max luminance step {tape_report['max_luma_step']:.1%} (≤ 10 %), captions burnt after it")
+                tape_level, size=(W, H), fps=FPS, captions=captions or None, output_dir=output_dir,
+                font_path=next((path for path in config.FONT_PATHS["bold"] if os.path.exists(path)), None),
+                font_size=NORMAL_CAP_FONT_SIZE, margin_bottom=NORMAL_CAP_MARGIN_B, key=output_path)
+            print(f"   → Film look '{tape_level}' on every frame (cuts stay clean): max luminance step "
+                  f"{tape_report['max_luma_step']:.1%} (≤ 10 %), captions burnt after it")
 
     # ── EXPORT ─────────────────────────────────────────────────
     total_secs = int(final.duration)

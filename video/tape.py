@@ -1,91 +1,200 @@
-"""Tape (VHS) playback effect, applied by ffmpeg in the final encode pass (Phase 3.6-F).
+"""Continuous film look, applied by ffmpeg in the final encode pass (Phase 3.8-D, replaces the 3.6-F tape glitch).
 
-``VIDEO_TAPE_EFFECT = "off" | "subtle" | "medium"`` (default ``subtle``). The
-frames are rendered without captions; the encode then applies, in one ffmpeg
-``-vf`` graph:
+``VIDEO_FILM_EFFECT = "off" | "grain" | "super8" | "super8_strong"`` (default ``super8``; the old
+``VIDEO_TAPE_EFFECT`` is still read: ``subtle`` → ``super8``, ``medium`` → ``super8_strong``).
 
-gentle horizontal gate weave → slight luminance wobble → very light chromatic
-aberration (1–2 px) → grain (temporal luma noise) → faint scanlines → soft
-vignette → a **tracking glitch** (horizontal tear + noise band + stronger
-chroma shift, 0.3 s) only on scene cuts (and optionally the title card) →
-finally the captions (``subtitles`` with an ASS file styled like the burnt-in
-pill), so they stay crisp.
+The look is the same on every frame: nothing is tied to scene cuts, so cuts stay clean (the
+crossfade or hard cut is untouched) and grain and dust keep running across them.
 
-**Photosensitivity safety** (``check_safety``): no full-frame flash (the noise
-band covers 3.5 % of the frame at low opacity), the estimated mean-luminance
-change between consecutive frames stays ≤ 10 %, and glitches start at least
-``MIN_GLITCH_GAP`` seconds apart (never more than 3 per second; in practice one
-per scene cut). Thumbnails never get the effect.
+* ``grain`` — cinema grain and a soft vignette.
+* ``super8`` — animated grain slightly coarser than pixel noise (ffmpeg ``noise`` on a neutral layer
+  at half resolution, upscaled and added with ``grainmerge``, so it shows in the shadows too); gentle, irregular exposure flicker
+  (a sum of three sines at incommensurate frequencies, ±2.5 %); a slight gate weave (1 px, slow);
+  sparse dust specks (1–2 frames, about one a second) and a thin vertical scratch (≤ 0.5 s, once
+  per 10 s loop); lifted blacks, a slight warm tint in the brand's ivory/gold range, a soft
+  vignette. No scanlines, no chroma shift.
+* ``super8_strong`` — the same, a little stronger.
+
+The vignette, dust and scratches come from a short lossless half-resolution layer rendered once from
+a fixed seed and cached in ``assets/film/`` (``dust_layer``); it loops with a per-video start offset,
+so the cost stays constant with video length. Measured on the render's encode path (moviepy frames
+piped to ffmpeg): grain +10 %, super8 +13 %, super8_strong +15 % encode time. The captions are burnt after the effect (``subtitles``) and stay crisp.
+The same graph serves the episode (1920×1080) and the Shorts (1080×1920). Thumbnails never get it.
+
+**Photosensitivity** (``check_safety``): the mean-luminance change between consecutive frames
+stays ≤ 10 % (flicker slope plus the brightest dust event) and there are no flashes.
 """
 from __future__ import annotations
 
+import hashlib
 import math
 import re
+import subprocess
 from pathlib import Path
 
 import config
 
-LEVELS = {
-    "subtle": {"grain": 5, "chroma": 1, "scanline_alpha": 0.06, "vignette": "PI/5", "wobble": 0.008,
-               "wobble_hz": 0.7, "weave": 1, "weave_hz": 0.8, "glitch_shift": 4, "glitch_noise": 14,
-               "band_alpha": 0.08, "tear": 12},
-    "medium": {"grain": 9, "chroma": 2, "scanline_alpha": 0.10, "vignette": "PI/4", "wobble": 0.015,
-               "wobble_hz": 0.9, "weave": 2, "weave_hz": 1.0, "glitch_shift": 8, "glitch_noise": 22,
-               "band_alpha": 0.12, "tear": 20},
+LOOKS = {
+    "grain": {"grain": 14, "flicker": (), "weave": 0, "dust": None, "vignette": 34,
+              "lift": 0.0, "warm": 0.0},
+    "super8": {"grain": 20, "flicker": ((0.012, 2.3), (0.008, 3.7), (0.005, 5.9)), "weave": 1,
+               "weave_hz": (0.45, 0.7), "dust": {"specks_per_second": 0.9, "scratch_seconds": 0.4},
+               "vignette": 40, "lift": 0.035, "warm": 0.03},
+    "super8_strong": {"grain": 28, "flicker": ((0.014, 2.3), (0.010, 3.7), (0.006, 5.9)), "weave": 2,
+                      "weave_hz": (0.5, 0.8), "dust": {"specks_per_second": 1.3, "scratch_seconds": 0.5},
+                      "vignette": 48, "lift": 0.05, "warm": 0.04},
 }
-GLITCH_SECONDS = 0.3
-GLITCH_LEAD = 0.1                 # the glitch starts just before the cut
-MIN_GLITCH_GAP = 1.0              # seconds between glitch onsets (≤ 3 per second required; 1 per second used)
-BAND = (0.62, 0.035)              # noise band / tear: top and height as a fraction of the frame
+ALIASES = {"subtle": "super8", "medium": "super8_strong", "on": "super8", "film": "super8"}
+DUST_VERSION = 1
+DUST_SECONDS = 10
+DUST_SEED = 8_388_608
 MAX_LUMA_STEP = 0.10              # mean luminance change allowed between consecutive frames
-MAX_FLASH_AREA = 0.25             # a lighter area must never cover more of the frame than this
+SPECK_RADIUS = (1, 3)             # px at the layer's half resolution
+_warned: set = set()
 
 
 class TapeSafetyError(ValueError):
     """The effect would break the photosensitivity rules."""
 
 
-def intensity(value: str | None = None) -> str:
-    chosen = str(value or getattr(config, "VIDEO_TAPE_EFFECT", "subtle")).strip().lower()
-    return chosen if chosen in LEVELS else "off"
+def look(value: str | None = None) -> str:
+    """The chosen look: VIDEO_FILM_EFFECT (or the 3.6 VIDEO_TAPE_EFFECT) with old values mapped."""
+    raw = value if value is not None else getattr(config, "VIDEO_FILM_EFFECT", None) \
+        or getattr(config, "VIDEO_TAPE_EFFECT", None) or "super8"
+    chosen = str(raw or "off").strip().lower()
+    if chosen in ALIASES:
+        mapped = ALIASES[chosen]
+        if chosen not in _warned:
+            _warned.add(chosen)
+            print(f"   ⚠ film effect {chosen!r} is from the tape effect (3.6); using {mapped!r}")
+        return mapped
+    return chosen if chosen in LOOKS else "off"
 
 
-def glitch_windows(cuts: list[float], duration: float, *, title_card: bool = False) -> list[tuple[float, float]]:
-    """0.3 s windows around each cut (and at 0 s for the title card), onsets ≥ MIN_GLITCH_GAP apart."""
-    starts = ([0.2] if title_card else []) + [max(0.0, cut - GLITCH_LEAD) for cut in sorted(cuts) if 0 < cut < duration]
-    windows = []
-    for start in starts:
-        if windows and start - windows[-1][0] < MIN_GLITCH_GAP:
-            continue
-        windows.append((round(start, 3), round(min(duration, start + GLITCH_SECONDS), 3)))
-    return windows
+intensity = look                  # 3.6 name
 
 
-def max_luma_step(level: dict, fps: float) -> float:
-    """Worst mean-luminance change between two consecutive frames (0-1 of full scale)."""
-    wobble = level["wobble"] * 2 * math.pi * level["wobble_hz"] / fps      # max slope of A·sin(2πft) per frame
-    band = BAND[1] * level["band_alpha"]                                 # the noise band appearing at once
-    return wobble + band
+# ── Photosensitivity ─────────────────────────────────────────────────────────
+
+def flicker_expression(spec: dict) -> str:
+    """Brightness offset over time: a smooth irregular curve (sum of sines), never square steps."""
+    terms = [f"{amp}*sin(2*PI*{hz}*t+{phase})" for (amp, hz), phase in zip(spec["flicker"], (0, 1.3, 2.1, 3.4))]
+    return "+".join(terms) or "0"
 
 
-def check_safety(level: dict, windows: list[tuple[float, float]], fps: float) -> dict:
+def flicker_amplitude(spec: dict) -> float:
+    return sum(amp for amp, _ in spec["flicker"])
+
+
+def max_luma_step(spec: dict, fps: float) -> float:
+    """Worst mean-luminance change between two consecutive frames (0-1 of full scale): the flicker's
+    steepest slope plus the brightest dust event (a scratch appearing over its whole height)."""
+    flicker = sum(amp * 2 * math.pi * hz / fps for amp, hz in spec["flicker"])
+    dust = spec.get("dust")
+    scratch = (2 / 960) * 0.35 if dust else 0.0        # a 2-px line at 35 % contrast on the half-res layer
+    return flicker + scratch
+
+
+def check_safety(spec: dict, fps: float) -> dict:
     """Raise TapeSafetyError when a rule is broken; return the measured values."""
-    step = max_luma_step(level, fps)
-    onsets = [start for start, _ in windows]
-    worst = max((sum(1 for other in onsets if start <= other < start + 1.0) for start in onsets), default=0)
-    report = {"max_luma_step": round(step, 4), "max_glitches_per_second": worst,
-              "flash_area": BAND[1]}
-    problems = []
+    step = max_luma_step(spec, fps)
+    report = {"max_luma_step": round(step, 4), "flicker_amplitude": round(flicker_amplitude(spec), 4)}
     if step > MAX_LUMA_STEP:
-        problems.append(f"luminance changes {step:.0%} between frames (max {MAX_LUMA_STEP:.0%})")
-    if worst > 3:
-        problems.append(f"{worst} glitches within one second (max 3)")
-    if BAND[1] > MAX_FLASH_AREA:
-        problems.append("the noise band would cover too much of the frame")
-    if problems:
-        raise TapeSafetyError("; ".join(problems))
+        raise TapeSafetyError(f"luminance changes {step:.0%} between frames (max {MAX_LUMA_STEP:.0%})")
     return report
 
+
+# ── The dust / scratch layer (rendered once, cached) ─────────────────────────
+
+def film_dir() -> Path:
+    return Path(getattr(config, "FILM_ASSETS_DIR", Path(__file__).resolve().parent.parent / "assets" / "film"))
+
+
+def ffmpeg_exe() -> str:
+    import imageio_ffmpeg
+    return imageio_ffmpeg.get_ffmpeg_exe()
+
+
+def vignette_offsets(size: tuple[int, int], strength: float):
+    """A static additive darkening (≤ 0) towards the corners: the vignette, baked into the film layer so
+    it costs nothing per frame (measured: ffmpeg's vignette filter alone added ~75 % to a 1080p encode)."""
+    import numpy as np
+    width, height = size
+    ys, xs = np.mgrid[0:height, 0:width]
+    radius = np.sqrt(((xs - width / 2) / (width / 2)) ** 2 + ((ys - height / 2) / (height / 2)) ** 2) / math.sqrt(2)
+    ramp = np.clip((radius - 0.35) / 0.65, 0, 1)
+    return -(strength * ramp * ramp * (3 - 2 * ramp))          # smoothstep, 0 in the centre
+
+
+def dust_frames(size: tuple[int, int], fps: float, spec: dict | None, seed: int = DUST_SEED, vignette: float = 0.0):
+    """Yield yuv420p frames (bytes) of the film layer: neutral grey (Y = 128, added with ``grainmerge``)
+    with the static vignette and, when ``spec`` has dust, sparse light and dark specks and one thin
+    vertical scratch from a fixed seed. Without dust a single frame is enough (it loops)."""
+    import random
+    import numpy as np
+    width, height = size
+    base = 128 + (vignette_offsets(size, vignette) if vignette else np.zeros((height, width)))
+    chroma = bytes([128]) * (2 * (width // 2) * (height // 2))
+    if not spec:
+        yield np.clip(np.round(base), 0, 255).astype(np.uint8).tobytes() + chroma
+        return
+    rng = random.Random(seed)
+    total = int(DUST_SECONDS * fps)
+    specks = {}
+    for _ in range(round(spec["specks_per_second"] * DUST_SECONDS)):
+        start = rng.randrange(total)
+        speck = (rng.randrange(width), rng.randrange(height), rng.randint(*SPECK_RADIUS),
+                 rng.choice((-1, 1)) * rng.randint(40, 90))
+        for frame in range(start, min(total, start + rng.choice((1, 2)))):
+            specks.setdefault(frame, []).append(speck)
+    scratch_start = rng.randrange(0, total - int(spec["scratch_seconds"] * fps))
+    scratch_frames = range(scratch_start, scratch_start + int(spec["scratch_seconds"] * fps))
+    scratch_x = rng.randrange(width // 5, 4 * width // 5)
+    ys, xs = np.mgrid[0:height, 0:width]
+    for frame in range(total):
+        luma = base.copy()
+        for x, y, radius, delta in specks.get(frame, []):
+            luma[(xs - x) ** 2 + (ys - y) ** 2 <= radius * radius] += delta
+        if frame in scratch_frames:
+            drift = int(round(2 * math.sin(frame / 3)))
+            column = min(width - 2, max(0, scratch_x + drift))
+            luma[:, column:column + 1] += 70
+        yield np.clip(np.round(luma), 0, 255).astype(np.uint8).tobytes() + chroma
+
+
+def dust_layer(look_name: str, size: tuple[int, int], fps: float) -> Path:
+    """The cached lossless film layer (half resolution) for this look and frame size: the vignette and,
+    for the Super 8 looks, a 10-s loop of dust and scratches. Rendered once, then reused."""
+    spec = LOOKS[look_name]
+    half = (size[0] // 2 // 2 * 2, size[1] // 2 // 2 * 2)
+    path = film_dir() / f"film_{look_name}_{half[0]}x{half[1]}_{int(fps)}fps_v{DUST_VERSION}.mkv"
+    if path.is_file() and path.stat().st_size:
+        return path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    partial = path.with_suffix(".partial.mkv")
+    process = subprocess.Popen(
+        [ffmpeg_exe(), "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "yuv420p",
+         "-s", f"{half[0]}x{half[1]}", "-r", str(fps), "-i", "-", "-c:v", "ffv1", "-level", "3", str(partial)],
+        stdin=subprocess.PIPE)
+    try:
+        for frame in dust_frames(half, fps, spec.get("dust"), vignette=spec["vignette"]):
+            process.stdin.write(frame)
+    finally:
+        process.stdin.close()
+        process.wait()
+    if process.returncode:
+        raise RuntimeError(f"could not render the film layer ({process.returncode})")
+    partial.replace(path)
+    return path
+
+
+def start_offset(key: str) -> float:
+    """A per-video start in the dust loop (seeded by the output path), so videos don't share dust."""
+    digest = int(hashlib.sha256(str(key).encode("utf-8")).hexdigest()[:8], 16)
+    return round(digest % (DUST_SECONDS * 100) / 100, 2)
+
+
+# ── The filter graph ─────────────────────────────────────────────────────────
 
 def escape_path(path) -> str:
     """A path for a filter option (Windows drive colons and quotes escaped), single-quoted."""
@@ -93,48 +202,39 @@ def escape_path(path) -> str:
     return f"'{text}'"
 
 
-def write_scanlines(path, size: tuple[int, int], alpha: float) -> str:
-    """A transparent PNG with a faint dark line every 3 px: overlaid once per frame it costs a third of
-    ``drawgrid`` (measured on 1080p: +0.8 s vs +2.4 s per 6 s of video)."""
-    from PIL import Image
-    width, height = size
-    image = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-    line = Image.new("RGBA", (width, 1), (0, 0, 0, round(255 * alpha)))
-    for y in range(0, height, 3):
-        image.paste(line, (0, y))
-    image.save(path)
-    return str(path)
+def filter_graph(look_name: str, size: tuple[int, int], fps: float, subtitles: str | None = None,
+                 fonts_dir: str | None = None, dust: str | Path | None = None, offset: float = 0.0) -> str:
+    """The -vf graph: the film look on every frame, then the captions. ``dust`` is ``dust_layer``'s file
+    (vignette, dust, scratches); without it the look has grain only.
 
-
-def filter_graph(level_name: str, size: tuple[int, int], fps: float, windows: list[tuple[float, float]],
-                 subtitles: str | None = None, fonts_dir: str | None = None, scanlines: str | None = None) -> str:
-    """The -vf filter graph (tape look, glitches on ``windows``, then the captions). ``scanlines`` is a PNG
-    from ``write_scanlines`` (faster); without it ``drawgrid`` draws them."""
-    level = LEVELS[level_name]
-    check_safety(level, windows, fps)
+    Cost-conscious (measured on 1080p): lifted blacks and the warm tint are one ``lutyuv`` (curves +
+    colorbalance cost 2× more), the vignette is baked into the layer, and the grain is generated at
+    half resolution and added to the layer before one full-size ``grainmerge``."""
+    spec = LOOKS[look_name]
+    check_safety(spec, fps)
     width, height = size
-    weave = level["weave"]
-    parts = [                                            # chromashift (YUV planes): 3× cheaper than rgbashift
-        f"crop=w=iw-{2 * weave}:h=ih:x='{weave}+{weave}*sin(2*PI*t*{level['weave_hz']})':y=0",
-        f"pad={width}:{height}:{weave}:0",
-        f"eq=brightness='{level['wobble']}*sin(2*PI*t*{level['wobble_hz']})':eval=frame",
-        f"chromashift=cbh={level['chroma']}:crh=-{level['chroma']}",
-        f"noise=c0s={level['grain']}:c0f=t+u",
-    ]
-    graph = ",".join(parts)
-    if scanlines:
-        graph += f",format=yuv420p[tapebase];movie={escape_path(scanlines)}[scan];[tapebase][scan]overlay=format=auto"
-    else:
-        graph += f",drawgrid=w=iw:h=3:t=1:c=black@{level['scanline_alpha']}"
-    graph += f",vignette=angle={level['vignette']}"
-    if windows:
-        enable = "+".join(f"between(t,{start},{end})" for start, end in windows)
-        top, band = BAND
-        graph += (f",split[base][cut];[cut]crop=w=iw:h=ih*{band}:x=0:y=ih*{top}[tear];"
-                  f"[base][tear]overlay=x={level['tear']}:y=main_h*{top}:enable='{enable}',"
-                  f"chromashift=cbh={level['glitch_shift']}:crh=-{level['glitch_shift']}:enable='{enable}',"
-                  f"noise=alls={level['glitch_noise']}:allf=t:enable='{enable}',"
-                  f"drawbox=x=0:y=ih*{top}:w=iw:h=ih*{band}:color=white@{level['band_alpha']}:t=fill:enable='{enable}'")
+    half = (width // 2 // 2 * 2, height // 2 // 2 * 2)
+    parts = []
+    weave = spec.get("weave") or 0
+    if weave:
+        hx, hy = spec["weave_hz"]
+        parts += [f"crop=w=iw-{2 * weave}:h=ih-{2 * weave}:x='{weave}+{weave}*sin(2*PI*t*{hx})'"
+                  f":y='{weave}+{weave}*sin(2*PI*t*{hy}+0.9)'",
+                  f"pad={width}:{height}:{weave}:{weave}"]
+    if spec["flicker"]:
+        parts.append(f"eq=brightness='{flicker_expression(spec)}':eval=frame")
+    parts.append("format=yuv420p")
+    if spec["lift"] or spec["warm"]:                  # lifted blacks + warm tint (ivory/gold), one LUT
+        shift = round(spec["warm"] * 100)
+        parts.append(f"lutyuv=y='val+{spec['lift']}*(235-val)':u='val-{shift}':v='val+{shift}'")
+    graph = ",".join(parts) + "[base];"
+    graph += (f"color=c=black:s={half[0]}x{half[1]}:r={fps},format=yuv420p,lutyuv=y=128:u=128:v=128,"
+              f"noise=c0s={spec['grain']}:c0f=t+u")
+    if dust:
+        graph += (f"[grain];movie={escape_path(dust)}:loop=0:seek_point={offset},setpts=N/({fps}*TB),"
+                  f"format=yuv420p[layer];[grain][layer]blend=all_mode=grainmerge")
+    graph += (f",scale={width}:{height}:flags=bilinear[film];"
+              f"[base][film]blend=all_mode=grainmerge:shortest=1")
     if subtitles:
         graph += f",subtitles=filename={escape_path(subtitles)}" + (f":fontsdir={escape_path(fonts_dir)}" if fonts_dir else "")
     return graph
@@ -188,18 +288,17 @@ def write_ass(captions: list[dict], path, size: tuple[int, int], *, font_path: s
     return str(path)
 
 
-def ffmpeg_params(level_name: str, *, size, fps, cuts, duration, captions=None, output_dir=None,
-                  font_path=None, font_size=36, margin_bottom=90, title_card=None) -> tuple[list[str], dict]:
+def ffmpeg_params(look_name: str, *, size, fps, captions=None, output_dir=None, font_path=None, font_size=36,
+                  margin_bottom=90, key: str = "") -> tuple[list[str], dict]:
     """(extra ffmpeg output params for moviepy's writer, report) for the final encode."""
-    title_card = bool(getattr(config, "VIDEO_TAPE_GLITCH_TITLE", False) if title_card is None else title_card)
-    windows = glitch_windows(cuts, duration, title_card=title_card)
     subtitles = fonts = None
-    scanlines = write_scanlines(Path(output_dir) / "tape_scanlines.png", size, LEVELS[level_name]["scanline_alpha"])         if output_dir else None
     if captions:
         subtitles = write_ass(captions, Path(output_dir) / "tape_captions.ass", size, font_path=font_path,
                               font_size=font_size, margin_bottom=margin_bottom)
         fonts = str(Path(font_path).parent) if font_path and Path(font_path).is_file() else None
-    graph = filter_graph(level_name, size, fps, windows, subtitles, fonts, scanlines)
-    report = check_safety(LEVELS[level_name], windows, fps)
-    report.update(intensity=level_name, glitches=len(windows), captions=bool(subtitles))
+    dust = dust_layer(look_name, size, fps)
+    offset = start_offset(key or str(output_dir))
+    graph = filter_graph(look_name, size, fps, subtitles, fonts, dust, offset)
+    report = check_safety(LOOKS[look_name], fps)
+    report.update(look=look_name, dust=bool(dust), dust_offset=offset, captions=bool(subtitles))
     return ["-vf", graph], report

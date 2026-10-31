@@ -2040,6 +2040,7 @@ def get_settings():
         "broll_interval":  getattr(config, "BROLL_INTERVAL",  10.0),
         "broll_xfade":     getattr(config, "BROLL_XFADE_DUR",  1.2),
         "render_preset":   getattr(config, "RENDER_PRESET", "ultrafast"),
+        "film_effect":     __import__("video.tape", fromlist=["look"]).look(),
         "banned_topics":   load_banned_topics(),
     })
 
@@ -2112,6 +2113,11 @@ def save_settings():
         "broll_xfade":   "BROLL_XFADE_DUR",
         "render_preset": "RENDER_PRESET",
     }
+    if "film_effect" in body:                       # Phase 3.8-D: off | grain | super8 | super8_strong
+        from video import tape
+        if body["film_effect"] not in ("off", *tape.LOOKS):
+            return jsonify({"ok": False, "error": "Invalid film effect"}), 400
+        config.VIDEO_FILM_EFFECT = config.VIDEO_TAPE_EFFECT = body["film_effect"]
     for k, attr in m.items():
         if k in body:
             val = body[k]
@@ -2141,6 +2147,8 @@ def save_settings():
         stock_env["STOCK_LICENSE_LOG_ENABLED"] = str(bool(config.STOCK_LICENSE_LOG_ENABLED)).lower()
     if "gemini_model" in body:
         stock_env["GEMINI_MODEL"] = str(config.GEMINI_MODEL)
+    if "film_effect" in body:
+        stock_env["VIDEO_FILM_EFFECT"] = str(config.VIDEO_FILM_EFFECT)
     if stock_env:
         try:
             _write_env_settings(stock_env)

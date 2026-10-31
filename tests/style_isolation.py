@@ -1,4 +1,4 @@
-"""Point config.STYLE_REFS_DIR and PROJECTS_DIR at empty temp folders for a test module.
+"""Point config.STYLE_REFS_DIR, PROJECTS_DIR and FILM_ASSETS_DIR at empty temp folders for a test module.
 
 Approved style anchors live in a channel-level folder and episodes in
 projects/; tests must not pick up whatever the user approved or created
@@ -23,6 +23,7 @@ def setUpModule():
         patch.object(config, "OUTPUT_DIR", config.OUTPUT_DIR),     # restored if a script activates one
         patch.object(config, "IMAGES_DIR", config.IMAGES_DIR),
         patch.object(config, "IMAGEGEN_VISUAL_QA", False),       # QA tests enable it with a mocked Gemini
+        patch.object(config, "FILM_ASSETS_DIR", os.path.join(_state["temp"].name, "film"), create=True),
     ]
     for item in _state["patches"]:
         item.start()
