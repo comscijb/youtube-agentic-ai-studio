@@ -135,7 +135,11 @@ class SlotPlanTests(StyleTestCase):
         composed = shots_module.compose_shot(self.shot(["julian_vance"]), self.vb_with_refs(), self.output)
         self.assertEqual([slot["kind"] for slot in composed["slots"]], ["character", "location", "style"])
         self.assertIn("drawing style of the third image", composed["prompt"])
-        insert = shots_module.compose_shot(self.shot([], "insert"), self.vb_with_refs(), self.output)
+        class Nobody:                                    # the anchor is checked for people (3.7): it is empty
+            def detect(self, path):
+                return {"persons": []}
+        with patch("video.qa.fixes._detector", return_value=Nobody()):
+            insert = shots_module.compose_shot(self.shot([], "insert"), self.vb_with_refs(), self.output)
         self.assertEqual([slot["kind"] for slot in insert["slots"]], ["style"])
         self.assertEqual(insert["kind"], "ref")
 
