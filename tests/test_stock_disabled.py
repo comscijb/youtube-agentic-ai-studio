@@ -98,12 +98,11 @@ class GuiStockTests(unittest.TestCase):
                     patch.object(gen, "plan_and_render", side_effect=gen.ApprovalRequired("Approve julian_vance")) as shots, \
                     patch("video.imagegen_comfyui.ImageGenerator"), redirect_stdout(io.StringIO()):
                 gui._run_pipeline(["images", "video"])
-        self.assertTrue(bible.called)
-        self.assertTrue(shots.called)
+        self.assertTrue(shots.called)                  # the legacy "images" step is an alias of "shots"
         logs = []
         while not gui._log_queue.empty():
             logs.append(gui._log_queue.get())
-        self.assertTrue(any("Images = generated shots" in message for _, message in logs))
+        self.assertTrue(any("The 'images' step is now 'shots'" in message for _, message in logs))
 
 
 if __name__ == "__main__":

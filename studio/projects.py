@@ -165,6 +165,22 @@ def is_project(path) -> bool:
     return (Path(path) / PROJECT_FILE).is_file()
 
 
+_RUNS = __import__("threading").Lock()
+
+
+def record_run(path, stage: str, status: str, started: float, finished: float) -> None:
+    """Last run of a stage (project.json "runs"): when it finished, how long it took, how it ended."""
+    path = Path(path)
+    if not is_project(path):
+        return
+    with _RUNS:
+        data = load(path)
+        data.setdefault("runs", {})[stage] = {
+            "finished": datetime.fromtimestamp(finished, timezone.utc).replace(microsecond=0).isoformat(),
+            "seconds": round(finished - started, 1), "status": status}
+        save(path, data)
+
+
 def touch(path, **fields) -> dict | None:
     """Update project.json (when ``path`` is a project) with ``fields`` and fresh stage status."""
     path = Path(path)
@@ -387,7 +403,8 @@ def summary(path) -> dict:
         "updated": data.get("updated"), "video_type": data.get("video_type", "normal"),
         "target_duration_minutes": data.get("target_duration_minutes"),
         "provisional": bool(data.get("provisional")), "published_video_id": data.get("published_video_id"),
-        "thumbnail": thumbnail, "stages": statuses, "empty": is_empty(path),
+        "thumbnail": thumbnail, "stages": statuses, "empty": is_empty(path), "runs": data.get("runs") or {},
+        "premise": data.get("premise", ""),
     }
 
 

@@ -26,13 +26,6 @@ from flask import Flask, Response, jsonify, request, send_file, abort
 
 import config
 
-# ── Lazy-import pipeline modules so GUI loads even if deps missing ──────────
-def _import(mod):
-    try:
-        return __import__(mod, fromlist=["_"])
-    except Exception as e:
-        return None
-
 # ══════════════════════════════════════════════════════════════════════════════
 #  GLOBAL STATE
 # ══════════════════════════════════════════════════════════════════════════════
@@ -47,7 +40,7 @@ _state = {
     "stages": {
         "research":  "pending",   # pending | running | done | error
         "script":    "pending",
-        "images":    "pending",
+        "music":     "pending",
         "narration": "pending",
         "visual_bible": "pending",
         "shots":     "pending",
@@ -87,9 +80,21 @@ class _Capture:
 def _log(msg, level="info"):
     _log_queue.put(("log", f"[{level.upper()}] {msg}"))
 
+_RUN_STARTED: dict = {}
+
+
 def _stage(name, status):
     _state["stages"][name] = status
     _log_queue.put(("stage", f"{name}:{status}"))
+    from studio import stages as stage_graph
+    stage = stage_graph.stage_for_step(name) or name
+    if status == "running":
+        _RUN_STARTED[stage] = time.time()
+    elif status in ("done", "error") and stage in _RUN_STARTED:
+        try:                                         # last run time and duration on the stage card
+            projects.record_run(config.OUTPUT_DIR, stage, status, _RUN_STARTED.pop(stage), time.time())
+        except (OSError, ValueError):
+            pass
     if status == "done":
         try:
             projects.touch(config.OUTPUT_DIR)       # keeps project.json's stage status current
@@ -186,7 +191,7 @@ def _build_description(script, research, video_type: str = "normal", output_dir=
 
 # Steps after the script; a run of only ["shots"] or ["visual_bible"] must reach them
 # instead of stopping at the Story Brief / Narrative Development early exits.
-_MEDIA_STEPS = ("images", "narration", "music", "visual_bible", "shots", "video")
+_MEDIA_STEPS = ("narration", "music", "visual_bible", "shots", "video", "shorts")
 
 
 def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "normal",
@@ -234,7 +239,7 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
         from agents.researcher   import research_topic
         from agents.scriptwriter import write_script
         from video.narrator      import generate_narration
-        from video.stock         import download_images, load_existing_images
+        from video.stock         import load_existing_images
         from video.creator       import create_video
         from video.music         import prepare_final_audio
 
@@ -341,27 +346,12 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
             _complete_partial("Narrative Development")
             return
 
-        # ── Images ────────────────────────────────────────────
-        # "Images" means generated shots (visual bible → shot list → ComfyUI, after
-        # narration); stock is only downloaded when opted in for cinematic_photo.
-        from agents import identity
-        from video.stock import enabled as stock_enabled
-        stock_images = stock_enabled() and not identity.is_illustration()
-        if "images" in steps and stock_images:
-            _stage("images", "running")
-            image_map = download_images(script, config.OUTPUT_DIR)
-            _state["image_map"] = image_map
-            _stage("images", "done")
-        else:
-            if "images" in steps:
-                steps = list(steps) + [step for step in ("visual_bible", "shots") if step not in steps]
-                _log("Images = generated shots: visual bible → shot list → ComfyUI, after narration")
-            _state["image_map"] = load_existing_images(script, config.OUTPUT_DIR)
-
-        _check_stop("images")
-        if not any(step in steps for step in ("narration", "music", "video", "visual_bible", "shots")):
-            _complete_partial("Stock Assets")
-            return
+        # Images are the generated shots (Planos, after narration and the visual bible); the legacy
+        # "images" step is an alias of "shots" (Phase 3.8-C) and stock stays a setting only.
+        if "images" in steps:
+            _log("The 'images' step is now 'shots' (Planos, after narration and the visual bible).", "warn")
+        steps = list(dict.fromkeys("shots" if step == "images" else step for step in steps))
+        _state["image_map"] = load_existing_images(script, config.OUTPUT_DIR)
 
         # ── Media stages on the graph (Phase 3.8-B) ───────────
         # Narration (Edge TTS) and the visual bible (Gemini) run together; reference candidates
@@ -389,10 +379,12 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
             _stage("narration", "done")
 
         def job_music():
+            _stage("music", "running")
             _log("Preparing final audio (music, ducking, -14 LUFS loudness)…")
             prepare_final_audio(narration_file(), mixed_path, episode={**(research or {}), **(script or {})},
                                 output_dir=out)
             _log("Audio ready")
+            _stage("music", "done")
 
         def job_visual_bible():
             _stage("visual_bible", "running")
@@ -437,8 +429,6 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
                 _stage("shots", "error")
                 raise stage_graph.Blocked(str(exc)) from None
             _stage("shots", "done")
-            if "images" in steps:
-                _stage("images", "done")
 
         def job_video():
             audio = narration_file()
@@ -569,6 +559,9 @@ def run_pipeline():
     steps       = body.get("steps", ["research","script","images","narration","music","video"])
     if not isinstance(steps, list) or not steps:
         return jsonify({"ok": False, "error": "Select at least one pipeline step"}), 400
+    if "images" in steps:                           # the legacy step before narration (Phase 3.8-C)
+        _log("The 'images' step is now 'shots' (Planos, after narration and the visual bible).", "warn")
+        steps = list(dict.fromkeys("shots" if step == "images" else step for step in steps))
     topic       = body.get("topic", "").strip()
     focus_angle = body.get("focus_angle", "").strip()
     video_type  = body.get("video_type", "normal")
@@ -630,13 +623,27 @@ def _reload_state_from_disk():
     _state["stages"]["images"] = _state["stages"]["shots"]
 
 
+def _running_stages() -> list[str]:
+    """Stage ids running now (from the GUI step states), for "em execução" on the cards."""
+    from studio import stages as stage_graph
+    names = [name for name, status in _state["stages"].items() if status == "running"]
+    return sorted({stage_graph.stage_for_step(name) or name for name in names})
+
+
 def _current_summary() -> dict:
     out = Path(config.OUTPUT_DIR)
     if projects.is_project(out):
-        return {"project": True, **projects.summary(out)}
+        return {"project": True, **projects.summary(out), "running": _running_stages()}
     statuses = projects.stage_status(out)
     return {"project": False, "slug": None, "title": "output/ (legacy folder)", "stages": statuses,
             "next_step": projects.next_step(statuses), "thumbnail": None}
+
+
+@app.route("/api/stages")
+def stages_graph():
+    """Phase 3.8-C: the one stage list (order, labels, dependencies, lanes) the GUI renders."""
+    from studio import stages as stage_graph
+    return jsonify({"ok": True, "stages": stage_graph.as_json(), "aliases": stage_graph.STEP_ALIASES})
 
 
 @app.route("/api/projects")
@@ -726,7 +733,30 @@ def new_project():
         target = float(body.get("target_duration", 15))
     except (TypeError, ValueError):
         target = 15.0
-    path = projects.create(str(body.get("title", "")), video_type=video_type, target_duration=target)
+    from agents import premise_brief
+    from agents.narrative import NARRATIVE_TYPES
+    premise = str(body.get("premise", "")).strip()
+    narrative_type = body.get("narrative_type", "auto")
+    if narrative_type != "auto" and narrative_type not in NARRATIVE_TYPES:
+        return jsonify({"ok": False, "error": "Invalid narrative type"}), 400
+    brief = None
+    if premise_brief.is_brief(premise):
+        try:
+            brief = premise_brief.parse(premise)
+        except premise_brief.BriefError as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 400
+        target = premise_brief.target_minutes(brief, target) or target
+    if video_type == "normal" and not 12 <= target <= 20:
+        return jsonify({"ok": False, "error": "Regular episodes must target 12-20 minutes"}), 400
+    path = projects.create(str(body.get("title", "") or (brief or {}).get("working_title", "")),
+                           video_type=video_type, target_duration=target)
+    # "Novo projeto" (Phase 3.8-C): the wizard's choices; the Story Brief stage uses them.
+    data = projects.load(path)
+    data.update(premise="" if brief else premise, focus_angle=str(body.get("focus_angle", "")).strip(),
+                narrative_type=narrative_type, narrative_review=bool(body.get("narrative_review", True)))
+    projects.save(path, data)
+    if brief:
+        premise_brief.save(path, brief)
     projects.activate(path)
     projects.set_active(path.name)
     _reload_state_from_disk()
@@ -874,8 +904,8 @@ def project_stage(stage):
         projects.save(out, data)
         projects.touch(out)
         return jsonify({"ok": True, **_current_summary()})
-    if action not in ("run", "rerun"):
-        return jsonify({"ok": False, "error": "action must be run, rerun or skip"}), 400
+    if action not in ("run", "rerun", "from_here"):
+        return jsonify({"ok": False, "error": "action must be run, rerun, from_here or skip"}), 400
     if _state["running"] or _state.get("imagegen_busy"):
         return jsonify({"ok": False, "error": "Another step is already running"}), 409
     statuses = projects.stage_status(out)
@@ -898,6 +928,10 @@ def project_stage(stage):
         for item in upstream:
             steps += [step for step in projects.steps_for(item["stage"]) if step not in steps]
     steps += [step for step in projects.steps_for(stage) if step not in steps]
+    if action == "from_here":                        # "Rodar a partir daqui": this stage and everything after it
+        from studio import stages as stage_graph
+        for later in stage_graph.downstream(stage):
+            steps += [step for step in projects.steps_for(later) if step not in steps]
     guard = _regeneration_guard(steps, body)
     if guard:
         return guard
@@ -909,7 +943,10 @@ def project_stage(stage):
             _state["stages"][name] = "pending"
     _state["video_type"] = video_type
     _stop_event.clear()
-    threading.Thread(target=_run_pipeline, args=(steps, "", video_type, "", "auto", target, True),
+    # The "Novo projeto" choices (premise, theme, type) feed the Story Brief stage.
+    threading.Thread(target=_run_pipeline,
+                     args=(steps, info.get("premise", ""), video_type, info.get("focus_angle", ""),
+                           info.get("narrative_type", "auto"), target, info.get("narrative_review", True)),
                      daemon=True).start()
     return jsonify({"ok": True, "steps": steps})
 
@@ -2124,21 +2161,6 @@ def save_settings():
 def get_banned_topics():
     entries = load_banned_topics()
     return jsonify({"topics": [entry["raw"] for entry in entries], "entries": entries})
-
-
-@app.route("/api/publications")
-def get_publications():
-    from uploader.publications import load_ledger
-    return jsonify(load_ledger())
-
-
-@app.route("/api/sync-publications", methods=["POST"])
-def post_sync_publications():
-    from uploader.publications import sync_publications_safely
-    summary = sync_publications_safely(interactive=False)
-    if summary is None:
-        return jsonify({"ok": False, "error": "Sync failed; see the log. Run python -m scripts.sync_publications to re-authorize."})
-    return jsonify({"ok": True, "summary": summary})
 
 
 @app.route("/api/save-banned-topics", methods=["POST"])

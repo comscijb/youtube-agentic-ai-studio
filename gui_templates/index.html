@@ -63,9 +63,9 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 #tab-settings{overflow:hidden;}
 
 /* ── Generate tab ── */
-.gen-layout{display:grid;grid-template-columns:320px 1fr;gap:0;height:100%;overflow:hidden}
-.gen-options{padding:18px;border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column;gap:16px}
-.gen-console{display:flex;flex-direction:column;overflow:hidden}
+.gen-layout{display:grid;grid-template-columns:minmax(0,640px);justify-content:center;gap:0;height:100%;overflow:hidden}
+.gen-options{padding:18px;overflow-y:auto;display:flex;flex-direction:column;gap:16px}
+.gen-console{display:flex;flex-direction:column;overflow:hidden;min-height:260px;max-height:420px;border:1px solid var(--border);border-radius:8px}
 
 .field-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
 input[type=text],textarea,select{
@@ -270,36 +270,7 @@ input[type=range]{width:100%;accent-color:var(--primary)}
   <aside class="sidebar">
     <div class="section-label">Pipeline</div>
 
-    <div class="stage pending" id="stage-research">
-      <div class="stage-icon">1</div>
-      <div>
-        <div class="stage-name">Story Brief</div>
-      </div>
-    </div>
-    <div class="stage pending" id="stage-script">
-      <div class="stage-icon">2</div>
-      <div class="stage-name">Script</div>
-    </div>
-    <div class="stage pending" id="stage-images">
-      <div class="stage-icon">3</div>
-      <div class="stage-name">Images</div>
-    </div>
-    <div class="stage pending" id="stage-narration">
-      <div class="stage-icon">4</div>
-      <div class="stage-name">Narration</div>
-    </div>
-    <div class="stage pending" id="stage-visual_bible">
-      <div class="stage-icon">5</div>
-      <div class="stage-name">Visual bible</div>
-    </div>
-    <div class="stage pending" id="stage-shots">
-      <div class="stage-icon">6</div>
-      <div class="stage-name">Shots</div>
-    </div>
-    <div class="stage pending" id="stage-video">
-      <div class="stage-icon">7</div>
-      <div class="stage-name">Video</div>
-    </div>
+    <div id="sidebar-stages"></div>   <!-- rendered from /api/stages (studio/stages.py) -->
 
     <div class="divider" style="margin:8px"></div>
 
@@ -320,7 +291,7 @@ input[type=range]{width:100%;accent-color:var(--primary)}
   <main class="main">
     <div class="tabs">
       <div class="tab" onclick="switchTab('project')">📁 Project</div>
-      <div class="tab active" onclick="switchTab('generate')">🚀 Generate</div>
+      <div class="tab active" onclick="switchTab('generate')">🚀 Novo projeto</div>
       <div class="tab" onclick="switchTab('review')">🎬 Review & Edit</div>
       <div class="tab" onclick="switchTab('settings')">⚙️ Settings</div>
       <div class="tab" onclick="switchTab('performance')">📈 Desempenho</div>
@@ -336,10 +307,28 @@ input[type=range]{width:100%;accent-color:var(--primary)}
           </div>
           <button class="btn btn-ghost" onclick="refreshProject()">⟳ Refresh</button>
         </div>
+        <div id="lane-activity" style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px"></div>
+        <div id="lane-progress" style="display:none;font-size:12px;flex-direction:column;gap:4px">
+          <div><span id="lane-planning-text"></span>
+            <div style="height:6px;background:var(--surface2);border-radius:3px"><div id="lane-planning-bar" style="height:6px;width:0;background:var(--accent,#4af);border-radius:3px"></div></div></div>
+          <div><span id="lane-images-text"></span>
+            <div style="height:6px;background:var(--surface2);border-radius:3px"><div id="lane-images-bar" style="height:6px;width:0;background:var(--green,#4ade80);border-radius:3px"></div></div></div>
+        </div>
         <div id="project-stage-list" style="display:flex;flex-direction:column;gap:8px"></div>
-        <div class="help-text">Run uses what is already there (cached artifacts and checkpoints); Re-run
-          builds the stage again; Skip marks it as not needed for this project. References and style
-          anchors are approved in Review &amp; Edit, inside this project.</div>
+        <div class="help-text">Rodar usa o que já existe (artefatos e checkpoints); Refazer gera o estágio de
+          novo; Pular marca como desnecessário neste projeto; Rodar a partir daqui roda este estágio e todos
+          os seguintes. Referências e planos são aprovados em Review &amp; Edit.</div>
+        <div class="flex-row">
+          <button class="btn btn-danger" id="stop-btn" onclick="stopPipeline()" style="display:none" title="Parar depois da etapa atual">⏹ Parar</button>
+          <button class="btn btn-ghost" onclick="clearConsole()">Limpar console</button>
+        </div>
+        <div class="gen-console">
+          <div class="console-bar">
+            <span>Console</span>
+            <span id="console-status" class="chip chip-idle">Idle</span>
+          </div>
+          <div class="console-body" id="console"></div>
+        </div>
       </div>
     </div>
 
@@ -449,21 +438,7 @@ input[type=range]{width:100%;accent-color:var(--primary)}
           <label class="step-check"><input type="checkbox" id="narrative-review" checked> Editorial quality review (one Gemini call)</label>
 
           <div>
-            <div class="field-label">Steps to run</div>
-            <div class="steps-grid">
-              <label class="step-check"><input type="checkbox" id="step-research" checked> 💡 Story Brief</label>
-              <label class="step-check"><input type="checkbox" id="step-script" checked> ✍️ Bible + Outline + Scenes</label>
-              <label class="step-check"><input type="checkbox" id="step-images" checked> 🖼 Images <span style="font-size:10px;opacity:0.6">(generated shots)</span></label>
-              <label class="step-check"><input type="checkbox" id="step-narration" checked> 🎙 Narration</label>
-              <label class="step-check"><input type="checkbox" id="step-music" checked> 🎵 Music <span style="font-size:10px;opacity:0.6">(library)</span></label>
-              <label class="step-check"><input type="checkbox" id="step-visual_bible"> 🧭 Visual bible</label>
-              <label class="step-check"><input type="checkbox" id="step-shots"> 🎨 Shots <span style="font-size:10px;opacity:0.6">(ComfyUI)</span></label>
-              <label class="step-check"><input type="checkbox" id="step-video" checked> 🎞 Render Video</label>
-            </div>
-            <div class="help-text" style="margin-top:8px">Uncheck steps to skip and reuse previous output. Useful after rejecting a video to just re-render a different section.</div>
-          </div>
-
-          <div>
+            <div class="field-label">Voice<br>          <div>
             <div class="field-label">Voice<br><span style="font-size:10px;font-weight:400;color:var(--success,#4ade80)">✓ = word-synced captions</span></div>
             <select id="quick-voice" onchange="applyQuickVoice(this.value)">
               <option value="en-US-AndrewNeural">Andrew (US, Warm) ✓</option>
@@ -506,25 +481,11 @@ input[type=range]{width:100%;accent-color:var(--primary)}
             </div>
           </div>
 
-          <div style="display:grid;grid-template-columns:1fr auto;gap:8px">
-            <button class="btn btn-primary btn-full" id="gen-btn" onclick="startGeneration()" style="padding:13px">
-              🚀 Generate Full Video
-            </button>
-            <button class="btn btn-danger" id="stop-btn" onclick="stopPipeline()"
-                    style="padding:13px 16px;display:none" title="Stop after current step">
-              ⏹ Stop
-            </button>
-          </div>
-          <button class="btn btn-ghost btn-full" onclick="clearConsole()">Clear Console</button>
-        </div>
-
-        <!-- Console -->
-        <div class="gen-console">
-          <div class="console-bar">
-            <span>Console</span>
-            <span id="console-status" class="chip chip-idle">Idle</span>
-          </div>
-          <div class="console-body" id="console"></div>
+          <button class="btn btn-primary btn-full" id="gen-btn" onclick="createProject()" style="padding:13px">
+            📁 Criar projeto e abrir
+          </button>
+          <div class="help-text">Cria o projeto com estas escolhas e abre a aba Projeto, onde cada estágio é
+            rodado (Premissa / Story Brief primeiro).</div>
         </div>
       </div>
     </div>
@@ -1216,7 +1177,7 @@ function setFormat(type) {
   document.getElementById('fmt-shorts').classList.toggle('fmt-active', type === 'shorts');
   // Update generate button label
   document.getElementById('gen-btn').textContent =
-    type === 'shorts' ? '📱 Gerar Short original' : '🚀 Generate Full Video';
+    type === 'shorts' ? '📱 Criar Short original' : '📁 Criar projeto e abrir';
   // Update manual mode placeholder for Shorts vs Normal
   const manualInput = document.getElementById('topic-input');
   if (manualInput) {
@@ -1235,54 +1196,25 @@ function confirmRegenerate(d) {
     '\n\nRegerar mesmo assim?');
 }
 
-function startGeneration(extra) {
-  const steps = [];
-  if (document.getElementById('step-research').checked)  steps.push('research');
-  if (document.getElementById('step-script').checked)    steps.push('script');
-  if (document.getElementById('step-images').checked)    steps.push('images');
-  if (document.getElementById('step-narration').checked) steps.push('narration');
-  if (document.getElementById('step-music').checked)     steps.push('music');
-  if (document.getElementById('step-visual_bible').checked) steps.push('visual_bible');
-  if (document.getElementById('step-shots').checked)     steps.push('shots');
-  if (document.getElementById('step-video').checked)     steps.push('video');
-
-  // Build topic payload from whichever mode is active
-  let topic       = '';
-  let focus_angle = '';
-  const mode = document.getElementById('panel-manual').style.display === 'none' ? 'ai' : 'manual';
-  if (mode === 'manual') {
-    topic = (document.getElementById('topic-input').value || '').trim();
+function createProject() {
+  // "Novo projeto" (Phase 3.8-C): the choices are saved in the project; stages run in the Projeto view.
+  let premise = '', focus_angle = '';
+  if (document.getElementById('panel-manual').style.display !== 'none') {
+    premise = (document.getElementById('topic-input').value || '').trim();
   } else {
     const sel = document.getElementById('focus-angle-select').value;
-    if (sel === '__custom__') {
-      focus_angle = (document.getElementById('focus-angle-custom').value || '').trim();
-    } else {
-      focus_angle = sel;   // empty string = random; named string = specific angle
-    }
+    focus_angle = sel === '__custom__' ? (document.getElementById('focus-angle-custom').value || '').trim() : sel;
   }
-
-  clearConsole();
-  setRunning(true);
-
-  const narrative_type = document.getElementById('narrative-type').value;
-  const target_duration = Number(document.getElementById('target-duration').value);
-  const narrative_review = document.getElementById('narrative-review').checked;
-  fetch('/api/run', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify(Object.assign({steps, topic, focus_angle, video_type: _videoType,
-                          narrative_type, target_duration, narrative_review}, extra || {}))
-  }).then(r => r.json()).then(d => {
-    if (d.needs_regenerate_confirmation) {
-      setRunning(false);
-      if (confirmRegenerate(d)) startGeneration({confirm_regenerate: true});
-      else _log('Story Brief mantido — nada foi descartado.');
-      return;
-    }
-    if (!d.ok) { _log('Error: '+d.error, 'log-error'); setRunning(false); return; }
-    _log('Pipeline started…');
-    startSSE();
-  });
+  fetch('/api/projects/new', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({video_type: _videoType, premise, focus_angle,
+                          narrative_type: document.getElementById('narrative-type').value,
+                          target_duration: Number(document.getElementById('target-duration').value),
+                          narrative_review: document.getElementById('narrative-review').checked})})
+    .then(r => r.json()).then(d => {
+      if (!d.ok) { alert(d.error); return; }
+      closeHome(); setProjectChip(d); openProjectTab();
+      _log(`Projeto criado: ${d.slug} — rode "Premissa / Story Brief" primeiro.`);
+    });
 }
 
 function startSSE() {
@@ -1319,7 +1251,7 @@ function startSSE() {
 }
 
 function setRunning(running) {
-  document.getElementById('gen-btn').disabled = running;
+  document.getElementById('gen-btn').disabled = running;   // "Criar projeto" waits for the run
   document.getElementById('stop-btn').style.display = running ? '' : 'none';
   document.getElementById('console-status').className = 
     running ? 'chip chip-running' : 'chip chip-idle';
@@ -1343,7 +1275,7 @@ function stopPipeline() {
 }
 
 function updateStage(name, status) {
-  const el = document.getElementById('stage-'+name);
+  const el = document.getElementById('stage-' + (_stepToStage[name] || name));
   if (!el) return;
   el.className = 'stage '+status;
   const icons = {pending:'○', running:'⟳', done:'✓', error:'✗'};
@@ -1353,10 +1285,35 @@ function updateStage(name, status) {
 // ══════════════════════════════════════════════════════════
 //  STATUS POLL
 // ══════════════════════════════════════════════════════════
+function renderLanes(d) {
+  // Live lane activity (network / GPU / CPU) and the shot lanes' progress (Phase 3.8).
+  const box = document.getElementById('lane-activity');
+  if (!box) return;
+  const label = id => ((_stageMeta.find(s => s.id === id) || {}).label || id);
+  const activity = d.lane_activity || {};
+  box.innerHTML = d.running ? ['network', 'gpu', 'cpu'].map(lane => {
+    const busy = (activity[lane] || []).map(label);
+    return `<span class="sbadge ${busy.length ? 'stale' : 'done'}">${LANE_PT[lane]}: ${_esc(busy.join(', ') || 'livre')}</span>`;
+  }).join('') : '';
+  const wrap = document.getElementById('lane-progress');
+  const lanes = d.lanes;
+  wrap.style.display = d.running && lanes ? 'flex' : 'none';
+  if (!lanes) return;
+  const pct = (a, b) => b ? Math.round(100 * a / b) + '%' : '0';
+  const plan = lanes.planning, images = lanes.images;
+  document.getElementById('lane-planning-text').textContent = `Planejamento: ${plan.done}/${plan.total} cenas` +
+    (plan.waiting_seconds ? ` — aguardando o Gemini (${plan.waiting_seconds} s)` : '');
+  document.getElementById('lane-planning-bar').style.width = pct(plan.done, plan.total);
+  document.getElementById('lane-images-text').textContent = `Imagens: ${images.done}/${images.total}` +
+    (lanes.eta_seconds ? ` — ETA ${Math.ceil(lanes.eta_seconds / 60)} min` : '');
+  document.getElementById('lane-images-bar').style.width = pct(images.done, images.total);
+}
+
 function pollStatus() {
   fetch('/api/status').then(r => r.json()).then(d => {
     // Update all stages
     for (const [name, status] of Object.entries(d.stages)) updateStage(name, status);
+    renderLanes(d);
     // Upload progress
     if (d.uploading) {
       document.getElementById('upload-progress-wrap').style.display = 'block';
@@ -3144,7 +3101,48 @@ function saveBannedTopics() {
 // ══════════════════════════════════════════════════════════
 //  PROJECTS
 // ══════════════════════════════════════════════════════════
-const STATUS_PT = {done:'feito', stale:'desatualizado', partial:'parcial', missing:'pendente', skipped:'pulado'};
+const STATUS_PT = {done:'feito', stale:'desatualizado', partial:'parcial', missing:'faltando', skipped:'pulado',
+                   running:'em execução', waiting:'aguardando aprovação'};
+const LANE_PT = {network: 'Rede', gpu: 'GPU', cpu: 'CPU', manual: 'Você'};
+let _stageMeta = [];            // /api/stages: the one stage list (studio/stages.py)
+let _stepToStage = {};          // GUI pipeline step -> stage id
+const APPROVALS = {references: ['Aprovar referências', 'ig-refs'], shot_review: ['Abrir visualizador', 'ig-shots'],
+                   publish: ['Revisar e publicar', 'upload-progress-wrap']};
+
+function loadStages() {
+  return fetch('/api/stages').then(r => r.json()).then(d => {
+    _stageMeta = d.stages;
+    _stepToStage = {};
+    d.stages.forEach(s => s.steps.forEach(step => { _stepToStage[step] = s.id; }));
+    Object.entries(d.aliases || {}).forEach(([old, step]) => { _stepToStage[old] = _stepToStage[step]; });
+    document.getElementById('sidebar-stages').innerHTML = d.stages.map(s =>
+      `<div class="stage pending" id="stage-${s.id}"><div class="stage-icon">${s.position}</div>` +
+      `<div class="stage-name">${_esc(s.label)}</div></div>`).join('');
+  });
+}
+
+function openApproval(id) {
+  switchTab('review');
+  setTimeout(() => { const el = document.getElementById(id); if (el) el.scrollIntoView({block: 'start'}); }, 300);
+}
+
+function stageStatusText(s, d) {
+  if ((d.running || []).includes(s.stage)) return STATUS_PT.running;
+  const byId = Object.fromEntries((d.stages || []).map(item => [item.stage, item.status]));
+  const meta = _stageMeta.find(m => m.id === s.stage) || {};
+  const ready = (meta.depends_on || []).every(dep => ['done', 'skipped'].includes(byId[dep]));
+  if (APPROVALS[s.stage] && ready && !['done', 'skipped'].includes(s.status)) return STATUS_PT.waiting;
+  if (s.status === 'partial') {
+    const m = (s.detail || '').match(/(\d+)\/(\d+)/);
+    return m ? `parcial ${m[1]}/${m[2]}` : STATUS_PT.partial;
+  }
+  return STATUS_PT[s.status] || s.status;
+}
+
+function formatSeconds(seconds) {
+  if (seconds == null) return '';
+  return seconds < 90 ? `${Math.round(seconds)} s` : `${Math.round(seconds / 60)} min`;
+}
 
 function _esc(text) {
   return String(text ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -3164,15 +3162,9 @@ function showHome() {
 function closeHome() { document.getElementById('home').classList.add('hidden'); }
 
 function homeNewProject() {
-  const type = (typeof _videoType !== 'undefined' && _videoType) || 'normal';
-  const minutes = document.getElementById('target-duration').value || 15;
-  fetch('/api/projects/new', {method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({video_type: type, target_duration: minutes})})
-    .then(r => r.json()).then(d => {
-      if (!d.ok) { alert(d.error); return; }
-      closeHome(); setProjectChip(d); switchTab('generate'); pollStatus();
-      _log(`New project folder: ${d.slug} (renamed after the Story Brief title)`);
-    });
+  // The "Novo projeto" wizard creates the project once the premise and options are chosen.
+  closeHome();
+  switchTab('generate');
 }
 
 function homeShowProjects() {
@@ -3252,21 +3244,32 @@ function refreshProject() {
     document.getElementById('project-title').textContent = d.title;
     const next = d.next_step;
     document.getElementById('project-next').textContent =
-      next ? `Próximo passo recomendado: ${next.label} (${STATUS_PT[next.status]})` : 'Tudo pronto — revise e publique.';
+      next ? `Próximo passo recomendado: ${next.label} (${stageStatusText(next, d)})` : 'Tudo pronto — revise e publique.';
     document.getElementById('project-stage-list').innerHTML = d.stages.map(s => {
-      const canRun = s.stage !== 'publish';
-      const runLabel = s.status === 'done' || s.status === 'stale' ? 'Re-run' : 'Run';
-      const action = s.status === 'done' || s.status === 'stale' ? 'rerun' : 'run';
+      const meta = _stageMeta.find(m => m.id === s.stage) || {};
+      const run = (d.runs || {})[s.stage];
+      const when = run ? `última execução ${_esc(new Date(run.finished).toLocaleString())} · ${formatSeconds(run.seconds)}`
+                         + (run.status === 'error' ? ' · erro' : '') : '';
+      const done = s.status === 'done' || s.status === 'stale';
+      const buttons = [];
+      if (meta.runnable) {
+        buttons.push(`<button class="btn btn-primary" onclick="runStage('${s.stage}','${done ? 'rerun' : 'run'}')">${done ? 'Refazer' : 'Rodar'}</button>`);
+        buttons.push(`<button class="btn btn-ghost" onclick="runStage('${s.stage}','from_here')" title="Este estágio e todos os seguintes">Rodar a partir daqui</button>`);
+      }
+      if (s.stage === 'references')
+        buttons.push(`<button class="btn btn-ghost" onclick="runStage('references','run')">Gerar candidatos</button>`);
+      if (APPROVALS[s.stage])
+        buttons.push(`<button class="btn btn-ghost" onclick="openApproval('${APPROVALS[s.stage][1]}')">${APPROVALS[s.stage][0]}</button>`);
+      if (d.project && s.status !== 'done' && s.status !== 'skipped')
+        buttons.push(`<button class="btn btn-ghost" onclick="runStage('${s.stage}','skip')">Pular</button>`);
+      const text = stageStatusText(s, d);
+      const css = text === STATUS_PT.running ? 'stale' : text === STATUS_PT.waiting ? 'partial' : s.status;
       return `<div class="project-stage ${next && next.stage === s.stage ? 'next' : ''}">
-        <div style="font-weight:600">${_esc(s.label)}</div>
-        <span class="sbadge ${s.status}">${STATUS_PT[s.status] || s.status}</span>
-        <div class="help-text" style="margin:0">${_esc(s.detail)}</div>
-        <div class="flex-row">
-          ${canRun ? `<button class="btn btn-primary" onclick="runStage('${s.stage}','${action}')">${runLabel}</button>`
-                   : `<button class="btn btn-ghost" onclick="switchTab('review')">Review</button>`}
-          ${d.project && s.status !== 'done' && s.status !== 'skipped'
-              ? `<button class="btn btn-ghost" onclick="runStage('${s.stage}','skip')">Skip</button>` : ''}
-        </div></div>`;
+        <div style="font-weight:600">${meta.position ? meta.position + '. ' : ''}${_esc(s.label)}
+          <span class="help-text" style="margin:0 0 0 6px">${LANE_PT[meta.lane] || ''}</span></div>
+        <span class="sbadge ${css}">${text}</span>
+        <div class="help-text" style="margin:0">${_esc(s.detail)}${when ? ' · ' + when : ''}</div>
+        <div class="flex-row">${buttons.join('')}</div></div>`;
     }).join('');
   });
 }
@@ -3304,8 +3307,7 @@ function runStage(stage, action, extra) {
 //  INIT
 // ══════════════════════════════════════════════════════════
 loadSettings();
-pollStatus();
-refreshProject();
+loadStages().then(() => { pollStatus(); refreshProject(); });
 showHome();
 </script>
 </body>
