@@ -698,6 +698,88 @@ video: … | published: …`; the same theme may return from a clearly different
 
 ---
 
+## Parallel stages, film look and the thumbnail gallery (Phase 3.8)
+
+- **Shots: Gemini plans while ComfyUI renders** (`video.shot_generation.plan_and_render`). A planner
+  thread plans the shot list scene by scene, checkpointed. Each scene's shots go into the render
+  queue as soon as the scene is ready.
+
+  The calling thread is the only ComfyUI caller. It renders the lowest scene/shot first, with
+  layer-1 QA inline, and keeps working while Gemini is in a backoff wait. The local VLM QA and its
+  fixes then run once over the batch, as before.
+
+  A scene the planner cannot plan is flagged and reported, and the others go on. Stop (or Ctrl+C)
+  finishes the current image; checkpoints and the image cache let a rerun resume both lanes.
+  `SHOT_PLANNER_CONCURRENCY` is 1 by default, 2 at most. With 2, a scene starts before the previous
+  one ends and uses the latest finished scene as continuity.
+
+  Progress shows "Planejamento: n/m cenas", "Imagens: n/m", an ETA and the Gemini wait, in the CLI
+  and in the Projeto view.
+- **One stage graph** (`studio/stages.py`: id, label, depends_on, lane `network|gpu|cpu`,
+  optional, produces) drives the status, the GUI and the runner:
+  - Narration (Edge TTS) and the visual bible (Gemini) run together;
+  - reference candidates start as soon as the visual bible exists;
+  - music mixing runs next to the shots;
+  - at most one GPU job at a time.
+- **GUI:** the stage list comes from `/api/stages`. In order:
+  1. Premissa / Story Brief
+  2. Roteiro
+  3. Narração
+  4. Música
+  5. Visual bible
+  6. Referências (aprovação)
+  7. Planos (ComfyUI)
+  8. Revisão dos planos
+  9. Vídeo
+  10. Shorts
+  11. Publicação
+
+  The legacy "images" step before narration is gone; an old `images` request runs `shots` with a
+  warning. **Novo projeto** (the former Generate tab) takes the premise or brief, theme, type and
+  duration, then opens the project. Every stage runs in **Projeto**: status, last run time and
+  duration, Rodar / Refazer / Pular / Rodar a partir daqui, links to the approval panels, and live
+  lane activity (Rede / GPU / CPU).
+- **Film look** (`VIDEO_FILM_EFFECT = off | grain | super8 | super8_strong`, default `super8`) on every
+  frame of the final encode; the cuts stay clean.
+  - `super8`: coarse animated grain, a gentle irregular exposure flicker (±2.5 %), a slight gate
+    weave, sparse dust and a rare thin scratch (a cached 10-s layer in `assets/film/`, looped from a
+    per-video offset), lifted blacks, a slight warm tint and a vignette.
+  - `grain`: grain and vignette only.
+
+  The 3.6 tape glitch on cuts is gone; `VIDEO_TAPE_EFFECT` still works (`subtle` → `super8`,
+  `medium` → `super8_strong`). Captions are burnt in after the effect. The Shorts get the same look
+  at 9:16. A photosensitivity guard keeps the frame-to-frame luminance step ≤ 10 % (super8 2.3 %,
+  super8_strong 2.8 %). The choice is in Settings → "Efeito de filme".
+
+  Encode cost, measured on the episode "He Lied About His Dead Wife" (12 min, 1080p30):
+
+  | Look | Render path (moviepy) | ffmpeg-only re-encode (64.6 s plain) |
+  |---|---|---|
+  | grain | +10 % | 110 s, +70 % |
+  | super8 | +13 % | 132 s, +104 % |
+  | super8_strong | +15 % | 147 s, +128 % |
+
+  The render-path figures are the relevant ones; the ffmpeg-only column is the worst case.
+- **Thumbnails:**
+  - **Mais opções** makes 3 new variants with fresh seeds (a per-project round counter) and
+    appends them; **Novos conceitos** asks Gemini for new concepts first; **Gerar de novo** on a
+    card re-rolls that concept.
+  - Nothing is overwritten: the gallery shows every variant newest first, with "Usar esta" and
+    "Arquivar".
+  - The panel polls while a job runs and shows its progress and any error (with a link to the
+    references when an approval is missing).
+  - Jobs act on the project open when the button was pressed.
+  - The legacy stock/`image_map` thumbnail path (`video/thumbnail.py`, `_make_thumbnail`) is
+    removed.
+
+```powershell
+python -m scripts.preview_tape_effect --seconds 20 --look super8      # also: grain, super8_strong
+python -m scripts.generate_shots --project <slug>     # planner and renderer run in parallel
+python gui.py                                         # Projeto view; thumbnails → "Mais opções" / "Novos conceitos"
+```
+
+---
+
 ## Premise briefs and Shorts cut from each episode (Phase 3.7)
 
 - **Detailed premise briefs** (`agents/premise_brief.py`). Instead of a one-sentence premise you can
@@ -736,7 +818,7 @@ video: … | published: …`; the same theme may return from a clearly different
   - the exact slice of the final mix, normalised to −14 LUFS / −1.5 dBTP;
   - the shots of the cut reframed to 9:16 on the detected faces, or over a blurred copy of the
     image when the subjects don't fit;
-  - large word-timed captions clear of the YouTube UI, after the episode's tape effect;
+  - large word-timed captions clear of the YouTube UI, after the episode's film look;
   - the hook text at the start and an end card.
 
   The approval gate covers the episode **and** its Shorts (their files and texts are hashed).
@@ -810,7 +892,7 @@ over the guests' faces, the protagonist's head cropped, and a title that restate
   Cached in `data/analytics/` and refreshed on demand or by the publication sync (every 6 h at
   most). Studio data lags 24–48 h. Flags: CTR < 2 % after ≥ 1 000 impressions, average viewed
   < 30 %.
-- **Tape (VHS) look** (`VIDEO_TAPE_EFFECT = off | subtle | medium`, default `subtle`), applied by
+- **Tape (VHS) look** (replaced in Phase 3.8 by the continuous film look, see above) (`VIDEO_TAPE_EFFECT = off | subtle | medium`), applied by
   ffmpeg in the final encode:
   - grain, 1–2 px chromatic aberration, faint scanlines, vignette, slight luminance wobble and
     gate weave;
@@ -823,7 +905,7 @@ over the guests' faces, the protagonist's head cropped, and a title that restate
 ```powershell
 python -m scripts.youtube_backfill --video-id w-XazyuEUv8 --captions --language --description   # re-consent first time; --dry-run to preview
 python -m scripts.thumbnails --project 2026-10-21-the-man-who-needed-everyone-to-envy-him --restore   # 3 variants (archived: restores only what it needs)
-python -m scripts.preview_tape_effect --seconds 20 --intensity subtle   # before | after, and the encode overhead
+python -m scripts.preview_tape_effect --seconds 20 --look super8   # before | after, and the encode overhead (3.8)
 python gui.py   # Review: thumbnails, scored titles, description; 📈 Desempenho
 ```
 
