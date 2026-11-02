@@ -705,6 +705,10 @@ Every feature below can be switched off; the previous behaviour stays available.
 - **Pluggable voices** (`audio/tts/`):
   - `TTS_BACKEND` is `edge` (default), `local` (Kokoro, Apache-2.0, or Chatterbox, MIT, set by
     `TTS_LOCAL_ENGINE`) or `elevenlabs` (`ELEVENLABS_API_KEY` from the environment).
+  - Kokoro needs numpy 2, but the project pins numpy < 2, so Kokoro runs in its own venv as a
+    worker process. Set it up once with `python -m venv .venv-tts`, then
+    `.venv-tts/Scripts/pip install kokoro-onnx`. Put `kokoro-v1.0.onnx` and `voices-v1.0.bin` (from
+    the kokoro-onnx releases) in `models/tts/`. To use another interpreter, set `TTS_LOCAL_PYTHON`.
   - Word timings come from the backend, or from forced alignment with faster-whisper
     (`ALIGNER_MODEL`). An alignment is used only when it covers at least 98 % of the script with a
     drift under 80 ms.
