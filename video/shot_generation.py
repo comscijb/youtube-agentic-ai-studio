@@ -530,7 +530,12 @@ def precompute_depth(output: Path, shot_list: dict, progress: Callable[[str], No
         image = output / str(shot.get("image_path") or "")
         if not shot.get("image_path") or not image.is_file():
             continue
-        if motion.depth_map(output, shot["shot_id"], image) is None:
+        try:
+            depth = motion.depth_map(output, shot["shot_id"], image)
+        except Exception as exc:                         # noqa: BLE001 — one unreadable image keeps Ken Burns
+            progress(f"   Depth map for {shot['shot_id']} failed ({exc.__class__.__name__}); it keeps Ken Burns")
+            continue
+        if depth is None:
             progress("   Depth maps skipped: no depth model (pip install transformers); shots keep Ken Burns")
             return made
         made += 1

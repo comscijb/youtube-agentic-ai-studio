@@ -202,6 +202,51 @@ class EngineHelperTests(unittest.TestCase):
         with patch.object(config, "TTS_LOCAL_ENGINE", "kokoro"):
             self.assertFalse(local.LocalBackend().supports_style)
 
+    def test_kokoro_runs_out_of_process_through_the_worker_protocol(self):
+        class FakeProcess:
+            def __init__(self, args, **kwargs):
+                self.args, self.sent = args, []
+                self.stdin = self
+                self.stdout = io.StringIO('{"ok": true, "ready": true}\n{"ok": true, "out": "a.wav"}\n'
+                                          '{"ok": false, "error": "ValueError: bad voice"}\n')
+
+            def write(self, text):
+                self.sent.append(json.loads(text))
+
+            def flush(self):
+                pass
+
+            def close(self):
+                pass
+
+            def wait(self, timeout=None):
+                return 0
+
+        with tempfile.TemporaryDirectory() as temp:
+            model = Path(temp, "kokoro-v1.0.onnx")
+            model.write_bytes(b"m")
+            Path(temp, "voices-v1.0.bin").write_bytes(b"v")
+            with patch.object(config, "TTS_KOKORO_MODEL", str(model)), \
+                    patch.object(local.subprocess, "Popen", FakeProcess):
+                worker = local.KokoroWorker(Path("python.exe"))
+                worker.synthesize("Hello there.", "bm_george", 0.95, "a.wav")
+                with self.assertRaises(tts.TTSUnavailable):
+                    worker.synthesize("Hello.", "zz_nobody", 1.0, "b.wav")
+                worker.close()
+        self.assertTrue(worker.process.args[1].endswith("kokoro_worker.py"))
+        self.assertEqual(worker.process.sent[0], {"text": "Hello there.", "voice": "bm_george", "speed": 0.95,
+                                                  "out": "a.wav"})
+        with tempfile.TemporaryDirectory() as temp, patch.object(config, "TTS_KOKORO_MODEL", str(Path(temp, "none.onnx"))):
+            with self.assertRaises(tts.TTSUnavailable):
+                local.KokoroWorker(Path("python.exe"))
+
+    def test_alignment_decodes_with_ffmpeg_to_16k(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = local.write_wav(Path(temp, "a.wav"), [0.25] * 24000, 24000)
+            samples = align.decode(path)
+        self.assertAlmostEqual(len(samples), 16000, delta=200)
+        self.assertAlmostEqual(float(samples[8000]), 0.25, places=2)
+
 
 if __name__ == "__main__":
     unittest.main()

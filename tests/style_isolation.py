@@ -11,6 +11,7 @@ import tempfile
 from unittest.mock import patch
 
 import config
+from video import motion
 
 _state = {}
 
@@ -31,6 +32,8 @@ def setUpModule():
         # the API (found in 3.9: the GUI pipeline tests reached the thumbnail concepts call).
         patch.object(config, "GEMINI_API_KEY", ""),
         patch.object(config, "EPISODE_PROFILES_FILE", os.path.join(_state["temp"].name, "profiles.json"), create=True),
+        # No real depth model either: with transformers installed it would download and run on the fixtures.
+        patch.object(motion, "estimate", side_effect=motion.DepthUnavailable("no depth model in tests")),
     ]
     for item in _state["patches"]:
         item.start()

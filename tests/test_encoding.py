@@ -38,7 +38,7 @@ def unencoded_text_io(root: Path) -> list[str]:
     """open()/io.open()/read_text()/write_text() in text mode without encoding=."""
     problems = []
     for path in sorted(root.rglob("*.py")):
-        if any(part in {".venv", "venv", "__pycache__", "node_modules"} for part in path.parts):
+        if any(part in {".venv", ".venv-tts", "venv", "__pycache__", "node_modules"} for part in path.parts):
             continue
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         for node in ast.walk(tree):

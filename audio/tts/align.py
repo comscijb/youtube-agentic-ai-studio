@@ -97,9 +97,21 @@ def _whisper():
     return _model[name]
 
 
+def decode(audio_path: str):
+    """16 kHz mono float32 samples via the project's ffmpeg (faster-whisper's own PyAV decoder breaks
+    with newer ``av`` releases)."""
+    import subprocess
+
+    import numpy as np
+    from video.tape import ffmpeg_exe
+    raw = subprocess.run([ffmpeg_exe(), "-loglevel", "error", "-i", str(audio_path), "-f", "s16le", "-ac", "1",
+                          "-ar", "16000", "-"], check=True, capture_output=True).stdout
+    return np.frombuffer(raw, dtype="<i2").astype("float32") / 32768.0
+
+
 def transcribe(audio_path: str) -> list[dict]:
     """Recognised words with timings (ms) from faster-whisper."""
-    segments, _ = _whisper().transcribe(str(audio_path), word_timestamps=True, language="en",
+    segments, _ = _whisper().transcribe(decode(audio_path), word_timestamps=True, language="en",
                                         vad_filter=False, beam_size=1)
     return [{"text": word.word.strip(), "start_ms": word.start * 1000, "end_ms": word.end * 1000}
             for segment in segments for word in (segment.words or [])]
