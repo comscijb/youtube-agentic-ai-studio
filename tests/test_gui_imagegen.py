@@ -201,6 +201,7 @@ class GuiImagegenTests(unittest.TestCase):
         (self.output / "narration.mp3").write_bytes(b"audio")       # narration step already done
         with patch.object(self.gui, "_state", dict(self.gui._state, research={"x": 1}, script=script)), \
                 patch.object(gen, "ensure_visual_bible", return_value=VISUAL_BIBLE), \
+                patch.object(self.gui, "_first_thumbnails"), \
                 patch.object(gen, "ensure_shot_list"), \
                 patch.object(gen, "plan_and_render", side_effect=gen.ApprovalRequired("Approve julian_vance")), \
                 patch("video.imagegen_comfyui.ImageGenerator"):

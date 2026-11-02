@@ -27,6 +27,9 @@ def setUpModule():
         patch.object(config, "AMBIENT_ASSETS_DIR", os.path.join(_state["temp"].name, "ambient"), create=True),
         # Phase 3.9: title scoring and the variation guard read the ledger and the episode profiles.
         patch.object(config, "PUBLICATIONS_FILE", os.path.join(_state["temp"].name, "publications.json")),
+        # No live Gemini in tests: an unmocked call fails at once ("no credentials") instead of reaching
+        # the API (found in 3.9: the GUI pipeline tests reached the thumbnail concepts call).
+        patch.object(config, "GEMINI_API_KEY", ""),
         patch.object(config, "EPISODE_PROFILES_FILE", os.path.join(_state["temp"].name, "profiles.json"), create=True),
     ]
     for item in _state["patches"]:

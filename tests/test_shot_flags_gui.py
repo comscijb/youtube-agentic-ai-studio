@@ -110,6 +110,7 @@ class GuiTests(FlagTestCase):
                     patch.object(self.gui, "_state", dict(self.gui._state, research={"x": 1},
                                                           script={"sections": []})), \
                     patch.object(gen, "ensure_visual_bible", return_value=VISUAL_BIBLE) as bible, \
+                    patch.object(self.gui, "_first_thumbnails"), \
                     patch.object(gen, "ensure_shot_list"), \
                     patch.object(gen, "plan_and_render", return_value={"failed": [], "flagged": []}) as shots, \
                     patch.object(gen, "generate_thumbnail_image"), \
