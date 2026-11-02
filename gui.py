@@ -1893,7 +1893,8 @@ def get_review_gate():
     meta = _upload_metadata()
     if not meta["video_path"] or not os.path.exists(meta["video_path"]):
         return jsonify({"ok": False, "error": "No video to review"})
-    return jsonify({"ok": True, **review_summary(config.OUTPUT_DIR, **meta)})
+    from agents.gemini_client import generate
+    return jsonify({"ok": True, **review_summary(config.OUTPUT_DIR, generator=generate, **meta)})
 
 
 @app.route("/api/approve-upload", methods=["POST"])

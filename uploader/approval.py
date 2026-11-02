@@ -162,9 +162,11 @@ def packaging_findings(run_dir, title: str) -> list[dict]:
     return findings
 
 
-def review_summary(run_dir, *, title: str, **artifacts) -> dict:
-    """Everything the reviewer must see before approving (for GUI/dashboard)."""
+def review_summary(run_dir, *, title: str, generator=None, **artifacts) -> dict:
+    """Everything the reviewer must see before approving (for GUI/dashboard). ``generator`` runs the
+    cached thumbnail-text check (Phase 3.9-E); without it only a cached answer is used."""
     status = narrative_status(run_dir)
+    from video import coherence
     findings = packaging_findings(run_dir, title)
     current = check_approval(run_dir, title=title, **artifacts)
     from video import description as upload_description
@@ -184,6 +186,7 @@ def review_summary(run_dir, *, title: str, **artifacts) -> dict:
         "synthetic_disclosure_default": realistic_synthetic_media(run_dir),
         "approval_valid": not current,
         "approval_problems": current,
+        "coherence": coherence.findings(run_dir, generator=generator),     # warnings, never a block
     }
 
 

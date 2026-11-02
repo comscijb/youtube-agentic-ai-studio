@@ -2953,6 +2953,7 @@ function loadReviewGate() {
                (d.status_override_required ? ' — upload blocked unless you type an override reason' : ''));
     if (!d.title_passes) lines.push('<span style="color:var(--red,#e05252)">Title/thumbnail text break the title policy (see findings under the title).</span>');
     if (d.license_flags.length) lines.push(`<span style="color:var(--yellow,#e0b252)">License log flags: ${d.license_flags.length}</span>`);
+    (d.coherence || []).forEach(w => lines.push(`<span style="color:var(--amber,#e0b252)">⚠ Miniatura/vídeo: ${_esc(w)}</span>`));
     lines.push(d.approval_valid ? '<span style="color:var(--green,#4caf50)">✓ A valid approval exists for these exact files.</span>'
                                 : `Not approved: ${d.approval_problems.join('; ')}`);
     status.innerHTML = lines.join('<br>');
