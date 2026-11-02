@@ -163,14 +163,14 @@ def main(argv=None) -> int:
                  (DEFAULT_VOICES.get(backend.strip()) or [tts.channel_voice(backend.strip())])]
     rows = []
     for backend, voice in pairs:
-        print(f"→ {backend}:{voice}", flush=True)
+        print(f"-> {backend}:{voice}", flush=True)
         row = audition(text, backend.strip(), voice.strip(), OUT)
         rows.append(row)
         print("   " + (row.get("error") or f"RTF {row['rtf']} · VRAM {row['vram_mib']} MiB · coverage "
                                            f"{row['coverage']} · drift {row['drift_ms']} ms · {row['lufs']} LUFS"))
     (OUT / "results.json").write_text(json.dumps({"text": text, "rows": rows}, indent=2, ensure_ascii=False),
                                       encoding="utf-8")
-    print(f"Listen: {write_page(rows, text, OUT)} (or GUI → Settings → Vozes)")
+    print(f"Listen: {write_page(rows, text, OUT)} (or GUI, Settings, Vozes)")
     return 0
 
 
