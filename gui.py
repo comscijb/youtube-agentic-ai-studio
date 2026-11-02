@@ -1820,6 +1820,7 @@ def imagegen_edit_shot(shot_id):
     def revalidate(shot):
         # Re-validated: the edit cleared the blocking problem; advisory notes are recomputed.
         shot["action"] = action
+        shot["action_edited_by_human"] = True        # editorial record (Phase 3.9-D)
         shot.pop("flags", None)
         notes = shots_module.advice_for(shot, narration.get(shot.get("scene_id", ""), ""))
         if notes:
@@ -2133,6 +2134,9 @@ def get_settings():
         "render_preset":   getattr(config, "RENDER_PRESET", "ultrafast"),
         "film_effect":     __import__("video.tape", fromlist=["look"]).look(),
         "motion_style":    __import__("video.motion", fromlist=["style"]).style(),
+        "credit_line":     getattr(config, "DESCRIPTION_CREDIT_LINE", ""),
+        "end_credit_card": bool(getattr(config, "END_CREDIT_CARD", True)),
+        "about_text":      __import__("video.description", fromlist=["about_text"]).about_text(),
         "ambient_enabled": bool(getattr(config, "AMBIENT_ENABLED", True)),
         "banned_topics":   load_banned_topics(),
     })
@@ -2312,6 +2316,14 @@ def save_settings():
     if "ambient_enabled" in body:
         config.AMBIENT_ENABLED = bool(body["ambient_enabled"])
         stock_env["AMBIENT_ENABLED"] = str(config.AMBIENT_ENABLED).lower()
+    if "credit_line" in body:                          # Phase 3.9-D: one line, kept in .env
+        line = " ".join(str(body["credit_line"]).split())
+        if not line:
+            return jsonify({"ok": False, "error": "The credit line cannot be empty"}), 400
+        config.DESCRIPTION_CREDIT_LINE = stock_env["DESCRIPTION_CREDIT_LINE"] = line
+    if "end_credit_card" in body:
+        config.END_CREDIT_CARD = bool(body["end_credit_card"])
+        stock_env["END_CREDIT_CARD"] = str(config.END_CREDIT_CARD).lower()
     if stock_env:
         try:
             _write_env_settings(stock_env)

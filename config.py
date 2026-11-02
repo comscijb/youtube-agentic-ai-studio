@@ -79,6 +79,14 @@ The visual and narrative style is cinematic, atmospheric, mature, and distinctiv
 The channel functions as an anthology, with mostly standalone stories centered on the hidden forces that shape human behavior and modern life.
 """
 CHANNEL_NAME = "Private Gravity"   # shown on-screen and in upload metadata
+# Phase 3.9-D: visible human authorship. The description's credit line (required by its validator; {channel}
+# becomes CHANNEL_NAME; editable in Settings) and the end credit card (last ~4 s of an episode).
+DESCRIPTION_CREDIT_LINE = os.getenv("DESCRIPTION_CREDIT_LINE") or (
+    "Original story written and edited by {channel}. Illustrations and narration produced with AI tools "
+    "under human direction.")
+END_CREDIT_CARD = os.getenv("END_CREDIT_CARD", "true").lower() in ("1", "true", "yes", "on")
+END_CREDIT_TEXT = "Written & directed by {channel} · Illustrations & narration: AI-assisted"
+END_CREDIT_SECONDS = 4.0
 
 # Narrative development defaults. Regular episodes can be set from 12 to 20
 # minutes in the GUI; Shorts use their own fixed pacing contract.

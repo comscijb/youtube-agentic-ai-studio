@@ -1125,6 +1125,7 @@ def create_video(script: dict, audio_path: str, output_dir: str,
                              duration=audio.duration - final.duration)
             final = concatenate_videoclips([final, tail], method="compose")
         final = final.set_audio(audio)
+        final = with_end_card(final)                    # Phase 3.9-D: visible human authorship
 
         output_path = os.path.join(output_dir, "final_video.mp4")
         if tape_level != "off":
@@ -1168,6 +1169,38 @@ def create_video(script: dict, audio_path: str, output_dir: str,
     except (OSError, RuntimeError, ValueError, KeyError) as exc:
         print(f"   ⚠ Could not check the final true peak: {exc}")
     return output_path
+
+
+def end_card_text() -> str:
+    return str(getattr(config, "END_CREDIT_TEXT", "")).replace("{channel}", config.CHANNEL_NAME).strip()
+
+
+def end_card_clip(duration: float | None = None):
+    """The end credit card: brand background and type, fading in and out; no captions, no audio."""
+    duration = float(duration or getattr(config, "END_CREDIT_SECONDS", 4.0))
+    text = end_card_text()
+    first, _, second = text.partition(" · ")
+
+    def make_frame(t):
+        frame = Image.new("RGB", (W, H), C["background"])
+        draw = ImageDraw.Draw(frame)
+        alpha = min(1.0, t / 0.6, max(0.0, duration - t) / 0.6)
+        for line, size, y, colour in ((first, 54, H * 0.44, C["white"]), (second, 34, H * 0.54, C["highlight"])):
+            if not line:
+                continue
+            font = _load_font("bold" if size > 40 else "regular", size)
+            box = draw.textbbox((0, 0), line, font=font)
+            fill = tuple(int(c * alpha + b * (1 - alpha)) for c, b in zip(colour, C["background"]))
+            draw.text(((W - (box[2] - box[0])) // 2, int(y)), line, font=font, fill=fill)
+        return np.array(frame)
+    return VideoClip(make_frame, duration=duration)
+
+
+def with_end_card(final):
+    """Append the end credit card (END_CREDIT_CARD) after everything, the CTA included."""
+    if not getattr(config, "END_CREDIT_CARD", True) or not end_card_text():
+        return final
+    return concatenate_videoclips([final, end_card_clip()], method="compose")
 
 
 def encode_settings() -> dict:

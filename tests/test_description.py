@@ -34,18 +34,20 @@ class ChapterTests(unittest.TestCase):
                          [(0, "Scene 2"), (64, "Scene 3"), (124, "Scene 4")])
         block = description.chapter_block(items)
         self.assertTrue(block.splitlines()[1].startswith("0:00 "))
-        self.assertTrue(description.passes(description.validate(block + "\n" + description.cta_block("Why?"))))
+        self.assertTrue(description.passes(description.validate(block + "\n" + description.cta_block("Why?") + "\n"
+                                                                + description.authorship())))
 
     def test_fewer_than_three_chapters_are_left_out(self):
         items = description.chapters(build_scene_timeline(SECTIONS[:2], [40.0, 30.0]))
         self.assertEqual(description.chapter_block(items), "")
-        findings = description.validate(description.cta_block("Why?"))
+        findings = description.validate(description.cta_block("Why?") + "\n" + description.authorship())
         self.assertEqual([item["rule"] for item in findings], ["no_chapters"])          # a warning only
 
     def test_validator_catches_each_rule(self):
-        cta = description.cta_block("Why?")
+        cta = description.cta_block("Why?") + "\n" + description.authorship()
         rules = lambda text: {item["rule"] for item in description.validate(text) if item["severity"] == "blocking"}
-        self.assertEqual(rules("0:00 A\n0:30 B\n1:00 C"), {"no_cta"})
+        self.assertEqual(rules("0:00 A\n0:30 B\n1:00 C"), {"no_cta", "no_authorship"})
+        self.assertEqual(rules(description.cta_block("Why?") + "\n0:00 A\n0:30 B\n1:00 C"), {"no_authorship"})
         self.assertIn("chapters_start", rules(cta + "\n0:05 A\n0:30 B\n1:00 C"))
         self.assertIn("chapters_count", rules(cta + "\n0:00 A\n0:30 B"))
         self.assertIn("chapters_short", rules(cta + "\n0:00 A\n0:05 B\n1:00 C"))

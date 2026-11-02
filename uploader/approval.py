@@ -240,6 +240,9 @@ def approve(run_dir, *, checklist: dict, video_path, title, description, tags=No
         "bindings": bindings(run_dir, video_path=video_path, title=title,
                              description=description, tags=tags, thumbnail_path=thumbnail_path),
     }
+    from uploader import editorial_record              # Phase 3.9-D: evidence of human creative input
+    record["editorial_record"] = editorial_record.build(run_dir)
+    record["editorial_summary"] = editorial_record.summary(record["editorial_record"])
     atomic_write_json(Path(run_dir) / APPROVAL_FILE, record)
     return record
 

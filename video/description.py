@@ -36,6 +36,7 @@ DEFAULT_TEMPLATE = """{hook}
 {channel_line}
 {fiction_note}
 {credits}
+{authorship}
 {hashtags}"""
 REQUIRED_PLACEHOLDERS = ("{chapters}", "{cta}")
 MAX_CHARS = 5000
@@ -147,6 +148,21 @@ def credits(output_dir) -> str:
     return "\n".join(lines)
 
 
+def authorship() -> str:
+    """The honest credit line (Phase 3.9-D): human story and editing, AI as a production tool."""
+    return str(getattr(config, "DESCRIPTION_CREDIT_LINE", "") or "").replace("{channel}", config.CHANNEL_NAME).strip()
+
+
+def about_text() -> str:
+    """A suggested channel "About" paragraph (pasted by hand in YouTube Studio; no API write)."""
+    return (f"{config.CHANNEL_NAME} is an anthology of original cinematic short fiction about the private forces "
+            "that shape people: envy, loneliness, the need to be needed, the stories we tell ourselves. Every "
+            "episode is a new story written, edited and reviewed by a person; the illustrations and the narration "
+            "are produced with AI tools under that direction, in a consistent hand-drawn style. The stories are "
+            "fiction: any resemblance to real people is coincidental. New episodes arrive at a steady, unhurried "
+            "pace.")
+
+
 def channel_line() -> str:
     text = " ".join(str(getattr(config, "CHANNEL_DESCRIPTION", "")).split())
     first = re.split(r"(?<=[.!?])\s", text, maxsplit=1)[0] if text else ""
@@ -163,8 +179,12 @@ def build(output_dir, script: dict, brief: dict, parts: dict | None = None) -> s
               "channel_line": channel_line(),
               "fiction_note": "This episode is an original work of fiction. Characters and events are fictional.",
               "credits": credits(output), "hashtags": hashtags(script.get("tags", [])),
-              "title": script.get("title", "")}
+              "title": script.get("title", ""), "authorship": authorship()}
     text = template().format(**values)
+    if values["authorship"] and values["authorship"] not in text:     # a custom template without {authorship}
+        tags = values["hashtags"]
+        text = text.replace(tags, f"{values['authorship']}\n{tags}", 1) if tags and tags in text \
+            else text.rstrip() + "\n" + values["authorship"]
     text = re.sub(r"\n{3,}", "\n\n", text).strip() + "\n"
     blocking = [item for item in validate(text) if item["severity"] == "blocking"]
     if blocking:
@@ -200,6 +220,8 @@ def validate(text: str) -> list[dict]:
             finding("blocking", "chapters_short", f"A chapter is shorter than {MIN_CHAPTER_SECONDS} s or out of order.")
     else:
         finding("major", "no_chapters", "No chapters: YouTube shows none for this video.")
+    if authorship() and authorship() not in text:
+        finding("blocking", "no_authorship", "The credit line on human authorship and AI tools is missing.")
     tags = re.findall(r"(?<!\S)#\w+", text)
     if len(tags) > 15:
         finding("blocking", "too_many_hashtags", f"{len(tags)} hashtags (YouTube ignores all above 15).")

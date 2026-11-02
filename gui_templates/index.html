@@ -886,6 +886,15 @@ input[type=range]{width:100%;accent-color:var(--primary)}
             </div>
 
             <div class="settings-field">
+              <div class="field-label">Autoria visível</div>
+              <input type="text" id="s-credit-line" title="Linha de crédito na descrição (obrigatória)">
+              <label class="step-check"><input type="checkbox" id="s-end-card"> Cartela final de créditos (últimos ~4 s)</label>
+              <div class="field-label" style="margin-top:6px">Sobre o canal (sugestão para colar no YouTube Studio)</div>
+              <textarea id="s-about-text" rows="5" readonly style="font-size:12px"></textarea>
+              <button class="btn btn-ghost" style="font-size:11px" onclick="navigator.clipboard.writeText(document.getElementById('s-about-text').value)">Copiar</button>
+            </div>
+
+            <div class="settings-field">
               <div class="field-label">Movimento</div>
               <select id="s-motion-style">
                 <option value="parallax">Paralaxe 2.5D (volta ao Ken Burns quando não serve)</option>
@@ -3146,6 +3155,9 @@ function loadSettings() {
     if (d.render_preset) document.getElementById('s-render-preset').value = d.render_preset;
     if (d.film_effect) document.getElementById('s-film-effect').value = d.film_effect;
     if (d.motion_style) document.getElementById('s-motion-style').value = d.motion_style;
+    document.getElementById('s-credit-line').value = d.credit_line || '';
+    document.getElementById('s-end-card').checked = !!d.end_credit_card;
+    document.getElementById('s-about-text').value = d.about_text || '';
     document.getElementById('s-ambient').checked = !!d.ambient_enabled;
 
     // B-roll interval (stored as float seconds, slider is integer seconds)
@@ -3263,6 +3275,8 @@ function saveSettings() {
       render_preset: document.getElementById('s-render-preset').value,
       film_effect:   document.getElementById('s-film-effect').value,
       motion_style:  document.getElementById('s-motion-style').value,
+      credit_line:   document.getElementById('s-credit-line').value,
+      end_credit_card: document.getElementById('s-end-card').checked,
       ambient_enabled: document.getElementById('s-ambient').checked,
       broll_interval: parseInt(document.getElementById('s-broll-interval').value),
       broll_xfade:    parseInt(document.getElementById('s-broll-xfade').value) / 10,
