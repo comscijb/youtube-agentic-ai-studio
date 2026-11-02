@@ -698,6 +698,60 @@ video: … | published: …`; the same theme may return from a clearly different
 
 ---
 
+## Authenticity hardening (Phase 3.9)
+
+Every feature below can be switched off; the previous behaviour stays available.
+
+- **Pluggable voices** (`audio/tts/`):
+  - `TTS_BACKEND` is `edge` (default), `local` (Kokoro, Apache-2.0, or Chatterbox, MIT, set by
+    `TTS_LOCAL_ENGINE`) or `elevenlabs` (`ELEVENLABS_API_KEY` from the environment).
+  - Word timings come from the backend, or from forced alignment with faster-whisper
+    (`ALIGNER_MODEL`). An alignment is used only when it covers at least 98 % of the script with a
+    drift under 80 ms.
+  - Pronunciation fixes live in `data/pronunciations.json`. Voice calibration is kept per backend
+    and voice.
+  - A voice clone needs a reference clip in `assets/voice/` with a provenance note: your own voice
+    or one licensed for this use, never a real public person.
+  - Compare voices with `python -m scripts.voice_audition --text-file briefs/audition.txt`. The
+    results go to `debug/voice_audition/`. In the GUI, the **Vozes** panel does the same.
+- **Motion** (`video/motion.py`, `video/ambient.py`):
+  - `MOTION_STYLE=parallax` gives a 2.5D move from a depth map (Depth Anything V2 Small, cached
+    next to each shot). It falls back to Ken Burns when there is no depth model, the depth is noisy,
+    or a face would be split. `ken_burns` is the old look.
+  - `AMBIENT_ENABLED` adds candle, dust, rain, fog or steam loops, only where the scene text
+    supports them.
+  - `PACING_VARIETY` varies shot lengths (CV ≥ 0.35, from 3.5 to 16 s).
+  - `SHOT_TRANSITIONS=smart` uses hard cuts on dialogue and crossfades on time jumps.
+  - `KEY_MOMENT_CLIPS` (0 by default) adds image-to-video clips at key moments. Run
+    `python -m scripts.probe_key_clips` first.
+  - Preview with `python -m scripts.preview_motion --project <slug> --seconds 30`.
+- **Variation guard** (`studio/variation.py`):
+  - Each episode gets a profile: theme tags, opening device and thumbnail composition. Profiles are
+    cached in `data/episode_profiles.json`, and you can edit them.
+  - The researcher and the outline see the recent ones.
+  - Titles similar to published ones are marked "parecido com" and lose points.
+  - The upload confirmation shows the cadence advisor (episodes per week, Shorts per day).
+- **Visible human authorship:**
+  - The description has a credit line (`DESCRIPTION_CREDIT_LINE`), and the validator requires it.
+  - The video ends with a credit card (`END_CREDIT_CARD`).
+  - Settings show an "About" text.
+  - The approval stores an editorial record: what the author wrote, edited, regenerated and chose.
+- **Thumbnail–video coherence** (`video/coherence.py`) shows warnings in the approval gate when:
+  - the thumbnail's focal element never appears in the video;
+  - its text is not in the story (one cached, low-temperature Gemini check);
+  - a Short's hook text is not from its own segment.
+
+  Thumbnail prompts always keep the style suffix.
+- **Synthetic-content disclosure:**
+  - `uploader.approval.disclosure_decision(run_dir)` is the single rule. The flag is set when any
+    shot, clip or thumbnail is realistic, or when the voice imitates a real person, and it comes
+    with a reason.
+  - The approval stores the decision once. The episode and all its Shorts upload with it, and the
+    ledger records `contains_synthetic_media` and `synthetic_disclosure_reason`.
+  - The approval card shows the decision. Choosing the other value needs a typed reason.
+  - Older ledger records are filled in by `python -m scripts.disclosure_backfill [--dry-run]`, using
+    the archived approvals.
+
 ## Parallel stages, film look and the thumbnail gallery (Phase 3.8)
 
 - **Shots: Gemini plans while ComfyUI renders** (`video.shot_generation.plan_and_render`). A planner
