@@ -25,6 +25,9 @@ def setUpModule():
         patch.object(config, "IMAGEGEN_VISUAL_QA", False),       # QA tests enable it with a mocked Gemini
         patch.object(config, "FILM_ASSETS_DIR", os.path.join(_state["temp"].name, "film"), create=True),
         patch.object(config, "AMBIENT_ASSETS_DIR", os.path.join(_state["temp"].name, "ambient"), create=True),
+        # Phase 3.9: title scoring and the variation guard read the ledger and the episode profiles.
+        patch.object(config, "PUBLICATIONS_FILE", os.path.join(_state["temp"].name, "publications.json")),
+        patch.object(config, "EPISODE_PROFILES_FILE", os.path.join(_state["temp"].name, "profiles.json"), create=True),
     ]
     for item in _state["patches"]:
         item.start()

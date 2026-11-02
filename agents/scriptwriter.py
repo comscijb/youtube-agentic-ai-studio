@@ -152,7 +152,8 @@ objects, gestures, environments or silhouettes). The first scene must function a
 the final scene as resolution/aftermath, with a climax before it. Every scene must change the
 situation through a decision, discovery, confrontation or consequence. Assign varied word budgets
 that sum approximately to the target; do not divide them mechanically. Escalate through decisions and consequences. No lecture,
-chapter summary, bullet lesson, generic CTA, or unsupported twist.""" + _author_rule(brief, "outline")
+chapter summary, bullet lesson, generic CTA, or unsupported twist.""" + _author_rule(brief, "outline") + \
+        _variation_rule()
     outline = _generate_json(
         contract, "story outline", lambda value: validate_outline(
             {**value, "narrative_contract_version": NARRATIVE_CONTRACT_VERSION}, bible, True
@@ -167,6 +168,17 @@ chapter summary, bullet lesson, generic CTA, or unsupported twist.""" + _author_
     outline["target_duration_minutes"] = target_minutes
     atomic_write_json(path, outline)
     return outline
+
+
+def _variation_rule() -> str:
+    """Phase 3.9-C: when the last two published episodes opened the same way, ask for another opening."""
+    try:
+        from studio import variation
+        from uploader.publications import load_ledger
+        hint = variation.opening_hint(variation.history(load_ledger().get("publications", [])))
+    except Exception:                                    # noqa: BLE001 — a hint, never a failure
+        return ""
+    return "\n" + hint if hint else ""
 
 
 def _author_rule(brief: dict, stage: str) -> str:

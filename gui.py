@@ -1916,11 +1916,66 @@ def approve_upload():
 
 @app.route("/api/upload/plan")
 def upload_plan():
-    """What the confirmation dialog shows: the episode now/scheduled and each Short's planned time."""
+    """What the confirmation dialog shows: the episode now/scheduled, each Short's planned time and the
+    cadence advisor (Phase 3.9-C: episodes per week, Shorts per day)."""
+    from datetime import datetime, timezone
+    from studio import variation
     from uploader import shorts_upload
+    from uploader.publications import load_ledger
     privacy = request.args.get("privacy", config.VIDEO_PRIVACY)
-    return jsonify({"ok": True, **shorts_upload.plan_lines(config.OUTPUT_DIR, privacy=privacy,
-                                                           publish_at=request.args.get("publish_at", ""))})
+    publish_at = request.args.get("publish_at", "")
+    plan = shorts_upload.plan_lines(config.OUTPUT_DIR, privacy=privacy, publish_at=publish_at)
+    now = datetime.now(timezone.utc)
+
+    def when(value):
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00")) if value else now
+        except ValueError:
+            return now
+    planned = [{"kind": "episode", "at": when(publish_at)}] + \
+        [{"kind": "short", "at": when(item.get("publish_at"))} for item in plan["shorts"]]
+    pace = variation.cadence(load_ledger().get("publications", []), planned, now=now)
+    plan["cadence"] = pace
+    plan["cadence_text"] = (f"Ritmo: {pace['episodes_per_week']} episódio(s) em 7 dias, até "
+                            f"{pace['shorts_per_day']} Short(s) por dia." +
+                            "".join(f"\n⚠ {warning}" for warning in pace["warnings"]))
+    return jsonify({"ok": True, **plan})
+
+
+@app.route("/api/variation")
+def variation_status():
+    """Phase 3.9-C: the open episode's variation warnings and the published episodes' profiles."""
+    from studio import variation
+    from uploader.publications import load_ledger
+    return jsonify({"ok": True, **variation.report(config.OUTPUT_DIR, load_ledger().get("publications", []))})
+
+
+@app.route("/api/variation/profile", methods=["POST"])
+def variation_profile():
+    """Edit a published episode's profile (theme tags, narrative type, opening device)."""
+    from studio import variation
+    body = request.get_json(force=True) or {}
+    video_id = str(body.get("video_id", ""))
+    if not video_id:
+        return jsonify({"ok": False, "error": "video_id required"}), 400
+    current = variation.load_profiles().get(video_id, {})
+    tags = variation.normalise_tags(body.get("theme_tags", current.get("theme_tags", [])))
+    device = body.get("opening_device", current.get("opening_device", ""))
+    if device and device not in variation.DEVICES:
+        return jsonify({"ok": False, "error": "Unknown opening device"}), 400
+    value = {**current, "theme_tags": tags, "primary": tags[0] if tags else "", "opening_device": device,
+             "narrative_type": body.get("narrative_type", current.get("narrative_type", "")), "source": "edited"}
+    return jsonify({"ok": True, "profile": variation.save_profile(video_id, value)})
+
+
+@app.route("/api/variation/backfill", methods=["POST"])
+def variation_backfill():
+    """Profiles for published episodes that have none (one Gemini call each, cached)."""
+    from agents.gemini_client import generate
+    from studio import variation
+    from uploader.publications import load_ledger
+    profiles = variation.backfill(load_ledger().get("publications", []), generator=generate)
+    return jsonify({"ok": True, "profiles": profiles})
 
 
 @app.route("/api/upload", methods=["POST"])

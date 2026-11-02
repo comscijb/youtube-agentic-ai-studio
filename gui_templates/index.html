@@ -517,6 +517,7 @@ input[type=range]{width:100%;accent-color:var(--primary)}
               <div class="no-thumb">No thumbnail yet</div>
             </div>
             <div class="help-text" style="margin-top:6px">A miniatura selecionada na galeria abaixo (vai no upload). O texto dela é independente do título.</div>
+            <div id="variation-box" style="margin:10px 0;font-size:12px"></div>
             <div class="flex-row" style="margin:10px 0 6px" id="thumb-gallery">
               <div class="field-label" style="margin:0">Miniaturas</div>
               <button class="btn btn-ghost" style="padding:5px 12px;font-size:11px" onclick="thumbAction('/api/thumbnails/generate', {})"
@@ -2527,6 +2528,63 @@ function loadThumbVariants() {
   });
 }
 
+function loadVariation() {
+  // Phase 3.9-C: warnings only (theme, structure, title shape, thumbnail composition), never a block.
+  fetch('/api/variation').then(r => r.json()).then(d => {
+    const box = document.getElementById('variation-box');
+    if (!box || !d.ok) return;
+    box.innerHTML = '';
+    const head = document.createElement('div');
+    head.style.fontWeight = '600';
+    const p = d.profile;
+    head.textContent = `Variação — temas: ${(p.theme_tags || []).join(', ') || '—'} · tipo ${p.narrative_type || '—'} · abertura: ${p.opening_device || '—'}`;
+    box.appendChild(head);
+    (d.warnings || []).forEach(w => {
+      const line = document.createElement('div');
+      line.style.color = 'var(--amber)';
+      line.textContent = '⚠ ' + w.message;
+      box.appendChild(line);
+    });
+    if (!(d.warnings || []).length) box.appendChild(Object.assign(document.createElement('div'), {textContent: 'Sem repetições em relação aos episódios publicados.'}));
+    const details = document.createElement('details');
+    const summary = document.createElement('summary');
+    summary.textContent = `Episódios publicados (${(d.history || []).length})`;
+    details.appendChild(summary);
+    (d.history || []).forEach(item => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:2px 0';
+      const title = document.createElement('span');
+      title.textContent = item.title;
+      title.style.minWidth = '260px';
+      row.appendChild(title);
+      const tags = document.createElement('input');
+      tags.value = (item.theme_tags || []).join(', ');
+      tags.title = 'Temas (o primeiro é o principal)';
+      row.appendChild(tags);
+      const device = document.createElement('select');
+      ['', 'cold-open line', 'object', 'dialogue', 'question'].forEach(v => device.add(new Option(v || '—', v)));
+      device.value = item.opening_device || '';
+      row.appendChild(device);
+      const save = document.createElement('button');
+      save.className = 'btn btn-ghost';
+      save.style.cssText = 'font-size:11px;padding:2px 8px';
+      save.textContent = 'Salvar';
+      save.onclick = () => fetch('/api/variation/profile', {method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({video_id: item.video_id, theme_tags: tags.value.split(','), opening_device: device.value})})
+        .then(r => r.json()).then(x => { if (!x.ok) alert(x.error); loadVariation(); });
+      row.appendChild(save);
+      details.appendChild(row);
+    });
+    const fill = document.createElement('button');
+    fill.className = 'btn btn-ghost';
+    fill.style.cssText = 'font-size:11px;padding:2px 8px';
+    fill.textContent = 'Preencher perfis que faltam (Gemini)';
+    fill.onclick = () => fetch('/api/variation/backfill', {method: 'POST'}).then(r => r.json()).then(() => loadVariation());
+    details.appendChild(fill);
+    box.appendChild(details);
+  });
+}
+
 function loadTitleScores() {
   // Phase 3.6-B: curiosity / concreteness / emotion / clarity (1-5) + length, total 0-100; pick or edit.
   fetch('/api/titles').then(r => r.json()).then(d => {
@@ -2544,7 +2602,8 @@ function loadTitleScores() {
       const text = document.createElement('span');
       text.style.flex = '1';
       const s = c.scores || {};
-      text.textContent = `${c.title} (${c.title.length})` + (c.passes ? '' : ' ⛔ política');
+      text.textContent = `${c.title} (${c.title.length})` + (c.passes ? '' : ' ⛔ política') +
+        (c.similar_to ? ` · parecido com: ${c.similar_to}` : '');
       text.title = `curiosidade ${s.curiosity} · concretude ${s.concreteness} · emoção ${s.emotion} · clareza ${s.clarity} · tamanho ${s.length}` +
         (c.note ? `
 ${c.note}` : '');
@@ -2713,6 +2772,7 @@ function loadReviewData() {
   loadShorts();
   loadThumbVariants();
   loadTitleScores();
+  loadVariation();
   checkDescription();
   // Video
   fetch('/api/status').then(r=>r.json()).then(d => {
@@ -2976,7 +3036,8 @@ async function scheduleUpload() {
   const privacy   = document.getElementById('schedule-privacy').value;
   const plan = await uploadPlan(privacy, publishAt);
   if (!confirm(`This video will be uploaded now and become ${privacy.toUpperCase()} at ${new Date(dt).toString()}.` +
-               (plan.shorts.length ? `\n\n${plan.text}` : '') + '\n\nContinue?')) return;
+               (plan.shorts.length ? `\n\n${plan.text}` : '') + (plan.cadence_text ? `\n\n${plan.cadence_text}` : '') +
+               '\n\nContinue?')) return;
   const btn = document.getElementById('schedule-btn');
   btn.disabled = true; btn.textContent = '⏳ Uploading…';
   document.getElementById('upload-progress-wrap').style.display = 'block';
@@ -3002,7 +3063,8 @@ async function uploadToYouTube() {
   const warning = (privacy === 'public'
     ? 'This video will be PUBLIC immediately.'
     : `This video will be uploaded as ${privacy.toUpperCase()}.`) +
-    (plan.shorts.length ? `\n\n${plan.text}` : '') + '\n\nContinue?';
+    (plan.shorts.length ? `\n\n${plan.text}` : '') + (plan.cadence_text ? `\n\n${plan.cadence_text}` : '') +
+    '\n\nContinue?';
   if (!confirm(warning)) return;
   btn.disabled = true;
   document.getElementById('upload-progress-wrap').style.display = 'block';

@@ -9,6 +9,7 @@ import time
 
 import config
 from agents.gemini_client import generate
+from studio.variation import TAGS as THEME_TAGS
 from agents.narrative import (
     NARRATIVE_TYPES,
     PSYCHOLOGICAL_THEMES,
@@ -240,6 +241,7 @@ them must be built on the story's most shareable moment (the reversal: what the 
 a viewer would retell to a friend), not only on the premise. At most 60 characters, the hook within
 the first ~45.
 thumbnail_text_candidates: exactly 3 strings that follow the thumbnail text policy.
+theme_tags: 1 to 3 of {json.dumps(list(THEME_TAGS))}, the primary theme first (Phase 3.9 variation guard).
 
 Use one of these narrative_type values: {json.dumps(sorted(NARRATIVE_TYPES))}.
 The story must be original, causally coherent, emotionally plausible, filmable with cinematic
@@ -268,6 +270,9 @@ Uniqueness nonce: {time.time_ns()}"""
                     candidate["narrative_type"] = narrative_type
         brief["target_duration_minutes"] = duration
         brief["request_hash"] = request_hash
+        from studio import variation             # Phase 3.9-C: known tags, else guessed from the theme
+        brief["theme_tags"] = variation.normalise_tags(brief.get("theme_tags"), " ".join(
+            str(brief.get(key, "")) for key in ("psychological_theme", "psychological_angle", "logline")))
         if not str(brief.get("psychological_angle") or "").strip():
             raise NarrativeValidationError(
                 "story brief requires a nonempty psychological_angle: one sentence naming the "

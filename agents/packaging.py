@@ -247,7 +247,23 @@ def score_titles(brief: dict, candidates: list, *, generator) -> list[dict]:
         row["scores"]["length"] = length_score(row["title"])
         row["note"] = scores["note"]
         row["total"] = total_score(row["scores"])
+    published = _published_titles()
+    for row in rows:                                     # Phase 3.9-C: near-duplicates of published titles
+        from studio import variation
+        penalty, similar = variation.title_penalty(row["title"], published)
+        if penalty:
+            row["total"] = max(0, row["total"] - penalty)
+            row["similar_to"] = similar
     return sorted(rows, key=lambda row: (not row["passes"], -row["total"]))
+
+
+def _published_titles() -> list[str]:
+    try:
+        from studio import variation
+        from uploader.publications import load_ledger
+        return [record.get("title", "") for record in variation.episodes(load_ledger().get("publications", []))]
+    except Exception:                                    # noqa: BLE001 — no ledger: nothing to compare
+        return []
 
 
 def thumbnail_text_for(output_dir, script: dict | None = None, brief: dict | None = None) -> str:
