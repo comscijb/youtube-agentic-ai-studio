@@ -885,6 +885,15 @@ input[type=range]{width:100%;accent-color:var(--primary)}
             </div>
 
             <div class="settings-field">
+              <div class="field-label">Movimento</div>
+              <select id="s-motion-style">
+                <option value="parallax">Paralaxe 2.5D (volta ao Ken Burns quando não serve)</option>
+                <option value="kenburns">Ken Burns (como antes)</option>
+              </select>
+              <label class="step-check"><input type="checkbox" id="s-ambient"> Elementos animados (vela, poeira, chuva, névoa, vapor) quando o texto da cena pede</label>
+            </div>
+
+            <div class="settings-field">
               <div class="field-label">Efeito de filme</div>
               <select id="s-film-effect">
                 <option value="off">Desligado</option>
@@ -3074,6 +3083,8 @@ function loadSettings() {
     // Render preset
     if (d.render_preset) document.getElementById('s-render-preset').value = d.render_preset;
     if (d.film_effect) document.getElementById('s-film-effect').value = d.film_effect;
+    if (d.motion_style) document.getElementById('s-motion-style').value = d.motion_style;
+    document.getElementById('s-ambient').checked = !!d.ambient_enabled;
 
     // B-roll interval (stored as float seconds, slider is integer seconds)
     const bri = Math.round(parseFloat(d.broll_interval) || 10);
@@ -3189,6 +3200,8 @@ function saveSettings() {
       privacy:      document.getElementById('quick-privacy').value,
       render_preset: document.getElementById('s-render-preset').value,
       film_effect:   document.getElementById('s-film-effect').value,
+      motion_style:  document.getElementById('s-motion-style').value,
+      ambient_enabled: document.getElementById('s-ambient').checked,
       broll_interval: parseInt(document.getElementById('s-broll-interval').value),
       broll_xfade:    parseInt(document.getElementById('s-broll-xfade').value) / 10,
     })

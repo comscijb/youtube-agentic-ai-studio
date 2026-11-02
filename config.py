@@ -224,6 +224,19 @@ IMAGEGEN_TIMEOUT_SECONDS  = 900
 IMAGEGEN_MAX_UNIQUE_SHOTS = int(os.getenv("IMAGEGEN_MAX_UNIQUE_SHOTS", "75"))   # ~70 for 10 min at 6-9 s
 IMAGEGEN_SHOT_MIN_SECONDS = 6.0
 IMAGEGEN_SHOT_MAX_SECONDS = 9.0     # one image every 6-9 s (a single longer sentence keeps its image)
+# Phase 3.9-B.4: shot lengths follow the narration's rhythm (quick cuts on short sentences and pauses,
+# long holds on long passages) in a wider window; off = the fixed 6-9 s window above.
+PACING_VARIETY = True
+PACING_MIN_SECONDS = 3.5
+PACING_MAX_SECONDS = 16.0
+# Phase 3.9-B: motion. MOTION_STYLE = "parallax" (2.5D from a depth map, falls back to Ken Burns per shot)
+# or "kenburns" (the previous behaviour). Ambient overlays (candle, dust, rain, fog, steam) only where the
+# narration supports them. SHOT_TRANSITIONS = "smart" (hard cuts inside a scene, crossfade on a time jump)
+# or "crossfade" (every cut, as before). KEY_MOMENT_CLIPS = 0..3 image-to-video clips (off by default).
+MOTION_STYLE = os.getenv("MOTION_STYLE", "parallax")
+AMBIENT_ENABLED = os.getenv("AMBIENT_ENABLED", "true").lower() in ("1", "true", "yes", "on")
+SHOT_TRANSITIONS = "smart"
+KEY_MOMENT_CLIPS = 0
 # "reference": approved character portraits drive identity, faces may be visible.
 # "limited_faces": mostly none/partial faces, at most IMAGEGEN_MAX_FULL_FACE_SHOTS hero shots.
 IMAGEGEN_IDENTITY_POLICY  = os.getenv("IMAGEGEN_IDENTITY_POLICY", "reference")

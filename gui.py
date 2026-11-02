@@ -2077,6 +2077,8 @@ def get_settings():
         "broll_xfade":     getattr(config, "BROLL_XFADE_DUR",  1.2),
         "render_preset":   getattr(config, "RENDER_PRESET", "ultrafast"),
         "film_effect":     __import__("video.tape", fromlist=["look"]).look(),
+        "motion_style":    __import__("video.motion", fromlist=["style"]).style(),
+        "ambient_enabled": bool(getattr(config, "AMBIENT_ENABLED", True)),
         "banned_topics":   load_banned_topics(),
     })
 
@@ -2250,6 +2252,11 @@ def save_settings():
         stock_env["GEMINI_MODEL"] = str(config.GEMINI_MODEL)
     if "film_effect" in body:
         stock_env["VIDEO_FILM_EFFECT"] = str(config.VIDEO_FILM_EFFECT)
+    if body.get("motion_style") in ("parallax", "kenburns"):         # Phase 3.9-B switches
+        config.MOTION_STYLE = stock_env["MOTION_STYLE"] = body["motion_style"]
+    if "ambient_enabled" in body:
+        config.AMBIENT_ENABLED = bool(body["ambient_enabled"])
+        stock_env["AMBIENT_ENABLED"] = str(config.AMBIENT_ENABLED).lower()
     if stock_env:
         try:
             _write_env_settings(stock_env)

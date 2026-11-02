@@ -99,6 +99,69 @@ def segment_scene(scene: dict, sentences: list[dict], min_s: float, max_s: float
     return segments
 
 
+BEAT_SENTENCE = 2.6          # a sentence this short is a beat: a natural place for a quick cut
+BEAT_PAUSE = 0.45            # a pause this long after a sentence is a beat too
+
+
+def pacing_window() -> tuple[float, float]:
+    """(min, max) seconds per shot: PACING_MIN/MAX_SECONDS with pacing variety (Phase 3.9-B.4), else the
+    fixed IMAGEGEN_SHOT_MIN/MAX_SECONDS window."""
+    if getattr(config, "PACING_VARIETY", True):
+        return (float(getattr(config, "PACING_MIN_SECONDS", 3.5)), float(getattr(config, "PACING_MAX_SECONDS", 16.0)))
+    return (float(getattr(config, "IMAGEGEN_SHOT_MIN_SECONDS", 6.0)), float(getattr(config, "IMAGEGEN_SHOT_MAX_SECONDS", 9.0)))
+
+
+def varied_segments(scene: dict, sentences: list[dict], min_s: float, max_s: float) -> list[dict]:
+    """Cut on the narration's rhythm (Phase 3.9-B.4): a short sentence or a pause is a beat and closes a
+    quick shot; long passages are held. Deterministic, sentence boundaries only, segments tile the scene.
+
+    Each shot gets a target length from a fixed long/short pattern (seeded by the scene), so durations
+    vary instead of piling up just under the maximum; a beat after the minimum closes the shot early."""
+    import random
+    inside = [s for s in sentences if scene["start"] - 0.05 <= s["start"] < scene["end"]]
+    if not inside:
+        return [{"start": scene["start"], "end": scene["end"], "text": ""}]
+    rng = random.Random(int(round(scene["start"] * 100)) + 17)
+
+    def target() -> float:      # mostly holds, some quick beats (tuned on episode 2: CV 0.23 → 0.37)
+        return min_s + (max_s - min_s) * (rng.random() ** 0.35 if rng.random() < 0.65 else rng.random() * 0.1)
+    groups, current, goal = [], [], target()
+    for position, sentence in enumerate(inside):
+        if current and sentence["end"] - current[0]["start"] > max_s and \
+                current[-1]["end"] - current[0]["start"] >= min_s:
+            groups.append(current)
+            current, goal = [], target()
+        current.append(sentence)
+        length = current[-1]["end"] - current[0]["start"]
+        following = inside[position + 1] if position + 1 < len(inside) else None
+        pause = (following["start"] - sentence["end"]) if following else 0.0
+        beat = sentence["end"] - sentence["start"] <= BEAT_SENTENCE or pause >= BEAT_PAUSE
+        if length >= max_s or length >= goal or (beat and length >= min_s and length >= goal * 0.5):
+            groups.append(current)
+            current, goal = [], target()
+    if current:
+        if groups and current[-1]["end"] - current[0]["start"] < min_s / 2:
+            groups[-1].extend(current)
+        else:
+            groups.append(current)
+    segments = []
+    for index, group in enumerate(groups):
+        start = scene["start"] if index == 0 else segments[-1]["end"]
+        end = scene["end"] if index == len(groups) - 1 else group[-1]["end"]
+        segments.append({"start": round(start, 3), "end": round(end, 3),
+                         "text": " ".join(item["text"] for item in group)})
+    return segments
+
+
+def pacing_cv(segments: list[dict]) -> float:
+    """Coefficient of variation of the shot durations (target ≥ 0.35: not metronomic)."""
+    import statistics
+    durations = [float(item["end"]) - float(item["start"]) for item in segments]
+    if len(durations) < 2 or not statistics.mean(durations):
+        return 0.0
+    return round(statistics.pstdev(durations) / statistics.mean(durations), 3)
+
+
 def enforce_budget(segments: list[dict], budget: int) -> list[dict]:
     """Merge the shortest adjacent pair within a scene until ``len <= budget``."""
     segments = [dict(segment) for segment in segments]
@@ -121,12 +184,12 @@ def enforce_budget(segments: list[dict], budget: int) -> list[dict]:
 
 
 def plan_segments(script: dict, timeline: dict, cues: list[tuple]) -> list[dict]:
-    min_s = float(getattr(config, "IMAGEGEN_SHOT_MIN_SECONDS", 6.0))
-    max_s = float(getattr(config, "IMAGEGEN_SHOT_MAX_SECONDS", 12.0))
+    min_s, max_s = pacing_window()
+    cut = varied_segments if getattr(config, "PACING_VARIETY", True) else segment_scene
     sentences = sentences_from_cues(cues)
     segments = []
     for scene in timeline.get("scenes", []):
-        for segment in segment_scene(scene, sentences, min_s, max_s):
+        for segment in cut(scene, sentences, min_s, max_s):
             segment.update({"scene_id": scene.get("outline_scene_id") or f"s{int(scene['scene_id']):02d}",
                             "section_id": scene["scene_id"]})
             segments.append(segment)
@@ -391,8 +454,19 @@ characters, never a third person. Characters whose presence (VISUAL BIBLE) is "n
 "voice_only" are never in characters, never named and never described as a person in action: a
 "none" character (an AI with no body) appears only as its visual_proxy (e.g. the gold glow of the
 phone screen); while a "voice_only" character speaks (a voice on the phone), the shot shows who is
-listening, with the phone. {policy_rule}
+listening, with the phone. {policy_rule}{_ambient_rule()}
 {identity.image_prompt_rules()}"""
+
+
+def _ambient_rule() -> str:
+    """Phase 3.9-B.2: one optional animated element per shot, only where the narration has its source."""
+    from video import ambient
+    if not ambient.enabled():
+        return ""
+    return ("\nambient (optional): \"\" or one of " + ", ".join(ambient.KINDS) + ": a subtle animated "
+            "element for this shot, only when the scene's narration names what produces it (a candle or "
+            "lamp; dust in a beam of light; rain; fog or mist; steam from a kettle, tea or a mug). At most "
+            "one per shot; most shots have none.")
 
 
 def _scene_context(scene_id: str, scene_segments: list[dict], vb: dict, outline: dict) -> str:
@@ -600,6 +674,10 @@ def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bo
                           f"{SCENE_REPAIRS} repairs; they are flagged and skipped until edited")
             with state:
                 totals["calls"] += result["calls"]
+        from video import ambient
+        scene_text = " ".join(segment["text"] for segment in scene_segments)
+        for shot in result["shots"]:                     # whitelist + the scene's own words (3.9-B.2)
+            shot["ambient"] = ambient.validate(shot.get("ambient"), scene_text) if ambient.enabled() else ""
         with state, guard:
             results[index] = result
             for lid, condition in (result.get("settings") or {}).items():
@@ -688,6 +766,7 @@ def _entry(segment: dict, shot: dict, settings: dict, vb: dict, output: Path, fl
         "others_present": shot.get("others_present") if isinstance(shot.get("others_present"), bool) else False,
         "setting_condition": settings.get(shot.get("location_id"), ""),
         "reuse_of": shot.get("reuse_of") or "", "seed": vbible.seed_for("shot", segment["shot_id"]),
+        "ambient": str(shot.get("ambient") or ""),
         "seed_offset": 0,
     }
     if flags:

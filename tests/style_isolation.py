@@ -24,6 +24,7 @@ def setUpModule():
         patch.object(config, "IMAGES_DIR", config.IMAGES_DIR),
         patch.object(config, "IMAGEGEN_VISUAL_QA", False),       # QA tests enable it with a mocked Gemini
         patch.object(config, "FILM_ASSETS_DIR", os.path.join(_state["temp"].name, "film"), create=True),
+        patch.object(config, "AMBIENT_ASSETS_DIR", os.path.join(_state["temp"].name, "ambient"), create=True),
     ]
     for item in _state["patches"]:
         item.start()

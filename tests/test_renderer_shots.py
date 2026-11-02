@@ -3,10 +3,13 @@ import io
 import json
 import tempfile
 import unittest
+from unittest.mock import patch
 from contextlib import redirect_stdout
 from pathlib import Path
 
 from PIL import Image
+
+import config
 from tests.style_isolation import setUpModule, tearDownModule  # noqa: F401
 
 try:
@@ -72,17 +75,22 @@ class ShotScheduleTests(unittest.TestCase):
         self.assertEqual(creator.adaptive_opacity(0, 0.38), 0.08)
 
     def test_frames_show_the_shot_for_each_moment_with_crossfade(self):
-        shots = creator._prepare_shots(self.schedule()[1])
-        clip = creator._make_clip(SECTIONS[0], 12.0, [], 1, 2, cinematic=True, shots=shots)
-
-        def dominant(t):
+        def dominant(clip, t):
             red, green, blue = clip.get_frame(t)[540, 960][:3]
             return "red" if red > blue + 20 else "blue" if blue > red + 20 else "mixed"
 
-        self.assertEqual(dominant(2.0), "red")
-        self.assertEqual(dominant(5.75), "mixed")        # 0.5 s crossfade into the next shot
-        self.assertEqual(dominant(9.0), "blue")
+        with patch.object(config, "SHOT_TRANSITIONS", "crossfade"), patch.object(config, "MOTION_STYLE", "kenburns"):
+            shots = creator._prepare_shots(self.schedule()[1])
+            clip = creator._make_clip(SECTIONS[0], 12.0, [], 1, 2, cinematic=True, shots=shots)
+            self.assertEqual(dominant(clip, 2.0), "red")
+            self.assertEqual(dominant(clip, 5.75), "mixed")        # 0.5 s crossfade into the next shot
+            self.assertEqual(dominant(clip, 9.0), "blue")
         self.assertEqual(creator.shot_at(shots, 6.5), 1)
+        # Phase 3.9-B.4: inside a scene the default is a hard cut (no time jump in the narration).
+        with patch.object(config, "SHOT_TRANSITIONS", "smart"), patch.object(config, "MOTION_STYLE", "kenburns"):
+            shots = creator._prepare_shots(self.schedule()[1])
+            clip = creator._make_clip(SECTIONS[0], 12.0, [], 1, 2, cinematic=True, shots=shots)
+            self.assertEqual(dominant(clip, 5.75), "red")
 
 
 if __name__ == "__main__":

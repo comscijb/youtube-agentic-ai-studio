@@ -188,6 +188,8 @@ def planned_shots(segments, full=1):
 
 class ShotListTests(unittest.TestCase):
     def setUp(self):
+        self._fixed = patch.object(config, "PACING_VARIETY", False)   # fixtures assume the 6-9 s window
+        self._fixed.start()
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)
         atomic_write_json(self.root / "scene_timeline.json", {"total_duration": 40.0, "scenes": [
@@ -201,6 +203,7 @@ class ShotListTests(unittest.TestCase):
         (self.root / "narration.srt").write_text("\n".join(lines), encoding="utf-8")
 
     def tearDown(self):
+        self._fixed.stop()
         self.temp.cleanup()
 
     def build(self, response, **settings):

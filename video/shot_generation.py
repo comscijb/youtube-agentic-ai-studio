@@ -512,8 +512,29 @@ def generate_shots(output_dir, generator: ImageGenerator, *, limit: int | None =
         summary["qa_hints"] = [shot["shot_id"] for shot in shots
                                if not shot.get("reuse_of") and _in_scope(shot, only) and fixes.hinted(shot)]
         save()
+    summary["depth_maps"] = precompute_depth(output, shot_list, progress)
     summary["seconds"] = round(clock() - started, 1)
     return summary
+
+
+def precompute_depth(output: Path, shot_list: dict, progress: Callable[[str], None] = print) -> int:
+    """Phase 3.9-B.1: depth maps for the parallax shots once their images are final (cached; an edited
+    image gets a new one). Nothing to do with MOTION_STYLE = kenburns or without a depth model."""
+    from video import motion
+    if motion.style() != "parallax":
+        return 0
+    made = 0
+    for shot in shot_list.get("shots", []):
+        if shot.get("reuse_of") or motion.motion_for(shot.get("shot_type", "medium"))["kind"] != "parallax":
+            continue
+        image = output / str(shot.get("image_path") or "")
+        if not shot.get("image_path") or not image.is_file():
+            continue
+        if motion.depth_map(output, shot["shot_id"], image) is None:
+            progress("   Depth maps skipped: no depth model (pip install transformers); shots keep Ken Burns")
+            return made
+        made += 1
+    return made
 
 
 def _render_shot(generator: ImageGenerator, output: Path, vb: dict, shot: dict, *, label: str, narration: dict,

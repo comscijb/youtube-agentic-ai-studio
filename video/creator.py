@@ -424,6 +424,18 @@ BROLL_XFADE_DUR = float(getattr(config, "BROLL_XFADE_DUR",  1.2))
 # ══════════════════════════════════════════════════════════════
 
 SHOT_XFADE = 0.5     # seconds of crossfade into the next shot at a cut
+# Phase 3.9-B.4: inside a scene shots hard-cut (dialogue turns, beats); a crossfade only marks a time jump.
+TIME_JUMP = re.compile(r"^\W*(?:later|hours later|days later|weeks later|years later|the next (?:morning|day|night|"
+                       r"week|sunday)|that (?:night|evening|afternoon)|by (?:morning|evening|nightfall|the time)|"
+                       r"(?:two|three|a few|several) (?:days|weeks|months|years)|(?:a|one) (?:week|month|year) later|"
+                       r"on (?:monday|tuesday|wednesday|thursday|friday|saturday|sunday))\b", re.I)
+
+
+def transition_into(text: str) -> str:
+    """"crossfade" when the shot opens on a time jump (or SHOT_TRANSITIONS = "crossfade"), else "cut"."""
+    if str(getattr(config, "SHOT_TRANSITIONS", "smart")) == "crossfade":
+        return "crossfade"
+    return "crossfade" if TIME_JUMP.search(str(text or "")) else "cut"
 
 
 def shot_motion(shot_type: str, index: int) -> tuple:
@@ -489,6 +501,8 @@ def load_shot_schedule(output_dir: str, sections: list, durations: list) -> dict
             "shot_id": shot["shot_id"], "image": image, "shot_type": shot.get("shot_type", "medium"),
             "start": max(0.0, float(shot["start"]) - section_start),
             "end": min(section_duration, float(shot["end"]) - section_start), "index": index,
+            "ambient": shot.get("ambient") or "", "output_dir": output_dir,
+            "transition": transition_into(shot.get("narration_excerpt", "")),
         })
     for items in schedule.values():
         items.sort(key=lambda item: item["start"])
@@ -496,6 +510,31 @@ def load_shot_schedule(output_dir: str, sections: list, durations: list) -> dict
         for current, following in zip(items, items[1:]):
             current["end"] = following["start"]
     return schedule
+
+
+def _faces(image_path) -> list:
+    """Face boxes from the layer-1 detector (none when it is unavailable)."""
+    try:
+        from video.qa import fixes
+        detector = fixes._detector()
+        if detector is None:
+            return []
+        return [person["face"]["box"] for person in detector.detect(image_path).get("persons", []) if person.get("face")]
+    except Exception:                                    # noqa: BLE001 — motion only, never blocks a render
+        return []
+
+
+def plan_motion(shot: dict) -> dict:
+    """Phase 3.9-B.1: parallax / push / drift / Ken Burns for one shot (depth cached per shot)."""
+    from video import motion
+    wanted = motion.motion_for(shot.get("shot_type", "medium"))
+    if motion.style() != "parallax":
+        return {"kind": "kenburns", "reason": "MOTION_STYLE is kenburns"}
+    if wanted["kind"] != "parallax":
+        return motion.plan(None, shot.get("shot_type", "medium"))
+    depth = motion.depth_map(shot.get("output_dir") or ".", shot["shot_id"], shot["image"]) \
+        if shot.get("output_dir") else None
+    return motion.plan(depth, shot.get("shot_type", "medium"), _faces(shot["image"]) if depth is not None else [])
 
 
 def _prepare_shots(shots: list) -> list:
@@ -506,9 +545,29 @@ def _prepare_shots(shots: list) -> list:
             continue
         luminance = float(np.dot(arr[::8, ::8].reshape(-1, 3).mean(axis=0), [0.299, 0.587, 0.114]))
         zoom_start, zoom_end, pan = shot_motion(shot["shot_type"], shot["index"])
+        movement = plan_motion(shot)
+        if movement["kind"] in ("push", "drift"):
+            zoom_start, zoom_end = movement["zoom"]
+            pan = (0, 0) if movement["kind"] == "push" else ((1, 0) if shot["index"] % 2 == 0 else (-1, 0))
         prepared.append({**shot, "arr": arr, "opacity": adaptive_opacity(luminance),
-                         "zoom": (zoom_start, zoom_end), "pan": pan})
+                         "zoom": (zoom_start, zoom_end), "pan": pan, "motion": movement})
     return prepared
+
+
+_LAYERS: dict = {}               # shot_id -> parallax layers; the current and next shots only
+
+
+def _parallax_layers(shot: dict) -> list:
+    from video import motion
+    key = shot["shot_id"]
+    if key not in _LAYERS:
+        import cv2
+        masks = [cv2.resize(mask.astype(np.uint8), (W, H), interpolation=cv2.INTER_NEAREST).astype(bool)
+                 for mask in shot["motion"]["masks"]]
+        _LAYERS[key] = motion.build_layers(shot["arr"], masks)
+        while len(_LAYERS) > 3:
+            _LAYERS.pop(next(iter(_LAYERS)))
+    return _LAYERS[key]
 
 
 def shot_at(shots: list, t: float) -> int:
@@ -521,8 +580,18 @@ def shot_at(shots: list, t: float) -> int:
 def _shot_frame(shot: dict, t: float) -> np.ndarray:
     local = max(0.0, t - shot["start"])
     duration = max(shot["end"] - shot["start"], 0.001)
-    frame = _ken_burns(shot["arr"], local, duration, zoom_start=shot["zoom"][0],
-                       zoom_end=shot["zoom"][1], pan_dir=shot["pan"])
+    movement = shot.get("motion") or {}
+    if movement.get("kind") == "parallax":
+        from video import motion
+        frame = motion.render(_parallax_layers(shot), min(1.0, local / duration), movement["amount"], (W, H),
+                              direction=1 if shot["index"] % 2 == 0 else -1)
+    else:
+        frame = _ken_burns(shot["arr"], local, duration, zoom_start=shot["zoom"][0],
+                           zoom_end=shot["zoom"][1], pan_dir=shot["pan"])
+    if shot.get("ambient"):
+        from video import ambient
+        if ambient.enabled():
+            frame = ambient.apply(frame, ambient.loop_uint8(shot["ambient"]), local)
     return _apply_overlay(frame, shot["opacity"])
 
 
@@ -556,7 +625,8 @@ def _make_clip(section, duration, bg_images, section_num, total_sections,
             position = shot_at(shots, t)
             current = shots[position]
             frame_np = _shot_frame(current, t)
-            if position + 1 < len(shots) and t >= current["end"] - SHOT_XFADE:
+            if position + 1 < len(shots) and t >= current["end"] - SHOT_XFADE and \
+                    shots[position + 1].get("transition", "crossfade") == "crossfade":
                 following = shots[position + 1]
                 raw_a = (t - (current["end"] - SHOT_XFADE)) / SHOT_XFADE
                 alpha = raw_a * raw_a * (3.0 - 2.0 * raw_a)

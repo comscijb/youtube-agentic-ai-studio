@@ -37,6 +37,7 @@ projects/
 *.png
 !docs/screenshots/*.png    # allow docs screenshots
 assets/film/               # film-look dust layers, rendered once from a fixed seed (Phase 3.8-D)
+assets/ambient/            # ambient overlay loops, generated once (Phase 3.9-B)
 
 # ── OS junk ──────────────────────────────
 .DS_Store
