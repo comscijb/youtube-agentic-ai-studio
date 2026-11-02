@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-22",
+  "style_version": 2,
+  "variants": {
+    "engraving": {
+      "seconds_per_image": 18.5,
+      "samples": [
+        27.2,
+        16.5,
+        16.3,
+        17.3,
+        16.5,
+        17.2
+      ],
+      "seed_base": 4242
+    }
+  }
+}

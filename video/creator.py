@@ -7,12 +7,14 @@ Shorts  : Fast-paced 1080×1920, image slideshow (cuts every 2-3 s),
 
 Runs fully offline: MoviePy 1.0.3 + Pillow + NumPy.
 """
-import os, re, math
+import json, os, re, math, time
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from moviepy.editor import VideoClip, AudioFileClip, ColorClip, concatenate_videoclips
 
 import config
+from agents.narrative import assert_no_mojibake
+from video import tape
 from video.timeline import load_timeline, proportional_scene_durations, write_timeline
 
 # ── globals (overwritten per call) ────────────────────────────
@@ -228,10 +230,10 @@ def _draw_lower_third(frame, caption, alpha, section_title=""):
 #  NORMAL VIDEO — SRT CAPTION OVERLAY
 # ══════════════════════════════════════════════════════════════
 
-NORMAL_CAP_FONT_SIZE = 36       # smaller than Shorts (56px) — 1920×1080 context
+NORMAL_CAP_FONT_SIZE = int(getattr(config, "CAPTION_FONT_SIZE", 36))      # 1920×1080 context
 NORMAL_CAP_BG        = (0, 0, 0, 160)   # semi-transparent dark pill
 NORMAL_CAP_FG        = (255, 255, 255)
-NORMAL_CAP_MARGIN_B  = 90       # px from bottom (above progress bar)
+NORMAL_CAP_MARGIN_B  = int(getattr(config, "CAPTION_BOTTOM_MARGIN", 90))   # px from bottom
 
 
 def _draw_normal_caption(frame: Image.Image, text: str) -> Image.Image:
@@ -417,9 +419,185 @@ BROLL_INTERVAL  = float(getattr(config, "BROLL_INTERVAL",  10.0))
 BROLL_XFADE_DUR = float(getattr(config, "BROLL_XFADE_DUR",  1.2))
 
 
+# ══════════════════════════════════════════════════════════════
+#  SHOT LIST (generated images aligned to the narration)
+# ══════════════════════════════════════════════════════════════
+
+SHOT_XFADE = 0.5     # seconds of crossfade into the next shot at a cut
+# Phase 3.9-B.4: inside a scene shots hard-cut (dialogue turns, beats); a crossfade only marks a time jump.
+TIME_JUMP = re.compile(r"^\W*(?:later|hours later|days later|weeks later|years later|the next (?:morning|day|night|"
+                       r"week|sunday)|that (?:night|evening|afternoon)|by (?:morning|evening|nightfall|the time)|"
+                       r"(?:two|three|a few|several) (?:days|weeks|months|years)|(?:a|one) (?:week|month|year) later|"
+                       r"on (?:monday|tuesday|wednesday|thursday|friday|saturday|sunday))\b", re.I)
+
+
+def transition_into(text: str) -> str:
+    """"crossfade" when the shot opens on a time jump (or SHOT_TRANSITIONS = "crossfade"), else "cut"."""
+    if str(getattr(config, "SHOT_TRANSITIONS", "smart")) == "crossfade":
+        return "crossfade"
+    return "crossfade" if TIME_JUMP.search(str(text or "")) else "cut"
+
+
+def shot_motion(shot_type: str, index: int) -> tuple:
+    """(zoom_start, zoom_end, pan_dir) per shot type.
+
+    Close-ups and inserts push in slowly; wides drift sideways (alternating);
+    everything else gets a gentle push.
+    """
+    if shot_type in {"close_up", "insert", "hands"}:
+        return 1.0, 1.12, (0, 0)
+    if shot_type in {"wide", "establishing"}:
+        return 1.08, 1.08, ((1, 0) if index % 2 == 0 else (-1, 0))
+    return 1.0, 1.06, ((1, 0) if index % 2 == 0 else (0, 1))
+
+
+def overlay_base() -> float:
+    """Illustrations are already low-key: a much lighter overlay than photos."""
+    from agents import identity
+    if identity.is_illustration():
+        return float(getattr(config, "ILLUSTRATION_OVERLAY_OPACITY", 0.12))
+    return float(getattr(config, "CINEMATIC_OVERLAY_OPACITY", 0.38))
+
+
+def adaptive_opacity(luminance: float, base: float | None = None) -> float:
+    """Darken bright images more, low-key (generated) images less."""
+    base = overlay_base() if base is None else base
+    return round(max(0.08, min(base, base * luminance / 110.0)), 3)
+
+
+def load_shot_schedule(output_dir: str, sections: list, durations: list) -> dict | None:
+    """Map section id -> shots with section-relative timing and image paths.
+
+    Returns None (keep the stock B-roll behaviour) unless shot_list.json exists
+    and every shot resolves to an existing image.
+    """
+    from agents.shot_list import resolve_image
+
+    path = os.path.join(output_dir, "shot_list.json")
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, encoding="utf-8") as handle:
+            shots = json.load(handle).get("shots", [])
+    except (OSError, ValueError):
+        return None
+    if not shots:
+        return None
+    starts, cursor = {}, 0.0
+    for section, duration in zip(sections, durations):
+        starts[section["id"]] = (cursor, duration)
+        cursor += duration
+    schedule: dict = {}
+    for index, shot in enumerate(shots):
+        image = resolve_image(shots, shot)
+        image = image if image and os.path.isabs(image) else (
+            os.path.join(output_dir, image) if image else None)
+        if not image or not os.path.exists(image) or shot.get("section_id") not in starts:
+            print(f"   ⚠ shot_list.json is incomplete ({shot.get('shot_id')} has no image); "
+                  "using stock B-roll cycling")
+            return None
+        section_start, section_duration = starts[shot["section_id"]]
+        schedule.setdefault(shot["section_id"], []).append({
+            "shot_id": shot["shot_id"], "image": image, "shot_type": shot.get("shot_type", "medium"),
+            "start": max(0.0, float(shot["start"]) - section_start),
+            "end": min(section_duration, float(shot["end"]) - section_start), "index": index,
+            "ambient": shot.get("ambient") or "", "output_dir": output_dir,
+            "transition": transition_into(shot.get("narration_excerpt", "")),
+        })
+    for items in schedule.values():
+        items.sort(key=lambda item: item["start"])
+        items[0]["start"] = 0.0
+        for current, following in zip(items, items[1:]):
+            current["end"] = following["start"]
+    return schedule
+
+
+def _faces(image_path) -> list:
+    """Face boxes from the layer-1 detector (none when it is unavailable)."""
+    try:
+        from video.qa import fixes
+        detector = fixes._detector()
+        if detector is None:
+            return []
+        return [person["face"]["box"] for person in detector.detect(image_path).get("persons", []) if person.get("face")]
+    except Exception:                                    # noqa: BLE001 — motion only, never blocks a render
+        return []
+
+
+def plan_motion(shot: dict) -> dict:
+    """Phase 3.9-B.1: parallax / push / drift / Ken Burns for one shot (depth cached per shot)."""
+    from video import motion
+    wanted = motion.motion_for(shot.get("shot_type", "medium"))
+    if motion.style() != "parallax":
+        return {"kind": "kenburns", "reason": "MOTION_STYLE is kenburns"}
+    if wanted["kind"] != "parallax":
+        return motion.plan(None, shot.get("shot_type", "medium"))
+    depth = motion.depth_map(shot.get("output_dir") or ".", shot["shot_id"], shot["image"]) \
+        if shot.get("output_dir") else None
+    return motion.plan(depth, shot.get("shot_type", "medium"), _faces(shot["image"]) if depth is not None else [])
+
+
+def _prepare_shots(shots: list) -> list:
+    prepared = []
+    for shot in shots:
+        arr = _load_bg_image(shot["image"])
+        if arr is None:
+            continue
+        luminance = float(np.dot(arr[::8, ::8].reshape(-1, 3).mean(axis=0), [0.299, 0.587, 0.114]))
+        zoom_start, zoom_end, pan = shot_motion(shot["shot_type"], shot["index"])
+        movement = plan_motion(shot)
+        if movement["kind"] in ("push", "drift"):
+            zoom_start, zoom_end = movement["zoom"]
+            pan = (0, 0) if movement["kind"] == "push" else ((1, 0) if shot["index"] % 2 == 0 else (-1, 0))
+        prepared.append({**shot, "arr": arr, "opacity": adaptive_opacity(luminance),
+                         "zoom": (zoom_start, zoom_end), "pan": pan, "motion": movement})
+    return prepared
+
+
+_LAYERS: dict = {}               # shot_id -> parallax layers; the current and next shots only
+
+
+def _parallax_layers(shot: dict) -> list:
+    from video import motion
+    key = shot["shot_id"]
+    if key not in _LAYERS:
+        import cv2
+        masks = [cv2.resize(mask.astype(np.uint8), (W, H), interpolation=cv2.INTER_NEAREST).astype(bool)
+                 for mask in shot["motion"]["masks"]]
+        _LAYERS[key] = motion.build_layers(shot["arr"], masks)
+        while len(_LAYERS) > 3:
+            _LAYERS.pop(next(iter(_LAYERS)))
+    return _LAYERS[key]
+
+
+def shot_at(shots: list, t: float) -> int:
+    for position, shot in enumerate(shots):
+        if t < shot["end"]:
+            return position
+    return len(shots) - 1
+
+
+def _shot_frame(shot: dict, t: float) -> np.ndarray:
+    local = max(0.0, t - shot["start"])
+    duration = max(shot["end"] - shot["start"], 0.001)
+    movement = shot.get("motion") or {}
+    if movement.get("kind") == "parallax":
+        from video import motion
+        frame = motion.render(_parallax_layers(shot), min(1.0, local / duration), movement["amount"], (W, H),
+                              direction=1 if shot["index"] % 2 == 0 else -1)
+    else:
+        frame = _ken_burns(shot["arr"], local, duration, zoom_start=shot["zoom"][0],
+                           zoom_end=shot["zoom"][1], pan_dir=shot["pan"])
+    if shot.get("ambient"):
+        from video import ambient
+        if ambient.enabled():
+            frame = ambient.apply(frame, ambient.loop_uint8(shot["ambient"]), local)
+    return _apply_overlay(frame, shot["opacity"])
+
+
 def _make_clip(section, duration, bg_images, section_num, total_sections,
                pan_dir=(1, 0), captions: list = None, section_start_t: float = 0.0,
-               cinematic: bool = False):
+               cinematic: bool = False, shots: list | None = None):
     """
     Build a single section clip with:
       • B-roll image cycling every BROLL_INTERVAL seconds with smooth crossfade
@@ -442,8 +620,21 @@ def _make_clip(section, duration, bg_images, section_num, total_sections,
     BROLL_PAN_DIRS = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1)]
 
     def make_frame(t):
+        # ── Background: one generated image per shot, cut on its timing ────
+        if shots:
+            position = shot_at(shots, t)
+            current = shots[position]
+            frame_np = _shot_frame(current, t)
+            if position + 1 < len(shots) and t >= current["end"] - SHOT_XFADE and \
+                    shots[position + 1].get("transition", "crossfade") == "crossfade":
+                following = shots[position + 1]
+                raw_a = (t - (current["end"] - SHOT_XFADE)) / SHOT_XFADE
+                alpha = raw_a * raw_a * (3.0 - 2.0 * raw_a)
+                frame_np = (frame_np.astype(np.float32) * (1.0 - alpha) +
+                            _shot_frame(following, following["start"]).astype(np.float32) * alpha
+                            ).astype(np.uint8)
         # ── Background: B-roll cycling with crossfade ──────────────────────
-        if n_imgs > 0:
+        elif n_imgs > 0:
             slot      = t / BROLL_INTERVAL
             cur_idx   = int(slot) % n_imgs
             img_t     = t % BROLL_INTERVAL          # time within this image slot
@@ -785,6 +976,7 @@ def create_video(script: dict, audio_path: str, output_dir: str,
     video_type: "normal" | "shorts"
     """
     global W, H, FPS
+    assert_no_mojibake(script, "caption rendering")
 
     # Clear font cache when dimensions change (Shorts vs Normal have different
     # optimal sizes, but the same font object can be shared across renders).
@@ -797,6 +989,7 @@ def create_video(script: dict, audio_path: str, output_dir: str,
     BROLL_XFADE_DUR = float(getattr(config, "BROLL_XFADE_DUR",  1.2))
 
     is_shorts = video_type == "shorts" or script.get("video_type") == "shorts"
+    tape_level = "off"                     # the tape effect is for normal episodes only
     if is_shorts:
         W, H, FPS = config.SHORTS_WIDTH, config.SHORTS_HEIGHT, config.SHORTS_FPS
     else:
@@ -877,7 +1070,16 @@ def create_video(script: dict, audio_path: str, output_dir: str,
         else:
             print("   → No SRT captions — subtitles will be disabled for this render.")
 
-        print(f"\n   Building {total_sections} section clips (B-roll cycling every {BROLL_INTERVAL:.0f}s):")
+        # Film look (Phase 3.8-D): ffmpeg applies it to every frame in the final encode, then burns
+        # the captions on top (ASS, same pill look) so they stay crisp; frames are drawn without them.
+        tape_level = tape.look()
+        frame_captions = captions if tape_level == "off" else []
+        schedule = load_shot_schedule(output_dir, sections, durations)
+        if schedule:
+            print(f"\n   Building {total_sections} section clips from shot_list.json "
+                  f"({sum(len(items) for items in schedule.values())} shots):")
+        else:
+            print(f"\n   Building {total_sections} section clips (B-roll cycling every {BROLL_INTERVAL:.0f}s):")
         clips           = []
         section_start_t = 0.0   # running global timestamp for SRT lookup
 
@@ -900,9 +1102,10 @@ def create_video(script: dict, audio_path: str, output_dir: str,
             if not bg_images:
                 print(f"          ⚠ no images for section {section['id']} — gradient fallback")
 
+            section_shots = _prepare_shots(schedule.get(section["id"], [])) if schedule else None
             clip = _make_clip(section, duration, bg_images, i + 1, total_sections,
-                              captions=captions, section_start_t=section_start_t,
-                              cinematic=cinematic)
+                              captions=frame_captions, section_start_t=section_start_t,
+                              cinematic=cinematic, shots=section_shots)
             clips.append(clip)
             section_start_t += duration   # advance global timestamp
 
@@ -922,25 +1125,94 @@ def create_video(script: dict, audio_path: str, output_dir: str,
                              duration=audio.duration - final.duration)
             final = concatenate_videoclips([final, tail], method="compose")
         final = final.set_audio(audio)
+        final = with_end_card(final)                    # Phase 3.9-D: visible human authorship
 
         output_path = os.path.join(output_dir, "final_video.mp4")
+        if tape_level != "off":
+            extra_params, tape_report = tape.ffmpeg_params(
+                tape_level, size=(W, H), fps=FPS, captions=captions or None, output_dir=output_dir,
+                font_path=next((path for path in config.FONT_PATHS["bold"] if os.path.exists(path)), None),
+                font_size=NORMAL_CAP_FONT_SIZE, margin_bottom=NORMAL_CAP_MARGIN_B, key=output_path)
+            print(f"   → Film look '{tape_level}' on every frame (cuts stay clean): max luminance step "
+                  f"{tape_report['max_luma_step']:.1%} (≤ 10 %), captions burnt after it")
 
     # ── EXPORT ─────────────────────────────────────────────────
     total_secs = int(final.duration)
     print(f"\n   → Rendering {total_secs // 60}m {total_secs % 60}s video…")
     print(f"      (~{max(1, total_secs // 10)} min — go get a coffee ☕)\n")
 
+    settings = encode_settings()
+    if not is_shorts and tape_level != "off":
+        settings["ffmpeg_params"] = settings["ffmpeg_params"] + extra_params
+    started = time.monotonic()
     final.write_videofile(
         output_path,
         fps=FPS,
         codec="libx264",
         audio_codec="aac",
         threads=4,
-        preset=getattr(config, "RENDER_PRESET", "ultrafast"),
+        **settings,
         verbose=False,
         logger=None,
     )
+    print(f"   → Encode took {time.monotonic() - started:.0f}s")
 
-    size_mb = os.path.getsize(output_path) // (1024 * 1024)
-    print(f"\n   ✅ Video rendered: {output_path} ({size_mb} MB)")
+    print(f"\n   ✅ Video rendered: {render_summary(output_path, final.duration)}")
+    try:
+        from video.music import limit_final_true_peak
+        peak = limit_final_true_peak(output_path)
+        if peak["action"] != "none":
+            print(f"   → True peak {peak['before_true_peak_dbtp']:.1f} dBTP on the final MP4: audio limited "
+                  f"to {peak['true_peak_dbtp']:.1f} dBTP and remuxed (video not re-encoded)")
+        else:
+            print(f"   → Final MP4: {peak['integrated_lufs']:.1f} LUFS, true peak {peak['true_peak_dbtp']:.1f} dBTP")
+    except (OSError, RuntimeError, ValueError, KeyError) as exc:
+        print(f"   ⚠ Could not check the final true peak: {exc}")
     return output_path
+
+
+def end_card_text() -> str:
+    return str(getattr(config, "END_CREDIT_TEXT", "")).replace("{channel}", config.CHANNEL_NAME).strip()
+
+
+def end_card_clip(duration: float | None = None):
+    """The end credit card: brand background and type, fading in and out; no captions, no audio."""
+    duration = float(duration or getattr(config, "END_CREDIT_SECONDS", 4.0))
+    text = end_card_text()
+    first, _, second = text.partition(" · ")
+
+    def make_frame(t):
+        frame = Image.new("RGB", (W, H), C["background"])
+        draw = ImageDraw.Draw(frame)
+        alpha = min(1.0, t / 0.6, max(0.0, duration - t) / 0.6)
+        for line, size, y, colour in ((first, 54, H * 0.44, C["white"]), (second, 34, H * 0.54, C["highlight"])):
+            if not line:
+                continue
+            font = _load_font("bold" if size > 40 else "regular", size)
+            box = draw.textbbox((0, 0), line, font=font)
+            fill = tuple(int(c * alpha + b * (1 - alpha)) for c, b in zip(colour, C["background"]))
+            draw.text(((W - (box[2] - box[0])) // 2, int(y)), line, font=font, fill=fill)
+        return np.array(frame)
+    return VideoClip(make_frame, duration=duration)
+
+
+def with_end_card(final):
+    """Append the end credit card (END_CREDIT_CARD) after everything, the CTA included."""
+    if not getattr(config, "END_CREDIT_CARD", True) or not end_card_text():
+        return final
+    return concatenate_videoclips([final, end_card_clip()], method="compose")
+
+
+def encode_settings() -> dict:
+    """libx264 at constant quality (RENDER_CRF) instead of a fixed high bitrate (Phase 3.4-F)."""
+    return {"preset": getattr(config, "RENDER_PRESET", "veryfast"),
+            "ffmpeg_params": ["-crf", str(getattr(config, "RENDER_CRF", 20)), "-pix_fmt", "yuv420p",
+                              "-movflags", "+faststart"]}
+
+
+def render_summary(path: str, duration: float) -> str:
+    """"final_video.mp4 (412 MB, 10m 12s, 5.4 Mbps)"."""
+    size = os.path.getsize(path)
+    seconds = max(float(duration or 0), 0.001)
+    return (f"{path} ({size / 2 ** 20:.0f} MB, {int(seconds) // 60}m {int(seconds) % 60:02d}s, "
+            f"{size * 8 / seconds / 1e6:.1f} Mbps)")

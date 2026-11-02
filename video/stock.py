@@ -23,6 +23,8 @@ import requests
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 import config
+from studio.filenames import safe_filename
+from video import stock_scoring as scoring
 
 
 PIXABAY_SEARCH = "https://pixabay.com/api/"
@@ -70,6 +72,8 @@ class StockAsset:
     local_path: str = ""
     manual_review_required: bool = False
     review_reason: str = ""
+    title: str = ""
+    selection: dict = field(default_factory=dict)
 
     @property
     def unique_id(self) -> str:
@@ -250,6 +254,7 @@ class OpenverseProvider(_HttpProvider):
                 height=_as_int(item.get("height")),
                 asset_type="image",
                 tags=tags,
+                title=str(item.get("title") or ""),
                 upstream_provider=str(item.get("provider") or "openverse"),
                 upstream_source=str(item.get("source") or ""),
                 manual_review_required=needs_review,
@@ -272,6 +277,7 @@ class StockManager:
     cache_enabled: bool = field(default_factory=lambda: bool(getattr(config, "STOCK_CACHE_ENABLED", True)))
     license_log_enabled: bool = field(default_factory=lambda: bool(getattr(config, "STOCK_LICENSE_LOG_ENABLED", True)))
     local_asset_dir: str = field(default_factory=lambda: str(getattr(config, "STOCK_LOCAL_ASSET_DIR", "assets/stock_approved")))
+    character_names: tuple = ()
 
     def __post_init__(self):
         self.output_path = Path(self.output_dir)
@@ -289,6 +295,7 @@ class StockManager:
         self.manifest_assets: list[dict] = []
         self.section_status: list[dict] = []
         self.provider_search_counts: dict[str, int] = {}
+        self.rejections: list[dict] = []
         self._providers = {
             "pixabay": PixabayProvider(
                 getattr(config, "PIXABAY_API_KEY", ""), session=self.session, sleep_fn=self.sleep_fn
@@ -297,6 +304,8 @@ class StockManager:
         }
 
     def provider_order(self) -> list[str]:
+        if not enabled():
+            return []                 # STOCK_ENABLED is false: never query Pixabay/Openverse
         selected = self.provider_name.strip().lower()
         fallback = self.fallback_name.strip().lower()
         if selected == "openverse":
@@ -329,7 +338,11 @@ class StockManager:
                 self._record(asset, target, section_id, query)
                 return str(target)
 
-        attempts = _alternative_queries(query, topic_hint)
+        names = tuple(self.character_names)
+        character_shot = scoring.is_character_shot(query, names)
+        attempts = [*scoring.concise_queries(query, names), *FALLBACK_QUERIES]
+        min_relevance = float(getattr(config, "STOCK_MIN_RELEVANCE", 0.4))
+        rejected = 0
         for provider_name in self.provider_order():
             provider = self._providers[provider_name]
             for attempt_query in attempts:
@@ -341,6 +354,15 @@ class StockManager:
                 for asset in candidates:
                     if asset.unique_id in self.used_ids:
                         continue
+                    score = scoring.relevance(attempt_query, asset.tags, asset.title)
+                    reason = scoring.tag_rejection(asset.tags, asset.title,
+                                                   character_shot=character_shot)
+                    if reason is None and score < min_relevance:
+                        reason = f"relevance {score:.2f} < {min_relevance:g} for '{attempt_query}'"
+                    if reason:
+                        rejected += 1
+                        self._reject(asset, section_id, reason)
+                        continue
                     cached = self.asset_cache_dir / f"{asset.provider}_{_safe_id(asset.asset_id)}.jpg"
                     if self.cache_enabled:
                         if cached.exists() and self._normalize_file(cached, target, orientation):
@@ -351,12 +373,41 @@ class StockManager:
                             continue
                     elif not self._download_and_validate(asset, target, orientation):
                         continue
+                    image_checks = self._image_checks(target)
+                    if image_checks.get("rejection"):
+                        rejected += 1
+                        self._reject(asset, section_id, image_checks["rejection"])
+                        target.unlink(missing_ok=True)
+                        continue
                     if not self._accept_unique(asset, target):
                         target.unlink(missing_ok=True)
                         continue
+                    asset.selection = {
+                        "query_variant": attempt_query, "relevance": round(score, 2),
+                        "character_shot": character_shot, "rejected_candidates": rejected,
+                        **{key: value for key, value in image_checks.items() if key != "rejection"},
+                    }
                     self._record(asset, target, section_id, query)
                     return str(target)
         return None
+
+    def _image_checks(self, path: Path) -> dict:
+        """Tone and text checks on the normalised file; adds 'rejection' when it fails."""
+        try:
+            with Image.open(path) as image:
+                measured = scoring.tone(image)
+                measured["text_likelihood"] = scoring.text_likelihood(image)
+                reason = scoring.tone_rejection(measured) or scoring.text_rejection(image)
+        except (OSError, UnidentifiedImageError):
+            return {"rejection": "unreadable image"}
+        if reason:
+            measured["rejection"] = reason
+        return measured
+
+    def _reject(self, asset: StockAsset, section_id: int, reason: str):
+        if len(self.rejections) < 500:
+            self.rejections.append({"section_id": section_id, "asset": asset.unique_id,
+                                    "tags": asset.tags[:120], "reason": reason})
 
     def mark_section(self, section_id: int, paths: list[str], expected: int):
         if not paths:
@@ -384,8 +435,17 @@ class StockManager:
             "fallback_provider": self.fallback_name,
             "sections": self.section_status,
             "assets": self.manifest_assets if self.license_log_enabled else [],
+            "rejected_candidates": self.rejections,
         }
         path = self.output_path / "asset_manifest.json"
+        # Music and generated-image provenance are written by other stages; keep them.
+        try:
+            previous = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+        except (OSError, ValueError):
+            previous = {}
+        for key in ("music", "generated_assets", "synthetic_media"):
+            if key in previous:
+                manifest[key] = previous[key]
         path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
 
     def _search(self, provider: StockProvider, query: str, orientation: str) -> list[StockAsset]:
@@ -502,9 +562,19 @@ class StockManager:
         return None
 
 
+def enabled() -> bool:
+    """Stock imagery is opt-in (``STOCK_ENABLED``); off by default."""
+    return bool(getattr(config, "STOCK_ENABLED", False))
+
+
 def download_images(script: dict, output_dir: str) -> dict:
     """Download normalized local JPEGs while preserving renderer contracts."""
-    manager = StockManager(output_dir)
+    if not enabled():
+        print("   -> Stock imagery is disabled (STOCK_ENABLED=false); no Pixabay/Openverse request is made")
+        return {section["id"]: None for section in script.get("sections", [])}
+    names =tuple(str(character.get("name", "")) for character in script.get("characters", [])
+                  if isinstance(character, dict) and character.get("name"))
+    manager = StockManager(output_dir, character_names=names)
     is_shorts = script.get("video_type") == "shorts"
     orientation = "portrait" if is_shorts else "landscape"
     raw_title = str(script.get("title") or "")
@@ -548,19 +618,6 @@ def load_existing_images(script: dict, output_dir: str) -> dict:
     return image_map
 
 
-def _alternative_queries(query: str, topic_hint: str) -> list[str]:
-    query = " ".join(str(query).split())[:100]
-    enriched = f"{topic_hint} {query}".strip() if topic_hint and topic_hint.lower() not in query.lower() else query
-    simplified = " ".join(query.split()[:6])
-    candidates = [enriched, query, simplified, *FALLBACK_QUERIES]
-    unique = []
-    for candidate in candidates:
-        candidate = candidate.strip()
-        if candidate and candidate.lower() not in {item.lower() for item in unique}:
-            unique.append(candidate)
-    return unique[:4]
-
-
 def _usable_dimensions(width: int, height: int, orientation: str) -> bool:
     minimum = MIN_PORTRAIT if orientation == "portrait" else MIN_LANDSCAPE
     if width < minimum[0] or height < minimum[1]:
@@ -574,7 +631,7 @@ def _valid_key(value: str) -> bool:
 
 
 def _safe_id(value: str) -> str:
-    return re.sub(r"[^A-Za-z0-9_.-]", "_", str(value))[:80]
+    return safe_filename(re.sub(r"[^A-Za-z0-9_.-]", "_", str(value)), max_length=80)
 
 
 def _redact_credential_values(value: str) -> str:

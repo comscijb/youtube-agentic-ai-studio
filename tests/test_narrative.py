@@ -151,6 +151,7 @@ def editorial_assessment(findings=None, score=8):
 
 
 class NarrativeContractTests(unittest.TestCase):
+    @patch("agents.researcher._score_titles", new=lambda brief: None)   # scoring has its own tests
     def test_automatic_premise_generation_uses_psychological_theme(self):
         payload = story_brief()
         payload["premise_candidates"] = [
@@ -492,8 +493,9 @@ class NarrativeContractTests(unittest.TestCase):
             revised, attempts = scriptwriter._expand_underlength_scenes(
                 script, story_brief(), bible(), outline()
             )
-        self.assertEqual(generated.call_count, 2)
+        self.assertEqual(generated.call_count, 1)        # a valid shape is not repaired; it did not improve
         self.assertFalse(attempts[0]["success"])
+        self.assertIn("did not improve", attempts[0]["error"])
         self.assertEqual(revised["sections"], script["sections"])
 
     def test_confirmed_continuity_finding_is_evidence_backed_and_routed(self):

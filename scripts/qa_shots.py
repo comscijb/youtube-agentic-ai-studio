@@ -1,0 +1,124 @@
+"""Run the layered visual QA on existing shots, without regenerating them.
+
+Run:  python -m scripts.qa_shots                                   # configured layers (IMAGEGEN_QA_LAYERS)
+      python -m scripts.qa_shots --layers deterministic,local_vlm  # explicit layers
+      python -m scripts.qa_shots --gemini                          # Gemini answers the focused questions
+      python -m scripts.qa_shots --only s04                        # one scene (or a shot id, e.g. s04_02)
+      python -m scripts.qa_shots --backend gemini [--only s04_02]  # Gemini second opinion (advisory, stored apart)
+
+Layer 1 (CPU detectors) runs on every shot first; then ComfyUI's models are
+freed, the local VLM answers every focused question of the batch in one go,
+and is unloaded. Each result is stored on the shot (``qa``: verdict, issues
+with boxes, notes — shown on the GUI shot card) and in asset_manifest.json
+(``visual_qa``). Fix failed shots with generate_shots --fix-only or in the GUI.
+"""
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+from typing import Callable
+
+from agents import shot_list as shots_module
+from agents import visual_bible as vbible
+from agents.narrative import atomic_write_json, load_json
+from studio import projects
+from video import shot_generation as gen
+from video import visual_qa
+from video.qa import fixes
+from video.qa.layered import LayeredQA, configured_layers
+
+
+def run(output, *, only: str | None = None, layers: list[str] | None = None, qa: LayeredQA | None = None,
+        progress: Callable[[str], None] = print, mode: str | None = None, backend: str = "local",
+        shot_ids: list[str] | None = None) -> dict:
+    """``backend="gemini"``: a second opinion — Gemini answers the focused questions, the result is
+    stored as ``qa.second_opinion`` (advisory) and the local result is left as it is."""
+    output = Path(output)
+    vb = load_json(output / vbible.FILE_NAME) or {}
+    shot_list = load_json(output / shots_module.FILE_NAME) or {}
+    shots = shot_list.get("shots", [])
+    narration = shots_module.scene_narration(shots)
+    selected = [shot for shot in shots if not shot.get("reuse_of") and shot.get("image_path")
+                and (output / shot["image_path"]).is_file()
+                and (not only or only in (shot["scene_id"], shot["shot_id"]))
+                and (shot_ids is None or shot["shot_id"] in shot_ids)]
+    summary = {"checked": 0, "passed": 0, "failed": [], "skipped": 0, "edit": [], "regenerate": [], "hints": 0,
+               "second_opinions": 0,
+               "without_image": sum(1 for shot in shots if not shot.get("reuse_of") and not (
+                   shot.get("image_path") and (output / shot["image_path"]).is_file())
+                   and (not only or only in (shot["scene_id"], shot["shot_id"])))}
+    if not selected:
+        return summary
+    if qa is None:
+        from video.imagegen_comfyui import ComfyClient
+        if backend == "gemini":
+            qa = LayeredQA(["deterministic", "gemini"], progress=progress, mode="advisory")
+        else:
+            qa = LayeredQA(layers, comfy=ComfyClient(), progress=progress, mode=mode)
+    progress(f"   QA layers: {', '.join(qa.layers)} — layer 1 on {len(selected)} shot(s)…")
+    items = [(output / shot["image_path"],
+              visual_qa.expected_for(shot, vb, narration.get(shot.get("scene_id", ""), "")),
+              int((shot.get("qa") or {}).get("edits", 0))) for shot in selected]
+    pendings = [qa.prepare(*item) for item in items]
+    asked = sum(len(pending["questions"]) for pending in pendings)
+    if asked:
+        progress(f"   Layer 2: {asked} focused question(s)…")
+    qa.answer(pendings)
+    for shot, pending in zip(selected, pendings):
+        result = qa.finish(pending)
+        if backend == "gemini":
+            fixes.record_second_opinion(shot, result)
+            summary["checked"] += 1
+            summary["second_opinions"] += 1
+            continue
+        fixes.record_result(shot, result)
+        gen.update_provenance(output, shot["shot_id"], visual_qa=result)
+        summary["checked"] += 1
+        summary["hints"] += int(fixes.hinted(shot))
+        if result["status"] == "pass":
+            summary["passed"] += 1
+        elif result["status"] == "fail":
+            summary["failed"].append(shot["shot_id"])
+            summary[result["verdict"]].append(shot["shot_id"])
+            progress(f"   ⛔ {shot['shot_id']} → {result['verdict']}: {result['verdict_reason']}")
+        else:
+            summary["skipped"] += 1
+            progress(f"   ⚠ {shot['shot_id']}: {'; '.join(result['warnings'])}")
+    atomic_write_json(output / shots_module.FILE_NAME, shot_list)
+    return summary
+
+
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(description="Layered visual QA of existing shots (no regeneration).")
+    parser.add_argument("--output-dir", default=None, help="explicit folder (overrides the project)")
+    projects.add_argument(parser)
+    parser.add_argument("--only", help="scene id (s04) or shot id (s04_02)")
+    parser.add_argument("--layers", help="comma list of deterministic, local_vlm, gemini (default: IMAGEGEN_QA_LAYERS)")
+    parser.add_argument("--gemini", action="store_true", help="add Gemini vision as layer 3")
+    parser.add_argument("--backend", choices=("local", "gemini"), default="local",
+                        help="gemini: second opinion stored beside the local result (advisory, live)")
+    parser.add_argument("--mode", choices=("advisory", "auto"), default=None,
+                        help="which issues may stay blocking (default: IMAGEGEN_QA_MODE, advisory)")
+    args = parser.parse_args(argv)
+    output = projects.cli_output(args)
+    layers = configured_layers(args.layers, gemini=True if args.gemini else None)
+    summary = run(output, only=args.only, layers=layers, mode=args.mode, backend=args.backend)
+    if args.backend == "gemini":
+        print(f"Gemini second opinion: {summary['second_opinions']} shot(s); see the shot cards in the GUI.")
+        return 0
+    print(f"Visual QA: {summary['checked']} checked, {summary['passed']} passed, "
+          f"{len(summary['failed'])} failed ({len(summary['edit'])} to edit, "
+          f"{len(summary['regenerate'])} to regenerate), {summary['skipped']} skipped; "
+          f"{summary['hints']} with hints to review in the GUI.")
+    if summary["without_image"]:
+        print(f"{summary['without_image']} shot(s) of shot_list.json have no image yet, so they were not checked "
+              "(images on disk from an earlier shot list are not linked). Generate them with: "
+              "python -m scripts.generate_shots")
+    if summary["failed"]:
+        print("Fix them with: python -m scripts.generate_shots --fix-only (or in the GUI)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

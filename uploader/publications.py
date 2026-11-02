@@ -81,6 +81,7 @@ def build_record(video_id: str, run_dir, *, title: str = "", video_path: str | N
         "video_id": video_id,
         "url": f"https://www.youtube.com/watch?v={video_id}",
         "run_dir": str(run),
+        "project": (load_json(run / "project.json") or {}).get("slug"),
         "uploaded_at": _now(),
         "scheduled_publish_at": scheduled_publish_at,
         "title": title or script.get("title") or brief.get("video_title", ""),
@@ -103,8 +104,9 @@ def build_record(video_id: str, run_dir, *, title: str = "", video_path: str | N
     return record
 
 
-def record_upload(video_id: str, run_dir, *, path=None, **kwargs) -> dict:
-    """Write the pending record right after a successful upload (idempotent per video)."""
+def record_upload(video_id: str, run_dir, *, path=None, touch_project: bool = True, **kwargs) -> dict:
+    """Write the pending record right after a successful upload (idempotent per video). Shorts
+    (``touch_project=False``) never become the project's published video."""
     with _lock:
         ledger = load_ledger(path)
         existing = next((item for item in ledger["publications"]
@@ -114,7 +116,10 @@ def record_upload(video_id: str, run_dir, *, path=None, **kwargs) -> dict:
         record = build_record(video_id, run_dir, **kwargs)
         ledger["publications"].append(record)
         save_ledger(ledger, path)
-        return record
+    if touch_project:
+        from studio import projects
+        projects.touch(run_dir, published_video_id=video_id)
+    return record
 
 
 def banned_entry(record: dict) -> dict:
@@ -154,6 +159,7 @@ def sync_publications(service=None, *, path=None, interactive: bool = False) -> 
         ledger = load_ledger(path)
         pending = [item for item in ledger["publications"] if item.get("state") == PENDING]
         if not pending:
+            _archive_published([])               # still retry archives queued by an earlier sync
             return summary
         if service is None:
             from uploader.youtube import get_service
@@ -175,7 +181,8 @@ def sync_publications(service=None, *, path=None, interactive: bool = False) -> 
             if state == PUBLISHED:
                 record["state"] = PUBLISHED
                 record["published_at"] = checked_at
-                append_banned_entry(banned_entry(record))
+                if not record.get("parent_video_id"):      # a Short never bans its episode's topic
+                    append_banned_entry(banned_entry(record))
                 summary["published"].append(record["video_id"])
             elif state in (FAILED, REMOVED):
                 record["state"] = state
@@ -183,7 +190,20 @@ def sync_publications(service=None, *, path=None, interactive: bool = False) -> 
             else:
                 summary["pending"].append(record["video_id"])
         save_ledger(ledger, path)
+    published = [record.get("project") for record in pending
+                 if record.get("state") == PUBLISHED and not record.get("parent_video_id")]
+    summary["archive"] = _archive_published(published)
     return summary
+
+
+def _archive_published(slugs: list) -> dict | None:
+    """Archive newly published projects to the HDD (ARCHIVE_ON_PUBLISH); never raises."""
+    try:
+        from studio import archive
+        return archive.archive_after_publish([slug for slug in slugs if slug])
+    except Exception as exc:
+        print(f"   WARNING: archive after publication skipped ({exc.__class__.__name__}: {exc})")
+        return None
 
 
 def sync_publications_safely(**kwargs) -> dict | None:
@@ -206,11 +226,55 @@ def start_background_sync(interval_minutes: float | None = None) -> threading.Th
     stop = threading.Event()
 
     def loop():
+        from uploader import analytics
         while not stop.is_set():
             sync_publications_safely(interactive=False)
+            analytics.refresh_due_safely()            # Phase 3.6-E: at most every ANALYTICS_REFRESH_HOURS
             stop.wait(max(60.0, minutes * 60))
 
     thread = threading.Thread(target=loop, name="publication-sync", daemon=True)
     thread.stop_event = stop
     thread.start()
     return thread
+
+
+def _archived(record: dict, name: str, folder: str, archive_root) -> dict | None:
+    """``name`` from the run folder, else from the project's archive (``<root>/<slug>/<folder>/``)."""
+    found = load_json(Path(record.get("run_dir") or "") / name)
+    if found is None and record.get("project"):
+        if archive_root is None:
+            from studio import archive
+            archive_root = archive.root()
+        found = load_json(Path(archive_root) / record["project"] / folder / name)
+    return found
+
+
+def backfill_disclosure(path=None, *, archive_root=None, dry_run: bool = False) -> list[dict]:
+    """Phase 3.9-F: give older ledger records ``contains_synthetic_media`` and its reason, read from
+    the episode's (possibly archived) approval. Records that already have it are left alone; a
+    record whose approval cannot be found is reported, not guessed. Returns one row per record."""
+    from uploader import approval as approval_module
+    rows = []
+    with _lock:
+        ledger = load_ledger(path)
+        for record in ledger["publications"]:
+            row = {"video_id": record.get("video_id"), "kind": record.get("kind", "episode")}
+            if "contains_synthetic_media" in record:
+                rows.append({**row, "action": "kept", "value": record["contains_synthetic_media"],
+                             "reason": record.get("synthetic_disclosure_reason", "")})
+                continue
+            approved = _archived(record, approval_module.APPROVAL_FILE, "text", archive_root)
+            if not approved or "synthetic_disclosure" not in approved:
+                rows.append({**row, "action": "missing", "reason": "no approval with a disclosure decision found"})
+                continue
+            manifest = _archived(record, "asset_manifest.json", "manifests", archive_root)
+            rule = approval_module.disclosure_decision(record.get("run_dir") or ".", manifest=manifest or {})
+            value = bool(approved["synthetic_disclosure"])
+            reason = approved.get("synthetic_disclosure_reason") or (
+                rule["reason"] if manifest and rule["value"] == value else "reviewer decision at approval")
+            record["contains_synthetic_media"] = value
+            record["synthetic_disclosure_reason"] = f"backfilled from the approval: {reason}"
+            rows.append({**row, "action": "backfilled", "value": value, "reason": record["synthetic_disclosure_reason"]})
+        if not dry_run and any(row["action"] == "backfilled" for row in rows):
+            save_ledger(ledger, path)
+    return rows

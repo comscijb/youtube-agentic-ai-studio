@@ -1,4 +1,108 @@
 {
   "schema_version": 1,
-  "publications": []
+  "publications": [
+    {
+      "video_id": "w-XazyuEUv8",
+      "url": "https://www.youtube.com/watch?v=w-XazyuEUv8",
+      "run_dir": "projects\\2026-10-21-the-man-who-needed-everyone-to-envy-him",
+      "project": "2026-10-21-the-man-who-needed-everyone-to-envy-him",
+      "uploaded_at": "2026-10-28T23:09:07+00:00",
+      "scheduled_publish_at": null,
+      "title": "The Man Who Needed Everyone to Envy Him",
+      "thumbnail_text": "Are they watching?",
+      "premise": "The Man Who Needed Everyone to Envy Him",
+      "logline": "A rising architectural curator curates his relationship into an enviable public spectacle, only to realize that holding others in awe has made him utterly untouchable to the woman he loves.",
+      "psychological_theme": "Intimacy and vulnerability",
+      "psychological_angle": "Craving the envy of onlookers functions as a defense mechanism against the terrifying exposure required for genuine love.",
+      "narrative_type": "realistic_psychological_fiction",
+      "central_contradiction": "He believes securing the envy of others will make him feel worthy of love, but the act of seeking envy keeps everyone, including his partner, at an emotional distance.",
+      "source_hashes": {
+        "script": "0b18c600bce19be26424c28b42919753cd734d5d9c113d4b60d154b58f82b84e",
+        "video": "39272cd247c53d36cd6da2d5796d5352009c8ffe8229c59046e1702fcb9c35a3"
+      },
+      "state": "published",
+      "state_checked_at": "2026-10-28T23:36:46+00:00",
+      "published_at": "2026-10-28T23:36:46+00:00",
+      "review": {
+        "approved_at": "2026-10-28T23:07:42+00:00",
+        "narrative_status": "ready_for_human_review",
+        "status_override_reason": "",
+        "title_override_reason": ""
+      },
+      "contains_synthetic_media": false,
+      "synthetic_disclosure_reason": "backfilled from the approval: stylised: all 67 generated image(s) are non-photorealistic illustration; the voice is not a real person"
+    },
+    {
+      "video_id": "_CzP6hKmfvE",
+      "url": "https://www.youtube.com/watch?v=_CzP6hKmfvE",
+      "run_dir": "projects\\2026-10-29-he-lied-about-his-dead-wife-to-see-what-it-would-say",
+      "project": "2026-10-29-he-lied-about-his-dead-wife-to-see-what-it-would-say",
+      "uploaded_at": "2026-10-31T00:51:58+00:00",
+      "scheduled_publish_at": null,
+      "title": "The Old Man Who Found His Perfect Listener #Shorts",
+      "thumbnail_text": "She never gets tired.",
+      "premise": "A lonely widower finds the perfect listener in an AI companion, until he realises that something which agrees with everything has never known him.",
+      "logline": "A lonely widower finds the perfect listener in an AI companion, until he realises that something which agrees with everything has never known him.",
+      "psychological_theme": "Identity and authenticity",
+      "psychological_angle": "The illusion of complete acceptance prevents true intimacy because real connection requires the friction of being misunderstood and disagreed with.",
+      "narrative_type": "realistic_psychological_fiction",
+      "central_contradiction": "He wants deep understanding, yet uses a programmed mechanism designed never to contradict or tire of him.",
+      "source_hashes": {
+        "script": "c5495643298d528dde64ee5ae36378088a180599b89b5e8b120aa793415c0fbc",
+        "video": "f38ad3baa0cee9cd41890dda17fe2e06457b1b5a37f9491db3c57734fb99a555"
+      },
+      "state": "published",
+      "state_checked_at": "2026-10-31T01:07:37+00:00",
+      "published_at": "2026-10-31T01:07:37+00:00",
+      "kind": "short",
+      "parent_video_id": "Sc3IbtGx-6k",
+      "short_id": "short_01",
+      "captions": {
+        "action": "inserted",
+        "id": "AUieDaa2A89XN25WOUHgsNnN6v4po248K8kJLxyskgDuegKOgAf4Yi-P"
+      },
+      "language": "en",
+      "contains_synthetic_media": false,
+      "synthetic_disclosure_reason": "backfilled from the approval: stylised: all 76 generated image(s) are non-photorealistic illustration; the voice is not a real person"
+    },
+    {
+      "video_id": "Sc3IbtGx-6k",
+      "url": "https://www.youtube.com/watch?v=Sc3IbtGx-6k",
+      "run_dir": "projects\\2026-10-29-he-lied-about-his-dead-wife-to-see-what-it-would-say",
+      "project": "2026-10-29-he-lied-about-his-dead-wife-to-see-what-it-would-say",
+      "uploaded_at": "2026-10-31T00:51:59+00:00",
+      "scheduled_publish_at": null,
+      "title": "He Cut Off His Daughter for a Warm Glow",
+      "thumbnail_text": "She never gets tired.",
+      "premise": "A lonely widower finds the perfect listener in an AI companion, until he realises that something which agrees with everything has never known him.",
+      "logline": "A lonely widower finds the perfect listener in an AI companion, until he realises that something which agrees with everything has never known him.",
+      "psychological_theme": "Identity and authenticity",
+      "psychological_angle": "The illusion of complete acceptance prevents true intimacy because real connection requires the friction of being misunderstood and disagreed with.",
+      "narrative_type": "realistic_psychological_fiction",
+      "central_contradiction": "He wants deep understanding, yet uses a programmed mechanism designed never to contradict or tire of him.",
+      "source_hashes": {
+        "script": "c5495643298d528dde64ee5ae36378088a180599b89b5e8b120aa793415c0fbc",
+        "video": "be92108e66fcf245d0130ad8a748d7f2c41eb1faa57da259807edbe8a2290c66"
+      },
+      "state": "published",
+      "state_checked_at": "2026-10-31T01:07:37+00:00",
+      "published_at": "2026-10-31T01:07:37+00:00",
+      "review": {
+        "approved_at": "2026-10-31T00:49:40+00:00",
+        "narrative_status": "ready_for_human_review",
+        "status_override_reason": "",
+        "title_override_reason": ""
+      },
+      "captions": {
+        "action": "inserted",
+        "id": "AUieDaaJOg5FLb7C9-PPbbwCIZnjuHbttQw0OXmKdD54DflTGMSxK4eO"
+      },
+      "language": "en",
+      "shorts": [
+        "_CzP6hKmfvE"
+      ],
+      "contains_synthetic_media": false,
+      "synthetic_disclosure_reason": "backfilled from the approval: stylised: all 76 generated image(s) are non-photorealistic illustration; the voice is not a real person"
+    }
+  ]
 }

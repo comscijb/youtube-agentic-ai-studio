@@ -66,6 +66,7 @@ def main(argv=None) -> None:
         raise
     finally:
         print_timing_table(gemini_client.call_records(), time.monotonic() - started)
+        print("  " + gemini_client.usage_line())
     print(f"Benchmark saved in isolated directory: {destination}")
     print("No stock, TTS, music, rendering, upload, commit, or push was performed.")
 

@@ -1,0 +1,529 @@
+{
+  "version": 1,
+  "mode": "focused",
+  "created_at": "2026-10-28T12:25:36",
+  "project": "2026-10-21-the-man-who-needed-everyone-to-envy-him",
+  "fixture_confirmed_by_user": true,
+  "comfyui": "http://127.0.0.1:8188",
+  "findings": {
+    "text_generate": true,
+    "text_generate_inputs": {
+      "clip": "CLIP",
+      "prompt": "STRING",
+      "max_length": "INT",
+      "sampling_mode": "COMFY_DYNAMICCOMBO_V3",
+      "image": "IMAGE",
+      "video": "IMAGE",
+      "audio": "AUDIO",
+      "thinking": "BOOLEAN",
+      "use_default_template": "BOOLEAN",
+      "mtp": "COMBO",
+      "system_prompt": "STRING"
+    },
+    "text_generate_takes_image": true,
+    "sampling_modes": [
+      "on",
+      "off"
+    ],
+    "clip_loader_types": [
+      "stable_diffusion",
+      "stable_cascade",
+      "sd3",
+      "stable_audio",
+      "mochi",
+      "ltxv",
+      "pixart",
+      "cosmos",
+      "lumina2",
+      "wan",
+      "hidream",
+      "chroma",
+      "ace",
+      "omnigen2",
+      "qwen_image",
+      "hunyuan_image",
+      "flux2",
+      "ovis",
+      "longcat_image",
+      "cogvideox",
+      "lens",
+      "pixeldit",
+      "ideogram4",
+      "boogu",
+      "krea2",
+      "joyimage",
+      "mage",
+      "minimax",
+      "yue2",
+      "flux3",
+      "moss_image",
+      "fibo2"
+    ],
+    "clip_loader_has_device": true,
+    "text_encoders": [
+      "qwen3.5_9b_flux3_prompt_upsampler_w4a8.safetensors",
+      "qwen3vl_4b_int8_convrot.safetensors",
+      "qwen_3_4b.safetensors"
+    ],
+    "candidates": [
+      "qwen3vl_4b_int8_convrot.safetensors",
+      "qwen3.5_9b_flux3_prompt_upsampler_w4a8.safetensors",
+      "qwen_3_4b.safetensors"
+    ],
+    "preview_any": true,
+    "load_image": true,
+    "problems": []
+  },
+  "models": [
+    {
+      "model": "qwen3vl_4b_int8_convrot.safetensors",
+      "mode": "focused",
+      "clip_type": "flux3",
+      "attempts": [],
+      "results": [
+        {
+          "shot_id": "s09_04",
+          "raw": "{\"marker:0:black horn-rimmed glasses\": \"unclear\", \"injury:0\": \"unclear\", \"text\": \"unclear\"}",
+          "error": "",
+          "model_texts": {
+            "marker:0:black horn-rimmed glasses": " || retry: ",
+            "injury:0": "user || retry: user",
+            "text": " || retry: "
+          },
+          "answer": {
+            "people_count": 1,
+            "issues": [
+              {
+                "type": "missing_marker",
+                "severity": "advisory",
+                "box": null,
+                "target": "julian_vance",
+                "note": "black horn-rimmed glasses: unclear on the visible face(s)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "unstated_injury",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "blood, wounds or red marks the narration does not state (unclear)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "text",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "visible writing or a watermark (unclear)",
+                "source": "local_vlm"
+              }
+            ],
+            "verdict": ""
+          },
+          "seconds": 5.93,
+          "layer1_seconds": 1.23,
+          "questions": 3,
+          "detected_people": 1,
+          "vram_peak_mb": 6611.3
+        },
+        {
+          "shot_id": "s03_06",
+          "raw": "{\"gender:0\": \"unclear\", \"marker:0:black horn-rimmed glasses\": \"unclear\", \"gender:1\": \"unclear\", \"marker:1:black horn-rimmed glasses\": \"unclear\", \"injury:0\": \"unclear\", \"injury:1\": \"unclear\", \"text\": \"unclear\", \"same:0:1\": \"unclear\"}",
+          "error": "",
+          "model_texts": {
+            "gender:0": " || retry: ",
+            "marker:0:black horn-rimmed glasses": " || retry: ",
+            "gender:1": " || retry: ",
+            "marker:1:black horn-rimmed glasses": " || retry: ",
+            "injury:0": " || retry: ",
+            "injury:1": " || retry: ",
+            "text": " || retry: ",
+            "same:0:1": " || retry: "
+          },
+          "answer": {
+            "people_count": 2,
+            "issues": [
+              {
+                "type": "missing_marker",
+                "severity": "advisory",
+                "box": null,
+                "target": "julian_vance",
+                "note": "black horn-rimmed glasses: unclear on the visible face(s)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "unstated_injury",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "blood, wounds or red marks the narration does not state (unclear)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "unstated_injury",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "blood, wounds or red marks the narration does not state (unclear)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "text",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "visible writing or a watermark (unclear)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "duplicate_person",
+                "severity": "advisory",
+                "box": [
+                  0.5256,
+                  0.1283,
+                  0.774,
+                  0.9907
+                ],
+                "target": "",
+                "note": "two faces look like the same person (unclear)",
+                "source": "local_vlm"
+              }
+            ],
+            "verdict": ""
+          },
+          "seconds": 8.47,
+          "layer1_seconds": 0.43,
+          "questions": 8,
+          "detected_people": 2,
+          "vram_peak_mb": 6623.8
+        },
+        {
+          "shot_id": "s01_05",
+          "raw": "{\"marker:0:black horn-rimmed glasses\": \"unclear\", \"injury:0\": \"unclear\", \"text\": \"unclear\"}",
+          "error": "",
+          "model_texts": {
+            "marker:0:black horn-rimmed glasses": " || retry: ",
+            "injury:0": " || retry: ",
+            "text": " || retry: "
+          },
+          "answer": {
+            "people_count": 1,
+            "issues": [
+              {
+                "type": "missing_marker",
+                "severity": "advisory",
+                "box": null,
+                "target": "julian_vance",
+                "note": "black horn-rimmed glasses: unclear on the visible face(s)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "unstated_injury",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "blood, wounds or red marks the narration does not state (unclear)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "text",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "visible writing or a watermark (unclear)",
+                "source": "local_vlm"
+              }
+            ],
+            "verdict": ""
+          },
+          "seconds": 3.9,
+          "layer1_seconds": 0.4,
+          "questions": 3,
+          "detected_people": 1,
+          "vram_peak_mb": 6643.2
+        },
+        {
+          "shot_id": "s03_05",
+          "raw": "{\"injury:0\": \"unclear\", \"text\": \"unclear\"}",
+          "error": "",
+          "model_texts": {
+            "injury:0": " || retry: ",
+            "text": " || retry: "
+          },
+          "answer": {
+            "people_count": 1,
+            "issues": [
+              {
+                "type": "unstated_injury",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "blood, wounds or red marks the narration does not state (unclear)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "text",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "visible writing or a watermark (unclear)",
+                "source": "local_vlm"
+              }
+            ],
+            "verdict": ""
+          },
+          "seconds": 3.29,
+          "layer1_seconds": 0.41,
+          "questions": 2,
+          "detected_people": 1,
+          "vram_peak_mb": 6789.0
+        },
+        {
+          "shot_id": "s02_04",
+          "raw": "{\"marker:0:black horn-rimmed glasses\": \"unclear\", \"injury:0\": \"unclear\", \"text\": \"unclear\"}",
+          "error": "",
+          "model_texts": {
+            "marker:0:black horn-rimmed glasses": " || retry: ",
+            "injury:0": " || retry: ",
+            "text": " || retry: "
+          },
+          "answer": {
+            "people_count": 2,
+            "issues": [
+              {
+                "type": "extra_person",
+                "severity": "blocking",
+                "box": [
+                  0.78,
+                  0.3869,
+                  0.819,
+                  0.6515
+                ],
+                "target": "",
+                "note": "2 people detected, 1 expected",
+                "source": "deterministic"
+              },
+              {
+                "type": "missing_marker",
+                "severity": "advisory",
+                "box": null,
+                "target": "julian_vance",
+                "note": "black horn-rimmed glasses: unclear on the visible face(s)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "unstated_injury",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "blood, wounds or red marks the narration does not state (unclear)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "text",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "visible writing or a watermark (unclear)",
+                "source": "local_vlm"
+              }
+            ],
+            "verdict": ""
+          },
+          "seconds": 3.9,
+          "layer1_seconds": 0.39,
+          "questions": 3,
+          "detected_people": 2,
+          "vram_peak_mb": 6637.3
+        },
+        {
+          "shot_id": "s01_03",
+          "raw": "{\"injury:0\": \"unclear\", \"text\": \"unclear\"}",
+          "error": "",
+          "model_texts": {
+            "injury:0": " || retry: ",
+            "text": " || retry: "
+          },
+          "answer": {
+            "people_count": 2,
+            "issues": [
+              {
+                "type": "extra_person",
+                "severity": "blocking",
+                "box": [
+                  0.1442,
+                  0.4146,
+                  0.1549,
+                  0.4377
+                ],
+                "target": "",
+                "note": "2 people detected, 1 expected",
+                "source": "deterministic"
+              },
+              {
+                "type": "unstated_injury",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "blood, wounds or red marks the narration does not state (unclear)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "text",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "visible writing or a watermark (unclear)",
+                "source": "local_vlm"
+              }
+            ],
+            "verdict": ""
+          },
+          "seconds": 2.76,
+          "layer1_seconds": 0.4,
+          "questions": 2,
+          "detected_people": 2,
+          "vram_peak_mb": 6667.1
+        },
+        {
+          "shot_id": "s04_03",
+          "raw": "{\"marker:0:black horn-rimmed glasses\": \"unclear\", \"injury:0\": \"unclear\", \"text\": \"unclear\"}",
+          "error": "",
+          "model_texts": {
+            "marker:0:black horn-rimmed glasses": " || retry: ",
+            "injury:0": " || retry: ",
+            "text": " || retry: "
+          },
+          "answer": {
+            "people_count": 2,
+            "issues": [
+              {
+                "type": "duplicate_person",
+                "severity": "blocking",
+                "box": [
+                  0.6097,
+                  0.1513,
+                  0.8557,
+                  0.9928
+                ],
+                "target": "",
+                "note": "the same face appears twice (similarity 0.53); this is the smaller copy",
+                "source": "deterministic"
+              },
+              {
+                "type": "missing_marker",
+                "severity": "advisory",
+                "box": null,
+                "target": "julian_vance",
+                "note": "black horn-rimmed glasses: unclear on the visible face(s)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "unstated_injury",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "blood, wounds or red marks the narration does not state (unclear)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "text",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "visible writing or a watermark (unclear)",
+                "source": "local_vlm"
+              }
+            ],
+            "verdict": ""
+          },
+          "seconds": 3.88,
+          "layer1_seconds": 0.4,
+          "questions": 3,
+          "detected_people": 2,
+          "vram_peak_mb": 6635.1
+        },
+        {
+          "shot_id": "s08_02",
+          "raw": "{\"injury:0\": \"unclear\", \"text\": \"unclear\"}",
+          "error": "",
+          "model_texts": {
+            "injury:0": " || retry: ",
+            "text": " || retry: "
+          },
+          "answer": {
+            "people_count": 2,
+            "issues": [
+              {
+                "type": "extra_person",
+                "severity": "blocking",
+                "box": [
+                  0.8131,
+                  0.3325,
+                  0.8601,
+                  0.6347
+                ],
+                "target": "",
+                "note": "2 people detected, 1 expected",
+                "source": "deterministic"
+              },
+              {
+                "type": "unstated_injury",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "blood, wounds or red marks the narration does not state (unclear)",
+                "source": "local_vlm"
+              },
+              {
+                "type": "text",
+                "severity": "advisory",
+                "box": null,
+                "target": "",
+                "note": "visible writing or a watermark (unclear)",
+                "source": "local_vlm"
+              }
+            ],
+            "verdict": ""
+          },
+          "seconds": 2.85,
+          "layer1_seconds": 0.39,
+          "questions": 2,
+          "detected_people": 2,
+          "vram_peak_mb": 6667.0
+        }
+      ],
+      "swap": {
+        "klein_warmup_s": 3.56,
+        "unload_klein_s": 0.0,
+        "qa_load_and_run_s": 34.98,
+        "unload_qa_s": 0.0,
+        "reload_klein_s": 3.82,
+        "total_swap_s": 38.8
+      },
+      "metrics": {
+        "images": 8,
+        "valid_json_rate": 1.0,
+        "accuracy": {
+          "people_count": 0.25,
+          "duplicate_person": 0.625,
+          "missing_glasses": 0.625,
+          "unstated_mark": 0.875,
+          "extra_person": 0.75,
+          "text": 1.0
+        },
+        "box_iou_mean": 0.038,
+        "box_hits_iou_0_3": 1,
+        "boxes_expected": 13,
+        "seconds_per_image": 4.37,
+        "seconds_first_image": 5.93,
+        "vram_peak_mb": 6789.0,
+        "detector_person_recall": 0.667,
+        "layer1_seconds_per_image": 0.51,
+        "questions_per_image": 3.2,
+        "ocr": false
+      }
+    }
+  ],
+  "missing_images": []
+}

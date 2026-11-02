@@ -127,6 +127,7 @@ class ResearcherTitleTests(unittest.TestCase):
             saved = json.loads(Path(temp, "story_brief.json").read_text(encoding="utf-8"))
         return brief, saved, generated
 
+    @patch("agents.researcher._score_titles", new=lambda brief: None)   # scoring has its own tests
     def test_failed_titles_get_one_bounded_repair(self):
         payload = story_brief()
         payload.update(video_title="The Architecture of Regret",
@@ -145,6 +146,7 @@ class ResearcherTitleTests(unittest.TestCase):
         self.assertEqual(saved["title_review"]["status"], "passed")
         self.assertTrue(saved["title_review"]["repair_attempted"])
 
+    @patch("agents.researcher._score_titles", new=lambda brief: None)   # scoring has its own tests
     def test_titles_still_failing_mark_revision_required(self):
         payload = story_brief()
         payload.update(video_title="The Architecture of Regret", thumbnail_text_candidates=["x"])

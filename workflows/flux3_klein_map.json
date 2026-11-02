@@ -1,0 +1,77 @@
+{
+  "prompt": [
+    "4",
+    "text"
+  ],
+  "seed": [
+    "7",
+    "seed"
+  ],
+  "steps": [
+    "7",
+    "steps"
+  ],
+  "width": [
+    "44",
+    "width"
+  ],
+  "height": [
+    "44",
+    "height"
+  ],
+  "filename_prefix": [
+    "9",
+    "filename_prefix"
+  ],
+  "models": {
+    "unet": [
+      "1",
+      "unet_name"
+    ],
+    "text_encoder": [
+      "2",
+      "clip_name"
+    ],
+    "vae": [
+      "3",
+      "vae_name"
+    ]
+  },
+  "references": [
+    [
+      "11",
+      "image"
+    ],
+    [
+      "12",
+      "image"
+    ],
+    [
+      "13",
+      "image"
+    ],
+    [
+      "14",
+      "image"
+    ]
+  ],
+  "reference_input": [
+    "17",
+    "images.image{index}"
+  ],
+  "latent_input": [
+    "7",
+    "latent_image"
+  ],
+  "latent_sources": {
+    "reference": [
+      "17",
+      2
+    ],
+    "empty_16x9": [
+      "44",
+      0
+    ]
+  },
+  "output_node": "9"
+}

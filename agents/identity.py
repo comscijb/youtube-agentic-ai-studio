@@ -6,6 +6,8 @@ movements, craft rules and title policy are stated once.
 """
 from __future__ import annotations
 
+import re
+
 CHANNEL_PROMISE = (
     "Private Gravity is an English-language anthology of original cinematic fiction in which "
     "psychological and philosophical ideas emerge through character choice, consequence, image "
@@ -65,8 +67,15 @@ TYPE_A_MOVEMENTS = (
      "reveals something new — not merely suffering the expected consequence."),
 )
 
+STACKED_MODIFIER_RULE = (
+    "Avoid stacking two or more adjectives, or an adverb + adjective, on one noun for emphasis "
+    "(\"pure, unmitigated estrangement\", \"devastating, unhurried calm\"); prefer one precise "
+    "word or a concrete action; never write intensifier pairs."
+)
+
 CRAFT_RULES = (
     "Dramatize with direct, specific dialogue and subtext.",
+    STACKED_MODIFIER_RULE,
     "Vary rhythm between description, action, dialogue, plain observation and silence.",
     "Avoid repeating the same sensory vocabulary (an earlier draft overused glass, heavy, stone, "
     "polished, silence, shadow).",
@@ -104,3 +113,242 @@ def identity_block(narrative_type: str | None = None, *, include_movements: bool
                   for index, (key, text) in enumerate(TYPE_A_MOVEMENTS, 1)]
     lines += ["", "CRAFT RULES (all types):"] + [f"- {rule}" for rule in CRAFT_RULES]
     return "\n".join(lines)
+
+
+# ── Visual identity ─────────────────────────────────────────────────────────
+# Single source of truth for the image style. Bump STYLE_VERSION whenever the
+# wording changes: the style hash is part of every image cache key and of every
+# approved reference, so a new style never reuses old images.
+STYLE_VERSION = 2   # 2: full-bleed single image, stronger engraving dread (Phase 3.2.1)
+VISUAL_STYLES = ("dark_illustration", "cinematic_photo")
+STYLE_VARIANTS = {
+    "engraving": "scratchboard and engraved line work dominant, dense hatching and cross-hatching, "
+                 "minimal tonal wash; deep black negative space dominating most of the frame, a single "
+                 "small source of warm light, figures small within towering architecture unless the "
+                 "shot is a close-up, heavy shadows swallowing the edges of the room",
+    "charcoal_gouache": "painterly charcoal and dry-brush gouache masses, softer edges, visible "
+                        "dry-brush texture, little line work",
+    "hybrid": "engraved ink line work and cross-hatching laid over painterly charcoal and gouache "
+              "washes",
+}
+# Brand colours used by the illustration palette, by config.COLORS key.
+_PALETTE_ROLES = (
+    ("background", "Midnight Ink", "dominant"),
+    ("primary", "Fog Blue", "midtones"),
+    ("white", "Warm Ivory", "highlights"),
+)
+_ACCENT_ROLES = (("highlight", "Antique Gold"), ("accent", "Muted Copper"))
+_PUNCTUATION = ("red", "Dusty Crimson")
+
+DARK_ILLUSTRATION = {
+    "medium": "dark hand-drawn illustration: ink drawing with scratchboard and engraving-like "
+              "hatching and cross-hatching, charcoal and dry-brush gouache washes, visible paper "
+              "grain, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic",
+    # Worded positively: with zeroed negative conditioning, naming "monsters" or
+    # "creatures" here would invite them.
+    "atmosphere": "cosmic dread carried only by space and light: oppressive scale with small figures "
+                  "against vast rooms, towering doorways and endless staircases, deep pooled shadows, "
+                  "a single dominant light source, smoke and fog tendrils and shadows that suggest an "
+                  "unseen presence and stay formless, subtly wrong geometry (corridors too long, "
+                  "ceilings lost in darkness), stillness, isolation",
+    "people": "stylised but consistent faces with gaunt planes, long shadows and expressive hands",
+    "exclusions": ("tentacles", "monsters", "creatures", "eldritch beings", "giant eyes", "gore",
+                   "occult symbols", "text", "letters", "watermark", "signature", "photorealism",
+                   "3D render", "glossy CGI", "anime", "cartoon", "bright saturated colour"),
+}
+# The same atmosphere with no figure, person or presence in it: with zeroed negative conditioning,
+# naming figures (even "small figures") draws them. Used for location references, style anchors and
+# shots without characters; figures stay only in shots that have characters.
+FIGURE_FREE_ATMOSPHERE = ("cosmic dread carried only by space and light: oppressive scale of vast rooms, "
+                          "towering doorways and endless staircases, deep pooled shadows, a single dominant "
+                          "light source, smoke and fog tendrils and formless shadows, subtly wrong geometry "
+                          "(corridors too long, ceilings lost in darkness), stillness, isolation")
+_FIGURE_WORDS = re.compile(r"\b(?:figures?|people|persons?|faces?|presence|silhouettes?)\b", re.I)
+CINEMATIC_PHOTO = {
+    "medium": "cinematic still, low-key lighting, muted palette, 35 mm film grain, shallow depth of "
+              "field, photorealistic",
+    "exclusions": ("text", "letters", "watermark", "signature"),
+}
+
+
+def _hex(rgb) -> str:
+    return "#" + "".join(f"{int(channel):02X}" for channel in rgb)
+
+
+def _color(key: str) -> str:
+    import config
+    return _hex(getattr(config, "COLORS", {}).get(key, (0, 0, 0)))
+
+
+def visual_style() -> str:
+    import config
+    style = str(getattr(config, "VISUAL_STYLE", "dark_illustration"))
+    return style if style in VISUAL_STYLES else "dark_illustration"
+
+
+def style_variant() -> str:
+    import config
+    variant = str(getattr(config, "VISUAL_STYLE_VARIANT", "engraving"))
+    return variant if variant in STYLE_VARIANTS else "engraving"
+
+
+def is_illustration() -> bool:
+    return visual_style() == "dark_illustration"
+
+
+# Examples of the rare crimson accent. Phase 3.3 dropped "a wound" (it drew
+# injuries nobody wrote); the style hash still hashes the 3.2.1 wording so the
+# approved references and style anchors stay valid — this is prompt wording,
+# not a change of drawing style.
+CRIMSON_EXAMPLES = "wine, a ring, a scarf, a candle reflection"
+_HASHED_CRIMSON_EXAMPLES = "wine, a wound, a ring"
+
+
+def palette_text(crimson_examples: str = CRIMSON_EXAMPLES) -> str:
+    """Palette rule built from config.COLORS (hex values are never hard-coded here)."""
+    base = ", ".join(f"{name} {_color(key)} ({role})" for key, name, role in _PALETTE_ROLES)
+    accents = " or ".join(f"{name} {_color(key)}" for key, name in _ACCENT_ROLES)
+    key, name = _PUNCTUATION
+    return (f"near-monochrome duotone palette: {base}; a single warm accent per image, {accents}, "
+            f"only on the light source or the story's focal object; {name} {_color(key)} only for "
+            f"rare emotional punctuation ({crimson_examples})")
+
+
+def negative_terms(style: str | None = None) -> tuple:
+    style = style or visual_style()
+    return (DARK_ILLUSTRATION if style == "dark_illustration" else CINEMATIC_PHOTO)["exclusions"]
+
+
+def style_suffix(style: str | None = None, variant: str | None = None, *,
+                 crimson_examples: str = CRIMSON_EXAMPLES, figures: bool = True) -> str:
+    """Appended to every image prompt.
+
+    The FLUX graphs zero out the negative conditioning (cfg 1), so naming the
+    exclusions here would *invite* them ("tentacles" in a prompt tends to draw
+    tentacles). Exclusions are rules for the prompt writers (``image_prompt_rules``)
+    and are checked in code (``forbidden_terms``); the suffix stays positive.
+    """
+    style = style or visual_style()
+    if style == "cinematic_photo":
+        return f"{CINEMATIC_PHOTO['medium']}, no lettering, no watermark"
+    variant = variant or style_variant()
+    spec = DARK_ILLUSTRATION
+    if not figures:
+        technique = ", ".join(part for part in STYLE_VARIANTS[variant].split(", ") if not _FIGURE_WORDS.search(part))
+        return (f"{FULL_BLEED}. {spec['medium']}; {technique}. {FIGURE_FREE_ATMOSPHERE}. "
+                f"{palette_text(crimson_examples)}. Clean image without lettering or watermark.")
+    return (f"{FULL_BLEED}. {spec['medium']}; {STYLE_VARIANTS[variant]}. {spec['atmosphere']}. "
+            f"{spec['people']}. {palette_text(crimson_examples)}. Clean image without lettering or watermark.")
+
+
+def sheet_style_suffix(style: str | None = None, variant: str | None = None) -> str:
+    """Drawing technique only, for neutral character reference sheets (Phase 3.3.2).
+
+    No environment or atmosphere clauses (rooms, architecture, smoke, fog,
+    negative space): the reference must carry identity, not a pose or a setting.
+    Derived from the same spec, so it never changes the style hash.
+    """
+    style = style or visual_style()
+    if style == "cinematic_photo":
+        return "studio portrait photograph, soft even light, muted palette, 35 mm film grain, photorealistic"
+    variant = variant or style_variant()
+    medium = DARK_ILLUSTRATION["medium"].replace(", painterly smoke and fog", "")
+    technique = STYLE_VARIANTS[variant].split(";")[0]
+    return (f"{FULL_BLEED}. {medium}; {technique}. Stylised but consistent face with gaunt planes. "
+            f"{palette_text()}. Clean image without lettering or watermark.")
+
+
+# Every illustration is one picture covering the whole 16:9 frame (no paper
+# margins, no comic pages); phrased positively because the negative is zeroed.
+FULL_BLEED = ("single full-bleed illustration filling the entire frame edge to edge, ink and "
+              "hatching reaching every border")
+# Words that ask for page layouts; rejected in shot descriptions (not in the suffix,
+# which itself says "every border").
+# Only phrases that mean a page layout: bare "panel"/"border" are legitimate architecture and light.
+LAYOUT_TERMS = ("comic panel", "comic panels", "multiple panels", "panel layout", "split panel",
+                "split panels", "split-screen", "grid of images", "triptych", "diptych", "comic page",
+                "storyboard", "white border", "decorative border", "border around", "torn paper",
+                "paper edge", "frame around")
+CROWD_RULE = ("When a shot contains more than one person who is not a named character, give each a "
+              "clearly different age, build, posture and clothing; prefer a few distant, indistinct "
+              "figures in shadow over several detailed ones.")
+
+
+# Dread comes from light, shadow, scale and stillness — never from decay, dirt,
+# damage, injury or tears the screenplay does not state (Phase 3.3).
+ART_DIRECTION_RULE = (
+    "Dread comes only from light, shadow, scale and stillness — never from decay, dirt, damage or "
+    "injury unless the screenplay states it. Settings keep the social status the story gives them "
+    "(an expensive, minimal home stays immaculate: polished surfaces, precise objects, pristine "
+    "walls). No blood, wounds, scratches, bruises or injuries unless the narration states them. "
+    "Wardrobe, grooming and expression follow the scene's moment: a composed character looks "
+    "poised and well groomed, with tears only where the text has them. Only people the narration "
+    "places in the scene at that moment appear; when it places nobody else there, the named "
+    "characters are alone."
+)
+# Word families that need the narration's support; "full-bleed", "stainless",
+# "scratchboard", "crystal" and "rustic" deliberately do not match.
+UNSUPPORTED_FAMILIES = {
+    "injury": r"\b(?:blood\w*|bleed(?:s|ing)|wound(?:s|ed)?|scratch(?:es|ed)?|bruis\w*|injur\w*|gash\w*|cut on)\b",
+    "decay": r"\b(?:grim(?:e|y)|decay\w*|rot|rott\w*|(?<!tear-)stain(?:s|ed|ing)?|rust(?:y|ed|ing)?|crumbl\w*|"
+             r"peeling|dilapidated|derelict|ruin\w*|dirty|filth\w*|squalid|neglected|mou?ldy|mildew\w*)\b",
+    # Broad on purpose: "her face blotched and wet", "she choked out" are crying too.
+    "tears": r"\b(?:tear-stained|tearful|teary|tears?(?!-free)|cry(?:ing)?|cries|cried|weep\w*|wept|sob\w*|"
+             r"choked|choking|blotched|wet\s+(?:face|cheeks|eyes|lashes)|"
+             r"(?:face|cheeks|eyes)\s+(?:\w+\s+){0,3}wet)\b",
+}
+
+
+def unsupported_terms(text: str, narration: str) -> list[str]:
+    """Injury, decay and tears words in ``text`` whose family the narration never mentions."""
+    import re
+    lowered, source = str(text or "").lower(), str(narration or "").lower()
+    found = []
+    for pattern in UNSUPPORTED_FAMILIES.values():
+        if re.search(pattern, source):
+            continue
+        found += [match.group(0) for match in re.finditer(pattern, lowered)
+                  if match.group(0) not in found]
+    return found
+
+
+def layout_terms(text: str) -> list[str]:
+    """Page-layout requests in a shot description (borders, panels, storyboard...)."""
+    import re
+    lowered = str(text or "").lower()
+    return [term for term in LAYOUT_TERMS if re.search(rf"\b{re.escape(term)}\b", lowered)]
+
+
+def image_prompt_rules(style: str | None = None) -> str:
+    """Rules for Gemini when it writes visual descriptions and shot actions."""
+    style = style or visual_style()
+    if style == "cinematic_photo":
+        return "Describe photographic, realistic scenes. Never include text, signs or screens with legible writing."
+    return ("Describe scenes for a dark hand-drawn illustration with cosmic dread but NO creatures: "
+            "suggest a presence only through shadow, fog, scale and wrong geometry. Never mention or "
+            "imply: " + ", ".join(DARK_ILLUSTRATION["exclusions"]) + ". Never include text, signs or "
+            "screens with legible writing. Each image is ONE single full-frame picture: never request "
+            "comic panels, page layouts, borders around the image, paper edges or multiple views. "
+            + CROWD_RULE + " " + ART_DIRECTION_RULE)
+
+
+def forbidden_terms(text: str, style: str | None = None) -> list[str]:
+    """Excluded subjects that slipped into a prompt (checked before generation)."""
+    import re
+    lowered = str(text or "").lower()
+    terms = [term for term in negative_terms(style)
+             if term not in {"text", "letters", "photorealism", "bright saturated colour"}]
+    return [term for term in terms if re.search(rf"\b{re.escape(term.lower())}\b", lowered)]
+
+
+def image_noun(style: str | None = None) -> str:
+    """'illustration' or 'photograph' for the generation-request voice."""
+    return "photograph" if (style or visual_style()) == "cinematic_photo" else "illustration"
+
+
+def style_hash(style: str | None = None, variant: str | None = None) -> str:
+    import hashlib
+    style = style or visual_style()
+    payload = f"{STYLE_VERSION}|{style}|{variant or style_variant() if style == 'dark_illustration' else ''}|" \
+              f"{style_suffix(style, variant, crimson_examples=_HASHED_CRIMSON_EXAMPLES)}"
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]

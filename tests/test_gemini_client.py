@@ -145,9 +145,9 @@ class GeminiClientTests(unittest.TestCase):
             401: ("invalid_credentials", False),
             403: ("permission_denied", False),
             404: ("model_unavailable", True),
-            429: ("quota_exhausted", True),
+            429: ("rate_limited", True),
             500: ("temporary_server", True),
-            503: ("temporary_server", True),
+            503: ("overloaded", True),
         }
         for code, (category, fallback) in expected.items():
             with self.subTest(code=code):
@@ -158,7 +158,7 @@ class GeminiClientTests(unittest.TestCase):
     def test_transient_failures_have_bounded_fallback(self):
         models = FakeModels(
             available=[model(name) for name in gc.MODEL_CANDIDATES],
-            generation=[api_error(503), api_error(503), response("must not be reached")],
+            generation=[api_error(500), api_error(500), response("must not be reached")],
         )
         with patch.object(gc, "_get_client", return_value=FakeClient(models)):
             with self.assertRaises(gc.GeminiGenerationError):
@@ -189,7 +189,7 @@ class GeminiClientTests(unittest.TestCase):
         self.assertEqual(len(models.generate_calls), 1)
 
     def test_model_discovery_failure_is_actionable(self):
-        fake = FakeClient(FakeModels(list_error=api_error(503)))
+        fake = FakeClient(FakeModels(list_error=api_error(500)))
         with self.assertRaises(gc.GeminiGenerationError) as caught:
             gc.discover_models(fake, force=True)
         self.assertEqual(caught.exception.info.category, "temporary_server")

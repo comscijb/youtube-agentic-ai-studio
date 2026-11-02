@@ -13,6 +13,7 @@ build/
 # ── Virtual environments ─────────────────
 venv/
 .venv/
+.venv-tts/
 env/
 .env/
 ENV/
@@ -28,6 +29,7 @@ youtube_token.pickle
 # ── Generated output — large files ───────
 output/
 output/images/
+projects/
 *.mp4
 *.mp3
 *.wav
@@ -35,6 +37,8 @@ output/images/
 *.jpeg
 *.png
 !docs/screenshots/*.png    # allow docs screenshots
+assets/film/               # film-look dust layers, rendered once from a fixed seed (Phase 3.8-D)
+assets/ambient/            # ambient overlay loops, generated once (Phase 3.9-B)
 
 # ── OS junk ──────────────────────────────
 .DS_Store
@@ -56,3 +60,9 @@ config.py
 client_secret.json
 # ── Stage diagnostics (raw model responses) ──
 debug/
+
+# Local QA detector models (Phase 3.5, downloaded from opencv_zoo)
+models/
+
+# YouTube Analytics cache (Phase 3.6-E)
+data/analytics/

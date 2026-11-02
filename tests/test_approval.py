@@ -12,6 +12,7 @@ from agents.narrative import atomic_write_json, load_json, validate_story_brief
 from tests.test_narrative import story_brief
 from tests.test_publications import FakeService
 from uploader import approval, publications, youtube
+from tests.style_isolation import setUpModule, tearDownModule  # noqa: F401
 
 CHECKLIST = {key: True for key in approval.CHECKLIST}
 GOOD_TITLE = "He Waited Twenty Years to Say It"
@@ -80,7 +81,7 @@ class ApprovalGateTests(GateTestCase):
         self.assertTrue(stored["approved_at"])
         self.assertEqual(set(stored["checklist"]), set(approval.CHECKLIST))
         self.assertEqual(set(stored["bindings"]),
-                         {"script", "video", "title", "description", "tags", "thumbnail"})
+                         {"script", "video", "title", "description", "tags", "thumbnail", "shorts"})
         service = FakeService(inserted_id="vidapprov1")
         record = self.upload(service)
         self.assertEqual(len(service.videos().insert_calls), 1)
@@ -167,6 +168,39 @@ class ApprovalGateTests(GateTestCase):
         self.assertFalse(summary["approval_valid"])
 
 
+class SyntheticDisclosureTests(GateTestCase):
+    def mark_synthetic(self):
+        manifest = load_json(self.run / "asset_manifest.json")
+        manifest.update({"synthetic_media": True, "generated_assets": [
+            {"job_id": "s01_01", "provider": "comfyui", "synthetic": True}]})
+        atomic_write_json(self.run / "asset_manifest.json", manifest)
+
+    def test_stock_only_run_keeps_base_checklist_and_flag_false(self):
+        self.assertNotIn("synthetic_media_disclosed", approval.checklist_for(self.run))
+        self.approve()
+        service = FakeService(inserted_id="vidplain01")
+        self.upload(service)
+        self.assertFalse(service.videos().insert_calls[0]["body"]["status"]["containsSyntheticMedia"])
+
+    def test_generated_images_require_disclosure_item_and_set_the_flag(self):
+        self.mark_synthetic()
+        summary = approval.review_summary(self.run, **self.meta)
+        self.assertTrue(summary["synthetic_media"])
+        self.assertIn("synthetic_media_disclosed", summary["checklist"])
+        with self.assertRaises(approval.UploadNotApproved) as caught:
+            self.approve()                                   # base checklist only
+        self.assertIn("synthetic_media_disclosed", str(caught.exception))
+        self.approve(checklist={**CHECKLIST, "synthetic_media_disclosed": True})
+        service = FakeService(inserted_id="vidsynth01")
+        self.upload(service)
+        self.assertTrue(service.videos().insert_calls[0]["body"]["status"]["containsSyntheticMedia"])
+
+    def test_old_approval_is_invalid_once_synthetic_images_are_added(self):
+        self.approve()
+        self.mark_synthetic()
+        self.assertTrue(approval.check_approval(self.run, **self.meta))
+
+
 class GuiGateTests(GateTestCase):
     def setUp(self):
         super().setUp()
@@ -229,8 +263,9 @@ class PipelineDashboardTests(GateTestCase):
     def test_pipeline_description_matches_upload(self):
         script = {"title": GOOD_TITLE, "description": "Story.", "tags": ["a", "b"]}
         description = youtube.build_upload_description(script)
-        self.assertIn("#a #b", description)
+        self.assertIn("#PrivateGravity #A #B", description)              # 2-3 hashtags, at the end (3.6-C)
         self.assertIn(config.CHANNEL_NAME, description)
+        self.assertIn("Tell us in the comments.", description)
 
 
 if __name__ == "__main__":

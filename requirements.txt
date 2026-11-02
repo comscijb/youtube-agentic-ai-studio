@@ -22,3 +22,7 @@ flask>=3.0.0
 google-api-python-client>=2.100.0
 google-auth-oauthlib>=1.1.0
 google-auth-httplib2>=0.1.0
+
+# Local visual QA, layer 1 (Phase 3.5): person/face detectors on the CPU.
+# ONNX models from opencv_zoo go in models/qa/ (not in git): YuNet, YOLOX-s, SFace.
+opencv-python-headless==4.11.0.86

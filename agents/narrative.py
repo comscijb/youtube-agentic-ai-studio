@@ -150,6 +150,59 @@ def write_debug_artifact(run_dir, stage: str, sections: dict, secrets=()) -> Pat
         return None
 
 
+MOJIBAKE_MARKERS = ("â€", "Ã©", "Ã", "â€™", "â€œ", "â€”")
+# A UTF-8 lead byte decoded as cp1252 followed by 1-3 continuation bytes
+# decoded the same way ("â€™" for "’", "Ã©" for "é").
+_CP1252_CONTINUATION = (
+    "\u0080-¿ŒœŠšŸŽžƒˆ˜"
+    "–—‘’‚“”„†‡•…"
+    "‰‹›€™"
+)
+_MOJIBAKE_RUN = re.compile(f"[Â-ô][{_CP1252_CONTINUATION}]{{1,3}}")
+
+
+class MojibakeError(ValueError):
+    """Narration contains UTF-8 text that was decoded with the wrong codec."""
+
+
+def has_mojibake(text) -> bool:
+    return any(marker in str(text or "") for marker in MOJIBAKE_MARKERS)
+
+
+def repair_mojibake(text: str) -> str:
+    """Undo cp1252-mis-decoded UTF-8 run by run; leave anything else untouched."""
+    def to_byte(char: str) -> bytes:
+        # Bytes undefined in cp1252 (0x81, 0x8D, 0x8F, 0x90, 0x9D) survive
+        # Windows decoding as the same-numbered control characters.
+        return bytes([ord(char)]) if ord(char) < 256 else char.encode("cp1252")
+
+    def fix(match):
+        try:
+            return b"".join(to_byte(char) for char in match.group()).decode("utf-8")
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            return match.group()
+    return _MOJIBAKE_RUN.sub(fix, str(text))
+
+
+def assert_no_mojibake(script: dict, stage: str = "narration") -> None:
+    """Stop before TTS or caption rendering when narration text is mis-decoded."""
+    bad = []
+    for scene in script.get("sections", []):
+        for field in ("narration", "caption_text", "on_screen_text", "title"):
+            value = scene.get(field)
+            if has_mojibake(value):
+                marker = next(m for m in MOJIBAKE_MARKERS if m in value)
+                at = value.index(marker)
+                bad.append(f"scene {scene.get('id')} {field}: ...{value[max(0, at - 20):at + 12]}...")
+                break
+    if bad:
+        raise MojibakeError(
+            f"Mis-decoded text (mojibake) found before {stage}; it would be spoken and captioned "
+            "incorrectly. " + "; ".join(bad)
+            + ". Repair with: python -m scripts.repair_text_encoding (dry run first)."
+        )
+
+
 def stable_hash(value) -> str:
     encoded = json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
@@ -633,6 +686,92 @@ def validate_script(script: dict, character_bible: dict | None = None,
     return script
 
 
+STYLE_INTENSIFIERS = (
+    "utterly", "unmitigated", "unadulterated", "absolute", "sheer", "devastating", "profound",
+    "immaculate", "impeccable",
+)
+_INTENSIFYING_ADVERBS = {
+    "utterly", "profoundly", "deeply", "impossibly", "unbearably", "achingly", "perfectly",
+    "completely", "absolutely", "entirely", "terribly", "infinitely", "unspeakably",
+}
+# A stacked pair must follow a determiner or preposition ("with pure, unmitigated
+# estrangement"); this keeps clauses such as "She turned, nodding slowly" out.
+_MODIFIER_LEADS = {
+    "a", "an", "the", "his", "her", "their", "its", "my", "your", "our", "with", "of", "in",
+    "into", "to", "from", "by", "for", "at", "on", "such", "this", "that", "some", "no", "and",
+    "was", "is", "were", "only", "but",
+}
+_COMMON_ADJECTIVES = {
+    "pure", "cold", "quiet", "soft", "dark", "bright", "deep", "sharp", "raw", "bare", "thin",
+    "heavy", "faint", "warm", "calm", "still", "sweet", "bitter", "harsh", "gentle", "cruel",
+    "empty", "hollow", "slow", "steady", "perfect", "total", "complete", "utter", "vast",
+    "grim", "stark", "pale", "clean", "smooth", "tight", "brittle", "dull", "fierce",
+}
+_NOT_NOUNS = {
+    "and", "or", "but", "as", "to", "the", "a", "an", "of", "in", "on", "with", "that", "than",
+    "then", "he", "she", "they", "it", "his", "her", "their", "was", "is", "were",
+}
+_ADJECTIVE_SUFFIX = re.compile(r"(ful|less|ous|ive|al|ed|ing|ic|ent|ant|able|ible|ish|ary)$")
+# Lookaheads so overlapping candidates ("with sorrow, but with pure, ...") are all seen.
+_STACKED_PAIR = re.compile(r"(?=\b([a-z']+)\s+([a-z'-]+),\s+([a-z'-]+)\s+([a-z'-]+)\b)")
+_ADVERB_STACK = re.compile(r"(?=\b([a-z]+ly)\s+([a-z'-]+)\s+([a-z'-]+)\b)")
+_INTENSIFIER = re.compile(r"\b(" + "|".join(STYLE_INTENSIFIERS) + r")\b")
+
+
+def _adjective_like(word: str) -> bool:
+    return (word in _COMMON_ADJECTIVES or word in STYLE_INTENSIFIERS
+            or (len(word) > 4 and not word.endswith("ly") and bool(_ADJECTIVE_SUFFIX.search(word))))
+
+
+def _noun_like(word: str) -> bool:
+    return word not in _NOT_NOUNS and not word.endswith("ly")
+
+
+def stacked_modifier_lint(sections: list[dict], threshold: int | None = None) -> dict:
+    """Count stacked modifiers and intensifiers per scene (warning-level only)."""
+    if threshold is None:
+        try:
+            import config
+            threshold = int(getattr(config, "NARRATIVE_STYLE_LINT_THRESHOLD", 3))
+        except ImportError:  # pragma: no cover
+            threshold = 3
+    per_scene, examples, total = {}, [], 0
+    for scene in sections:
+        text = str(scene.get("narration", "")).lower()
+        spans, found = [], []
+        for match in _STACKED_PAIR.finditer(text):
+            lead, first, second, noun = match.groups()
+            if (lead in _MODIFIER_LEADS and _adjective_like(first) and _adjective_like(second)
+                    and _noun_like(noun)):
+                spans.append(match.span(2))
+                found.append(f"{first}, {second} {noun}")
+        for match in _ADVERB_STACK.finditer(text):
+            adverb, adjective, noun = match.groups()
+            if adverb in _INTENSIFYING_ADVERBS and _adjective_like(adjective) and _noun_like(noun):
+                spans.append(match.span(1))
+                found.append(f"{adverb} {adjective} {noun}")
+        stacked = len(found)
+        intensifiers = 0
+        for match in _INTENSIFIER.finditer(text):
+            covered = any(start <= match.start() < end + 40 for start, end in spans)
+            if not covered:
+                intensifiers += 1
+                found.append(match.group(1))
+        count = stacked + intensifiers
+        total += count
+        examples += [f"scene {scene.get('id')}: {item}" for item in found]
+        per_scene[str(scene.get("id"))] = {
+            "stacked_modifiers": stacked, "intensifiers": intensifiers, "total": count,
+            "examples": found[:5],
+        }
+    return {"total": total, "threshold": threshold, "per_scene": per_scene,
+            "examples": examples[:10]}
+
+
+# Over-target scenes become a major issue only past this ratio (or when the total is out of range).
+OVER_BUDGET_MAJOR_RATIO = 1.30
+
+
 def missing_arc_movements(outline: dict | None, narrative_type: str | None) -> list[str]:
     """Type A movements no scene declares; empty for B/C or outlines predating the field."""
     if narrative_type != TYPE_A or not isinstance(outline, dict):
@@ -664,6 +803,7 @@ def deterministic_review(script: dict, target_duration_minutes: float,
     warnings = []
     blocking_issues = []
     major_issues = []
+    minor_issues = []
     proposed_corrections = []
 
     plan_by_id = {}
@@ -709,12 +849,19 @@ def deterministic_review(script: dict, target_duration_minutes: float,
                 f"Scene {scene.get('id')} '{scene.get('title', '')}' is {abs(deficit)} words "
                 f"{direction} its {target}-word target ({actual}/{target}; {ratio:.1%})."
             )
-            major_issues.append({
-                "severity": "major", "issue_type": "scene_word_budget",
+            # Under-development always matters. A slightly long scene inside a total
+            # that is within range is a pacing note, not a revision trigger.
+            proportionate = (deficit < 0 and not is_shorts and ratio <= OVER_BUDGET_MAJOR_RATIO
+                             and total_min <= total_ratio <= total_max)
+            issue = {
+                "severity": "minor" if proportionate else "major", "issue_type": "scene_word_budget",
                 "scene_ids": [scene.get("id")], "claim": message,
                 "evidence": [f"actual={actual}", f"target={target}", f"ratio={ratio:.4f}"],
-                "recommendation": "Revise this scene with substantive dramatic action; do not pad it.",
-            })
+                "recommendation": ("Consider tightening this scene if it drags when read aloud."
+                                   if proportionate else
+                                   "Revise this scene with substantive dramatic action; do not pad it."),
+            }
+            (minor_issues if proportionate else major_issues).append(issue)
             proposed_corrections.append({
                 "scene_id": scene.get("id"), "action": "expand" if deficit > 0 else "tighten",
                 "word_delta": abs(deficit), "preserve": ["identity", "causality", "continuity"],
@@ -773,6 +920,18 @@ def deterministic_review(script: dict, target_duration_minutes: float,
         warnings.append("Possible motif overuse: " + ", ".join(
             f"{term} ({count})" for term, count in repeated_terms.items()
         ))
+    style_lint = stacked_modifier_lint(sections)
+    if style_lint["total"] > style_lint["threshold"]:
+        issue = {
+            "severity": "minor", "issue_type": "style",
+            "scene_ids": [int(sid) for sid, item in style_lint["per_scene"].items() if item["total"]],
+            "claim": (f"{style_lint['total']} stacked modifiers or intensifiers "
+                      f"(threshold {style_lint['threshold']}) read badly aloud."),
+            "evidence": style_lint["examples"],
+            "recommendation": "Keep one precise word or replace the emphasis with a concrete action.",
+        }
+        minor_issues.append(issue)
+        warnings.append(issue["claim"])
 
     narrative_type = script.get("narrative_type")
     missing_movements = missing_arc_movements(outline, narrative_type)
@@ -835,6 +994,8 @@ def deterministic_review(script: dict, target_duration_minutes: float,
             "total_word_budget": total_min <= total_ratio <= total_max,
             "scene_word_budgets": all(item["status"] == "within_target" for item in scene_budgets),
         },
+        "minor_issues": minor_issues,
+        "style_lint": style_lint,
         "warnings": warnings,
         "editorial_assessment": None,
         "editorial_validation_complete": False,
@@ -1133,8 +1294,88 @@ def validate_editorial_assessment(value: dict, narrative_type: str | None = None
     return value
 
 
-def merge_editorial_review(deterministic: dict, assessment: dict | None) -> dict:
+_DURATION_TERMS = re.compile(r"duration|word count|words|runtime|length|minutes|wpm", re.I)
+_NUMBER = re.compile(r"\d")
+_WORD_COUNT = re.compile(r"(\d[\d,]*)\s+(?:narrated\s+|spoken\s+)?words?\b", re.I)
+_SCENE_COUNT = re.compile(r"(\d+)\s+scenes\b", re.I)
+_AGE = re.compile(r"\b(?:aged?\s+(\d{1,3})|(\d{1,3})[- ]years?[- ]old)\b", re.I)
+# Word counts below this are passage-level ("a 40-word speech") and cannot be
+# checked against scene or episode totals.
+_MIN_VERIFIABLE_WORD_COUNT = 100
+
+
+def _finding_text(finding: dict) -> str:
+    evidence = finding.get("evidence") or []
+    return " ".join([str(finding.get("claim", ""))] + [str(item) for item in evidence])
+
+
+def _known_word_counts(deterministic: dict) -> set[int]:
+    counts = {deterministic.get("word_count"), deterministic.get("target_word_count")}
+    for budget in deterministic.get("scene_budgets") or []:
+        counts.update({budget.get("actual_words"), budget.get("target_words")})
+    return {value for value in counts if isinstance(value, int)}
+
+
+def _bible_ages(bible: dict | None) -> dict[str, int]:
+    ages = {}
+    for character in (bible or {}).get("characters") or []:
+        match = re.search(r"\d{1,3}", str(character.get("age", "")))
+        if match and character.get("name"):
+            ages[str(character["name"])] = int(match.group())
+    return ages
+
+
+def screen_editorial_findings(findings: list[dict], deterministic: dict,
+                              bible: dict | None = None) -> tuple[list[dict], list[dict]]:
+    """Split editorial findings into kept and discarded.
+
+    LLM reviewers cannot count words: duration and word-count verdicts belong
+    to the deterministic report (``deterministic_owner``). Remaining numeric
+    claims about words, scenes or ages are checked against the artifacts and
+    dropped when contradicted (``contradicted_by_artifacts``).
+    """
+    kept, discarded = [], []
+    known = _known_word_counts(deterministic)
+    scene_count = deterministic.get("scene_count")
+    ages = _bible_ages(bible)
+    for finding in findings:
+        claim = str(finding.get("claim", ""))
+        if (_DURATION_TERMS.search(str(finding.get("issue_type", "")))
+                or (_NUMBER.search(claim) and _DURATION_TERMS.search(claim))):
+            discarded.append({**finding, "reason": "deterministic_owner", "verified_value": {
+                "word_count": deterministic.get("word_count"),
+                "target_word_count": deterministic.get("target_word_count"),
+                "estimated_narration_minutes": deterministic.get("estimated_narration_minutes"),
+            }})
+            continue
+        text = _finding_text(finding)
+        contradiction = None
+        words = [int(value.replace(",", "")) for value in _WORD_COUNT.findall(text)]
+        words = [value for value in words if value >= _MIN_VERIFIABLE_WORD_COUNT]
+        if words and not any(abs(value - count) <= max(2, count * .02)
+                              for value in words for count in known):
+            contradiction = {"asserted_word_counts": words, "word_count": deterministic.get("word_count")}
+        scenes = [int(value) for value in _SCENE_COUNT.findall(text)]
+        if contradiction is None and isinstance(scene_count, int) and any(
+                value > scene_count for value in scenes):
+            contradiction = {"asserted_scene_counts": scenes, "scene_count": scene_count}
+        asserted_ages = [int(a or b) for a, b in _AGE.findall(text)]
+        named = {name: age for name, age in ages.items()
+                 if name in text or name.split()[0] in text}
+        if contradiction is None and asserted_ages and named and not set(asserted_ages) & set(named.values()):
+            contradiction = {"asserted_ages": asserted_ages, "bible_ages": named}
+        if contradiction:
+            discarded.append({**finding, "reason": "contradicted_by_artifacts",
+                              "verified_value": contradiction})
+        else:
+            kept.append(finding)
+    return kept, discarded
+
+
+def merge_editorial_review(deterministic: dict, assessment: dict | None,
+                           bible: dict | None = None) -> dict:
     merged = deepcopy(deterministic)
+    merged.setdefault("discarded_editorial_findings", [])
     if assessment is None:
         merged["status"] = (
             merged["status"] if merged["status"] in ("structurally_invalid", "revision_required")
@@ -1145,7 +1386,8 @@ def merge_editorial_review(deterministic: dict, assessment: dict | None) -> dict
     assessment = validate_editorial_assessment(assessment, merged.get("narrative_type"))
     merged["editorial_assessment"] = assessment
     merged["editorial_validation_complete"] = True
-    findings = assessment["findings"]
+    findings, discarded = screen_editorial_findings(assessment["findings"], merged, bible)
+    merged["discarded_editorial_findings"] = discarded
     merged["continuity_findings"] = [
         item for item in findings if "continu" in item["issue_type"].lower()
     ]

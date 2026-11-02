@@ -257,6 +257,7 @@ class BannedTopicTests(LedgerTestCase):
         self.assertIn("matches an already published topic", output.getvalue())
         self.assertEqual(len(brief["published_topic_warning"]), 1)
 
+    @patch("agents.researcher._score_titles", new=lambda brief: None)   # scoring has its own tests
     def test_missing_angle_is_repaired_for_new_briefs(self):
         payload = story_brief()
         del payload["psychological_angle"]

@@ -19,11 +19,12 @@ import json
 import re
 from contextvars import ContextVar
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Callable
 
 import config
 from agents.gemini_client import GeminiGenerationError
-from agents.narrative import NarrativeValidationError, extract_json, write_debug_artifact
+from agents.narrative import NarrativeValidationError, extract_json, stable_hash, write_debug_artifact
 
 DEFAULT_STAGE_TEMPERATURES = {
     "premise": 0.9,
@@ -39,6 +40,10 @@ _VALIDATION_ERRORS = (NarrativeValidationError, ValueError, KeyError, TypeError)
 
 # Run directory for debug artifacts; set by the pipeline entry points.
 debug_dir: ContextVar[str | None] = ContextVar("narrative_debug_dir", default=None)
+# Stage checkpoints: while set, every validated result is saved here and an
+# identical later call (same label, contract and context) reuses it instead of
+# calling Gemini, so a run that failed mid-way resumes where it stopped.
+checkpoint_dir: ContextVar[str | None] = ContextVar("stage_checkpoint_dir", default=None)
 
 
 @dataclass(frozen=True)
@@ -47,10 +52,16 @@ class SceneScope:
 
     ``issues`` maps a document to ``{scene_key: [problems]}``. A scene key is
     its ``id_key`` value, or ``#<position>`` (1-based) when the id is missing.
+    With ``prefer`` the item-level repair is used whenever ``issues`` names
+    items, not only when the whole document is too large to resend (an empty
+    result still falls back to the whole-document repair). ``item`` names one
+    entry in the repair prompt ("scene", "shot").
     """
     issues: Callable[[dict], dict[str, list[str]]]
     list_key: str = "scenes"
     id_key: str = "scene_id"
+    prefer: bool = False
+    item: str = "scene"
 
 
 def stage_temperature(stage_key: str) -> float:
@@ -73,12 +84,48 @@ def compose_prompt(contract: str, context: str = "") -> str:
     return f"{contract}\n\n{context}" if context else contract
 
 
+def _checkpoint_path(label: str, contract: str, context: str, stage: str | None) -> Path | None:
+    folder = checkpoint_dir.get()
+    if not folder:
+        return None
+    key = stable_hash({"label": label, "contract": contract, "context": context})
+    return Path(folder) / f"{_slug(stage or label)}-{key[:16]}.json"
+
+
 def generate_json(contract: str, label: str, validator=None, *, generator,
                   context: str = "", stage: str | None = None,
                   temperature_key: str | None = None,
                   scene_scope: SceneScope | None = None,
                   run_dir: str | None = None) -> dict:
-    """Generate one JSON object, allowing exactly one bounded repair."""
+    """Generate one JSON object, allowing exactly one bounded repair.
+
+    Inside a checkpointed run, a validated result for the same inputs is reused.
+    """
+    checkpoint = _checkpoint_path(label, contract, context, stage)
+    if checkpoint is not None and checkpoint.is_file():
+        # The checkpoint holds the validator's output (it may reshape the JSON,
+        # e.g. a scene batch becomes a list), so it is returned as saved.
+        try:
+            saved = json.loads(checkpoint.read_text(encoding="utf-8"))["value"]
+            print(f"   -> Reusing checkpoint for {label}")
+            return saved
+        except (OSError, ValueError, KeyError, TypeError):
+            pass
+    value = _generate_json(contract, label, validator, generator=generator, context=context,
+                           stage=stage, temperature_key=temperature_key,
+                           scene_scope=scene_scope, run_dir=run_dir)
+    if checkpoint is not None:
+        checkpoint.parent.mkdir(parents=True, exist_ok=True)
+        checkpoint.write_text(json.dumps({"label": label, "value": value}, ensure_ascii=False),
+                              encoding="utf-8")
+    return value
+
+
+def _generate_json(contract: str, label: str, validator=None, *, generator,
+                   context: str = "", stage: str | None = None,
+                   temperature_key: str | None = None,
+                   scene_scope: SceneScope | None = None,
+                   run_dir: str | None = None) -> dict:
     job = _Job(generator, label, stage or _slug(label), temperature_key,
                run_dir if run_dir is not None else debug_dir.get())
     raw = job.call(compose_prompt(contract, context), job.stage, temperature_key)
@@ -100,6 +147,9 @@ def generate_json(contract: str, label: str, validator=None, *, generator,
         return validator(value)
     except _VALIDATION_ERRORS as initial_error:
         job.dump("validation-failure", initial_error, raw)
+        if scene_scope is not None and scene_scope.prefer and _item_issues(scene_scope, value):
+            return _scene_scoped_repair(job, contract, context, value, initial_error,
+                                        validator, scene_scope)
         repair = _semantic_repair_prompt(contract, context, label, initial_error, value)
         if repair is not None:
             return job.repair(repair, validator, initial_error)
@@ -177,6 +227,13 @@ VALIDATION ERROR:
     return _fit(header, contract, context, f"CURRENT VALID JSON:\n{compact_json(value)}")
 
 
+def _item_issues(scope: SceneScope, value) -> dict:
+    try:
+        return scope.issues(value) or {}
+    except _VALIDATION_ERRORS:
+        return {}
+
+
 def _scene_key(scene, position: int, id_key: str) -> str:
     sid = scene.get(id_key) if isinstance(scene, dict) else None
     if isinstance(sid, str) and sid.strip():
@@ -204,18 +261,20 @@ def _scene_scoped_repair(job: _Job, contract, context, value, error, validator,
         near for index in targets for near in (index - 1, index + 1)
         if 0 <= near < len(scenes) and near not in targets
     })
-    diagnostics = "\n".join(f"- scene {keys[i]}: {'; '.join(issues[keys[i]])}" for i in targets)
-    header = f"""Part of the {job.label} JSON failed validation. Repair ONLY the invalid scenes listed
+    item = scope.item
+    diagnostics = "\n".join(f"- {item} {keys[i]}: {'; '.join(issues[keys[i]])}" for i in targets)
+    header = f"""Part of the {job.label} JSON failed validation. Repair ONLY the invalid {item}s listed
 below. Return exactly {{"{scope.list_key}": [...]}} containing one complete corrected object per
-invalid scene, in the same order, keeping each {scope.id_key}. Every scene must satisfy the complete
-contract. Do not return the neighbour scenes; they are read-only continuity context.
+invalid {item}, in the same order, keeping each {scope.id_key}. Every {item} must satisfy the complete
+contract. Do not return the neighbour {item}s; they are read-only continuity context.
 
-VALIDATION ERRORS BY SCENE:
+VALIDATION ERRORS BY {item.upper()}:
 {diagnostics}"""
     invalid = compact_json([scenes[i] for i in targets])
     nearby = compact_json([scenes[i] for i in neighbours])
     prompt = _fit(header, contract, context,
-                  f"INVALID SCENES TO CORRECT:\n{invalid}\n\nNEIGHBOUR SCENES (read-only):\n{nearby}")
+                  f"INVALID {item.upper()}S TO CORRECT:\n{invalid}\n\n"
+                  f"NEIGHBOUR {item.upper()}S (read-only):\n{nearby}")
     if prompt is None:
         raise NarrativeValidationError(
             f"{job.label} scene-scoped repair still exceeds GEMINI_REPAIR_MAX_CHARS "
@@ -241,7 +300,7 @@ VALIDATION ERRORS BY SCENE:
             merged_scenes[index] = replacement
         return {**value, scope.list_key: merged_scenes}
 
-    print(f"   -> Scene-scoped {job.label} repair: {', '.join(keys[i] for i in targets)}")
+    print(f"   -> {item.capitalize()}-scoped {job.label} repair: {', '.join(keys[i] for i in targets)}")
     return job.repair(prompt, lambda repaired: _validated(validator, merge(repaired)), error)
 
 

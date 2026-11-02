@@ -9,6 +9,7 @@ import time
 
 import config
 from agents.gemini_client import generate
+from studio.variation import TAGS as THEME_TAGS
 from agents.narrative import (
     NARRATIVE_TYPES,
     PSYCHOLOGICAL_THEMES,
@@ -139,6 +140,7 @@ def research_topic(
     narrative_type: str = "auto",
     target_duration_minutes: float | None = None,
     reuse_cached: bool = False,
+    premise_brief: dict | None = None,
 ) -> dict:
     """Develop several premises and select one production-ready story brief.
 
@@ -146,18 +148,35 @@ def research_topic(
     verbatim in ``topic`` and ``requested_premise`` even if the model paraphrases.
     With ``reuse_cached`` a valid ``story_brief.json`` produced by the same
     request in ``config.OUTPUT_DIR`` is returned without an API call.
+
+    ``premise_brief`` (Phase 3.7, ``agents.premise_brief``) is a detailed author brief: it is
+    authoritative — provided fields are preserved, Gemini fills only what is missing. The story
+    brief records ``requested_brief_hash``, ``brief_coverage`` and ``author_brief`` (the parts the
+    bible, outline and scene prompts need).
     """
+    from agents import premise_brief as briefs
+    author = dict(premise_brief or {})
+    if author:
+        narrative_type = author["narrative_type"] if author.get("narrative_type") in NARRATIVE_TYPES \
+            else narrative_type
+        topic_override = topic_override.strip() or briefs.exact_premise(author)
+        target_duration_minutes = briefs.target_minutes(author, target_duration_minutes)
     if narrative_type != "auto" and narrative_type not in NARRATIVE_TYPES:
         raise ValueError(f"Unsupported narrative type: {narrative_type}")
     exact = topic_override.strip()
     duration = float(target_duration_minutes or getattr(config, "TARGET_DURATION_MINUTES", 15))
-    request_hash = stable_hash({
-        "premise": exact, "theme": focus_angle.strip(),
-        "narrative_type": narrative_type, "duration": duration,
-    })
+    request = {"premise": exact, "theme": focus_angle.strip(), "narrative_type": narrative_type,
+               "duration": duration}
+    accepted = []
+    if author:
+        # Phase 3.7 hashed the saved record with its own "hash" key; that cache key stays valid.
+        accepted.append(stable_hash({**request, "brief": stable_hash(
+            {key: value for key, value in author.items() if key != "raw"})}))
+        request["brief"] = briefs.brief_hash(author)
+    request_hash = stable_hash(request)
     brief_path = os.path.join(config.OUTPUT_DIR, "story_brief.json")
     if reuse_cached:
-        cached = _cached_brief(brief_path, request_hash)
+        cached = _cached_brief(brief_path, [request_hash] + accepted)
         if cached:
             print("   -> Reusing cached story brief")
             return cached
@@ -183,7 +202,10 @@ def research_topic(
         "Choose the narrative type that best serves the story."
         if narrative_type == "auto" else f'Use exactly this narrative type: "{narrative_type}".'
     )
-    print(f"   -> Developing {'exact premise' if exact else 'original premises'}: {exact or theme}")
+    if author:
+        mode_instruction += "\n\n" + briefs.contract_block(author)
+    print(f"   -> Developing {'author brief' if author else 'exact premise' if exact else 'original premises'}: "
+          f"{exact or theme}")
     contract = f"""You are the Story Development Agent for Private Gravity, an anthology of
 cinematic psychological fiction. Ideas from psychology and philosophy must emerge through
 character choice, consequence, image and subtext—never through a lecture or explainer.
@@ -214,8 +236,12 @@ psychological_theme is the broad theme (e.g. "envy"); psychological_angle is ONE
 naming the mechanism explored (e.g. "needing to be envied as a substitute for self-worth").
 PUBLISHED TOPICS RULE: {BANNED_RULE}
 title_candidates: exactly 5 objects {{"title": "...", "rationale": "one sentence on the curiosity it
-creates"}} that follow the title policy; video_title must be the strongest of them.
+creates"}} that follow the title policy; video_title must be the strongest of them. At least two of
+them must be built on the story's most shareable moment (the reversal: what the protagonist does that
+a viewer would retell to a friend), not only on the premise. At most 60 characters, the hook within
+the first ~45.
 thumbnail_text_candidates: exactly 3 strings that follow the thumbnail text policy.
+theme_tags: 1 to 3 of {json.dumps(list(THEME_TAGS))}, the primary theme first (Phase 3.9 variation guard).
 
 Use one of these narrative_type values: {json.dumps(sorted(NARRATIVE_TYPES))}.
 The story must be original, causally coherent, emotionally plausible, filmable with cinematic
@@ -244,6 +270,9 @@ Uniqueness nonce: {time.time_ns()}"""
                     candidate["narrative_type"] = narrative_type
         brief["target_duration_minutes"] = duration
         brief["request_hash"] = request_hash
+        from studio import variation             # Phase 3.9-C: known tags, else guessed from the theme
+        brief["theme_tags"] = variation.normalise_tags(brief.get("theme_tags"), " ".join(
+            str(brief.get(key, "")) for key in ("psychological_theme", "psychological_angle", "logline")))
         if not str(brief.get("psychological_angle") or "").strip():
             raise NarrativeValidationError(
                 "story brief requires a nonempty psychological_angle: one sentence naming the "
@@ -251,6 +280,8 @@ Uniqueness nonce: {time.time_ns()}"""
             )
         if matches:
             brief["published_topic_warning"] = [item["raw"] for item in matches]
+        if author:
+            _apply_author_brief(brief, author, published)
         if not exact and len(brief.get("premise_candidates", [])) < 3:
             raise NarrativeValidationError(
                 "automatic story development requires at least three premise_candidates"
@@ -263,6 +294,7 @@ Uniqueness nonce: {time.time_ns()}"""
         run_dir=config.OUTPUT_DIR,
     )
     _apply_title_review(brief, _review_titles(brief))
+    _score_titles(brief)
     atomic_write_json(brief_path, brief)
     return brief
 
@@ -342,16 +374,89 @@ The previous candidates failed for these reasons; do not repeat them:
     return retried
 
 
+def _apply_author_brief(brief: dict, author: dict, published: list[dict]) -> None:
+    """Phase 3.7-A: provided fields win over the model's; record the coverage and a topic warning."""
+    from agents import premise_brief as briefs
+    if author.get("logline"):
+        brief["logline"] = author["logline"]
+    if author.get("narrative_type") in NARRATIVE_TYPES:
+        brief["narrative_type"] = author["narrative_type"]
+    if author.get("thumbnail_idea"):
+        brief["thumbnail_concept"] = author["thumbnail_idea"]
+    ideas = [{"title": title, "rationale": "author's title idea"} for title in author.get("title_ideas") or []]
+    if author.get("working_title"):
+        ideas.insert(0, {"title": author["working_title"], "rationale": "author's working title"})
+        brief["author_title"] = author["working_title"]          # kept as video_title (Phase 3.7 fix)
+        brief["video_title"] = author["working_title"]
+    existing = {str(item.get("title") if isinstance(item, dict) else item) for item in brief.get("title_candidates") or []}
+    brief["title_candidates"] = [item for item in ideas if item["title"] not in existing] + \
+        list(brief.get("title_candidates") or [])
+    brief["author_brief"] = briefs.author_parts(author)
+    brief["requested_brief_hash"] = briefs.brief_hash(author)
+    model_coverage = brief.get("brief_coverage") if isinstance(brief.get("brief_coverage"), dict) else {}
+    brief["brief_coverage"] = {**{key: str(value) for key, value in model_coverage.items()},
+                               **briefs.coverage(author, brief)}
+    theme, angle = brief.get("psychological_theme", ""), brief.get("psychological_angle", "")
+    similar = [item["raw"] for item in published if item.get("theme") and
+               str(item["theme"]).strip().lower() == str(theme).strip().lower()
+               and briefs.mentioned(item.get("angle", ""), angle, 0.5)]
+    if similar:
+        print("   WARNING: the brief's theme and angle match a published episode: " + "; ".join(similar))
+        brief["published_topic_warning"] = list(brief.get("published_topic_warning") or []) + similar
+
+
+def _score_titles(brief: dict) -> None:
+    """Phase 3.6-B: score the candidates and choose the best one that passes the title policy.
+    A scoring failure keeps the policy's choice (scoring is advice, the validator is the gate)."""
+    from agents import packaging
+    review = brief.get("title_review") or {}
+    try:
+        scored = packaging.score_titles(brief, review.get("title_candidates") or [], generator=generate)
+    except (NarrativeValidationError, KeyError, TypeError, ValueError) as exc:
+        brief["title_scoring_error"] = str(exc)[:300]
+        return
+    brief["title_scores"] = scored
+    best = next((row for row in scored if row["passes"]), None)
+    kept = _kept_title(brief)
+    if kept:
+        # The author's (or the user's) title stays until the user switches; the best is a suggestion.
+        brief["video_title"] = kept
+        if best and best["title"] != kept:
+            brief["suggested_title"] = best["title"]
+    elif best:
+        brief["video_title"] = best["title"]
+        review["selected_title"] = best["title"]
+        review["selected_title_findings"] = best["findings"]
+    packaging.save_titles(config.OUTPUT_DIR, scored, brief.get("video_title", ""),
+                          reason="kept" if kept else "scored")
+
+
+def _kept_title(brief: dict) -> str:
+    """A title nobody may replace without confirmation: the premise brief's working title, else one the
+    user chose in the GUI (titles.json)."""
+    from agents import packaging
+    if brief.get("author_title"):
+        return brief["author_title"]
+    record = load_json(os.path.join(config.OUTPUT_DIR, packaging.TITLES_FILE)) or {}
+    return record.get("selected", "") if record.get("selected_reason") in ("user", "edited") else ""
+
+
 def _apply_title_review(brief: dict, review: dict) -> None:
-    if review.get("selected_title"):
+    kept = _kept_title(brief)
+    if kept:
+        if review.get("selected_title") and review["selected_title"] != kept:
+            brief["suggested_title"] = review["selected_title"]
+        brief["video_title"] = kept
+    elif review.get("selected_title"):
         brief["video_title"] = review["selected_title"]
     brief["thumbnail_text"] = review.get("selected_thumbnail_text", "")
     brief["title_review"] = review
 
 
-def _cached_brief(path: str, request_hash: str) -> dict | None:
+def _cached_brief(path: str, request_hashes) -> dict | None:
     value = load_json(path)
-    if not value or value.get("request_hash") != request_hash:
+    hashes = [request_hashes] if isinstance(request_hashes, str) else list(request_hashes)
+    if not value or value.get("request_hash") not in hashes:
         return None
     try:
         return validate_story_brief(value)

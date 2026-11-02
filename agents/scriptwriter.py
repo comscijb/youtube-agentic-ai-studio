@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
 import config
-from agents import structured
+from agents import premise_brief, structured
 from agents.gemini_client import generate
-from agents.identity import TITLE_POLICY, identity_block
+from agents.voice_calibration import planning_wpm
+from agents.identity import STACKED_MODIFIER_RULE, TITLE_POLICY, identity_block
 from agents.structured import SceneScope, compact_json
 from agents.narrative import (
     CONTENT_MODE,
@@ -96,7 +98,7 @@ example only; do not copy its character or story content into the requested stor
 For behavioral_patterns use a canonical STRING, for example: "Avoids difficult conversations;
 checks his phone for social approval." Never use null, an empty string, an empty array, generic
 placeholders, or omit a required field. Keep the cast compact and preserve the brief's exact story
-decisions. If the premise is not speculative, speculative_rules must be an empty array."""
+decisions. If the premise is not speculative, speculative_rules must be an empty array.""" + _author_rule(brief, "bible")
     bible = _generate_json(
         contract, "character bible",
         lambda value: validate_character_bible(value, source_hash),
@@ -112,13 +114,14 @@ def _outline(brief: dict, bible: dict, video_type: str, target_minutes: float,
              output: Path, force: bool) -> dict:
     source_hash = stable_hash({"brief": brief, "bible": bible, "video_type": video_type,
                                "target_minutes": target_minutes,
-                               "contract": NARRATIVE_CONTRACT_VERSION})
+                               "contract": NARRATIVE_CONTRACT_VERSION,
+                               "wpm": planning_wpm()})
     path = output / "story_outline.json"
     if not force:
         cached = _cached(path, source_hash, validate_outline, bible)
         if cached:
             return cached
-    wpm = int(getattr(config, "NARRATION_WPM", 125))
+    wpm = planning_wpm()
     target_words = 110 if video_type == "shorts" else round(target_minutes * wpm)
     scene_count = 4 if video_type == "shorts" else max(8, min(14, round(target_minutes * .75)))
     narrative_type = brief.get("narrative_type")
@@ -149,7 +152,8 @@ objects, gestures, environments or silhouettes). The first scene must function a
 the final scene as resolution/aftermath, with a climax before it. Every scene must change the
 situation through a decision, discovery, confrontation or consequence. Assign varied word budgets
 that sum approximately to the target; do not divide them mechanically. Escalate through decisions and consequences. No lecture,
-chapter summary, bullet lesson, generic CTA, or unsupported twist."""
+chapter summary, bullet lesson, generic CTA, or unsupported twist.""" + _author_rule(brief, "outline") + \
+        _variation_rule()
     outline = _generate_json(
         contract, "story outline", lambda value: validate_outline(
             {**value, "narrative_contract_version": NARRATIVE_CONTRACT_VERSION}, bible, True
@@ -166,6 +170,41 @@ chapter summary, bullet lesson, generic CTA, or unsupported twist."""
     return outline
 
 
+def _variation_rule() -> str:
+    """Phase 3.9-C: when the last two published episodes opened the same way, ask for another opening."""
+    try:
+        from studio import variation
+        from uploader.publications import load_ledger
+        hint = variation.opening_hint(variation.history(load_ledger().get("publications", [])))
+    except Exception:                                    # noqa: BLE001 — a hint, never a failure
+        return ""
+    return "\n" + hint if hint else ""
+
+
+def _author_rule(brief: dict, stage: str) -> str:
+    """Phase 3.7-A: the author's brief (``author_brief`` in the STORY BRIEF) is authoritative."""
+    if not brief.get("author_brief"):
+        return ""
+    rules = {
+        "bible": "The STORY BRIEF's author_brief is authoritative: keep every named character with the exact "
+                 "name, age and relationship given there; add at most what the story needs.",
+        "outline": "The STORY BRIEF's author_brief is authoritative: map each of its beats to the scene(s) that "
+                   "express it (arc_movements: hook, mechanism/escalation_success, hidden_cost, reversal, "
+                   "philosophical_layer, ending); plan every must_include item, every line its beats quote "
+                   "and every detail of its ending beat into a scene; never use a must_avoid item; keep its "
+                   "setting and tone.",
+        "scenes": "Honour the STORY BRIEF's author_brief: its tone, every must_include item placed in its "
+                  "planned scene, never a must_avoid item, names and ages exactly as given. Every line quoted "
+                  "in its beats is spoken verbatim, as direct speech in double quotes, in the scene that "
+                  "delivers that beat; every detail of its ending beat appears on the page in the final scenes.",
+        "review": "The STORY BRIEF has an author_brief: also check faithfulness to it (must_include present, "
+                  "must_avoid absent, beats mapped, the beats' quoted lines spoken as direct dialogue, every "
+                  "ending detail on the page, names/ages/relationships unchanged); report each violation "
+                  "with issue_type brief_faithfulness and the scene_ids to change.",
+    }
+    return "\n" + rules[stage]
+
+
 def _write_scene_batch(brief: dict, bible: dict, outline: dict, scenes: list[dict],
                        previous_ending: str) -> list[dict]:
     contract = f"""You are the scene writer for Private Gravity. Write broadcast-ready English
@@ -174,7 +213,9 @@ original cinematic story; never explains psychology to the audience. Preserve ch
 chronology, speculative rules, causality and EACH allocated word count (85%-115%). Dramatize
 objectives, obstacles, decisions, consequences and discoveries through action. The protagonist
 must make consequential choices. Never pad with repeated atmosphere, restated feelings, generic
-transitions or summary. Make sentences natural for spoken audio. When a scene's outline lists
+transitions or summary. Make sentences natural for spoken audio. Words a character says aloud
+are direct speech in double quotes ("I'll be here tomorrow, Walter."), never reported speech.
+When a scene's outline lists
 arc_movements, the narration must deliver those movements on the page (for character_wound, the
 wound itself must appear in the screenplay).
 
@@ -186,7 +227,8 @@ function from the outline), narration, setting, characters_present, dramatic_fun
 visual_direction, image_query, image_query_2, image_query_3, caption_text, on_screen_text.
 Search queries must depict story-world environments/objects/actions and not educational diagrams.
 Use on_screen_text only for diegetic or dramatically necessary text; otherwise empty string.
-No placeholders, headings inside narration, moral summary, subscribe request or bullet points."""
+No placeholders, headings inside narration, moral summary, subscribe request or bullet points.""" + \
+        _author_rule(brief, "scenes")
     context = f"""STORY BRIEF: {compact_json(brief)}
 CHARACTER BIBLE: {compact_json(bible)}
 FULL OUTLINE: {compact_json(outline)}
@@ -243,7 +285,24 @@ PREVIOUS BATCH ENDING: {previous_ending or 'This is the opening batch.'}"""
     )
 
 
-def _editorial_review(script: dict, brief: dict, bible: dict, outline: dict) -> dict:
+def _measurements(deterministic: dict | None) -> dict:
+    """Deterministic facts the editor must take as given (never re-counted)."""
+    report = deterministic or {}
+    return {
+        "total_words": report.get("word_count"),
+        "target_words": report.get("target_word_count"),
+        "estimated_narration_minutes": report.get("estimated_narration_minutes"),
+        "scenes": [
+            {"scene_id": item.get("scene_id"), "actual_words": item.get("actual_words"),
+             "target_words": item.get("target_words")}
+            for item in report.get("scene_budgets") or []
+        ],
+        "style_lint": report.get("style_lint", {}),
+    }
+
+
+def _editorial_review(script: dict, brief: dict, bible: dict, outline: dict,
+                      deterministic: dict | None = None) -> dict:
     narrative_type = brief.get("narrative_type")
     strategy_rule = (
         "This is a Type A story: score it." if narrative_type == TYPE_A else
@@ -275,8 +334,14 @@ Return ONLY JSON with:
 scene_ids (integer array), claim, evidence (string array), why_it_matters, recommendation,
 certainty (confirmed|probable|possible). Any lecture-like or explanatory passage is at least a
 major finding with issue_type "lecture".
-- strengths and revision_priorities as arrays."""
-    context = f"""STORY BRIEF: {compact_json(brief)}
+- strengths and revision_priorities as arrays.
+
+WORD COUNTS AND DURATION ARE PRE-COMPUTED: the DETERMINISTIC MEASUREMENTS below are exact and
+authoritative. Do not count words, estimate runtime or report duration, length or word-count
+findings; those verdicts belong to the deterministic checks. Use style_lint as context when
+scoring literary_style.""" + _author_rule(brief, "review")
+    context = f"""DETERMINISTIC MEASUREMENTS: {compact_json(_measurements(deterministic))}
+STORY BRIEF: {compact_json(brief)}
 CHARACTER BIBLE: {compact_json(bible)}
 OUTLINE: {compact_json(outline)}
 SCREENPLAY: {compact_json(script)}"""
@@ -302,55 +367,249 @@ def _expand_underlength_scenes(script: dict, brief: dict, bible: dict,
     ]
     batch_size = max(1, int(getattr(config, "NARRATIVE_EXPANSION_BATCH_SIZE", 3)))
     max_calls = max(0, int(getattr(config, "NARRATIVE_EXPANSION_MAX_CALLS", 3)))
+    single_calls = max(0, int(getattr(config, "NARRATIVE_EXPANSION_SINGLE_RETRIES", 3)))
     revised = script
     attempts = []
-    for offset in range(0, len(deficient), batch_size):
-        if len(attempts) >= max_calls:
-            break
-        batch = deficient[offset:offset + batch_size]
-        ids = [item["scene_id"] for item in batch]
-        selected = [scene for scene in revised["sections"] if scene["id"] in ids]
-        neighbors = [
-            {"id": scene["id"], "title": scene["title"],
-             "ending": scene["narration"][-350:]}
-            for scene in revised["sections"]
-            if any(abs(scene["id"] - scene_id) == 1 for scene_id in ids)
-        ]
-        contract = f"""You are performing one bounded screenplay expansion pass. Return ONLY the
+    batches = [deficient[offset:offset + batch_size] for offset in range(0, len(deficient), batch_size)]
+    for batch in batches[:max_calls]:
+        revised, attempt = _expansion_pass(revised, batch, brief, bible, outline)
+        attempts.append(attempt)
+        if len(batch) > 1 and not attempt["success"]:        # retry the scenes still short, one by one
+            for item in batch:
+                if item["scene_id"] in attempt["accepted"] or single_calls <= 0:
+                    continue
+                single_calls -= 1
+                revised, single = _expansion_pass(revised, [item], brief, bible, outline)
+                single["kind"] = "single_scene_expansion"
+                attempts.append(single)
+    return revised, attempts
+
+
+def _band_distance(ratio: float) -> float:
+    """How far a scene's words/target ratio is from the 85%-115% band (0 inside it)."""
+    return max(0.0, .85 - ratio, ratio - 1.15)
+
+
+def _expansion_pass(revised: dict, batch: list[dict], brief: dict, bible: dict,
+                    outline: dict) -> tuple[dict, dict]:
+    """One expansion call for ``batch``. Code owns scene ids and order (mapped by position).
+    A scene is accepted inside 85%-115%, or when it improved and is within 2 points of the band;
+    in any case the version closest to the band is kept instead of being discarded."""
+    ids = [item["scene_id"] for item in batch]
+    attempt = {"scene_ids": ids, "kind": "targeted_substantive_expansion", "success": False,
+               "accepted": [], "kept_best": []}
+    selected = [scene for scene in revised["sections"] if scene["id"] in ids]
+    neighbors = [
+        {"id": scene["id"], "title": scene["title"],
+         "ending": scene["narration"][-350:]}
+        for scene in revised["sections"]
+        if any(abs(scene["id"] - scene_id) == 1 for scene_id in ids)
+    ]
+    contract = f"""You are performing one bounded screenplay expansion pass. Return ONLY the
 SELECTED SCENES supplied after this contract, in order, as {{"scenes": [...]}}. Preserve every scene
 ID, canonical section_type, narrative_function, established fact, chronology, character identity,
 causal outcome and useful line already present. Add substantive dramatic action, consequential
-choice, credible discovery, specific dialogue and subtext until each scene reaches 85%-115% of its
+choice, credible discovery, specific dialogue (spoken lines in double quotes) and subtext until each scene reaches 85%-115% of its
 target. Do not add filler, repeated atmosphere, exposition summaries, new characters, new rules or
-unsupported twists.
+unsupported twists. {STACKED_MODIFIER_RULE}
 
 EXACT DEFICITS: {compact_json(batch)}"""
-        context = f"""SELECTED SCENES: {compact_json(selected)}
+    context = f"""SELECTED SCENES: {compact_json(selected)}
 NEIGHBOR CONTEXT: {compact_json(neighbors)}
 STORY BRIEF: {compact_json(brief)}
 CHARACTER BIBLE: {compact_json(bible)}
 OUTLINE: {compact_json(outline)}"""
 
-        def validate_expansion(value):
+    def validate_expansion(value):
+        scenes = value.get("scenes") if isinstance(value, dict) else value
+        if not isinstance(scenes, list) or len(scenes) != len(ids):
+            raise NarrativeValidationError(
+                f"targeted expansion must return exactly {len(ids)} scene(s), in the given order")
+        for scene in scenes:
+            if not isinstance(scene, dict) or not isinstance(scene.get("narration"), str) \
+                    or not scene["narration"].strip():
+                raise NarrativeValidationError("targeted expansion requires narration")
+        return scenes
+
+    try:
+        replacements = _generate_json(
+            contract, "targeted scene expansion", validate_expansion, context=context,
+            stage=f"expansion {'-'.join(str(scene_id) for scene_id in ids)}",
+            temperature_key="expansion",
+        )
+    except NarrativeValidationError as exc:
+        attempt["error"] = str(exc)
+        return revised, attempt
+    notes = []
+    for item, replacement in zip(batch, replacements):       # by position: the code owns ids
+        original = next(scene for scene in revised["sections"] if scene["id"] == item["scene_id"])
+        before = _band_distance(len(original["narration"].split()) / item["target_words"])
+        ratio = len(replacement["narration"].split()) / item["target_words"]
+        after = _band_distance(ratio)
+        if after >= before:
+            notes.append(f"scene {item['scene_id']} did not improve ({ratio:.1%})")
+            continue
+        merged = dict(original)
+        merged.update(replacement)
+        for field in ("id", "outline_scene_id", "section_type", "narrative_function",
+                      "target_words"):
+            merged[field] = original.get(field)
+        merged["bullet_points"] = []
+        candidate = dict(revised)
+        candidate["sections"] = [merged if scene["id"] == item["scene_id"] else scene
+                                 for scene in revised["sections"]]
+        try:
+            revised = validate_script(candidate, bible, outline)
+        except NarrativeValidationError as exc:
+            notes.append(f"scene {item['scene_id']}: {exc}")
+            continue
+        if after <= .02:
+            attempt["accepted"].append(item["scene_id"])
+        else:
+            attempt["kept_best"].append(item["scene_id"])
+            notes.append(f"scene {item['scene_id']} improved but remains outside 85%-115% "
+                         f"({ratio:.1%}); the better version is kept")
+    attempt["success"] = len(attempt["accepted"]) == len(ids)
+    if notes:
+        attempt["error"] = "; ".join(notes)
+    return revised, attempt
+
+
+SEMANTIC_REVISION_TYPES = (
+    "lecture", "continuity", "unintroduced_character", "character_consistency", "agency",
+    "causality", "repetition", "style", "brief_faithfulness",
+)
+# Reviewer spellings -> canonical eligible type. Unknown types are not eligible.
+_SEMANTIC_ALIASES = {
+    "lecture": "lecture", "didactic": "lecture", "exposition": "lecture",
+    "explanation": "lecture", "lecturing": "lecture",
+    "continuity": "continuity", "causal_continuity": "continuity",
+    "chronological_continuity": "continuity", "continuity_error": "continuity",
+    "object_continuity": "continuity", "costume_continuity": "continuity",
+    "unintroduced_character": "unintroduced_character", "new_character": "unintroduced_character",
+    "unestablished_character": "unintroduced_character",
+    "unintroduced_characters": "unintroduced_character",
+    "character_consistency": "character_consistency", "character_inconsistency": "character_consistency",
+    "agency": "agency", "character_agency": "agency", "passivity": "agency",
+    "causality": "causality", "causal_logic": "causality",
+    "repetition": "repetition", "repetition_control": "repetition", "repetitive": "repetition",
+    "style": "style", "literary_style": "style", "prose_style": "style",
+    "brief_faithfulness": "brief_faithfulness", "faithfulness": "brief_faithfulness",
+    "author_brief": "brief_faithfulness",
+}
+
+
+def semantic_issue_type(raw) -> str | None:
+    """Normalize a reviewer issue_type; None when it is not eligible for revision."""
+    key = "_".join(str(raw or "").strip().lower().replace("-", " ").split())
+    canonical = _SEMANTIC_ALIASES.get(key)
+    allowed = getattr(config, "NARRATIVE_SEMANTIC_REVISION_TYPES", SEMANTIC_REVISION_TYPES)
+    return canonical if canonical in allowed else None
+
+
+def eligible_semantic_findings(review: dict, script: dict) -> dict[int, list[dict]]:
+    """Map screenplay scene id -> eligible editorial findings (discarded ones never count)."""
+    ids = {int(scene["id"]): int(scene["id"]) for scene in script.get("sections", [])}
+    ids.update({scene.get("outline_scene_id"): int(scene["id"])
+                for scene in script.get("sections", [])})
+    by_scene: dict[int, list[dict]] = {}
+    for finding in review.get("blocking_issues", []) + review.get("major_issues", []):
+        if "certainty" not in finding:          # deterministic issue, not editorial
+            continue
+        if finding.get("certainty") not in ("confirmed", "probable"):
+            continue
+        if semantic_issue_type(finding.get("issue_type")) is None:
+            continue
+        for raw in finding.get("scene_ids") or []:
+            scene_id = ids.get(raw if not isinstance(raw, str) or not raw.isdigit() else int(raw))
+            if scene_id is not None:
+                by_scene.setdefault(scene_id, []).append(finding)
+    return by_scene
+
+
+def _semantic_revision(script: dict, brief: dict, bible: dict, outline: dict, review: dict,
+                       output: Path, target: float, repair_attempts: list) -> tuple[dict, dict]:
+    """One bounded rewrite of the scenes cited by eligible editorial findings.
+
+    Unaffected scenes stay byte-for-byte; each revised scene must stay within
+    85%-115% of its allocation. Afterwards the deterministic review runs again
+    plus at most one editorial re-review. Never loops further.
+    """
+    if not getattr(config, "NARRATIVE_SEMANTIC_REVISION_ENABLED", True):
+        return script, review
+    by_scene = eligible_semantic_findings(review, script)
+    if not by_scene:
+        return script, review
+    batch_size = max(1, int(getattr(config, "NARRATIVE_SEMANTIC_REVISION_BATCH_SIZE", 3)))
+    max_calls = max(0, int(getattr(config, "NARRATIVE_SEMANTIC_REVISION_MAX_CALLS", 1)))
+    scene_ids = sorted(by_scene)
+    revised = script
+    revisions = []
+    for offset in range(0, len(scene_ids), batch_size):
+        if len(revisions) >= max_calls:
+            break
+        ids = scene_ids[offset:offset + batch_size]
+        selected = [scene for scene in revised["sections"] if scene["id"] in ids]
+        neighbors = [scene for scene in revised["sections"]
+                     if scene["id"] not in ids and any(abs(scene["id"] - i) == 1 for i in ids)]
+        findings = []
+        for scene_id in ids:
+            for finding in by_scene[scene_id]:
+                if finding not in findings:
+                    findings.append(finding)
+        budgets = {scene["id"]: scene["target_words"] for scene in selected}
+        contract = f"""You are performing one bounded editorial revision of a Private Gravity screenplay.
+Return ONLY the SELECTED SCENES supplied after this contract, in order, as {{"scenes": [...]}} with
+the same keys. Fix exactly the problems in the EDITORIAL FINDINGS by following their
+recommendations, through dramatized action, dialogue and subtext. Preserve every scene id,
+canonical section_type, narrative_function, established fact, chronology, character identity,
+causal outcome and every line the findings do not touch. Do not add new characters, rules or
+twists. Never let the narrator explain psychology or cite thinkers academically.
+
+{identity_block(brief.get("narrative_type"))}
+
+WORD BUDGETS (each revised narration must stay between 85% and 115% of its target):
+{compact_json([{"id": i, "target_words": w, "minimum": int(w * .85) + 1, "maximum": int(w * 1.15)}
+               for i, w in budgets.items()])}
+
+EDITORIAL FINDINGS:
+{compact_json([{key: finding.get(key) for key in ("severity", "issue_type", "scene_ids", "claim",
+                "evidence", "recommendation")} for finding in findings])}"""
+        context = f"""SELECTED SCENES: {compact_json(selected)}
+NEIGHBOR SCENES (read-only): {compact_json(neighbors)}
+STORY BRIEF: {compact_json(brief)}
+CHARACTER BIBLE: {compact_json(bible)}"""
+
+        def validate_revision(value, ids=ids, budgets=budgets):
             scenes = value.get("scenes")
             if not isinstance(scenes, list) or [scene.get("id") for scene in scenes] != ids:
-                raise NarrativeValidationError("targeted expansion changed scene IDs or order")
-            targets = {item["scene_id"]: item["target_words"] for item in batch}
+                raise NarrativeValidationError(
+                    f"semantic revision must return scenes {ids} in order"
+                )
             for scene in scenes:
                 if not isinstance(scene.get("narration"), str):
-                    raise NarrativeValidationError("targeted expansion requires narration")
-                ratio = len(scene["narration"].split()) / targets[scene["id"]]
+                    raise NarrativeValidationError(f"revised scene {scene['id']} requires narration")
+                ratio = len(scene["narration"].split()) / budgets[scene["id"]]
                 if ratio < .85 or ratio > 1.15:
                     raise NarrativeValidationError(
-                        f"expanded scene {scene['id']} remains outside 85%-115% ({ratio:.1%})"
+                        f"revised scene {scene['id']} is outside 85%-115% of its "
+                        f"{budgets[scene['id']]}-word budget ({ratio:.1%})"
                     )
             return scenes
 
-        attempt = {"scene_ids": ids, "kind": "targeted_substantive_expansion", "success": False}
+        record = {
+            "kind": "targeted_semantic_revision", "scene_ids": ids, "success": False,
+            "findings_addressed": [
+                {key: finding.get(key) for key in ("severity", "issue_type", "scene_ids", "claim")}
+                for finding in findings
+            ],
+            "word_counts": {str(scene["id"]): {"before": len(scene["narration"].split())}
+                            for scene in selected},
+        }
         try:
             replacements = _generate_json(
-                contract, "targeted scene expansion", validate_expansion, context=context,
-                stage=f"expansion {'-'.join(str(scene_id) for scene_id in ids)}",
+                contract, "semantic revision", validate_revision, context=context,
+                stage=f"semantic_revision {'-'.join(str(i) for i in ids)}",
                 temperature_key="expansion",
             )
             by_id = {scene["id"]: scene for scene in replacements}
@@ -367,14 +626,53 @@ OUTLINE: {compact_json(outline)}"""
                     merged[field] = original.get(field)
                 merged["bullet_points"] = []
                 updated.append(merged)
-            candidate = dict(revised)
-            candidate["sections"] = updated
-            revised = validate_script(candidate, bible, outline)
-            attempt["success"] = True
+            candidate = validate_script(dict(revised, sections=updated), bible, outline)
+            for scene in candidate["sections"]:
+                if str(scene["id"]) in record["word_counts"]:
+                    record["word_counts"][str(scene["id"])]["after"] = len(scene["narration"].split())
+            revised = candidate
+            record["success"] = True
         except NarrativeValidationError as exc:
-            attempt["error"] = str(exc)
-        attempts.append(attempt)
-    return revised, attempts
+            record["error"] = str(exc)
+        revisions.append(record)
+
+    if not any(item["success"] for item in revisions):
+        review = dict(review, semantic_revisions=revisions)
+        return script, review
+
+    atomic_write_json(output / "script.pre_revision.json", script)
+    attempts = list(repair_attempts) + [
+        {key: item[key] for key in ("kind", "scene_ids", "success")} for item in revisions
+    ]
+    new_review = deterministic_review(revised, target, outline, attempts, brief)
+    new_review = premise_brief.add_findings(new_review, brief, bible=bible, outline=outline, script=revised)
+    rereview = {"performed": False}
+    if getattr(config, "NARRATIVE_SEMANTIC_REREVIEW", True):
+        print("   -> Re-running editorial review after the semantic revision...")
+        new_review = merge_editorial_review(
+            new_review, _editorial_review(revised, brief, bible, outline, new_review), bible
+        )
+        rereview = {
+            "performed": True, "status": new_review["status"],
+            "remaining_major_or_blocking": len([
+                item for item in new_review["blocking_issues"] + new_review["major_issues"]
+                if "certainty" in item
+            ]),
+        }
+    else:
+        new_review = merge_editorial_review(new_review, None)
+        new_review["editorial_review_stale"] = True
+        new_review["pre_revision_editorial_assessment"] = review.get("editorial_assessment")
+    for item in revisions:
+        item["rereview"] = rereview
+    new_review["semantic_revisions"] = revisions
+    new_review["pre_revision_status"] = review.get("status")
+    return revised, new_review
+
+
+# Stage checkpoints of an unfinished write_script run (scene batches, expansion,
+# editorial review, semantic revision); removed once the stage completes.
+CHECKPOINT_FOLDER = ".checkpoints"
 
 
 def write_script(
@@ -398,10 +696,18 @@ def write_script(
     if video_type == "normal" and not 12 <= target <= 20:
         raise ValueError("Regular Private Gravity videos must target 12-20 minutes")
     token = structured.debug_dir.set(str(output))
+    checkpoints = output / CHECKPOINT_FOLDER
+    if force:
+        shutil.rmtree(checkpoints, ignore_errors=True)
+    checkpoint_token = structured.checkpoint_dir.set(str(checkpoints))
     try:
-        return _write_script(brief, video_type, output, target, narrative_review, force)
+        script = _write_script(brief, video_type, output, target, narrative_review, force)
     finally:
+        structured.checkpoint_dir.reset(checkpoint_token)
         structured.debug_dir.reset(token)
+    # The script stage completed: the next run should write a fresh draft.
+    shutil.rmtree(checkpoints, ignore_errors=True)
+    return script
 
 
 def _write_script(brief: dict, video_type: str, output: Path, target: float,
@@ -444,7 +750,7 @@ def _write_script(brief: dict, video_type: str, output: Path, target: float,
         "tags": brief.get("tags", []),
         "narrative_type": brief["narrative_type"],
         "psychological_theme": brief["psychological_theme"],
-        "planned_words_per_minute": int(getattr(config, "NARRATION_WPM", 125)),
+        "planned_words_per_minute": planning_wpm(),
         "target_duration_minutes": target,
         "source_hash": stable_hash({"brief": brief, "bible": bible, "outline": outline}),
         "characters": bible["characters"],
@@ -455,13 +761,20 @@ def _write_script(brief: dict, video_type: str, output: Path, target: float,
     atomic_write_json(output / "script.json", script)
 
     review = deterministic_review(script, target, outline, repair_attempts, brief)
+    review = premise_brief.add_findings(review, brief, bible=bible, outline=outline, script=script)
     use_editor = (getattr(config, "NARRATIVE_REVIEW_ENABLED", True)
                   if narrative_review is None else narrative_review)
     if use_editor:
         print("   -> Running optional editorial quality review...")
         review = merge_editorial_review(
-            review, _editorial_review(script, brief, bible, outline)
+            review, _editorial_review(script, brief, bible, outline, review), bible
         )
+        revised, review = _semantic_revision(
+            script, brief, bible, outline, review, output, target, repair_attempts
+        )
+        if revised is not script:
+            script = revised
+            atomic_write_json(output / "script.json", script)
     else:
         review = merge_editorial_review(review, None)
     review["source_hash"] = stable_hash(script)

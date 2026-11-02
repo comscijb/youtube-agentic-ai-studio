@@ -23,6 +23,18 @@ from video.stock import (
 )
 
 
+# Phase 3.3: stock is opt-in (STOCK_ENABLED=false by default); these tests cover it when enabled.
+_stock_switch = patch.object(config, "STOCK_ENABLED", True)
+
+
+def setUpModule():
+    _stock_switch.start()
+
+
+def tearDownModule():
+    _stock_switch.stop()
+
+
 def image_bytes(size=(1280, 720), color=(30, 40, 50), fmt="JPEG"):
     buffer = io.BytesIO()
     Image.new("RGB", size, color).save(buffer, fmt)

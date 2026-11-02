@@ -2,3 +2,5 @@
 # Built-in banned: The Boltzmann Brain, Simulation Theory, Quantum Immortality
 # Add topics here after you make a video about them.
 
+theme: Intimacy and vulnerability | angle: Craving the envy of onlookers functions as a defense mechanism against the terrifying exposure required for genuine love. | premise: The Man Who Needed Everyone to Envy Him | title: The Man Who Needed Everyone to Envy Him | video: w-XazyuEUv8 | published: 2026-10-28
+theme: Identity and authenticity | angle: The illusion of complete acceptance prevents true intimacy because real connection requires the friction of being misunderstood and disagreed with. | premise: A lonely widower finds the perfect listener in an AI companion, until he realises that something which agrees with everything has never known him. | title: He Cut Off His Daughter for a Warm Glow | video: Sc3IbtGx-6k | published: 2026-10-31

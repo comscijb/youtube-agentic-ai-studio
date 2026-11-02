@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-22",
+  "size": [
+    1360,
+    752
+  ],
+  "modes": {
+    "t2i": {
+      "seconds_per_image": 16.6,
+      "vram_peak_mb": 7432.7,
+      "samples": [
+        15.3,
+        18.2,
+        16.2
+      ]
+    },
+    "ref_reference": {
+      "seconds_per_image": 33.0,
+      "vram_peak_mb": 7633.8,
+      "samples": [
+        36.3,
+        32.4,
+        30.4
+      ]
+    },
+    "ref_empty_16x9": {
+      "seconds_per_image": 21.0,
+      "vram_peak_mb": 7607.6,
+      "samples": [
+        22.3,
+        22.3,
+        18.3
+      ]
+    },
+    "ref": {
+      "seconds_per_image": 33.0,
+      "vram_peak_mb": 7633.8,
+      "samples": [
+        36.3,
+        32.4,
+        30.4
+      ]
+    }
+  }
+}
