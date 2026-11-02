@@ -131,9 +131,10 @@ class MojibakeTests(unittest.TestCase):
         assert_no_mojibake({"sections": [{"id": 1, "narration": CLEAN}]})
 
     def test_narration_refuses_mojibake_before_any_tts(self):
+        from audio.tts import edge
         from video import narrator
         script = {"sections": [{"id": 3, "narration": windows_misdecode(CLEAN)}]}
-        with patch.object(narrator, "_synthesise") as synth, tempfile.TemporaryDirectory() as temp:
+        with patch.object(edge, "_synthesise") as synth, tempfile.TemporaryDirectory() as temp:
             with self.assertRaises(MojibakeError):
                 narrator.generate_narration(script, temp)
         synth.assert_not_called()

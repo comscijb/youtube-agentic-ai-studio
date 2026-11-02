@@ -231,6 +231,17 @@ def _entry(stage: str, status: str, detail: str = "") -> dict:
     return {"stage": stage, "label": label, "status": status, "detail": detail, "optional": optional}
 
 
+def narration_voice_changed(path) -> bool:
+    """The narration was made with another backend/voice than the channel voice (Phase 3.9-A).
+    Narrations from before 3.9 record no voice and are never marked by this."""
+    from audio import tts
+    made = (load_json(Path(path) / "narration_words.json") or {}).get("voice")
+    if not made:
+        return False
+    now = tts.identity()
+    return (made.get("backend"), made.get("voice")) != (now["backend"], now["voice"])
+
+
 def stage_status(path) -> list[dict]:
     path = Path(path)
     data = load(path)
@@ -277,6 +288,8 @@ def stage_status(path) -> list[dict]:
         result.append(_entry("narration", "partial", f"{len(present)}/{len(narration_files)} files"))
     elif _newer([files["script.json"]], files["scene_timeline.json"]):
         result.append(_entry("narration", "stale", "the script changed after the narration"))
+    elif narration_voice_changed(path):
+        result.append(_entry("narration", "stale", "the channel voice changed after the narration"))
     else:
         timeline = load_json(files["scene_timeline.json"]) or {}
         result.append(_entry("narration", "done", f"{float(timeline.get('total_duration', 0)) / 60:.1f} min"))

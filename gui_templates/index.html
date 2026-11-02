@@ -866,6 +866,24 @@ input[type=range]{width:100%;accent-color:var(--primary)}
               </select>
             </div>
 
+            <div class="settings-field" id="voices-panel">
+              <div class="field-label">Vozes — a voz do canal</div>
+              <div id="voices-channel" class="help-text"></div>
+              <div id="voices-list" style="display:flex;flex-direction:column;gap:6px;font-size:12px"></div>
+              <div class="help-text">Gere as amostras com <code>python -m scripts.voice_audition --text-file briefs/audition.txt</code>.
+                Trocar a voz marca a narração como desatualizada.</div>
+              <details style="margin-top:6px"><summary style="font-size:12px">Voz de referência para clonagem</summary>
+                <div class="help-text">Só a sua própria voz ou uma licenciada para este uso. Nunca uma pessoa pública real.</div>
+                <input type="file" id="voice-ref-file" accept=".wav,.mp3,.flac,.m4a,.ogg">
+                <input type="text" id="voice-ref-speaker" placeholder="Quem fala">
+                <input type="text" id="voice-ref-licence" placeholder="Licença ou consentimento">
+                <label class="step-check"><input type="checkbox" id="voice-ref-own"> É a minha voz (ou licenciada para isto)</label>
+                <label class="step-check"><input type="checkbox" id="voice-ref-public"> Não é a voz de uma pessoa pública real</label>
+                <button class="btn btn-ghost" style="font-size:11px" onclick="uploadVoiceReference()">Enviar referência</button>
+                <div id="voice-ref-list" class="help-text"></div>
+              </details>
+            </div>
+
             <div class="settings-field">
               <div class="field-label">Efeito de filme</div>
               <select id="s-film-effect">
@@ -1140,7 +1158,7 @@ function switchTab(name) {
       dtEl.value = t.toISOString().slice(0,16);
     }
   }
-  if (name === 'settings') loadSettings();
+  if (name === 'settings') { loadSettings(); loadVoices(); }
   if (name === 'project') refreshProject();
 }
 
@@ -1203,6 +1221,67 @@ function setFormat(type) {
       : 'e.g. A man secretly attends the retirement party held for his invented twin';
   }
   document.getElementById('target-duration').disabled = type === 'shorts';
+}
+
+function loadVoices() {
+  // Phase 3.9-A: audition samples side by side; one click makes a voice the channel voice.
+  fetch('/api/voices').then(r => r.json()).then(d => {
+    const channel = d.channel;
+    document.getElementById('voices-channel').textContent =
+      `Voz do canal: ${channel.backend} · ${channel.voice}` + (d.narration_stale ? ' — a narração deste projeto está desatualizada' : '');
+    const list = document.getElementById('voices-list');
+    list.innerHTML = '';
+    (d.audition.rows || []).forEach(row => {
+      const line = document.createElement('div');
+      line.style.cssText = 'display:flex;gap:8px;align-items:center;flex-wrap:wrap';
+      const label = document.createElement('span');
+      label.style.minWidth = '220px';
+      label.textContent = `${row.backend} · ${row.voice}` + (row.error ? ` — ${row.error}` :
+        ` — RTF ${row.rtf} · VRAM ${row.vram_mib ?? '—'} MiB · cobertura ${row.coverage ?? '—'} · deriva ${row.drift_ms ?? '—'} ms · ${row.lufs ?? '—'} LUFS`);
+      label.title = row.licence || '';
+      line.appendChild(label);
+      if (row.file) {
+        const audio = document.createElement('audio');
+        audio.controls = true;
+        audio.src = '/api/voices/sample/' + encodeURIComponent(row.file);
+        line.appendChild(audio);
+        const use = document.createElement('button');
+        use.className = 'btn btn-ghost';
+        use.style.cssText = 'font-size:11px;padding:2px 8px';
+        const current = row.backend === channel.backend && row.voice === channel.voice;
+        use.textContent = current ? '✓ voz do canal' : 'Usar como voz do canal';
+        use.disabled = current;
+        use.onclick = () => {
+          if (!confirm('Trocar a voz do canal? A narração existente fica desatualizada e precisa ser refeita.')) return;
+          fetch('/api/voices/channel', {method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({backend: row.backend, voice: row.voice})}).then(r => r.json()).then(x => {
+              if (!x.ok) { alert(x.error); return; }
+              loadVoices(); refreshProject();
+            });
+        };
+        line.appendChild(use);
+      }
+      list.appendChild(line);
+    });
+    if (!(d.audition.rows || []).length) list.textContent = 'Nenhuma amostra ainda.';
+    document.getElementById('voice-ref-list').textContent = (d.references || []).map(item =>
+      `${item.name}: ${item.usable ? 'ok' : item.error}`).join(' · ');
+  });
+}
+
+function uploadVoiceReference() {
+  const file = document.getElementById('voice-ref-file').files[0];
+  if (!file) { alert('Escolha um arquivo de áudio.'); return; }
+  const form = new FormData();
+  form.append('clip', file);
+  form.append('speaker', document.getElementById('voice-ref-speaker').value);
+  form.append('licence', document.getElementById('voice-ref-licence').value);
+  form.append('own_voice', document.getElementById('voice-ref-own').checked ? 'true' : 'false');
+  form.append('not_public_person', document.getElementById('voice-ref-public').checked ? 'true' : 'false');
+  fetch('/api/voices/reference', {method: 'POST', body: form}).then(r => r.json()).then(d => {
+    if (!d.ok) { alert(d.error); return; }
+    loadVoices();
+  });
 }
 
 function confirmRegenerate(d) {

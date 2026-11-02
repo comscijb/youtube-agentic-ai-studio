@@ -1,31 +1,32 @@
 """
-Narrator — Microsoft Edge TTS (100% free)
-Generates broadcast-quality voiceover + word-timed subtitle (SRT) file.
+Narrator — the channel voice through a pluggable TTS backend (audio/tts, Phase 3.9-A).
 
-- Requests WordBoundary events (edge-tts >= 7 sends only SentenceBoundary
-  unless Communicate(..., boundary="WordBoundary") is passed).
-- Each scene is synthesised separately with bounded retries and cached by
-  hash(text, voice, rate, pitch, edge-tts version): re-running narration only
-  re-synthesises scenes whose text changed.
-- Measured delivery (words per minute) is recorded for planning.
+- The backend is ``TTS_BACKEND`` (edge | local | elevenlabs) with the voice ``TTS_VOICE``; Edge TTS
+  remains the default. Word timings come from the backend (Edge WordBoundary, ElevenLabs character
+  timings) or from forced alignment against the script (local models).
+- The shared pronunciation list (data/pronunciations.json) is applied for every backend.
+- Backends that take delivery hints get the scene split into narration and quoted dialogue (quieter
+  narration where the scene's emotional tone says so); the others read the scene in one piece.
+- Each scene is synthesised separately and cached by hash(text, backend, voice, rate, pitch, engine
+  version, pronunciations): re-running narration only re-synthesises scenes whose text changed.
+- Measured delivery (words per minute) is recorded per backend + voice for planning, and the voice is
+  stored with the narration (a channel-voice change marks it stale).
 Uses MoviePy's AudioFileClip for duration — guaranteed to match the video render.
 """
-import asyncio
 import hashlib
-import importlib.metadata
-import inspect
 import json
 import os
 import re
 import shutil
 import tempfile
-import time
 
-import edge_tts
 import config
 from moviepy.editor import AudioFileClip, concatenate_audioclips
 from agents.narrative import assert_no_mojibake
 from agents.voice_calibration import record as record_calibration
+from audio import tts
+from audio.tts import delivery, pronunciations
+from audio.tts.edge import edge_tts_version, supports_word_boundary  # noqa: F401  (render_preflight, tests)
 from video.captions import align_words, build_cues, proportional_words
 from video.timeline import write_shifted_srt, write_timeline
 
@@ -35,9 +36,6 @@ WORD_SYNCED_VOICES = [
     ("en-US-AndrewNeural", "Andrew (US, Warm male)"),
     ("en-GB-LibbyNeural",  "Libby  (UK, Clear female)"),
 ]
-RETRY_DELAYS = (2, 5, 10)      # seconds before attempts 2, 3 and 4
-_sleep = time.sleep
-_upgrade_hint_shown = False
 
 
 # ══════════════════════════════════════════════════════════════
@@ -76,25 +74,6 @@ def _get_audio_duration_ms(audio_path: str) -> float:
         return 60_000
 
 
-def edge_tts_version() -> str:
-    try:
-        return importlib.metadata.version("edge-tts")
-    except importlib.metadata.PackageNotFoundError:
-        return getattr(edge_tts, "__version__", "unknown")
-
-
-def supports_word_boundary() -> bool:
-    """edge-tts >= 7 exposes Communicate(boundary=...); older versions always send words."""
-    try:
-        return "boundary" in inspect.signature(edge_tts.Communicate.__init__).parameters
-    except (TypeError, ValueError):
-        return False
-
-
-# ══════════════════════════════════════════════════════════════
-#  SRT WRITER
-# ══════════════════════════════════════════════════════════════
-
 def _write_srt_blocks(blocks: list[tuple[float, float, str]], srt_path: str) -> int:
     """
     Write a list of (start_ms, end_ms, text) tuples as a valid SRT file.
@@ -119,84 +98,55 @@ def scene_cues(text: str, events: list[dict], duration_s: float) -> list[tuple]:
 #  TTS SYNTHESIS
 # ══════════════════════════════════════════════════════════════
 
-def _communicate(text: str):
-    kwargs = {"rate": config.VOICE_RATE, "pitch": config.VOICE_PITCH}
-    if supports_word_boundary():
-        kwargs["boundary"] = "WordBoundary"
-    return edge_tts.Communicate(text, config.VOICE_ID, **kwargs)
+def _concat(parts: list[str], out_path: str) -> None:
+    """Join per-line audio pieces into one scene file (no inserted silence)."""
+    clips = [AudioFileClip(part) for part in parts]
+    try:
+        joined = concatenate_audioclips(clips)
+        joined.write_audiofile(out_path, codec="libmp3lame", verbose=False, logger=None)
+        joined.close()
+    finally:
+        for clip in clips:
+            clip.close()
 
 
-async def _synthesise(text: str, audio_path: str) -> list[dict]:
-    """Stream one scene's audio to ``audio_path``; return WordBoundary events (ms)."""
-    audio_chunks = []
-    events = []
-    async for event in _communicate(text).stream():
-        if event["type"] == "audio":
-            audio_chunks.append(event["data"])
-        elif event["type"] == "WordBoundary":
-            offset_ms = event["offset"] / 10_000          # 100-ns ticks → ms
-            events.append({
-                "text": event["text"],
-                "start_ms": offset_ms,
-                "end_ms": offset_ms + event["duration"] / 10_000,
-            })
-    if not audio_chunks:
-        raise edge_tts.exceptions.NoAudioReceived("No audio was received for this scene.")
-    with open(audio_path, "wb") as f:
-        for chunk in audio_chunks:
-            f.write(chunk)
+def synthesise_scene(text: str, audio_path: str, label: str = "", section: dict | None = None) -> list[dict]:
+    """One scene in the channel voice; returns word events (ms) for ``text``."""
+    backend = tts.get()
+    voice = tts.channel_voice(backend.name)
+    entries = pronunciations.load()
+    common = {"voice": voice, "rate": config.VOICE_RATE, "pitch": config.VOICE_PITCH, "label": label}
+    pieces = delivery.lines(text, section) if backend.supports_style else [(text, None)]
+    if len(pieces) == 1:
+        spoken = pronunciations.apply(pieces[0][0], backend.name, entries)
+        return backend.synthesize(spoken, audio_path, style=pieces[0][1], **common)["words"]
+    events, parts, offset = [], [], 0.0
+    with tempfile.TemporaryDirectory(prefix="private_gravity_lines_") as temp:
+        for number, (line, style) in enumerate(pieces):
+            part = os.path.join(temp, f"line_{number:03d}.mp3")
+            result = backend.synthesize(pronunciations.apply(line, backend.name, entries), part, style=style,
+                                        **common)
+            clip = AudioFileClip(part)
+            duration = float(clip.duration)
+            clip.close()
+            events += [{**item, "start_ms": item["start_ms"] + offset, "end_ms": item["end_ms"] + offset}
+                       for item in result["words"]]
+            parts.append(part)
+            offset += duration * 1000
+        _concat(parts, audio_path)
     return events
 
 
-def _http_status(exc) -> int | None:
-    for name in ("status", "status_code", "code"):
-        value = getattr(exc, name, None)
-        if isinstance(value, int):
-            return value
-    match = re.search(r"\b(403|5\d\d)\b", str(exc))
-    return int(match.group(1)) if match else None
-
-
-def _retryable(exc) -> bool:
-    exceptions = getattr(edge_tts, "exceptions", None)
-    edge_errors = tuple(
-        getattr(exceptions, name) for name in
-        ("NoAudioReceived", "WebSocketError", "UnexpectedResponse", "UnknownResponse")
-        if exceptions is not None and hasattr(exceptions, name)
-    )
-    status = _http_status(exc)
-    return (isinstance(exc, edge_errors + (asyncio.TimeoutError, ConnectionError))
-            or status == 403 or (status is not None and 500 <= status < 600)
-            or exc.__class__.__module__.startswith("aiohttp"))
-
-
-def synthesise_scene(text: str, audio_path: str, label: str = "") -> list[dict]:
-    """Synthesise with up to len(RETRY_DELAYS) retries on transient Edge TTS failures."""
-    global _upgrade_hint_shown
-    for attempt in range(len(RETRY_DELAYS) + 1):
-        try:
-            return asyncio.run(_synthesise(text, audio_path))
-        except Exception as exc:
-            if not _retryable(exc) or attempt == len(RETRY_DELAYS):
-                raise
-            if _http_status(exc) == 403 and not _upgrade_hint_shown:
-                _upgrade_hint_shown = True
-                print(f"   ⚠ Edge TTS answered 403. Outdated clients are rejected: "
-                      f"pip install -U edge-tts (installed {edge_tts_version()}).")
-            delay = RETRY_DELAYS[attempt]
-            print(f"   ⚠ {label or 'scene'}: {exc.__class__.__name__}; retry "
-                  f"{attempt + 1}/{len(RETRY_DELAYS)} in {delay}s")
-            _sleep(delay)
-    raise RuntimeError("unreachable")
-
-
 def cache_key(text: str) -> str:
-    payload = json.dumps([text, config.VOICE_ID, config.VOICE_RATE, config.VOICE_PITCH,
-                          edge_tts_version(), supports_word_boundary()], ensure_ascii=False)
+    backend = tts.get()
+    payload = json.dumps([text, backend.name, tts.channel_voice(backend.name), config.VOICE_RATE,
+                          config.VOICE_PITCH, backend.cache_tag(), pronunciations.fingerprint()],
+                         ensure_ascii=False)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-def cached_scene(text: str, cache_dir: str, scene_audio: str, label: str) -> tuple[list, bool]:
+def cached_scene(text: str, cache_dir: str, scene_audio: str, label: str,
+                 section: dict | None = None) -> tuple[list, bool]:
     """Copy a cached synthesis into ``scene_audio`` or synthesise and cache it."""
     key = cache_key(text)
     cached_audio = os.path.join(cache_dir, f"{key}.mp3")
@@ -209,7 +159,8 @@ def cached_scene(text: str, cache_dir: str, scene_audio: str, label: str) -> tup
             return events, True
         except (OSError, ValueError):
             pass
-    events = synthesise_scene(text, scene_audio, label)
+    events = synthesise_scene(text, scene_audio, label, section) if section is not None \
+        else synthesise_scene(text, scene_audio, label)
     os.makedirs(cache_dir, exist_ok=True)
     shutil.copyfile(scene_audio, cached_audio)
     with open(cached_events, "w", encoding="utf-8") as f:
@@ -249,7 +200,7 @@ def generate_narration(script: dict, output_dir: str) -> str:
                 scene_audio = os.path.join(temp_dir, f"scene_{index:03d}.mp3")
                 scene_srt = os.path.join(temp_dir, f"scene_{index:03d}.srt")
                 label = f"scene {index}/{len(sections)}"
-                events, hit = cached_scene(text, cache_dir, scene_audio, label)
+                events, hit = cached_scene(text, cache_dir, scene_audio, label, section)
                 print(f"   → {'Reused' if hit else 'Synthesised'} {label} "
                       f"({len(text.split())} words, {len(events)} word timings)")
                 clip = AudioFileClip(scene_audio)
@@ -271,10 +222,13 @@ def generate_narration(script: dict, output_dir: str) -> str:
         finally:
             for clip in clips:
                 clip.close()
+            backend = tts.get()
+            if hasattr(backend, "close"):
+                backend.close()                     # a local model gives the VRAM back
 
     if scenes_without_words:
         print(f"   ⚠ No WordBoundary events for scene(s) {scenes_without_words} "
-              f"(edge-tts {edge_tts_version()}; word timings need "
+              f"(backend {tts.backend_name()}; edge-tts {edge_tts_version()}; word timings need "
               f"Communicate(boundary=\"WordBoundary\"), supported: {supports_word_boundary()}). "
               "Those captions use proportional timing.")
 
@@ -284,12 +238,13 @@ def generate_narration(script: dict, output_dir: str) -> str:
     durations[-1] += rendered_duration - sum(durations)
     write_timeline(os.path.join(output_dir, "scene_timeline.json"), sections, durations)
     with open(os.path.join(output_dir, "narration_words.json"), "w", encoding="utf-8") as handle:
-        json.dump({"words": timed_words, "total_duration": round(rendered_duration, 3)}, handle, ensure_ascii=False)
+        json.dump({"words": timed_words, "total_duration": round(rendered_duration, 3),
+                   "voice": tts.identity()}, handle, ensure_ascii=False)
 
     words = sum(len(section["narration"].split()) for section in sections)
     entry = record_calibration(words, rendered_duration)
     if entry:
-        print(f"   → Measured delivery: {entry['wpm']} wpm for {config.VOICE_ID} "
+        print(f"   → Measured delivery: {entry['wpm']} wpm for {tts.backend_name()}:{tts.channel_voice()} "
               f"{config.VOICE_RATE} (saved for planning)")
 
     # ── Post-run report ──────────────────────────────────────────────────────

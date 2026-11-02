@@ -142,6 +142,17 @@ NARRATIVE_SEMANTIC_REVISION_TYPES = (
 #    en-US-GuyNeural      — US, clear, neutral
 # ─────────────────────────────────────────
 VOICE_ID    = "en-US-AndrewNeural"
+# Phase 3.9-A: the channel voice. TTS_BACKEND = edge | local | elevenlabs; TTS_VOICE is the voice of that
+# backend (empty = VOICE_ID for edge). Pick it in the GUI → Vozes after
+# python -m scripts.voice_audition --text-file briefs/audition.txt
+TTS_BACKEND = os.getenv("TTS_BACKEND", "edge")
+TTS_VOICE   = os.getenv("TTS_VOICE", "")
+TTS_LOCAL_ENGINE = os.getenv("TTS_LOCAL_ENGINE", "kokoro")      # kokoro (Apache-2.0) | chatterbox (MIT)
+TTS_LOCAL_DEVICE = os.getenv("TTS_LOCAL_DEVICE", "auto")        # auto | cpu | cuda
+TTS_LOCAL_VOICE  = "am_michael"                                  # Kokoro stock voice when TTS_VOICE is empty
+TTS_REFERENCE_CLIP = os.getenv("TTS_REFERENCE_CLIP", "")         # assets/voice/<clip> (Chatterbox; provenance note required)
+ELEVENLABS_MODEL = "eleven_multilingual_v2"                      # key: ELEVENLABS_API_KEY in .env
+ALIGNER_MODEL = "base.en"                                        # faster-whisper model for forced alignment
 VOICE_RATE  = "-5%"     # slow down slightly for narration feel
 VOICE_PITCH = "-3Hz"    # slightly deeper = more cinematic
 

@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 import config
 from agents import voice_calibration
+from audio.tts import edge
 from video import captions, narrator
 
 TEXT = "He set the table for his father’s dinner—eight guests, all watching. Elena didn’t move."
@@ -100,15 +101,15 @@ class SynthesisTests(unittest.TestCase):
     def test_word_boundary_requested_when_supported(self):
         FakeCommunicate.calls = []
         with tempfile.TemporaryDirectory() as temp, \
-                patch.object(narrator.edge_tts, "Communicate", FakeCommunicate):
-            result = narrator.synthesise_scene("Hi", str(Path(temp, "a.mp3")))
+                patch.object(edge.edge_tts, "Communicate", FakeCommunicate):
+            result = edge.synthesise_scene("Hi", str(Path(temp, "a.mp3")))
         self.assertEqual(FakeCommunicate.calls[0]["boundary"], "WordBoundary")
         self.assertEqual(result, [{"text": "Hi", "start_ms": 100.0, "end_ms": 300.0}])
 
     def test_older_edge_tts_without_boundary_parameter(self):
-        with patch.object(narrator.edge_tts, "Communicate", OldCommunicate):
-            self.assertFalse(narrator.supports_word_boundary())
-            communicate = narrator._communicate("Hi")
+        with patch.object(edge.edge_tts, "Communicate", OldCommunicate):
+            self.assertFalse(edge.supports_word_boundary())
+            communicate = edge._communicate("Hi")
         self.assertNotIn("boundary", communicate.kwargs)
 
     def test_transient_failures_retry_with_backoff_then_succeed(self):
@@ -117,12 +118,12 @@ class SynthesisTests(unittest.TestCase):
         async def flaky(text, path):
             attempts.append(1)
             if len(attempts) < 3:
-                raise narrator.edge_tts.exceptions.NoAudioReceived("none")
+                raise edge.edge_tts.exceptions.NoAudioReceived("none")
             return [{"text": "ok"}]
 
         waits = []
-        with patch.object(narrator, "_synthesise", flaky), patch.object(narrator, "_sleep", waits.append):
-            result, _ = quiet(narrator.synthesise_scene, "x", "unused.mp3", "scene 1/1")
+        with patch.object(edge, "_synthesise", flaky), patch.object(edge, "_sleep", waits.append):
+            result, _ = quiet(edge.synthesise_scene, "x", "unused.mp3", "scene 1/1")
         self.assertEqual(result, [{"text": "ok"}])
         self.assertEqual(waits, [2, 5])
 
@@ -134,12 +135,12 @@ class SynthesisTests(unittest.TestCase):
             raise Forbidden("Invalid response status 403")
 
         waits = []
-        narrator._upgrade_hint_shown = False
-        with patch.object(narrator, "_synthesise", always), patch.object(narrator, "_sleep", waits.append):
+        edge._upgrade_hint_shown = False
+        with patch.object(edge, "_synthesise", always), patch.object(edge, "_sleep", waits.append):
             with self.assertRaises(Forbidden):
                 output = io.StringIO()
                 with redirect_stdout(output):
-                    narrator.synthesise_scene("x", "unused.mp3")
+                    edge.synthesise_scene("x", "unused.mp3")
         self.assertEqual(waits, [2, 5, 10])
         self.assertEqual(output.getvalue().count("pip install -U edge-tts"), 1)
 
@@ -147,15 +148,15 @@ class SynthesisTests(unittest.TestCase):
         async def broken(text, path):
             raise ValueError("bad voice")
 
-        with patch.object(narrator, "_synthesise", broken), patch.object(narrator, "_sleep") as wait:
+        with patch.object(edge, "_synthesise", broken), patch.object(edge, "_sleep") as wait:
             with self.assertRaises(ValueError):
-                narrator.synthesise_scene("x", "unused.mp3")
+                edge.synthesise_scene("x", "unused.mp3")
         wait.assert_not_called()
 
     def test_scene_cache_reuses_unchanged_text_only(self):
         calls = []
 
-        def fake_synth(text, path, label=""):
+        def fake_synth(text, path, label="", section=None):
             calls.append(text)
             Path(path).write_bytes(text.encode("utf-8"))
             return [{"text": text, "start_ms": 0, "end_ms": 10}]
@@ -197,7 +198,7 @@ class GenerateNarrationTests(unittest.TestCase):
         script = {"sections": [{"id": 1, "narration": " ".join(["word"] * 60) + "."},
                                {"id": 2, "narration": "Elena didn’t move."}]}
 
-        def fake_synth(text, path, label=""):
+        def fake_synth(text, path, label="", section=None):
             Path(path).write_bytes(b"x")
             tokens = [token.strip(".") for token in text.split()]
             return events(tokens, step=40, length=30)
@@ -223,7 +224,7 @@ class GenerateNarrationTests(unittest.TestCase):
     def test_neutral_warning_without_word_boundaries(self):
         script = {"sections": [{"id": 1, "narration": "A short line without timings."}]}
 
-        def no_words(text, path, label=""):
+        def no_words(text, path, label="", section=None):
             Path(path).write_bytes(b"x")
             return []
 

@@ -2081,6 +2081,71 @@ def get_settings():
     })
 
 
+# ── Channel voice (Phase 3.9-A) ─────────────────────────────────────────────
+
+def _audition_dir() -> Path:
+    from scripts.voice_audition import OUT
+    return OUT
+
+
+@app.route("/api/voices")
+def voices_status():
+    """"Vozes": the channel voice, the audition samples, the backends and the reference clips."""
+    from audio import tts
+    from audio.tts import voices
+    results = load_json(_audition_dir() / "results.json") or {"rows": []}
+    backends = []
+    for name in tts.BACKENDS:
+        ok, detail = tts.get(name).available()
+        backends.append({"name": name, "available": ok, "detail": detail})
+    stale = projects.is_project(config.OUTPUT_DIR) and projects.narration_voice_changed(config.OUTPUT_DIR)
+    return jsonify({"ok": True, "channel": tts.identity(), "audition": results, "backends": backends,
+                    "references": voices.references(), "narration_stale": bool(stale)})
+
+
+@app.route("/api/voices/sample/<name>")
+def voices_sample(name):
+    folder = _audition_dir().resolve()
+    path = (folder / name).resolve()
+    if path.parent != folder or path.suffix.lower() not in (".mp3", ".wav") or not path.is_file():
+        abort(404)
+    return send_file(str(path), conditional=True)
+
+
+@app.route("/api/voices/channel", methods=["POST"])
+def voices_channel():
+    """Make a backend + voice the channel voice (used by every later narration and Short)."""
+    from audio import tts
+    body = request.get_json(force=True) or {}
+    backend, voice = str(body.get("backend", "")), str(body.get("voice", "")).strip()
+    if backend not in tts.BACKENDS or not voice:
+        return jsonify({"ok": False, "error": "Choose a backend and a voice"}), 400
+    config.TTS_BACKEND, config.TTS_VOICE = backend, voice
+    try:
+        _write_env_settings({"TTS_BACKEND": backend, "TTS_VOICE": voice})
+    except OSError as exc:
+        return jsonify({"ok": False, "error": f"Could not save the voice: {exc}"}), 500
+    stale = projects.is_project(config.OUTPUT_DIR) and projects.narration_voice_changed(config.OUTPUT_DIR)
+    return jsonify({"ok": True, "channel": tts.identity(), "narration_stale": bool(stale)})
+
+
+@app.route("/api/voices/reference", methods=["POST"])
+def voices_reference():
+    """Upload a reference clip for cloning: refused without speaker, licence and both confirmations."""
+    from audio.tts import voices
+    upload = request.files.get("clip")
+    if upload is None:
+        return jsonify({"ok": False, "error": "No audio file"}), 400
+    try:
+        path = voices.save_reference(upload.read(), upload.filename or "reference.wav",
+                                     speaker=request.form.get("speaker", ""), licence=request.form.get("licence", ""),
+                                     own_voice=request.form.get("own_voice") == "true",
+                                     not_public_person=request.form.get("not_public_person") == "true")
+    except voices.VoiceProvenanceError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    return jsonify({"ok": True, "name": path.name})
+
+
 @app.route("/api/gemini/models")
 def get_gemini_models():
     """Explicit capability check; never returns credentials or raw SDK errors."""
