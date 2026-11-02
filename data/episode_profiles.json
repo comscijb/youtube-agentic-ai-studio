@@ -1,0 +1,30 @@
+{
+  "episodes": {
+    "w-XazyuEUv8": {
+      "theme_tags": [
+        "status/envy",
+        "love/intimacy",
+        "control"
+      ],
+      "primary": "status/envy",
+      "narrative_type": "realistic_psychological_fiction",
+      "opening_device": "cold-open line",
+      "title": "The Man Who Needed Everyone to Envy Him",
+      "thumbnail_composition": "",
+      "source": "backfill"
+    },
+    "Sc3IbtGx-6k": {
+      "theme_tags": [
+        "technology-intimacy",
+        "loneliness",
+        "family"
+      ],
+      "primary": "technology-intimacy",
+      "narrative_type": "realistic_psychological_fiction",
+      "opening_device": "cold-open line",
+      "title": "He Cut Off His Daughter for a Warm Glow",
+      "thumbnail_composition": "",
+      "source": "backfill"
+    }
+  }
+}
