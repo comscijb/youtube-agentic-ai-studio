@@ -253,17 +253,18 @@ def upload_run(run_dir: str, *, video_path: str, title: str, description: str, t
     published and bans its topic.
     """
     from uploader import publications
-    from uploader.approval import realistic_synthetic_media, require_approval
+    from uploader.approval import episode_disclosure, require_approval
 
     approval = require_approval(
         run_dir, video_path=video_path, title=title, description=description, tags=tags,
         thumbnail_path=thumbnail_path,
     )
+    disclosure = episode_disclosure(run_dir, approval)  # Phase 3.9-F: one decision for the episode and its Shorts
     video_id = upload_video(
         video_path, title=title, description=description, tags=tags, privacy=privacy,
         publish_at=publish_at, thumbnail_path=thumbnail_path, progress=progress,
         service=service,
-        contains_synthetic_media=approval.get("synthetic_disclosure", realistic_synthetic_media(run_dir)),
+        contains_synthetic_media=disclosure["value"],
     )
     captions = {"action": "skipped", "reason": "no narration.srt"}
     srt = Path(run_dir) / "narration.srt"
@@ -279,7 +280,7 @@ def upload_run(run_dir: str, *, video_path: str, title: str, description: str, t
     if shorts_upload.included(run_dir):                 # Phase 3.7: after the episode, with its URL
         try:
             shorts = shorts_upload.upload_shorts(run_dir, video_id, service=service, privacy=privacy,
-                                                 publish_at=publish_at)
+                                                 publish_at=publish_at, disclosure=disclosure)
         except Exception as exc:                       # noqa: BLE001 — the episode is uploaded and recorded
             print(f"   WARNING: Shorts upload stopped ({exc.__class__.__name__}: {str(exc)[:200]}); "
                   "the episode is uploaded.")
@@ -292,7 +293,8 @@ def upload_run(run_dir: str, *, video_path: str, title: str, description: str, t
             "status_override_reason": approval.get("status_override_reason", ""),
             "title_override_reason": approval.get("title_override_reason", ""),
         }, "captions": captions, "language": getattr(config, "VIDEO_LANGUAGE", "en"),
-            "shorts": [record["video_id"] for record in shorts]},
+            "shorts": [record["video_id"] for record in shorts],
+            "contains_synthetic_media": disclosure["value"], "synthetic_disclosure_reason": disclosure["reason"]},
     )
 
 

@@ -236,3 +236,45 @@ def start_background_sync(interval_minutes: float | None = None) -> threading.Th
     thread.stop_event = stop
     thread.start()
     return thread
+
+
+def _archived(record: dict, name: str, folder: str, archive_root) -> dict | None:
+    """``name`` from the run folder, else from the project's archive (``<root>/<slug>/<folder>/``)."""
+    found = load_json(Path(record.get("run_dir") or "") / name)
+    if found is None and record.get("project"):
+        if archive_root is None:
+            from studio import archive
+            archive_root = archive.root()
+        found = load_json(Path(archive_root) / record["project"] / folder / name)
+    return found
+
+
+def backfill_disclosure(path=None, *, archive_root=None, dry_run: bool = False) -> list[dict]:
+    """Phase 3.9-F: give older ledger records ``contains_synthetic_media`` and its reason, read from
+    the episode's (possibly archived) approval. Records that already have it are left alone; a
+    record whose approval cannot be found is reported, not guessed. Returns one row per record."""
+    from uploader import approval as approval_module
+    rows = []
+    with _lock:
+        ledger = load_ledger(path)
+        for record in ledger["publications"]:
+            row = {"video_id": record.get("video_id"), "kind": record.get("kind", "episode")}
+            if "contains_synthetic_media" in record:
+                rows.append({**row, "action": "kept", "value": record["contains_synthetic_media"],
+                             "reason": record.get("synthetic_disclosure_reason", "")})
+                continue
+            approved = _archived(record, approval_module.APPROVAL_FILE, "text", archive_root)
+            if not approved or "synthetic_disclosure" not in approved:
+                rows.append({**row, "action": "missing", "reason": "no approval with a disclosure decision found"})
+                continue
+            manifest = _archived(record, "asset_manifest.json", "manifests", archive_root)
+            rule = approval_module.disclosure_decision(record.get("run_dir") or ".", manifest=manifest or {})
+            value = bool(approved["synthetic_disclosure"])
+            reason = approved.get("synthetic_disclosure_reason") or (
+                rule["reason"] if manifest and rule["value"] == value else "reviewer decision at approval")
+            record["contains_synthetic_media"] = value
+            record["synthetic_disclosure_reason"] = f"backfilled from the approval: {reason}"
+            rows.append({**row, "action": "backfilled", "value": value, "reason": record["synthetic_disclosure_reason"]})
+        if not dry_run and any(row["action"] == "backfilled" for row in rows):
+            save_ledger(ledger, path)
+    return rows

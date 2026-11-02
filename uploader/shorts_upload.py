@@ -126,9 +126,12 @@ def reminder(episode_url: str, count: int) -> str:
 
 def upload_shorts(run_dir, episode_video_id: str, *, service=None, privacy: str | None = None,
                   publish_at: str = "", now: datetime | None = None,
-                  progress: Callable[[str], None] = print) -> list[dict]:
-    """Upload every included Short after its episode; returns their ledger records."""
+                  progress: Callable[[str], None] = print, disclosure: dict | None = None) -> list[dict]:
+    """Upload every included Short after its episode; returns their ledger records. Each Short carries
+    the episode's synthetic-content decision (Phase 3.9-F)."""
     from uploader import publications, youtube
+    from uploader.approval import episode_disclosure
+    disclosure = disclosure or episode_disclosure(run_dir)
     script = load_json(Path(run_dir) / "script.json") or {}
     episode_url = f"https://www.youtube.com/watch?v={episode_video_id}"
     items = included(run_dir)
@@ -139,7 +142,7 @@ def upload_shorts(run_dir, episode_video_id: str, *, service=None, privacy: str 
         video_id = youtube.upload_video(
             item["video_path"], title=item["title"], description=description(item, episode_url, run_dir),
             tags=list(script.get("tags", []))[:10] + ["Shorts"], privacy=privacy, publish_at=scheduled,
-            service=service, contains_synthetic_media=False)
+            service=service, contains_synthetic_media=disclosure["value"])
         captions = {"action": "skipped"}
         if Path(item["srt_path"]).is_file():
             try:
@@ -150,7 +153,9 @@ def upload_shorts(run_dir, episode_video_id: str, *, service=None, privacy: str 
             video_id, run_dir, title=item["title"], video_path=item["video_path"],
             scheduled_publish_at=scheduled or None, touch_project=False,
             extra={"kind": "short", "parent_video_id": episode_video_id, "short_id": item["id"],
-                   "captions": captions, "language": getattr(config, "VIDEO_LANGUAGE", "en")})
+                   "captions": captions, "language": getattr(config, "VIDEO_LANGUAGE", "en"),
+                   "contains_synthetic_media": disclosure["value"],
+                   "synthetic_disclosure_reason": disclosure["reason"]})
         progress(f"   → Short {item['id']}: {record['url']} ({label(when, now)})")
         records.append(record)
     return records
