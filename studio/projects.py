@@ -154,7 +154,10 @@ def resolve(slug: str | None = None) -> Path:
 
 
 def activate(path) -> Path:
-    """Point config.OUTPUT_DIR / IMAGES_DIR at ``path`` (every module reads them at call time)."""
+    """Point config.OUTPUT_DIR / IMAGES_DIR at ``path`` — a folder, or a project slug — (every module
+    reads them at call time)."""
+    if isinstance(path, str) and re.fullmatch(r"[a-z0-9][a-z0-9-]*", path):
+        path = path_for(path)
     path = Path(path)
     config.OUTPUT_DIR = str(path)
     config.IMAGES_DIR = str(path / "images")
@@ -163,6 +166,12 @@ def activate(path) -> Path:
 
 def is_project(path) -> bool:
     return (Path(path) / PROJECT_FILE).is_file()
+
+
+def is_archived(path) -> bool:
+    """Moved to the archive (only project.json and ARCHIVED.txt are left): restore before editing."""
+    path = Path(path)
+    return load(path).get("status") == "archived" or (path / "ARCHIVED.txt").is_file()
 
 
 _RUNS = __import__("threading").Lock()

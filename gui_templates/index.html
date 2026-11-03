@@ -233,6 +233,11 @@ input[type=range]{width:100%;accent-color:var(--primary)}
 .voice-player audio{width:100%;height:30px}
 .voice-action .btn{font-size:11px;padding:2px 8px;white-space:nowrap}
 .voices-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:2px 12px;margin:6px 0}
+.project-empty{display:none;margin:24px}
+body.no-project .project-empty{display:block}
+body.no-project #tab-project > :not(.project-empty),
+body.no-project #tab-review > :not(.project-empty),
+body.no-project #tab-performance > :not(.project-empty){display:none}
 .empty-state{color:var(--muted);font-size:12px;padding:12px;text-align:center;border:1px dashed var(--border);border-radius:6px}
 .sbadge.partial{background:rgba(96,165,250,.15);color:var(--blue)}
 .sbadge.missing{background:rgba(255,255,255,.04);color:var(--muted);border-color:var(--border)}
@@ -308,6 +313,7 @@ input[type=range]{width:100%;accent-color:var(--primary)}
 
     <!-- ════ PROJECT TAB ════ -->
     <div class="tab-content" id="tab-project">
+      <div class="empty-state project-empty">Nenhum projeto aberto. Crie o projeto para começar (aba 🚀 Novo projeto) ou abra um em 📁 Projetos.</div>
       <div class="project-stages">
         <div class="flex-row" style="justify-content:space-between">
           <div>
@@ -343,6 +349,7 @@ input[type=range]{width:100%;accent-color:var(--primary)}
 
     <!-- ════ PERFORMANCE TAB (Phase 3.6-E) ════ -->
     <div class="tab-content" id="tab-performance">
+      <div class="empty-state project-empty">Nenhum projeto aberto. Crie o projeto para começar (aba 🚀 Novo projeto) ou abra um em 📁 Projetos.</div>
       <div class="project-stages">
         <div class="flex-row" style="justify-content:space-between">
           <div class="home-title" style="font-size:18px">Desempenho</div>
@@ -491,6 +498,7 @@ input[type=range]{width:100%;accent-color:var(--primary)}
 
     <!-- ════ REVIEW TAB ════ -->
     <div class="tab-content" id="tab-review">
+      <div class="empty-state project-empty">Nenhum projeto aberto. Crie o projeto para começar (aba 🚀 Novo projeto) ou abra um em 📁 Projetos.</div>
       <div class="review-layout">
 
         <!-- Left: video + thumbnail -->
@@ -1392,7 +1400,8 @@ function createProject() {
                           narrative_review: document.getElementById('narrative-review').checked})})
     .then(r => r.json()).then(d => {
       if (!d.ok) { alert(d.error); return; }
-      closeHome(); setProjectChip(d); openProjectTab();
+      closeHome();
+      refreshAll().then(() => openProjectTab());
       _log(`Projeto criado: ${d.slug} — rode "Premissa / Story Brief" primeiro.`);
     });
 }
@@ -2398,7 +2407,7 @@ function igTime(seconds) {
 }
 
 function loadImagegen() {
-  fetch('/api/imagegen/status').then(r => r.json()).then(d => {
+  projectFetch('/api/imagegen/status').then(r => r.json()).then(d => {
     _igData = d;
     document.getElementById('ig-comfy').innerHTML = d.comfyui
       ? '<span style="color:var(--green)">● ComfyUI running</span>'
@@ -2531,7 +2540,7 @@ function thumbButton(label, onclick, title) {
 
 function loadThumbVariants() {
   // Phase 3.8-E: the whole gallery (newest first), progress while a job runs, the last error.
-  fetch('/api/thumbnails').then(r => r.json()).then(d => {
+  projectFetch('/api/thumbnails').then(r => r.json()).then(d => {
     const box = document.getElementById('thumb-variants');
     const status = document.getElementById('thumb-status');
     if (!box) return;
@@ -2580,12 +2589,12 @@ function loadThumbVariants() {
       actions.style.cssText = 'display:flex;gap:4px;margin-top:4px;flex-wrap:wrap';
       const selected = v.number === d.selected;
       actions.appendChild(thumbButton(selected ? '✓ vai no upload' : 'Usar esta', () =>
-        fetch('/api/thumbnails/select', {method: 'POST', headers: {'Content-Type': 'application/json'},
+        projectFetch('/api/thumbnails/select', {method: 'POST', headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({number: v.number})}).then(r => r.json()).then(x => { if (!x.ok) alert(x.error); loadThumbVariants(); })));
       actions.appendChild(thumbButton('Gerar de novo', () => thumbAction('/api/thumbnails/regenerate', {number: v.number}),
                                       'Mesmo conceito, semente nova (fica ao lado)'));
       if (!selected) actions.appendChild(thumbButton('Arquivar', () =>
-        fetch('/api/thumbnails/archive', {method: 'POST', headers: {'Content-Type': 'application/json'},
+        projectFetch('/api/thumbnails/archive', {method: 'POST', headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({number: v.number})}).then(r => r.json()).then(x => { if (!x.ok) alert(x.error); loadThumbVariants(); }),
         'Esconde da galeria; os arquivos ficam'));
       const download = document.createElement('a');
@@ -2604,7 +2613,7 @@ function loadThumbVariants() {
 
 function loadVariation() {
   // Phase 3.9-C: warnings only (theme, structure, title shape, thumbnail composition), never a block.
-  fetch('/api/variation').then(r => r.json()).then(d => {
+  projectFetch('/api/variation').then(r => r.json()).then(d => {
     const box = document.getElementById('variation-box');
     if (!box || !d.ok) return;
     box.innerHTML = '';
@@ -2643,7 +2652,7 @@ function loadVariation() {
       save.className = 'btn btn-ghost';
       save.style.cssText = 'font-size:11px;padding:2px 8px';
       save.textContent = 'Salvar';
-      save.onclick = () => fetch('/api/variation/profile', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      save.onclick = () => projectFetch('/api/variation/profile', {method: 'POST', headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({video_id: item.video_id, theme_tags: tags.value.split(','), opening_device: device.value})})
         .then(r => r.json()).then(x => { if (!x.ok) alert(x.error); loadVariation(); });
       row.appendChild(save);
@@ -2653,7 +2662,7 @@ function loadVariation() {
     fill.className = 'btn btn-ghost';
     fill.style.cssText = 'font-size:11px;padding:2px 8px';
     fill.textContent = 'Preencher perfis que faltam (Gemini)';
-    fill.onclick = () => fetch('/api/variation/backfill', {method: 'POST'}).then(r => r.json()).then(() => loadVariation());
+    fill.onclick = () => projectFetch('/api/variation/backfill', {method: 'POST'}).then(r => r.json()).then(() => loadVariation());
     details.appendChild(fill);
     box.appendChild(details);
   });
@@ -2661,7 +2670,7 @@ function loadVariation() {
 
 function loadTitleScores() {
   // Phase 3.6-B: curiosity / concreteness / emotion / clarity (1-5) + length, total 0-100; pick or edit.
-  fetch('/api/titles').then(r => r.json()).then(d => {
+  projectFetch('/api/titles').then(r => r.json()).then(d => {
     const box = document.getElementById('title-scores');
     if (!box) return;
     box.innerHTML = '';
@@ -2686,7 +2695,7 @@ ${c.note}` : '');
       use.className = 'btn btn-ghost';
       use.style.cssText = 'font-size:10px;padding:1px 6px';
       use.textContent = c.title === d.selected ? '✓' : 'Usar';
-      use.onclick = () => fetch('/api/titles/select', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      use.onclick = () => projectFetch('/api/titles/select', {method: 'POST', headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({title: c.title})}).then(r => r.json()).then(x => {
           if (!x.ok) { alert(x.error); return; }
           document.getElementById('edit-title').value = x.title; loadTitleScores(); });
@@ -2835,7 +2844,7 @@ function shortsSave() {
 }
 
 function loadShorts() {
-  fetch('/api/shorts').then(r => r.json()).then(d => {
+  projectFetch('/api/shorts').then(r => r.json()).then(d => {
     _shorts = {plan: d.plan && d.plan.segments ? d.plan : {segments: []}, sentences: d.sentences || [], limits: d.limits};
     renderShorts();
   });
@@ -2849,7 +2858,7 @@ function loadReviewData() {
   loadVariation();
   checkDescription();
   // Video
-  fetch('/api/status').then(r=>r.json()).then(d => {
+  projectFetch('/api/status').then(r=>r.json()).then(d => {
     const vw = document.getElementById('video-wrap');
     const tw = document.getElementById('thumb-wrap');
     // Adapt aspect ratio for Shorts vs Normal
@@ -2873,7 +2882,7 @@ function loadReviewData() {
   });
   // Script data
   loadReviewGate();
-  fetch('/api/output').then(r=>r.json()).then(d => {
+  projectFetch('/api/output').then(r=>r.json()).then(d => {
     document.getElementById('edit-title').value  = d.title  || '';
     checkTitle();
     document.getElementById('edit-desc').value   = d.description || '';
@@ -3009,7 +3018,7 @@ function switchUploadMode(mode) {
 // ── Pre-publication review gate ───────────────────────────
 let _gate = null;
 function loadReviewGate() {
-  fetch('/api/review-gate').then(r=>r.json()).then(d => {
+  projectFetch('/api/review-gate').then(r=>r.json()).then(d => {
     if (!d.ok) { _gate = null; updateGateButtons(); return; }
     _gate = d;
     const status = document.getElementById('gate-status');
@@ -3043,7 +3052,7 @@ function loadReviewGate() {
       card.querySelector('.desc').textContent = short.description;
       card.querySelector('button').onclick = () => {
         const segments = (_shorts.plan.segments || []).map(s => s.id === short.id ? Object.assign({}, s, {include: false}) : s);
-        fetch('/api/shorts/save', {method: 'POST', headers: {'Content-Type': 'application/json'},
+        projectFetch('/api/shorts/save', {method: 'POST', headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({segments})}).then(r => r.json()).then(x => { if (!x.ok) alert(x.error); loadShorts(); loadReviewGate(); });
       };
       list.appendChild(card);
@@ -3448,10 +3457,37 @@ function showHome() {
 
 function closeHome() { document.getElementById('home').classList.add('hidden'); }
 
+function resetWizard() {
+  document.getElementById('topic-input').value = '';
+  document.getElementById('narrative-type').value = 'auto';
+  document.getElementById('target-duration').value = '15';
+  document.getElementById('focus-angle-select').selectedIndex = 0;
+  document.getElementById('focus-angle-custom').value = '';
+  document.getElementById('narrative-review').checked = true;
+}
+
 function homeNewProject() {
-  // The "Novo projeto" wizard creates the project once the premise and options are chosen.
-  closeHome();
-  switchTab('generate');
+  // A blank draft: nothing of the previous project stays on screen until the wizard creates the new one.
+  fetch('/api/projects/draft', {method: 'POST'}).then(r => r.json()).then(d => {
+    if (!d.ok) { alert(d.error); return; }
+    resetWizard();
+    closeHome();
+    refreshAll().then(() => switchTab('generate'));
+  });
+}
+
+function restoreProject(slug) {
+  if (!confirm('Restaurar este projeto do arquivo? Os arquivos são copiados de volta para projects/.')) return;
+  fetch('/api/projects/restore', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({slug})}).then(r => r.json()).then(d => {
+      if (!d.ok) { alert(d.error); return; }
+      _log(`Restaurando ${slug}… (acompanhe no console)`);
+      const wait = setInterval(() => fetch('/api/imagegen/status').then(r => r.json()).then(s => {
+        if (s.busy) return;
+        clearInterval(wait);
+        homeShowProjects();
+      }), 2000);
+    });
 }
 
 function homeShowProjects() {
@@ -3475,7 +3511,9 @@ function homeShowProjects() {
           <div class="help-text" style="margin:0">Próximo passo: ${p.next_step ? _esc(p.next_step.label) + ' (' + STATUS_PT[p.next_step.status] + ')' : 'nada — pronto'}</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px">
-          <button class="btn btn-primary" onclick="openProject('${_esc(p.slug)}')">Abrir</button>
+          ${p.archived
+              ? `<button class="btn btn-primary" onclick="restoreProject('${_esc(p.slug)}')">Restaurar</button>`
+              : `<button class="btn btn-primary" onclick="openProject('${_esc(p.slug)}')">Abrir</button>`}
           ${p.published_video_id && !p.archived
               ? `<button class="btn btn-ghost" onclick="archiveProject('${_esc(p.slug)}')">Arquivar</button>` : ''}
           ${p.empty ? `<button class="btn btn-ghost" onclick="discardProject('${_esc(p.slug)}')">Descartar projeto</button>` : ''}
@@ -3487,8 +3525,13 @@ function homeShowProjects() {
 function openProject(slug) {
   fetch('/api/projects/open', {method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({slug})}).then(r => r.json()).then(d => {
-      if (!d.ok) { alert(d.error); return; }
-      closeHome(); openProjectTab(); pollStatus();
+      if (!d.ok) {
+        if (d.archived && confirm(d.error + '\n\nRestaurar agora?')) restoreProject(slug);
+        else if (!d.archived) alert(d.error);
+        return;
+      }
+      closeHome();
+      refreshAll().then(() => openProjectTab());
     });
 }
 
@@ -3521,13 +3564,37 @@ function discardProject(slug) {
 
 function setProjectChip(d) {
   const chip = document.getElementById('project-chip');
-  chip.textContent = d.project ? `📁 ${d.title}` : '📁 output/ (legacy)';
-  chip.title = d.slug || 'output/';
+  chip.textContent = d.draft ? '📝 Novo projeto (não criado)' : d.project ? `📁 ${d.title}` : '📁 output/ (legacy)';
+  chip.title = d.slug || (d.draft ? 'nada criado ainda' : 'output/');
+}
+
+// Phase 3.9.1-C: every project panel says which project its answer is about (X-Project-Slug); an answer
+// for another project (a late reply after a switch) is dropped instead of overwriting the new one.
+let _currentSlug = null;
+function projectFetch(url, options) {
+  return fetch(url, options).then(r => {
+    const slug = r.headers.get('X-Project-Slug');
+    if (_currentSlug !== null && slug !== null && slug !== _currentSlug) return new Promise(() => {});
+    return r;
+  });
+}
+
+function refreshAll() {
+  // One reload for every panel after the project changes (open, create, draft, restore).
+  return refreshProject().then(d => {
+    pollStatus();
+    if (!d.draft) { loadReviewData(); loadReviewGate(); }
+    loadVoices();
+    return d;
+  });
 }
 
 function refreshProject() {
-  fetch('/api/projects/current').then(r => r.json()).then(d => {
+  return fetch('/api/projects/current').then(r => r.json()).then(d => {
+    _currentSlug = d.slug || '';
+    document.body.classList.toggle('no-project', !!d.draft);
     setProjectChip(d);
+    if (d.draft) return d;
     document.getElementById('project-title').textContent = d.title;
     const next = d.next_step;
     document.getElementById('project-next').textContent =
@@ -3561,6 +3628,7 @@ function refreshProject() {
         <div class="help-text" style="margin:0">${_esc(s.detail)}${when ? ' · ' + when : ''}</div>${voice}
         <div class="flex-row">${buttons.join('')}</div></div>`;
     }).join('');
+    return d;
   });
 }
 
@@ -3597,7 +3665,7 @@ function runStage(stage, action, extra) {
 //  INIT
 // ══════════════════════════════════════════════════════════
 loadSettings();
-loadStages().then(() => { pollStatus(); refreshProject(); });
+loadStages().then(() => refreshAll()).then(d => { if (d && d.draft) homeShowProjects(); });
 showHome();
 </script>
 </body>

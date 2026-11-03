@@ -255,6 +255,7 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
             atomic_write_json(f"{config.OUTPUT_DIR}/research.json", research)
             if projects.is_project(config.OUTPUT_DIR):     # a new project gets its title-based name
                 projects.activate(projects.retitle(config.OUTPUT_DIR, research["video_title"]))
+                _remember_active(Path(config.OUTPUT_DIR).name)
             _stage("research", "done")
             _log(f"Topic: {research['video_title']}")
         else:
@@ -534,6 +535,8 @@ def stream():
 def run_pipeline():
     if _state["running"]:
         return jsonify({"ok": False, "error": "Pipeline already running"})
+    if _state.get("draft"):
+        return jsonify({"ok": False, "error": "Crie o projeto para começar (Novo projeto → Criar projeto e abrir)"}), 409
     body       = request.get_json(force=True) or {}
     steps       = body.get("steps", ["research","script","images","narration","music","video"])
     if not isinstance(steps, list) or not steps:
@@ -609,9 +612,69 @@ def _running_stages() -> list[str]:
     return sorted({stage_graph.stage_for_step(name) or name for name in names})
 
 
+GUI_STATE_FILE = Path(__file__).resolve().parent / "data" / "gui_state.json"
+
+
+def _remember_active(slug: str | None) -> None:
+    """The GUI's active project (data/gui_state.json); None = a blank "Novo projeto" draft."""
+    try:
+        atomic_write_json(Path(getattr(config, "GUI_STATE_FILE", GUI_STATE_FILE)), {"active": slug})
+    except OSError:
+        pass
+
+
+def _remembered_active() -> str | None:
+    state = load_json(Path(getattr(config, "GUI_STATE_FILE", GUI_STATE_FILE)))
+    return state.get("active") if state else projects.active_slug()
+
+
+def _enter_draft() -> None:
+    """A blank "Novo projeto (não criado)": no project is loaded, so every panel shows its empty state
+    (an empty scratch folder stands in for the project folder until the wizard creates one)."""
+    import tempfile
+    projects.activate(Path(tempfile.mkdtemp(prefix="pg-draft-")))
+    _state["draft"] = True
+    _reload_state_from_disk()
+
+
+def _switch_project(path) -> None:
+    """Make ``path`` the project every panel reads (server side), and remember it."""
+    path = projects.activate(path)
+    _state["draft"] = False
+    projects.set_active(path.name)
+    _remember_active(path.name)
+    _reload_state_from_disk()
+
+
+def startup() -> None:
+    """Open the last project unless it is archived or gone; then the GUI starts on a blank draft and the
+    home screen lists the projects."""
+    slug = _remembered_active()
+    try:
+        path = projects.path_for(slug) if slug else None
+    except projects.ProjectNotFound:
+        path = None
+    if path is None or projects.is_archived(path):
+        _enter_draft()
+    else:
+        _switch_project(path)
+
+
+@app.after_request
+def _project_header(response):
+    """Every API answer says which project it is about, so the GUI drops late answers for another one."""
+    if request.path.startswith("/api/"):
+        out = Path(config.OUTPUT_DIR)
+        response.headers["X-Project-Slug"] = "" if _state.get("draft") or not projects.is_project(out) else out.name
+    return response
+
+
 def _current_summary() -> dict:
     from audio import tts
     out = Path(config.OUTPUT_DIR)
+    if _state.get("draft"):
+        return {"project": False, "draft": True, "slug": None, "title": "Novo projeto (não criado)", "stages": [],
+                "next_step": None, "thumbnail": None, "channel_voice": tts.identity()}
     if projects.is_project(out):
         return {"project": True, **projects.summary(out), "running": _running_stages(), "channel_voice": tts.identity()}
     statuses = projects.stage_status(out)
@@ -697,10 +760,35 @@ def open_project():
         path = projects.path_for(slug)
     except projects.ProjectNotFound as exc:
         return jsonify({"ok": False, "error": str(exc)}), 404
-    projects.activate(path)
-    projects.set_active(slug)
-    _reload_state_from_disk()
+    if projects.is_archived(path):
+        return jsonify({"ok": False, "archived": True, "slug": slug,
+                        "error": "Este projeto está arquivado. Use “Restaurar” antes de abrir para edição."}), 409
+    _switch_project(path)
     return jsonify({"ok": True, **_current_summary()})
+
+
+@app.route("/api/projects/draft", methods=["POST"])
+def draft_project():
+    """"Novo projeto": a blank draft until the wizard creates the project."""
+    if _state["running"] or _state.get("imagegen_busy"):
+        return jsonify({"ok": False, "error": "Wait for the running step to finish"}), 409
+    _enter_draft()
+    _remember_active(None)
+    return jsonify({"ok": True, **_current_summary()})
+
+
+@app.route("/api/projects/restore", methods=["POST"])
+def restore_project_endpoint():
+    """"Restaurar": copy an archived project back from the archive (a background job)."""
+    from studio import archive
+    slug = str((request.get_json(force=True) or {}).get("slug", ""))
+    try:
+        path = projects.path_for(slug)
+    except projects.ProjectNotFound as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 404
+    if not projects.is_archived(path):
+        return jsonify({"ok": False, "error": "This project is not archived"}), 400
+    return _imagegen_run(lambda: archive.restore_project(slug, log=lambda line: _log(line)))
 
 
 @app.route("/api/projects/new", methods=["POST"])
@@ -737,9 +825,7 @@ def new_project():
     projects.save(path, data)
     if brief:
         premise_brief.save(path, brief)
-    projects.activate(path)
-    projects.set_active(path.name)
-    _reload_state_from_disk()
+    _switch_project(path)
     return jsonify({"ok": True, **_current_summary()})
 
 
@@ -862,9 +948,9 @@ def discard_project_endpoint():
         projects.discard(path)
     except (ValueError, OSError) as exc:
         return jsonify({"ok": False, "error": str(exc)}), 400
-    if current:                                   # fall back to the most recent project (or legacy output/)
-        projects.activate(projects.resolve())
-        _reload_state_from_disk()
+    if current:                                   # nothing loaded: a blank draft
+        _enter_draft()
+        _remember_active(None)
     return jsonify({"ok": True})
 
 
@@ -873,6 +959,8 @@ def project_stage(stage):
     """Run / re-run / skip one stage of the current project, respecting existing artifacts."""
     if stage not in projects.STAGE_KEYS:
         return jsonify({"ok": False, "error": f"Unknown stage {stage}"}), 404
+    if _state.get("draft"):
+        return jsonify({"ok": False, "error": "Crie o projeto para começar"}), 409
     body = request.get_json(force=True) or {}
     action = body.get("action", "run")
     out = Path(config.OUTPUT_DIR)
@@ -2433,9 +2521,8 @@ if __name__ == "__main__":
     port = 7070
     print(f"\n🎬  YouTube AI Agent Studio")
     print(f"   Opening at  http://localhost:{port}\n")
-    # Continue where the user left off: the active (or most recent) project, else legacy output/.
-    projects.activate(projects.resolve())
-    _reload_state_from_disk()
+    # Continue where the user left off, unless that project is archived or gone (then a blank draft).
+    startup()
     print(f"   Project folder: {config.OUTPUT_DIR}\n")
     threading.Timer(1.4, lambda: webbrowser.open(f"http://localhost:{port}")).start()
     # Sync publication states now and every PUBLICATION_SYNC_INTERVAL_MINUTES.
