@@ -186,7 +186,10 @@ def _location_job(vb: dict, lid: str, number: int, output: Path) -> ImageJob:
     """Establishing image of a location; style-anchored only by an anchor with nobody in it."""
     from agents import style_refs
     location = vbible.location(vb, lid) or {}
-    anchors = style_refs.empty_paths()
+    # Hotfix (3.9.3): a style board as the ONLY reference is copied and edited by Klein (the moor and
+    # the bakery came out as board_6's empty room with its chair). Locations are text-to-image again;
+    # the style comes from the prompt suffix, as for the character sheets.
+    anchors = []
     return ImageJob(
         job_id=f"loc_{lid}_{number}", prompt=location_prompt(vb, lid, anchor=bool(anchors)),
         seed=location.get("seed", vbible.seed_for("location", lid)) + number,

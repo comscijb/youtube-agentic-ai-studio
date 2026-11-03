@@ -92,8 +92,9 @@ class EmptyAnchorTests(unittest.TestCase):
         self.assertEqual(again, empty)
         self.assertEqual(detector.calls, 2)                                    # cached in approved.json
         self.assertEqual([entry["people"] for entry in saved[identity.style_hash()]], [2, 0])
-        self.assertEqual((job.kind, [Path(path).name for path in job.references]), ("ref", ["board_2.png"]))
-        self.assertIn("drawing style of the first image", job.prompt)
+        # 3.9.3 hotfix: a lone style board as the only reference is copied by Klein, so locations are t2i.
+        self.assertEqual(list(job.references or []), [])
+        self.assertNotIn("drawing style of the first image", job.prompt)
 
     def test_without_a_detector_no_anchor_is_trusted(self):
         with tempfile.TemporaryDirectory() as temp, patch.object(config, "STYLE_REFS_DIR", temp), \

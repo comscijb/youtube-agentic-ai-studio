@@ -140,8 +140,9 @@ class SlotPlanTests(StyleTestCase):
                 return {"persons": []}
         with patch("video.qa.fixes._detector", return_value=Nobody()):
             insert = shots_module.compose_shot(self.shot([], "insert"), self.vb_with_refs(), self.output)
-        self.assertEqual([slot["kind"] for slot in insert["slots"]], ["style"])
-        self.assertEqual(insert["kind"], "ref")
+        # 3.9.3 hotfix: a style board is never the only reference (Klein copies it): the insert is t2i.
+        self.assertEqual([slot["kind"] for slot in insert["slots"]], [])
+        self.assertEqual(insert["kind"], "t2i")
 
     def test_references_are_style_specific(self):
         vb = self.vb_with_refs()

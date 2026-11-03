@@ -844,7 +844,9 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
     style = identity.style_suffix(figures=figures)
     anchors = style_refs.approved_paths() if figures else style_refs.empty_paths()
     style_text = ""
-    if anchors and len(references) < 4:
+    # Hotfix (3.9.3): never a style board as the only reference (it gets copied); it only joins
+    # character or location references.
+    if anchors and references and len(references) < 4:
         references.append(anchors[0])
         slots.append({"slot": len(references) - 1, "kind": "style", "id": Path(anchors[0]).stem})
         style_text = f"Rendered in the drawing style of the {ORDINALS[len(references) - 1]} image."
