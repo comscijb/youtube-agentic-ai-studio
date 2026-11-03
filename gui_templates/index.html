@@ -290,11 +290,11 @@ input[type=range]{width:100%;accent-color:var(--primary)}
   <!-- ── Main ── -->
   <main class="main">
     <div class="tabs">
-      <div class="tab" onclick="switchTab('project')">📁 Project</div>
-      <div class="tab active" onclick="switchTab('generate')">🚀 Novo projeto</div>
-      <div class="tab" onclick="switchTab('review')">🎬 Review & Edit</div>
-      <div class="tab" onclick="switchTab('settings')">⚙️ Settings</div>
-      <div class="tab" onclick="switchTab('performance')">📈 Desempenho</div>
+      <div class="tab" data-tab="project" onclick="switchTab('project')">📁 Project</div>
+      <div class="tab active" data-tab="generate" onclick="switchTab('generate')">🚀 Novo projeto</div>
+      <div class="tab" data-tab="review" onclick="switchTab('review')">🎬 Review & Edit</div>
+      <div class="tab" data-tab="settings" onclick="switchTab('settings')">⚙️ Settings</div>
+      <div class="tab" data-tab="performance" onclick="switchTab('performance')">📈 Desempenho</div>
     </div>
 
     <!-- ════ PROJECT TAB ════ -->
@@ -438,7 +438,6 @@ input[type=range]{width:100%;accent-color:var(--primary)}
           <label class="step-check"><input type="checkbox" id="narrative-review" checked> Editorial quality review (one Gemini call)</label>
 
           <div>
-            <div class="field-label">Voice<br>          <div>
             <div class="field-label">Voice<br><span style="font-size:10px;font-weight:400;color:var(--success,#4ade80)">✓ = word-synced captions</span></div>
             <select id="quick-voice" onchange="applyQuickVoice(this.value)">
               <option value="en-US-AndrewNeural">Andrew (US, Warm) ✓</option>
@@ -1168,10 +1167,7 @@ function loadBriefFile(input) {
 }
 
 function switchTab(name) {
-  document.querySelectorAll('.tab').forEach((t,i) => {
-    const names = ['project','generate','review','settings','performance'];
-    t.classList.toggle('active', names[i] === name);
-  });
+  document.querySelectorAll('.tab[data-tab]').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   if (name === 'performance') loadPerformance();
