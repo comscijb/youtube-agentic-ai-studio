@@ -165,6 +165,9 @@ ELEVENLABS_MODEL = "eleven_multilingual_v2"                      # key: ELEVENLA
 ALIGNER_MODEL = "base.en"                                        # faster-whisper model for forced alignment
 VOICE_RATE  = "-5%"     # slow down slightly for narration feel
 VOICE_PITCH = "-3Hz"    # slightly deeper = more cinematic
+# Phase 3.9.2-E: heard thoughts (single quotes, where the brief's rule involves thoughts) delivered quieter
+# than speech, in italics in the captions. "soft" | "off".
+HEARD_THOUGHT_STYLE = os.getenv("HEARD_THOUGHT_STYLE", "soft")
 
 # ─────────────────────────────────────────
 #  AI Model

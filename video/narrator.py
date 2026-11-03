@@ -24,10 +24,10 @@ import config
 from moviepy.editor import AudioFileClip, concatenate_audioclips
 from agents.narrative import assert_no_mojibake
 from agents.voice_calibration import record as record_calibration
-from audio import tts
+from audio import heard_thoughts, tts
 from audio.tts import delivery, pronunciations
 from audio.tts.edge import edge_tts_version, supports_word_boundary  # noqa: F401  (render_preflight, tests)
-from video.captions import align_words, build_cues, proportional_words
+from video.captions import align_words, build_cues, mark_thoughts, proportional_words
 from video.timeline import write_shifted_srt, write_timeline
 
 # Voices known to emit WordBoundary events (needed for word-synced captions).
@@ -88,10 +88,15 @@ def _write_srt_blocks(blocks: list[tuple[float, float, str]], srt_path: str) -> 
     return len(blocks)
 
 
-def scene_cues(text: str, events: list[dict], duration_s: float) -> list[tuple]:
-    """Word-timed cues when events exist, else character-proportional timing."""
+def scene_words(text: str, events: list[dict], duration_s: float, thoughts: bool = False) -> list[dict]:
+    """Word timings from the events, else character-proportional; heard thoughts flagged when on."""
     words = align_words(text, events) if events else proportional_words(text, duration_s)
-    return build_cues(words, end_limit=duration_s)
+    return mark_thoughts(text, words) if thoughts else words
+
+
+def scene_cues(text: str, events: list[dict], duration_s: float, thoughts: bool = False) -> list[tuple]:
+    """Word-timed cues when events exist, else character-proportional timing."""
+    return build_cues(scene_words(text, events, duration_s, thoughts), end_limit=duration_s)
 
 
 # ══════════════════════════════════════════════════════════════
@@ -193,6 +198,7 @@ def generate_narration(script: dict, output_dir: str) -> str:
     timed_words = []                      # narration_words.json (Phase 3.7: Shorts cut on sentences)
     cursor = 0.0
     scenes_without_words = []
+    thoughts = heard_thoughts.enabled(output_dir, script)
     with tempfile.TemporaryDirectory(prefix="private_gravity_tts_") as temp_dir:
         try:
             for index, section in enumerate(sections, 1):
@@ -208,10 +214,10 @@ def generate_narration(script: dict, output_dir: str) -> str:
                 clips.append(clip)
                 if not events:
                     scenes_without_words.append(index)
-                _write_srt_blocks(scene_cues(text, events, duration), scene_srt)
+                _write_srt_blocks(scene_cues(text, events, duration, thoughts), scene_srt)
                 timed_words += [{**word, "start": round(word["start"] + cursor, 3), "end": round(word["end"] + cursor, 3),
                                  "scene_id": section.get("id")}
-                                for word in (align_words(text, events) if events else proportional_words(text, duration))]
+                                for word in scene_words(text, events, duration, thoughts)]
                 durations.append(duration)
                 scene_srts.append((scene_srt, cursor))
                 cursor += duration
@@ -225,6 +231,10 @@ def generate_narration(script: dict, output_dir: str) -> str:
             backend = tts.get()
             if hasattr(backend, "close"):
                 backend.close()                     # a local model gives the VRAM back
+
+    if thoughts:                                    # gain and filters only: every timing above stays valid
+        treated = heard_thoughts.apply(audio_path, heard_thoughts.intervals(timed_words))
+        print(f"   → Heard thoughts: {treated} span(s) delivered quieter than speech")
 
     if scenes_without_words:
         print(f"   ⚠ No WordBoundary events for scene(s) {scenes_without_words} "

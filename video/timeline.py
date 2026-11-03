@@ -72,7 +72,7 @@ def load_timeline(path) -> dict | None:
         return None
 
 
-def parse_srt(path) -> list[tuple[float, float, str]]:
+def parse_srt(path, *, keep_tags: bool = False) -> list[tuple[float, float, str]]:
     try:
         raw = Path(path).read_text(encoding="utf-8").strip()
     except OSError:
@@ -84,7 +84,8 @@ def parse_srt(path) -> list[tuple[float, float, str]]:
             continue
         try:
             start, end = (_timestamp_to_ms(value) for value in lines[1].split(" --> ", 1))
-            cues.append((start, end, " ".join(lines[2:])))
+            text = " ".join(lines[2:])
+            cues.append((start, end, text if keep_tags else re.sub(r"</?i>", "", text)))
         except ValueError:
             continue
     return cues
@@ -94,7 +95,7 @@ def write_shifted_srt(destination, scene_srts: list[tuple[str, float]]) -> int:
     shifted = []
     for path, offset_seconds in scene_srts:
         offset_ms = float(offset_seconds) * 1000
-        for start, end, text in parse_srt(path):
+        for start, end, text in parse_srt(path, keep_tags=True):
             shifted.append((start + offset_ms, end + offset_ms, text))
     with open(destination, "w", encoding="utf-8") as handle:
         for index, (start, end, text) in enumerate(shifted, 1):

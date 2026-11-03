@@ -282,6 +282,7 @@ def write_ass(captions: list[dict], path, size: tuple[int, int], *, font_path: s
     ]
     for cue in captions:
         text = re.sub(r"\s+", " ", str(cue["text"])).replace("{", "(").replace("}", ")").strip()
+        text = text.replace("<i>", "{\\i1}").replace("</i>", "{\\i0}")      # heard thoughts in italics (3.9.2-E)
         if text:
             lines.append(f"Dialogue: 0,{_ass_time(cue['start'])},{_ass_time(cue['end'])},Caption,,0,0,0,,{text}")
     Path(path).write_text("\n".join(lines) + "\n", encoding="utf-8")

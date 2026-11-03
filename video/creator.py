@@ -53,6 +53,10 @@ def _load_font(variant: str, size: int) -> ImageFont.FreeTypeFont:
 #  SRT CAPTION PARSER
 # ══════════════════════════════════════════════════════════════
 
+def _strip_cue_tags(text: str) -> str:
+    return re.sub(r"</?i>", "", str(text))
+
+
 def _parse_srt(srt_path: str) -> list:
     """
     Returns list of {"start": float_sec, "end": float_sec, "text": str}.
@@ -869,7 +873,7 @@ def _get_caption_at(captions: list, t_global: float) -> str:
     """Return the caption text active at global time t_global (seconds)."""
     for cap in captions:
         if cap["start"] <= t_global < cap["end"]:
-            return cap["text"]
+            return _strip_cue_tags(cap["text"])              # frames are drawn plain; ASS keeps the italics
     return ""
 
 
