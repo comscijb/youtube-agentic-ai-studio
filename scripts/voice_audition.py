@@ -205,8 +205,8 @@ def run(pairs: list[tuple[str, str]], text: str, out: Path = OUT, progress=print
                 row = audition(text, backend, voice, out)
             except Exception as exc:                     # noqa: BLE001
                 row = {"backend": backend, "voice": voice, "text_hash": text_hash(text), "error": str(exc)[:300]}
-            progress("   " + (row.get("error") or f"RTF {row.get('rtf')} · VRAM {row.get('vram_mib')} MiB · coverage "
-                                                  f"{row.get('coverage')} · drift {row.get('drift_ms')} ms · {row.get('lufs')} LUFS"))
+            progress("   " + (row.get("error") or f"RTF {row.get('rtf')} | VRAM {row.get('vram_mib')} MiB | coverage "
+                                                  f"{row.get('coverage')} | drift {row.get('drift_ms')} ms | {row.get('lufs')} LUFS"))
         else:
             progress("   cached sample reused")
         rows.append(row)

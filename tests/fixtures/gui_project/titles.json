@@ -1,0 +1,112 @@
+{
+ "history": [
+  {
+   "title": "He Lied About His Dead Wife to See What It Would Say",
+   "replaced_by": "He Lied About His Dead Wife Just to See",
+   "reason": "scored"
+  },
+  {
+   "title": "He Lied About His Dead Wife Just to See",
+   "replaced_by": "He Tested His Listener with an Awful Lie",
+   "reason": "scored"
+  },
+  {
+   "title": "He Tested His Listener with an Awful Lie",
+   "replaced_by": "He Cut Off His Daughter for a Warm Glow",
+   "reason": "scored"
+  }
+ ],
+ "candidates": [
+  {
+   "title": "He Cut Off His Daughter for a Warm Glow",
+   "rationale": "Dramatizes the hidden cost of choosing convenience over messy human affection.",
+   "findings": [],
+   "passes": true,
+   "scores": {
+    "curiosity": 5,
+    "concreteness": 5,
+    "emotion": 5,
+    "clarity": 5,
+    "length": 5
+   },
+   "note": "Extremely concrete, shocking, and packs a heavy emotional punch instantly.",
+   "total": 100
+  },
+  {
+   "title": "He Told His App a Cruel Lie on Purpose",
+   "rationale": "Hooks viewers by highlighting the protagonist's desperate, self-sabotaging experiment.",
+   "findings": [],
+   "passes": true,
+   "scores": {
+    "curiosity": 5,
+    "concreteness": 4,
+    "emotion": 4,
+    "clarity": 5,
+    "length": 5
+   },
+   "note": "Leans into the story's core reversal and creates an irresistible curiosity gap.",
+   "total": 91
+  },
+  {
+   "title": "He Lied to His Phone Just to Hear It Agree",
+   "rationale": "Captures the exact shareable reversal moment where the protagonist tests the system with a painful falsehood.",
+   "findings": [],
+   "passes": true,
+   "scores": {
+    "curiosity": 4,
+    "concreteness": 4,
+    "emotion": 3,
+    "clarity": 5,
+    "length": 5
+   },
+   "note": "Provides a specific, slightly unsettling action that sparks instant curiosity.",
+   "total": 81
+  },
+  {
+   "title": "The Only One Who Never Got Tired of Him",
+   "rationale": "Focuses on the core emotional trap that lures the lonely protagonist into isolation.",
+   "findings": [],
+   "passes": true,
+   "scores": {
+    "curiosity": 3,
+    "concreteness": 2,
+    "emotion": 3,
+    "clarity": 4,
+    "length": 5
+   },
+   "note": "Emotionally resonant, but lacks a concrete object or act.",
+   "total": 62
+  },
+  {
+   "title": "She Never Got Tired of Listening to His Stories",
+   "rationale": "Evokes the deceptive comfort of an uncritical audience.",
+   "findings": [],
+   "passes": true,
+   "scores": {
+    "curiosity": 2,
+    "concreteness": 2,
+    "emotion": 2,
+    "clarity": 4,
+    "length": 4
+   },
+   "note": "Feels too generic and reads like a standard relationship drama.",
+   "total": 50
+  },
+  {
+   "title": "He Finally Found Someone Who Always Understood",
+   "rationale": "author's title idea",
+   "findings": [],
+   "passes": true,
+   "scores": {
+    "curiosity": 2,
+    "concreteness": 1,
+    "emotion": 2,
+    "clarity": 3,
+    "length": 4
+   },
+   "note": "Too vague and abstract to compel a click at feed speed.",
+   "total": 42
+  }
+ ],
+ "selected": "He Cut Off His Daughter for a Warm Glow"
+}

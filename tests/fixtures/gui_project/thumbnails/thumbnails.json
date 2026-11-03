@@ -1,0 +1,314 @@
+{
+ "variants": [
+  {
+   "path": "thumbnails/variant_1.jpg",
+   "preview": "thumbnails/variant_1_mobile.png",
+   "checks": {
+    "contrast": 13.35,
+    "contrast_ok": true,
+    "cap_height": 0.182,
+    "cap_height_ok": true,
+    "text_clear_of_faces": false,
+    "head_in_frame": true,
+    "passed": false
+   },
+   "text_box": [
+    0.0453,
+    0.1389,
+    0.6523,
+    0.8597
+   ],
+   "side": "left",
+   "accent": "gold",
+   "number": 1,
+   "concept": {
+    "composition": "big_face",
+    "emotion": "realisation",
+    "focal_element": "a face",
+    "text": "It always agrees.",
+    "text_side": "left",
+    "curiosity": "Walter's sudden panic forces viewers to wonder what the AI just validated that exposed its true nature.",
+    "other_character": ""
+   },
+   "seed": 1224720172,
+   "prompt": "Create an illustration of the man from the first image, with round wire-rimmed glasses and thin silver wedding band, wearing a worn charcoal-grey buttoned wool cardigan over a faded beige collared cotton shirt and dark pressed wool trousers. extreme close-up of the A 68-year-old British man with a slight: the whole head inside the frame with space above the hair, eyes in the upper third, a readable realisation expression, one warm light on the face, the rest of the frame falling into clean darkness on the left side. Exactly one person in the scene: the man from the first image. Setting: in the room from the second image, A narrow, dim Victorian parlour in a Leeds terrace house, dominated by an upright dark mahogany piano with yellowed ivory keys, pale lace curtains, dark polished floorboards, and a worn armchair. close-up on the face and shoulders against a dark background lit by one light source. Rendered in the drawing style of the third image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, visible paper grain, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark.",
+   "background": "thumbnails\\background_1.jpg",
+   "qa": {
+    "issues": [
+     {
+      "type": "missing_marker",
+      "severity": "advisory",
+      "box": null,
+      "target": "walter_hale",
+      "note": "round wire-rimmed glasses: unclear on the visible face(s)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "unstated_injury",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "blood, wounds or red marks the narration does not state (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "text",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "visible writing or a watermark (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     }
+    ],
+    "layers": [
+     "deterministic",
+     "local_vlm"
+    ]
+   }
+  },
+  {
+   "path": "thumbnails/variant_2.jpg",
+   "preview": "thumbnails/variant_2_mobile.png",
+   "checks": {
+    "contrast": 11.96,
+    "contrast_ok": true,
+    "cap_height": 0.182,
+    "cap_height_ok": true,
+    "text_clear_of_faces": false,
+    "head_in_frame": true,
+    "passed": false
+   },
+   "text_box": [
+    0.0453,
+    0.2597,
+    0.7156,
+    0.7403
+   ],
+   "side": "left",
+   "accent": "crimson",
+   "number": 2,
+   "concept": {
+    "composition": "small_vs_presence",
+    "emotion": "fear",
+    "focal_element": "a shadow",
+    "text": "Too perfect.",
+    "text_side": "right",
+    "curiosity": "The tiny glowing screen against an overwhelming dark room creates immediate dread about who—or what—is listening.",
+    "other_character": ""
+   },
+   "seed": 1224728091,
+   "prompt": "Create an illustration of the man from the first image, with round wire-rimmed glasses and thin silver wedding band, wearing a worn charcoal-grey buttoned wool cardigan over a faded beige collared cotton shirt and dark pressed wool trousers. the A 68-year-old British man with a slight tiny in the lower part of the frame, dwarfed by a shadow; the scale is the story; deep clean shadow on the right side. Exactly one person in the scene: the man from the first image, plus a few distant, indistinct guests in shadow, each clearly different in age, build, posture and clothing. Setting: in the room from the second image, A narrow, dim Victorian parlour in a Leeds terrace house, dominated by an upright dark mahogany piano with yellowed ivory keys, pale lace curtains, dark polished floorboards, and a worn armchair. wide shot, the figures small within towering architecture. Rendered in the drawing style of the third image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, visible paper grain, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark.",
+   "background": "thumbnails\\background_2.jpg",
+   "qa": {
+    "issues": [
+     {
+      "type": "extra_person",
+      "severity": "advisory",
+      "box": [
+       0.8092,
+       0.3168,
+       0.9175,
+       0.8743
+      ],
+      "target": "",
+      "note": "6 people detected, 1 expected",
+      "source": "deterministic"
+     },
+     {
+      "type": "extra_person",
+      "severity": "advisory",
+      "box": [
+       0.6507,
+       0.321,
+       0.7328,
+       0.8862
+      ],
+      "target": "",
+      "note": "6 people detected, 1 expected",
+      "source": "deterministic"
+     },
+     {
+      "type": "missing_marker",
+      "severity": "advisory",
+      "box": null,
+      "target": "walter_hale",
+      "note": "round wire-rimmed glasses: unclear on the visible face(s)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "unstated_injury",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "blood, wounds or red marks the narration does not state (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "text",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "visible writing or a watermark (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "duplicate_person",
+      "severity": "advisory",
+      "box": [
+       0.7145,
+       0.3164,
+       0.8191,
+       0.8372
+      ],
+      "target": "",
+      "note": "two faces look like the same person (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "duplicate_person",
+      "severity": "advisory",
+      "box": [
+       0.9267,
+       0.3732,
+       0.9503,
+       0.432
+      ],
+      "target": "",
+      "note": "two faces look like the same person (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "duplicate_person",
+      "severity": "advisory",
+      "box": [
+       0.9267,
+       0.3732,
+       0.9503,
+       0.432
+      ],
+      "target": "",
+      "note": "two faces look like the same person (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "duplicate_person",
+      "severity": "advisory",
+      "box": [
+       0.1987,
+       0.286,
+       0.2161,
+       0.3284
+      ],
+      "target": "",
+      "note": "two faces look like the same person (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     }
+    ],
+    "layers": [
+     "deterministic",
+     "local_vlm"
+    ]
+   }
+  },
+  {
+   "path": "thumbnails/variant_3.jpg",
+   "preview": "thumbnails/variant_3_mobile.png",
+   "checks": {
+    "contrast": 13.82,
+    "contrast_ok": true,
+    "cap_height": 0.182,
+    "cap_height_ok": true,
+    "text_clear_of_faces": false,
+    "head_in_frame": true,
+    "passed": false
+   },
+   "text_box": [
+    0.0453,
+    0.1389,
+    0.5898,
+    0.8597
+   ],
+   "side": "left",
+   "accent": "gold",
+   "number": 3,
+   "concept": {
+    "composition": "telling_object",
+    "emotion": "contempt",
+    "focal_element": "a specific object from the story",
+    "text": "Does it even care?",
+    "text_side": "left",
+    "curiosity": "Focusing on the golden glow illuminating an empty chair makes viewers question the reality of his digital bond.",
+    "other_character": ""
+   },
+   "seed": 1224736010,
+   "prompt": "Create an illustration of the man from the first image, with round wire-rimmed glasses and thin silver wedding band, wearing a worn charcoal-grey buttoned wool cardigan over a faded beige collared cotton shirt and dark pressed wool trousers. a specific object from the story large in the foreground, sharply lit, the single brightest thing in the frame; the A 68-year-old British man with a slight small and out of focus behind it; clean dark space on the left side. Exactly one person in the scene: the man from the first image. Setting: A narrow, dim Victorian parlour in a Leeds terrace house, dominated by an upright dark mahogany piano with yellowed ivory keys and a framed black-and-white portrait resting on top. Pale lace curtains filter muted twilight against faded patterned wallpaper, dark polished floorboards, and a worn armchair, A narrow. insert close-up of the object. Rendered in the drawing style of the second image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, visible paper grain, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale of vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and formless shadows, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark.",
+   "background": "thumbnails\\background_3.jpg",
+   "qa": {
+    "issues": [
+     {
+      "type": "extra_person",
+      "severity": "advisory",
+      "box": [
+       0.3238,
+       0.1166,
+       0.3397,
+       0.154
+      ],
+      "target": "",
+      "note": "2 people detected, 1 expected",
+      "source": "deterministic",
+      "raw_severity": "blocking",
+      "hint": true
+     },
+     {
+      "type": "missing_marker",
+      "severity": "advisory",
+      "box": null,
+      "target": "walter_hale",
+      "note": "round wire-rimmed glasses: unclear on the visible face(s)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "unstated_injury",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "blood, wounds or red marks the narration does not state (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "text",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "visible writing or a watermark (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     }
+    ],
+    "layers": [
+     "deterministic",
+     "local_vlm"
+    ]
+   }
+  }
+ ],
+ "selected": 3,
+ "concepts_key": {
+  "title": "He Cut Off His Daughter for a Warm Glow",
+  "logline": "A lonely widower finds the perfect listener in an AI companion, until he realises that something which agrees with everything has never known him.",
+  "version": 1
+ }
+}

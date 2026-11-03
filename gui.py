@@ -694,7 +694,7 @@ def list_projects():
     legacy = Path(projects.LEGACY_DIR)
     return jsonify({
         "projects": [projects.summary(path) for path in projects.all_paths()],
-        "active": projects.active_slug(),
+        "active": None if _state.get("draft") else projects.active_slug(),
         "current": Path(config.OUTPUT_DIR).name if projects.is_project(config.OUTPUT_DIR) else None,
         "legacy_unmigrated": (legacy / "script.json").is_file() or (legacy / "story_brief.json").is_file(),
     })
@@ -2252,6 +2252,10 @@ def voice_rows() -> list[dict]:
                for row in (load_json(_audition_dir() / "results.json") or {}).get("rows", [])}
     entries = catalogue.catalogue()
     known = {catalogue.key(entry["backend"], entry["voice"]) for entry in entries}
+    if catalogue.key(channel["backend"], channel["voice"]) not in known:   # the channel voice is always listed
+        entries.insert(0, {"backend": channel["backend"], "voice": channel["voice"], "label": channel["voice"],
+                           "licence": catalogue.LICENCES.get(channel["backend"], "")})
+        known.add(catalogue.key(channel["backend"], channel["voice"]))
     entries += [{"backend": row["backend"], "voice": row["voice"], "label": row["voice"], "licence": row.get("licence", "")}
                 for key, row in results.items() if key not in known]
     rows = []

@@ -1,0 +1,189 @@
+{
+ "characters": [
+  {
+   "character_id": "walter_hale",
+   "descriptor": "A 68-year-old British man with a slight, lean build, an angular weathered jawline, pale blue eyes, and thin, receding silver hair neatly combed back, with faint age spots along his temples.",
+   "signature_markers": [
+    "round wire-rimmed glasses",
+    "thin silver wedding band"
+   ],
+   "wardrobe": [
+    {
+     "scene_ids": [
+      "s01",
+      "s02",
+      "s03",
+      "s04",
+      "s05",
+      "s06",
+      "s09"
+     ],
+     "outfit": "a worn charcoal-grey buttoned wool cardigan over a faded beige collared cotton shirt and dark pressed wool trousers",
+     "grooming": "neatly combed silver hair, clean-shaven, reserved and still posture"
+    },
+    {
+     "scene_ids": [
+      "s07",
+      "s08"
+     ],
+     "outfit": "a heavy dark wool overcoat buttoned over a worn charcoal-grey buttoned wool cardigan, a faded beige collared cotton shirt, and dark pressed wool trousers",
+     "grooming": "silver hair slightly shifted by outdoor cold, clean-shaven, rigid and upright posture"
+    }
+   ],
+   "scene_states": {
+    "s06": "glasses removed and held in lap while pressing fingertips against closed eyes",
+    "s08": "pale breath misting in the freezing air"
+   },
+   "seed": 601028186,
+   "presence": "on_screen"
+  },
+  {
+   "character_id": "june_hale",
+   "descriptor": "",
+   "visual_proxy": "Walter holding the telephone receiver pressed tightly to his ear",
+   "signature_markers": [],
+   "wardrobe": [],
+   "scene_states": {},
+   "seed": 942627603,
+   "presence": "voice_only"
+  },
+  {
+   "character_id": "ada",
+   "descriptor": "",
+   "visual_proxy": "the warm amber-gold glow cast across surfaces from Walter's smartphone screen",
+   "signature_markers": [],
+   "wardrobe": [],
+   "scene_states": {},
+   "seed": 412145089,
+   "presence": "none"
+  }
+ ],
+ "locations": [
+  {
+   "location_id": "terraced_house_front_room",
+   "name": "Walter's Front Room",
+   "descriptor": "A narrow, dim Victorian parlour in a Leeds terrace house, dominated by an upright dark mahogany piano with yellowed ivory keys and a framed black-and-white portrait resting on top. Pale lace curtains filter muted twilight against faded patterned wallpaper, dark polished floorboards, and a worn armchair.",
+   "scene_ids": [
+    "s01",
+    "s04",
+    "s05",
+    "s06",
+    "s07",
+    "s09"
+   ],
+   "seed": 759858705
+  },
+  {
+   "location_id": "terraced_house_kitchen",
+   "name": "Terrace Kitchen",
+   "descriptor": "A compact, utilitarian terraced galley kitchen with pale tiled walls, a stainless steel draining rack holding a single teacup, and an untouched second mug resting alone on an upper shelf. Cool daylight enters through a frosted sash window above muted laminate countertops.",
+   "scene_ids": [
+    "s02"
+   ],
+   "seed": 1379106034
+  },
+  {
+   "location_id": "hallway",
+   "name": "Entrance Hallway",
+   "descriptor": "A narrow, high-ceilinged Victorian entrance hall with draughty wooden floorboards, faded wallpaper, a wall-mounted corded telephone, and an empty dark timber coat rack near the front door.",
+   "scene_ids": [
+    "s03"
+   ],
+   "seed": 1725740864
+  },
+  {
+   "location_id": "cemetery",
+   "name": "Cemetery Bench",
+   "descriptor": "A desolate municipal graveyard under a dark winter sky, featuring weathered stone headstones dusted with frost, silhouettes of barren trees, and a solitary wooden bench beside a snow-dusted grave.",
+   "scene_ids": [
+    "s08"
+   ],
+   "seed": 1154204974
+  }
+ ],
+ "thumbnail_shot": {
+  "description": "Vast negative space and deep shadow fill the left half of the frame; on the right, Walter sits in sharp profile beside the dark upright piano, his face and round wire-rimmed glasses bathed in the eerie amber glow of his phone resting on the music desk, surrounded by imposing, silent darkness.",
+  "characters": [
+   "walter_hale"
+  ],
+  "location_id": "terraced_house_front_room",
+  "seed": 1224712253
+ },
+ "global_style": {
+  "style": "dark_illustration",
+  "variant": "engraving",
+  "style_hash": "d043a627229faba8",
+  "style_suffix": "single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, visible paper grain, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark.",
+  "exclusions": [
+   "tentacles",
+   "monsters",
+   "creatures",
+   "eldritch beings",
+   "giant eyes",
+   "gore",
+   "occult symbols",
+   "text",
+   "letters",
+   "watermark",
+   "signature",
+   "photorealism",
+   "3D render",
+   "glossy CGI",
+   "anime",
+   "cartoon",
+   "bright saturated colour"
+  ]
+ },
+ "presence_overrides": {
+  "ada": "none",
+  "june_hale": "voice_only"
+ },
+ "references": {
+  "character:walter_hale": {
+   "path": "character_refs/walter_hale.png",
+   "seed": 601028187,
+   "prompt": "An illustration character reference sheet: head and shoulders of A 68-year-old British man with a slight, lean build, an angular weathered jawline, pale blue eyes, and thin, receding silver hair neatly combed back, with faint age spots along his temples., facing the viewer, wearing a simple plain dark top. Neutral relaxed expression, standing still, centred. Plain flat dark-grey backdrop, uniform and empty; even soft key light on the face. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, visible paper grain, hand-drawn imperfection; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash. Stylised but consistent face with gaunt planes. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark.",
+   "style": "dark_illustration",
+   "style_hash": "d043a627229faba8",
+   "sheet_version": 2
+  },
+  "character:june_hale": {
+   "path": "character_refs/june_hale.png",
+   "seed": 942627604,
+   "prompt": "An illustration character reference sheet: head and shoulders of A 41-year-old Caucasian woman of medium build, with an angular jawline, dark brown eyes, straight chin-length dark brown hair cut in an even bob, and faint fatigue circles beneath the lower eyelids., facing the viewer, wearing a simple plain dark top. Neutral relaxed expression, standing still, centred. Plain flat dark-grey backdrop, uniform and empty; even soft key light on the face. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, visible paper grain, hand-drawn imperfection; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash. Stylised but consistent face with gaunt planes. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark.",
+   "style": "dark_illustration",
+   "style_hash": "d043a627229faba8",
+   "sheet_version": 2
+  },
+  "location:terraced_house_front_room": {
+   "path": "location_refs/terraced_house_front_room.png",
+   "seed": 759858706,
+   "prompt": "An illustration: establishing wide view of A narrow, high-ceilinged Victorian parlor with dark aged floorboards, muted olive floral wallpaper, a heavily draped bay window, and an imposing upright dark wood piano coated in a fine layer of dust beside an upholstered wingback armchair and a small polished side table, illuminated by pools of amber lamplight and encroaching deep room shadows., empty, no people. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, visible paper grain, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark.",
+   "style": "dark_illustration",
+   "style_hash": "d043a627229faba8"
+  },
+  "location:terraced_house_kitchen": {
+   "path": "location_refs/terraced_house_kitchen.png",
+   "seed": 1379106037,
+   "prompt": "An illustration: establishing wide view of a deserted, unoccupied A compact, utilitarian terraced galley kitchen with pale tiled walls, a stainless steel draining rack holding a single teacup, and an untouched second mug resting alone on an upper shelf. Cool daylight enters through a frosted sash window above muted laminate countertops.; only architecture, furniture and objects; perfectly still. Rendered in the drawing style of the first image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, visible paper grain, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale of vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and formless shadows, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark.",
+   "style": "dark_illustration",
+   "style_hash": "d043a627229faba8"
+  },
+  "location:hallway": {
+   "path": "location_refs/hallway.png",
+   "seed": 1725740867,
+   "prompt": "An illustration: establishing wide view of a deserted, unoccupied A narrow, high-ceilinged Victorian entrance hall with draughty wooden floorboards, faded wallpaper, a wall-mounted corded telephone, and an empty dark timber coat rack near the front door.; only architecture, furniture and objects; perfectly still. Rendered in the drawing style of the first image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, visible paper grain, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale of vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and formless shadows, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark.",
+   "style": "dark_illustration",
+   "style_hash": "d043a627229faba8"
+  },
+  "location:cemetery": {
+   "path": "location_refs/cemetery.png",
+   "seed": 1154204979,
+   "prompt": "An illustration: establishing wide view of a deserted, unoccupied A desolate municipal graveyard under a dark winter sky, featuring weathered stone headstones dusted with frost, silhouettes of barren trees, and a solitary wooden bench beside a snow-dusted grave.; only architecture, furniture and objects; perfectly still. Rendered in the drawing style of the first image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, visible paper grain, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale of vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and formless shadows, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark.",
+   "style": "dark_illustration",
+   "style_hash": "d043a627229faba8"
+  }
+ },
+ "version": 4,
+ "source_hash": "ca9234c39b2d69e53e56263048825aed86aeb41ed9b07ae2ad6de396bf58ced1"
+}

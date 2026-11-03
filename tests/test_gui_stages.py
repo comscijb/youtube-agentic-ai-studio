@@ -52,9 +52,11 @@ class TemplateTests(unittest.TestCase):
         for current in ('id="sidebar-stages"', "loadStages()", "fetch('/api/stages')", "Rodar a partir daqui",
                         "aguardando aprovação", "renderLanes(d)", "createProject()", "🚀 Novo projeto"):
             self.assertIn(current, page)
-        project = page[page.index('id="tab-project"'):page.index('id="tab-performance"')]
-        self.assertIn('id="console"', project)                     # stages run (and log) in the Projeto view
-        self.assertIn('id="stop-btn"', project)
+        # Phase 3.9.1-D: the console (with Stop) is docked under every tab, after the tab contents.
+        dock = page[page.index('id="console-dock"'):page.index("</main>")]
+        self.assertIn('id="console"', dock)
+        self.assertIn('id="stop-btn"', dock)
+        self.assertGreater(page.index('id="console-dock"'), page.index('id="tab-settings"'))
 
 
 class WizardAndRunTests(unittest.TestCase):

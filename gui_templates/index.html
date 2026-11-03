@@ -65,7 +65,13 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 /* ── Generate tab ── */
 .gen-layout{display:grid;grid-template-columns:minmax(0,640px);justify-content:center;gap:0;height:100%;overflow:hidden}
 .gen-options{padding:18px;overflow-y:auto;display:flex;flex-direction:column;gap:16px}
-.gen-console{display:flex;flex-direction:column;overflow:hidden;min-height:260px;max-height:420px;border:1px solid var(--border);border-radius:8px}
+.console-dock{flex-shrink:0;display:flex;flex-direction:column;border-top:1px solid var(--border);background:var(--surface)}
+.console-dock .console-bar{padding:4px 12px}
+.console-dock .console-bar .btn{padding:3px 10px;font-size:11px}
+.console-dock .console-body{height:150px;flex:none}
+.console-dock.collapsed .console-body{display:none}
+.console-toggle{min-width:96px}
+.console-last{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:"Consolas","Courier New",monospace;font-size:11px;color:var(--muted)}
 
 .field-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
 input[type=text],textarea,select{
@@ -75,7 +81,6 @@ input[type=text],textarea,select{
 input[type=text]:focus,textarea:focus,select:focus{border-color:var(--primary)}
 input[type=range]{width:100%;accent-color:var(--primary)}
 
-.steps-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .step-check{display:flex;align-items:center;gap:7px;padding:7px 10px;
   background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);
   cursor:pointer;font-size:12px;transition:border-color .15s}
@@ -180,15 +185,12 @@ input[type=range]{width:100%;accent-color:var(--primary)}
 .range-row{display:flex;align-items:center;gap:10px}
 .range-row input[type=range]{flex:1}
 .range-val{font-size:12px;font-weight:600;color:var(--primary);min-width:38px;text-align:right}
-.voice-options{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 
 /* ── Status chips ── */
 .chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;
   border-radius:20px;font-size:11px;font-weight:600}
 .chip-running{background:rgba(99,102,241,.2);color:var(--primary)}
-.chip-done{background:rgba(52,211,153,.15);color:var(--green)}
 .chip-idle{background:rgba(255,255,255,.06);color:var(--muted)}
-.chip-error{background:rgba(248,113,113,.15);color:var(--red)}
 
 /* ── Format selector buttons ── */
 .fmt-btn{display:flex;align-items:center;gap:10px;flex:1;padding:10px 12px;
@@ -243,8 +245,12 @@ body.no-project #tab-performance > :not(.project-empty){display:none}
 .sbadge.missing{background:rgba(255,255,255,.04);color:var(--muted);border-color:var(--border)}
 .sbadge.skipped{background:transparent;color:var(--muted);border-color:var(--border);text-decoration:line-through}
 .project-stages{display:flex;flex-direction:column;gap:8px;padding:18px;overflow-y:auto}
-.project-stage{display:grid;grid-template-columns:150px 90px 1fr auto;gap:12px;align-items:center;
-  padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm)}
+.project-stage{display:grid;grid-template-columns:minmax(170px,220px) 120px minmax(0,1fr) auto;gap:12px;align-items:center;
+  min-height:58px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm)}
+.project-stage .flex-row{flex-wrap:nowrap;justify-content:flex-end}
+.project-stage .sbadge{justify-self:start;white-space:nowrap}
+a{color:var(--accent)}
+a:hover{color:var(--text)}
 .project-stage.next{border-color:var(--primary)}
 .project-stage .btn{padding:6px 12px;font-size:12px}
 </style>
@@ -272,11 +278,11 @@ body.no-project #tab-performance > :not(.project-empty){display:none}
 
   <!-- ── Top bar ── -->
   <header class="topbar">
-    <div class="logo">🎬 <span>Fractured</span> Timelines Studio</div>
+    <div class="logo">🎬 <span>Private</span> Gravity Studio</div>
     <div class="topbar-right">
       <span id="project-chip" class="chip chip-idle" title="Current project folder"></span>
       <button class="btn btn-ghost" style="padding:5px 12px;font-size:12px" onclick="showHome()">📁 Projetos</button>
-      <span id="status-chip" class="chip chip-idle">● Idle</span>
+      <span id="status-chip" class="chip chip-idle">● Parado</span>
     </div>
   </header>
 
@@ -304,10 +310,10 @@ body.no-project #tab-performance > :not(.project-empty){display:none}
   <!-- ── Main ── -->
   <main class="main">
     <div class="tabs">
-      <div class="tab" data-tab="project" onclick="switchTab('project')">📁 Project</div>
+      <div class="tab" data-tab="project" onclick="switchTab('project')">📁 Projeto</div>
       <div class="tab active" data-tab="generate" onclick="switchTab('generate')">🚀 Novo projeto</div>
-      <div class="tab" data-tab="review" onclick="switchTab('review')">🎬 Review & Edit</div>
-      <div class="tab" data-tab="settings" onclick="switchTab('settings')">⚙️ Settings</div>
+      <div class="tab" data-tab="review" onclick="switchTab('review')">🎬 Revisão e edição</div>
+      <div class="tab" data-tab="settings" onclick="switchTab('settings')">⚙️ Configurações</div>
       <div class="tab" data-tab="performance" onclick="switchTab('performance')">📈 Desempenho</div>
     </div>
 
@@ -320,7 +326,7 @@ body.no-project #tab-performance > :not(.project-empty){display:none}
             <div class="home-title" id="project-title" style="font-size:18px"></div>
             <div class="help-text" id="project-next"></div>
           </div>
-          <button class="btn btn-ghost" onclick="refreshProject()">⟳ Refresh</button>
+          <button class="btn btn-ghost" onclick="refreshAll()">⟳ Atualizar</button>
         </div>
         <div id="lane-activity" style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px"></div>
         <div id="lane-progress" style="display:none;font-size:12px;flex-direction:column;gap:4px">
@@ -332,18 +338,7 @@ body.no-project #tab-performance > :not(.project-empty){display:none}
         <div id="project-stage-list" style="display:flex;flex-direction:column;gap:8px"></div>
         <div class="help-text">Rodar usa o que já existe (artefatos e checkpoints); Refazer gera o estágio de
           novo; Pular marca como desnecessário neste projeto; Rodar a partir daqui roda este estágio e todos
-          os seguintes. Referências e planos são aprovados em Review &amp; Edit.</div>
-        <div class="flex-row">
-          <button class="btn btn-danger" id="stop-btn" onclick="stopPipeline()" style="display:none" title="Parar depois da etapa atual">⏹ Parar</button>
-          <button class="btn btn-ghost" onclick="clearConsole()">Limpar console</button>
-        </div>
-        <div class="gen-console">
-          <div class="console-bar">
-            <span>Console</span>
-            <span id="console-status" class="chip chip-idle">Idle</span>
-          </div>
-          <div class="console-body" id="console"></div>
-        </div>
+          os seguintes. Referências e planos são aprovados em Revisão e edição.</div>
       </div>
     </div>
 
@@ -374,26 +369,26 @@ body.no-project #tab-performance > :not(.project-empty){display:none}
           <div id="topic-section">
 
             <!-- Mode toggle -->
-            <div class="field-label" style="margin-bottom:8px">Topic Mode</div>
+            <div class="field-label" style="margin-bottom:8px">Premissa</div>
             <div style="display:flex;gap:0;border:1px solid var(--border,#333);border-radius:8px;overflow:hidden;margin-bottom:12px">
               <button id="mode-ai" onclick="setTopicMode('ai')"
                 style="flex:1;padding:7px 0;font-size:12px;font-weight:600;border:none;cursor:pointer;
                        background:var(--primary,#6366f1);color:#fff;transition:background .2s">
-                🤖 AI Picks
+                🤖 A IA escolhe
               </button>
               <button id="mode-manual" onclick="setTopicMode('manual')"
                 style="flex:1;padding:7px 0;font-size:12px;font-weight:600;border:none;cursor:pointer;
                        background:var(--surface,#1a1a2e);color:var(--muted,#888);transition:background .2s">
-                ✏️ I Pick
+                ✏️ Eu escrevo
               </button>
             </div>
 
             <!-- AI mode panel -->
             <div id="panel-ai">
-              <div class="field-label" style="margin-bottom:4px">Psychological Theme</div>
+              <div class="field-label" style="margin-bottom:4px">Tema psicológico</div>
               <select id="focus-angle-select" style="margin-bottom:6px"
                       onchange="document.getElementById('focus-angle-custom').style.display=this.value==='__custom__'?'block':'none'">
-                <option value="">🎲 Random (AI surprises you)</option>
+                <option value="">🎲 Aleatório (a IA surpreende)</option>
                 <option value="Loneliness and belonging">Loneliness &amp; belonging</option>
                 <option value="Status and social comparison">Status &amp; social comparison</option>
                 <option value="Identity and authenticity">Identity &amp; authenticity</option>
@@ -411,7 +406,7 @@ body.no-project #tab-performance > :not(.project-empty){display:none}
               <input type="text" id="focus-angle-custom"
                      placeholder="Describe your custom theme…"
                      style="display:none;margin-bottom:6px">
-              <div class="help-text">The Story Development Agent will compare weighted original premises in this theme.</div>
+              <div class="help-text">O agente de desenvolvimento compara premissas originais neste tema e escolhe a mais forte.</div>
             </div>
 
             <!-- Manual mode panel -->
@@ -433,47 +428,47 @@ body.no-project #tab-performance > :not(.project-empty){display:none}
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <div>
-              <div class="field-label">Narrative Type</div>
+              <div class="field-label">Tipo de narrativa</div>
               <select id="narrative-type">
-                <option value="auto">Auto-select</option>
+                <option value="auto">Automático</option>
                 <option value="realistic_psychological_fiction">Realistic psychological fiction</option>
                 <option value="philosophical_thought_experiment">Philosophical thought experiment</option>
                 <option value="dark_human_parable">Dark human parable</option>
               </select>
             </div>
             <div>
-              <div class="field-label">Target Duration</div>
+              <div class="field-label">Duração-alvo</div>
               <select id="target-duration">
-                <option value="12">12 minutes</option>
-                <option value="15" selected>15 minutes</option>
-                <option value="18">18 minutes</option>
-                <option value="20">20 minutes</option>
+                <option value="12">12 minutos</option>
+                <option value="15" selected>15 minutos</option>
+                <option value="18">18 minutos</option>
+                <option value="20">20 minutos</option>
               </select>
             </div>
           </div>
-          <label class="step-check"><input type="checkbox" id="narrative-review" checked> Editorial quality review (one Gemini call)</label>
+          <label class="step-check"><input type="checkbox" id="narrative-review" checked> Revisão editorial de qualidade (uma chamada ao Gemini)</label>
 
           <div>
             <div class="field-label">Voz</div>
-            <div class="help-text" id="wizard-voice" style="margin:0">Voz do canal: … — trocar em <a href="#" onclick="openVoices();return false">Settings → Vozes</a></div>
+            <div class="help-text" id="wizard-voice" style="margin:0">Voz do canal: … — trocar em <a href="#" onclick="openVoices();return false">Configurações → Vozes</a></div>
           </div>
 
           <div>
-            <div class="field-label">Video privacy</div>
+            <div class="field-label">Privacidade do vídeo</div>
             <select id="quick-privacy">
-              <option value="public">Public</option>
-              <option value="unlisted">Unlisted</option>
-              <option value="private">Private</option>
+              <option value="public">Público</option>
+              <option value="unlisted">Não listado</option>
+              <option value="private">Privado</option>
             </select>
           </div>
 
           <div>
-            <div class="field-label">Video Format</div>
+            <div class="field-label">Formato</div>
             <div style="display:flex;gap:8px">
               <button id="fmt-normal" class="fmt-btn fmt-active" onclick="setFormat('normal')">
                 <span style="font-size:16px">📺</span>
                 <span>
-                  <div style="font-weight:700;font-size:12px">Normal Video</div>
+                  <div style="font-weight:700;font-size:12px">Episódio (vídeo normal)</div>
                   <div style="font-size:10px;color:var(--muted)">16:9 · 12-20 min · 1920×1080</div>
                 </span>
               </button>
@@ -504,24 +499,24 @@ body.no-project #tab-performance > :not(.project-empty){display:none}
         <!-- Left: video + thumbnail -->
         <div class="review-left">
           <div>
-            <div class="field-label" style="margin-bottom:8px">Video Preview</div>
+            <div class="field-label" style="margin-bottom:8px">Prévia do vídeo</div>
             <div class="video-wrap" id="video-wrap">
               <div class="no-video">
                 <span style="font-size:32px">🎬</span>
-                <span>Generate a video first</span>
+                <span>Gere o vídeo primeiro (estágio Vídeo)</span>
               </div>
             </div>
           </div>
 
           <div>
             <div class="flex-row" style="margin-bottom:8px">
-              <div class="field-label" style="margin:0">Thumbnail</div>
+              <div class="field-label" style="margin:0">Miniatura</div>
               <a href="#thumb-gallery" class="btn btn-ghost" style="padding:5px 12px;font-size:11px"
                  onclick="document.getElementById('thumb-gallery').scrollIntoView({block:'start'});return false">Escolher outra miniatura</a>
               <button class="btn btn-ghost" style="padding:5px 12px;font-size:11px" onclick="regenThumbnail()">↻ Mais opções</button>
             </div>
             <div class="thumb-wrap" id="thumb-wrap">
-              <div class="no-thumb">No thumbnail yet</div>
+              <div class="no-thumb">Nenhuma miniatura ainda</div>
             </div>
             <div class="help-text" style="margin-top:6px">A miniatura selecionada na galeria abaixo (vai no upload). O texto dela é independente do título.</div>
             <div id="variation-box" style="margin:10px 0;font-size:12px"></div>
@@ -591,9 +586,9 @@ body.no-project #tab-performance > :not(.project-empty){display:none}
         <!-- Right: edit panel + upload -->
         <div class="review-right">
           <div class="edit-panel">
-            <div class="field-label" style="margin-bottom:4px">Video Title</div>
+            <div class="field-label" style="margin-bottom:4px">Título</div>
             <input type="text" id="edit-title" placeholder="Video title…" oninput="markDirty(); scheduleTitleCheck()">
-            <div class="help-text">Present a person and a situation; never explain the theme. Max 70 characters / 12 words.</div>
+            <div class="help-text">Mostre uma pessoa e uma situação; nunca explique o tema. Máx. 70 caracteres / 12 palavras.</div>
             <div id="title-findings" style="font-size:11px;margin-top:4px"></div>
             <div class="flex-row" style="margin:8px 0 4px">
               <div class="field-label" style="margin:0">Títulos pontuados</div>
@@ -603,8 +598,8 @@ body.no-project #tab-performance > :not(.project-empty){display:none}
 
             <div>
               <div class="flex-row" style="margin-bottom:6px">
-                <div class="field-label" style="margin:0">Description</div>
-                <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="regenDescription()">✨ AI Rewrite</button>
+                <div class="field-label" style="margin:0">Descrição</div>
+                <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="regenDescription()">✨ Reescrever (IA)</button>
               </div>
               <textarea id="edit-desc" rows="12" style="font-size:12px" placeholder="Video description…" oninput="markDirty()"></textarea>
               <div class="flex-row" style="margin-top:4px;gap:6px">
@@ -641,7 +636,7 @@ body.no-project #tab-performance > :not(.project-empty){display:none}
           </div>
 
           <div class="upload-section" id="review-gate">
-            <div style="font-size:12px;font-weight:600;color:var(--dim);margin-bottom:6px">Pre-publication review</div>
+            <div style="font-size:12px;font-weight:600;color:var(--dim);margin-bottom:6px">Revisão antes de publicar</div>
             <div id="gate-status" style="font-size:11px;line-height:1.5;margin-bottom:6px"></div>
             <div id="gate-checklist" style="display:flex;flex-direction:column;gap:4px;font-size:12px"></div>
             <div id="gate-title-reason-wrap" style="display:none;margin-top:6px">
@@ -655,37 +650,37 @@ body.no-project #tab-performance > :not(.project-empty){display:none}
             <div id="gate-disclosure-box" style="font-size:12px;margin-top:6px">
               <div id="gate-disclosure-decision" style="color:var(--dim)"></div>
               <label id="gate-disclosure-wrap" style="display:flex;gap:6px;align-items:center;margin-top:2px">
-                <input type="checkbox" id="gate-disclosure" onchange="updateGateButtons()"> Set YouTube's altered/synthetic content disclosure
+                <input type="checkbox" id="gate-disclosure" onchange="updateGateButtons()"> Marcar a divulgação de conteúdo alterado/sintético do YouTube
               </label>
               <div id="gate-disclosure-reason-wrap" style="display:none;margin-top:4px">
                 <div class="field-label" style="margin-bottom:2px">Disclosure override reason</div>
                 <input type="text" id="gate-disclosure-reason" placeholder="Why differ from the rule?" oninput="updateGateButtons()">
               </div>
             </div>
-            <textarea id="gate-notes" rows="2" style="font-size:12px;margin-top:6px" placeholder="Optional reviewer notes"></textarea>
-            <button class="btn btn-ghost" id="gate-approve-btn" style="margin-top:6px;font-size:12px" onclick="approveUpload()" disabled>✔ Record approval</button>
+            <textarea id="gate-notes" rows="2" style="font-size:12px;margin-top:6px" placeholder="Notas do revisor (opcional)"></textarea>
+            <button class="btn btn-ghost" id="gate-approve-btn" style="margin-top:6px;font-size:12px" onclick="approveUpload()" disabled>✔ Registrar aprovação</button>
             <div id="gate-msg" style="font-size:11px;margin-top:4px"></div>
           </div>
 
           <div class="upload-section">
-            <div style="font-size:12px;font-weight:600;color:var(--dim);margin-bottom:10px">Upload to YouTube</div>
+            <div style="font-size:12px;font-weight:600;color:var(--dim);margin-bottom:10px">Enviar ao YouTube</div>
 
             <!-- Tab switcher -->
             <div style="display:flex;gap:4px;margin-bottom:10px">
-              <button class="upload-mode-btn active" id="utab-now" onclick="switchUploadMode('now')">Upload Now</button>
-              <button class="upload-mode-btn" id="utab-schedule" onclick="switchUploadMode('schedule')">📅 Schedule</button>
+              <button class="upload-mode-btn active" id="utab-now" onclick="switchUploadMode('now')">Enviar agora</button>
+              <button class="upload-mode-btn" id="utab-schedule" onclick="switchUploadMode('schedule')">📅 Agendar</button>
             </div>
 
             <!-- Upload Now pane -->
             <div id="upane-now">
               <div class="upload-row">
                 <select id="upload-privacy" style="flex:1">
-                  <option value="public">Public</option>
-                  <option value="unlisted">Unlisted</option>
-                  <option value="private">Private</option>
+                  <option value="public">Público</option>
+                  <option value="unlisted">Não listado</option>
+                  <option value="private">Privado</option>
                 </select>
                 <button class="btn btn-success" id="upload-btn" onclick="uploadToYouTube()" disabled>
-                  ▲ Upload
+                  ▲ Enviar
                 </button>
               </div>
             </div>
@@ -693,18 +688,18 @@ body.no-project #tab-performance > :not(.project-empty){display:none}
             <!-- Schedule pane -->
             <div id="upane-schedule" style="display:none">
               <div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.5">
-                Video uploads immediately but goes public at the chosen date &amp; time.<br>
-                Requires a <strong style="color:var(--dim)">verified YouTube channel</strong>.
+                O vídeo é enviado agora e fica público na data e hora escolhidas.<br>
+                Exige um <strong style="color:var(--dim)">canal do YouTube verificado</strong>.
               </div>
               <div style="display:flex;flex-direction:column;gap:8px">
                 <input type="datetime-local" id="schedule-datetime" style="font-size:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);padding:7px 10px;outline:none;width:100%;color-scheme:dark">
                 <div class="upload-row">
                   <select id="schedule-privacy" style="flex:1">
-                    <option value="public">Public at scheduled time</option>
-                    <option value="unlisted">Unlisted at scheduled time</option>
+                    <option value="public">Público na hora agendada</option>
+                    <option value="unlisted">Não listado na hora agendada</option>
                   </select>
                   <button class="btn btn-amber" id="schedule-btn" onclick="scheduleUpload()" disabled>
-                    📅 Schedule
+                    📅 Agendar
                   </button>
                 </div>
               </div>
@@ -1005,6 +1000,17 @@ body.no-project #tab-performance > :not(.project-empty){display:none}
 
       </div>
     </div>
+    <!-- Console: docked under every tab (Phase 3.9.1-D) -->
+    <section class="console-dock collapsed" id="console-dock">
+      <div class="console-bar">
+        <button class="btn btn-ghost console-toggle" onclick="toggleConsole()" title="Mostrar/ocultar o console">▸ Console</button>
+        <span id="console-status" class="chip chip-idle">Parado</span>
+        <span id="console-last" class="console-last"></span>
+        <button class="btn btn-danger" id="stop-btn" onclick="stopPipeline()" style="display:none" title="Parar depois da etapa atual">⏹ Parar</button>
+        <button class="btn btn-ghost" onclick="clearConsole()">Limpar</button>
+      </div>
+      <div class="console-body" id="console"></div>
+    </section>
   </main>
 </div>
 
@@ -1183,7 +1189,18 @@ function switchTab(name) {
 //  CONSOLE HELPERS
 // ══════════════════════════════════════════════════════════
 const cons = document.getElementById('console');
+function toggleConsole(open) {
+  const dock = document.getElementById('console-dock');
+  const collapsed = open === undefined ? !dock.classList.contains('collapsed') : !open;
+  dock.classList.toggle('collapsed', collapsed);
+  dock.querySelector('.console-toggle').textContent = (collapsed ? '▸' : '▾') + ' Console';
+  try { localStorage.setItem('consoleOpen', collapsed ? '' : '1'); } catch (e) {}
+}
+try { if (localStorage.getItem('consoleOpen')) toggleConsole(true); } catch (e) {}
+
 function _log(msg, cls='log-info') {
+  const last = document.getElementById('console-last');
+  if (last) last.textContent = String(msg);
   const el = document.createElement('div');
   el.className = cls;
   // Pretty-format known prefixes
@@ -1329,7 +1346,7 @@ function loadVoices() {
     }
     showVoiceJob(d.job);
     const wizard = document.getElementById('wizard-voice');
-    if (wizard) wizard.innerHTML = `Voz do canal: <b>${_esc(current ? current.label : channel.voice)}</b> (${_esc(BACKEND_PT[channel.backend] || channel.backend)}) — trocar em <a href="#" onclick="openVoices();return false">Settings → Vozes</a>`;
+    if (wizard) wizard.innerHTML = `Voz do canal: <b>${_esc(current ? current.label : channel.voice)}</b> (${_esc(BACKEND_PT[channel.backend] || channel.backend)}) — trocar em <a href="#" onclick="openVoices();return false">Configurações → Vozes</a>`;
     document.getElementById('voice-ref-list').textContent = (d.references || []).map(item =>
       `${item.name}: ${item.usable ? 'ok' : item.error}`).join(' · ');
   });
@@ -1445,11 +1462,12 @@ function setRunning(running) {
   document.getElementById('console-status').className = 
     running ? 'chip chip-running' : 'chip chip-idle';
   document.getElementById('console-status').textContent = 
-    running ? '⟳ Running' : 'Idle';
+    running ? '⟳ Rodando' : 'Parado';
+  if (running) toggleConsole(true);
   document.getElementById('status-chip').className =
     running ? 'chip chip-running' : 'chip chip-idle';
   document.getElementById('status-chip').textContent =
-    running ? '⟳ Running' : '● Idle';
+    running ? '⟳ Rodando' : '● Parado';
 }
 
 function stopPipeline() {
@@ -2036,6 +2054,9 @@ function igSideCharacters(side, shot) {
       img.src = igFile(ref.approved_path, 'ref');
       img.style.cssText = 'width:104px;height:104px;object-fit:cover;border-radius:4px;display:block;cursor:zoom-in';
       img.onclick = () => window.open(igFile(ref.approved_path, 'ref'), '_blank');
+      img.onerror = () => { const gap = document.createElement('div'); gap.className = 'empty-state';
+        gap.style.cssText = 'width:104px;height:104px;padding:4px;display:flex;align-items:center;justify-content:center';
+        gap.textContent = 'referência ausente'; img.replaceWith(gap); };
       cell.appendChild(img);
     }
     const caption = document.createElement('div');
@@ -2950,7 +2971,7 @@ function renderTitleFindings(findings) {
   const box = document.getElementById('title-findings');
   box.innerHTML = '';
   if (!findings.length) {
-    box.innerHTML = '<span style="color:var(--green,#4caf50)">✓ Title passes the title policy</span>';
+    box.innerHTML = '<span style="color:var(--green,#4caf50)">✓ O título passa na política de títulos</span>';
     return;
   }
   findings.forEach(f => {
@@ -2995,7 +3016,7 @@ function regenDescription() {
   const btn = event.target;
   btn.disabled = true; btn.textContent = '⟳ Rewriting…';
   fetch('/api/regenerate-description', {method:'POST'}).then(r=>r.json()).then(d => {
-    btn.disabled = false; btn.textContent = '✨ AI Rewrite';
+    btn.disabled = false; btn.textContent = '✨ Reescrever (IA)';
     if (d.ok) {
       document.getElementById('edit-desc').value = d.description;
       markDirty();
@@ -3620,12 +3641,12 @@ function refreshProject() {
       const css = text === STATUS_PT.running ? 'stale' : text === STATUS_PT.waiting ? 'partial' : s.status;
       if (s.stage === 'narration' && s.status === 'stale' && /voice/.test(s.detail || '')) text += ' (voz mudou)';
       const voice = s.stage === 'narration' && d.channel_voice
-        ? `<div class="help-text" style="margin:0">Voz: ${_esc(d.channel_voice.voice)} · <a href="#" onclick="openVoices();return false">trocar</a></div>` : '';
+        ? `<br>Voz: ${_esc(d.channel_voice.voice)} · <a href="#" onclick="openVoices();return false">trocar</a>` : '';
       return `<div class="project-stage ${next && next.stage === s.stage ? 'next' : ''}">
         <div style="font-weight:600">${meta.position ? meta.position + '. ' : ''}${_esc(s.label)}
           <span class="help-text" style="margin:0 0 0 6px">${LANE_PT[meta.lane] || ''}</span></div>
         <span class="sbadge ${css}">${text}</span>
-        <div class="help-text" style="margin:0">${_esc(s.detail)}${when ? ' · ' + when : ''}</div>${voice}
+        <div class="help-text" style="margin:0">${_esc(s.detail)}${when ? ' · ' + when : ''}${voice}</div>
         <div class="flex-row">${buttons.join('')}</div></div>`;
     }).join('');
     return d;
