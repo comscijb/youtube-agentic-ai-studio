@@ -610,12 +610,13 @@ def _running_stages() -> list[str]:
 
 
 def _current_summary() -> dict:
+    from audio import tts
     out = Path(config.OUTPUT_DIR)
     if projects.is_project(out):
-        return {"project": True, **projects.summary(out), "running": _running_stages()}
+        return {"project": True, **projects.summary(out), "running": _running_stages(), "channel_voice": tts.identity()}
     statuses = projects.stage_status(out)
     return {"project": False, "slug": None, "title": "output/ (legacy folder)", "stages": statuses,
-            "next_step": projects.next_step(statuses), "thumbnail": None}
+            "next_step": projects.next_step(statuses), "thumbnail": None, "channel_voice": tts.identity()}
 
 
 @app.route("/api/stages")
@@ -2120,7 +2121,6 @@ def get_settings():
         "music_library":   getattr(config, "MUSIC_LIBRARY_DIR", ""),
         "channel_name":    config.CHANNEL_NAME,
         "channel_desc":    config.CHANNEL_DESCRIPTION,
-        "voice_id":        config.VOICE_ID,
         "voice_rate":      config.VOICE_RATE,
         "voice_pitch":     config.VOICE_PITCH,
         "configured_wpm":  voice_calibration.configured_wpm(),
@@ -2151,19 +2151,85 @@ def _audition_dir() -> Path:
     return OUT
 
 
+_voice_job = {"running": False, "done": 0, "total": 0, "current": "", "log": [], "errors": {}}
+
+
+def voice_rows() -> list[dict]:
+    """The catalogue voices installed here plus any other auditioned voice, each with its latest sample
+    (play URL), stats and error, and whether it is the channel voice."""
+    from audio import tts
+    from audio.tts import catalogue
+    channel = tts.identity()
+    results = {catalogue.key(row["backend"], row["voice"]): row
+               for row in (load_json(_audition_dir() / "results.json") or {}).get("rows", [])}
+    entries = catalogue.catalogue()
+    known = {catalogue.key(entry["backend"], entry["voice"]) for entry in entries}
+    entries += [{"backend": row["backend"], "voice": row["voice"], "label": row["voice"], "licence": row.get("licence", "")}
+                for key, row in results.items() if key not in known]
+    rows = []
+    for entry in entries:
+        key = catalogue.key(entry["backend"], entry["voice"])
+        result = results.get(key, {})
+        has_file = bool(result.get("file")) and (_audition_dir() / result["file"]).is_file()
+        rows.append({**entry, **{name: result.get(name) for name in ("rtf", "coverage", "drift_ms", "lufs", "vram_mib")},
+                     "error": result.get("error") or _voice_job["errors"].get(key),
+                     "url": f"/api/voices/sample/{result['file']}" if has_file else "",
+                     "current": entry["backend"] == channel["backend"] and entry["voice"] == channel["voice"]})
+    return rows
+
+
 @app.route("/api/voices")
 def voices_status():
-    """"Vozes": the channel voice, the audition samples, the backends and the reference clips."""
+    """"Vozes": the channel voice, every catalogue voice with its preview, the backends, the reference
+    clips and the "Gerar prévias" job."""
     from audio import tts
     from audio.tts import voices
-    results = load_json(_audition_dir() / "results.json") or {"rows": []}
+    from scripts.voice_audition import DEFAULT_TEXT
     backends = []
     for name in tts.BACKENDS:
         ok, detail = tts.get(name).available()
         backends.append({"name": name, "available": ok, "detail": detail})
     stale = projects.is_project(config.OUTPUT_DIR) and projects.narration_voice_changed(config.OUTPUT_DIR)
-    return jsonify({"ok": True, "channel": tts.identity(), "audition": results, "backends": backends,
-                    "references": voices.references(), "narration_stale": bool(stale)})
+    text = DEFAULT_TEXT.read_text(encoding="utf-8").strip() if DEFAULT_TEXT.is_file() else ""
+    return jsonify({"ok": True, "channel": tts.identity(), "voices": voice_rows(), "backends": backends,
+                    "references": voices.references(), "narration_stale": bool(stale),
+                    "preview_text": text, "job": {key: value for key, value in _voice_job.items() if key != "errors"}})
+
+
+@app.route("/api/voices/previews", methods=["POST"])
+def voices_previews():
+    """"Gerar prévias": render the chosen voices in the background (cached samples are reused; a failing
+    voice is recorded and the others go on)."""
+    from scripts import voice_audition
+    body = request.get_json(force=True) or {}
+    pairs = [tuple(str(item).split(":", 1)) for item in body.get("voices") or [] if ":" in str(item)]
+    if not pairs:
+        return jsonify({"ok": False, "error": "Escolha pelo menos uma voz"}), 400
+    if _voice_job["running"]:
+        return jsonify({"ok": False, "error": "As prévias já estão sendo geradas"}), 409
+    text = str(body.get("text") or "").strip() or voice_audition.DEFAULT_TEXT.read_text(encoding="utf-8").strip()
+    _voice_job.update(running=True, done=0, total=len(pairs), current="", log=[], errors={})
+
+    def progress(line):
+        _voice_job["log"] = (_voice_job["log"] + [line])[-40:]
+        if line.startswith("["):
+            _voice_job["current"] = line.split("] ", 1)[-1]
+        elif line.startswith("   "):
+            _voice_job["done"] += 1
+
+    def work():
+        try:
+            for row in voice_audition.run(pairs, text, _audition_dir(), progress=progress):
+                if row.get("error"):
+                    _voice_job["errors"][f"{row['backend']}:{row['voice']}"] = row["error"]
+        except Exception as exc:                         # noqa: BLE001 — shown in the panel
+            progress(f"Erro: {exc}")
+            _log(f"Voice previews: {exc}", "error")
+        finally:
+            _voice_job.update(running=False, current="")
+
+    threading.Thread(target=work, daemon=True).start()
+    return jsonify({"ok": True, "total": len(pairs)})
 
 
 @app.route("/api/voices/sample/<name>")
@@ -2265,7 +2331,6 @@ def save_settings():
         "music_volume":  "MUSIC_VOLUME",
         "channel_name":  "CHANNEL_NAME",
         "channel_desc":  "CHANNEL_DESCRIPTION",
-        "voice_id":      "VOICE_ID",
         "voice_rate":    "VOICE_RATE",
         "voice_pitch":   "VOICE_PITCH",
         "gemini_model":  "GEMINI_MODEL",

@@ -225,6 +225,15 @@ input[type=range]{width:100%;accent-color:var(--primary)}
 .sbadge{padding:1px 7px;border-radius:20px;font-size:10px;font-weight:700;border:1px solid transparent}
 .sbadge.done{background:rgba(52,211,153,.15);color:var(--green)}
 .sbadge.stale{background:rgba(251,191,36,.15);color:var(--amber)}
+.voices-channel{font-size:13px;margin-bottom:4px}
+.voices-list{display:flex;flex-direction:column;gap:4px;margin:8px 0}
+.voice-row{display:grid;grid-template-columns:minmax(180px,1.2fr) minmax(220px,1.5fr) minmax(160px,1.3fr) auto;gap:10px;align-items:center;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px}
+.voice-row.current{border-color:var(--success,#4ade80);background:rgba(74,222,128,.06)}
+.voice-name{display:flex;flex-direction:column}
+.voice-player audio{width:100%;height:30px}
+.voice-action .btn{font-size:11px;padding:2px 8px;white-space:nowrap}
+.voices-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:2px 12px;margin:6px 0}
+.empty-state{color:var(--muted);font-size:12px;padding:12px;text-align:center;border:1px dashed var(--border);border-radius:6px}
 .sbadge.partial{background:rgba(96,165,250,.15);color:var(--blue)}
 .sbadge.missing{background:rgba(255,255,255,.04);color:var(--muted);border-color:var(--border)}
 .sbadge.skipped{background:transparent;color:var(--muted);border-color:var(--border);text-decoration:line-through}
@@ -438,17 +447,8 @@ input[type=range]{width:100%;accent-color:var(--primary)}
           <label class="step-check"><input type="checkbox" id="narrative-review" checked> Editorial quality review (one Gemini call)</label>
 
           <div>
-            <div class="field-label">Voice<br><span style="font-size:10px;font-weight:400;color:var(--success,#4ade80)">✓ = word-synced captions</span></div>
-            <select id="quick-voice" onchange="applyQuickVoice(this.value)">
-              <option value="en-US-AndrewNeural">Andrew (US, Warm) ✓</option>
-              <option value="en-US-BrianNeural">Brian (US, Calm)</option>
-              <option value="en-GB-LibbyNeural">Libby (UK, Clear) ✓</option>
-              <option value="en-US-GuyNeural">Guy (US, Neutral)</option>
-              <option value="en-GB-RyanNeural">Ryan (UK, Warm)</option>
-              <option value="en-US-AriaNeural">Aria (US, Female)</option>
-              <option value="en-GB-SoniaNeural">Sonia (UK, Female)</option>
-              <option value="en-US-ChristopherNeural">Christopher (US, Deep)</option>
-            </select>
+            <div class="field-label">Voz</div>
+            <div class="help-text" id="wizard-voice" style="margin:0">Voz do canal: … — trocar em <a href="#" onclick="openVoices();return false">Settings → Vozes</a></div>
           </div>
 
           <div>
@@ -718,6 +718,57 @@ input[type=range]{width:100%;accent-color:var(--primary)}
     <div class="tab-content" id="tab-settings">
       <div class="settings-scroll">
 
+        <!-- ── Vozes (Phase 3.9.1-B: listen before choosing the channel voice) ── -->
+        <div class="settings-section" id="voices-section">
+          <div class="settings-header" onclick="toggleSection(this)">🎙 Vozes <span class="caret">▾</span></div>
+          <div class="settings-body" id="voices-panel">
+            <div id="voices-channel" class="voices-channel"></div>
+            <div class="help-text">Ouça cada voz e escolha a voz do canal. Trocar a voz marca a narração dos projetos como desatualizada.</div>
+            <div id="voices-list" class="voices-list"></div>
+            <details class="voices-generate">
+              <summary class="field-label" style="cursor:pointer">Gerar prévias</summary>
+              <div class="help-text">Marque as vozes e gere uma amostra de ~20 s de cada uma (as que já existem para o mesmo texto são reaproveitadas).</div>
+              <div id="voices-picker" class="voices-picker"></div>
+              <textarea id="voices-text" rows="3" style="font-size:12px" placeholder="Texto da prévia (vazio = briefs/voice-preview.txt)"></textarea>
+              <div class="flex-row">
+                <button class="btn btn-primary" id="voices-generate-btn" onclick="generateVoicePreviews()">Gerar prévias</button>
+                <span id="voices-job" class="help-text" style="margin:0"></span>
+              </div>
+            </details>
+            <div class="settings-cols">
+              <div class="settings-field">
+                <div class="field-label">Speed</div>
+                <div class="range-row">
+                  <input type="range" id="s-voice-rate-range" min="-20" max="20" value="-5"
+                         oninput="document.getElementById('s-voice-rate').value=this.value+'%';document.getElementById('s-voice-rate-val').textContent=this.value+'%'">
+                  <span class="range-val" id="s-voice-rate-val">-5%</span>
+                </div>
+                <input type="hidden" id="s-voice-rate" value="-5%">
+                <div class="help-text" id="s-wpm-info"></div>
+              </div>
+              <div class="settings-field">
+                <div class="field-label">Pitch</div>
+                <div class="range-row">
+                  <input type="range" id="s-voice-pitch-range" min="-10" max="10" value="-3"
+                         oninput="document.getElementById('s-voice-pitch').value=this.value+'Hz';document.getElementById('s-voice-pitch-val').textContent=this.value+'Hz'">
+                  <span class="range-val" id="s-voice-pitch-val">-3Hz</span>
+                </div>
+                <input type="hidden" id="s-voice-pitch" value="-3Hz">
+              </div>
+            </div>
+              <details style="margin-top:6px"><summary style="font-size:12px">Voz de referência para clonagem</summary>
+                <div class="help-text">Só a sua própria voz ou uma licenciada para este uso. Nunca uma pessoa pública real.</div>
+                <input type="file" id="voice-ref-file" accept=".wav,.mp3,.flac,.m4a,.ogg">
+                <input type="text" id="voice-ref-speaker" placeholder="Quem fala">
+                <input type="text" id="voice-ref-licence" placeholder="Licença ou consentimento">
+                <label class="step-check"><input type="checkbox" id="voice-ref-own"> É a minha voz (ou licenciada para isto)</label>
+                <label class="step-check"><input type="checkbox" id="voice-ref-public"> Não é a voz de uma pessoa pública real</label>
+                <button class="btn btn-ghost" style="font-size:11px" onclick="uploadVoiceReference()">Enviar referência</button>
+                <div id="voice-ref-list" class="help-text"></div>
+              </details>
+          </div>
+        </div>
+
         <!-- ── API Keys ── -->
         <div class="settings-section">
           <div class="settings-header" onclick="toggleSection(this)">🔑 API Keys <span class="caret">▾</span></div>
@@ -784,52 +835,6 @@ input[type=range]{width:100%;accent-color:var(--primary)}
           </div>
         </div>
 
-        <!-- ── Voice ── -->
-        <div class="settings-section">
-          <div class="settings-header" onclick="toggleSection(this)">🎙 Voice (Edge TTS — Free) <span class="caret">▾</span></div>
-          <div class="settings-body">
-            <div class="settings-field">
-              <div class="field-label">Voice</div>
-              <select id="s-voice">
-                <optgroup label="✓ Word-synced captions (best quality)">
-                  <option value="en-US-AndrewNeural">Andrew (US, Warm male)</option>
-                  <option value="en-GB-LibbyNeural">Libby (UK, Clear female)</option>
-                </optgroup>
-                <optgroup label="Sentence-level captions (good quality)">
-                  <option value="en-US-BrianNeural">Brian (US, Calm male)</option>
-                  <option value="en-US-GuyNeural">Guy (US, Neutral male)</option>
-                  <option value="en-GB-RyanNeural">Ryan (UK, Warm male)</option>
-                  <option value="en-US-ChristopherNeural">Christopher (US, Deep male)</option>
-                  <option value="en-US-AriaNeural">Aria (US, Expressive female)</option>
-                  <option value="en-GB-SoniaNeural">Sonia (UK, Clear female)</option>
-                  <option value="en-AU-NatashaNeural">Natasha (AU, female)</option>
-                </optgroup>
-              </select>
-            </div>
-            <div class="settings-cols">
-              <div class="settings-field">
-                <div class="field-label">Speed</div>
-                <div class="range-row">
-                  <input type="range" id="s-voice-rate-range" min="-20" max="20" value="-5"
-                         oninput="document.getElementById('s-voice-rate').value=this.value+'%';document.getElementById('s-voice-rate-val').textContent=this.value+'%'">
-                  <span class="range-val" id="s-voice-rate-val">-5%</span>
-                </div>
-                <input type="hidden" id="s-voice-rate" value="-5%">
-                <div class="help-text" id="s-wpm-info"></div>
-              </div>
-              <div class="settings-field">
-                <div class="field-label">Pitch</div>
-                <div class="range-row">
-                  <input type="range" id="s-voice-pitch-range" min="-10" max="10" value="-3"
-                         oninput="document.getElementById('s-voice-pitch').value=this.value+'Hz';document.getElementById('s-voice-pitch-val').textContent=this.value+'Hz'">
-                  <span class="range-val" id="s-voice-pitch-val">-3Hz</span>
-                </div>
-                <input type="hidden" id="s-voice-pitch" value="-3Hz">
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- ── AI Model ── -->
         <div class="settings-section">
           <div class="settings-header" onclick="toggleSection(this)">🤖 AI Model <span class="caret">▾</span></div>
@@ -871,24 +876,6 @@ input[type=range]{width:100%;accent-color:var(--primary)}
                 <option value="veryfast">⚖️ Balanced (veryfast) — recommended</option>
                 <option value="medium">🎬 High Quality (medium) — best quality, ~3× slower</option>
               </select>
-            </div>
-
-            <div class="settings-field" id="voices-panel">
-              <div class="field-label">Vozes — a voz do canal</div>
-              <div id="voices-channel" class="help-text"></div>
-              <div id="voices-list" style="display:flex;flex-direction:column;gap:6px;font-size:12px"></div>
-              <div class="help-text">Gere as amostras com <code>python -m scripts.voice_audition --text-file briefs/audition.txt</code>.
-                Trocar a voz marca a narração como desatualizada.</div>
-              <details style="margin-top:6px"><summary style="font-size:12px">Voz de referência para clonagem</summary>
-                <div class="help-text">Só a sua própria voz ou uma licenciada para este uso. Nunca uma pessoa pública real.</div>
-                <input type="file" id="voice-ref-file" accept=".wav,.mp3,.flac,.m4a,.ogg">
-                <input type="text" id="voice-ref-speaker" placeholder="Quem fala">
-                <input type="text" id="voice-ref-licence" placeholder="Licença ou consentimento">
-                <label class="step-check"><input type="checkbox" id="voice-ref-own"> É a minha voz (ou licenciada para isto)</label>
-                <label class="step-check"><input type="checkbox" id="voice-ref-public"> Não é a voz de uma pessoa pública real</label>
-                <button class="btn btn-ghost" style="font-size:11px" onclick="uploadVoiceReference()">Enviar referência</button>
-                <div id="voice-ref-list" class="help-text"></div>
-              </details>
             </div>
 
             <div class="settings-field">
@@ -1245,50 +1232,125 @@ function setFormat(type) {
   document.getElementById('target-duration').disabled = type === 'shorts';
 }
 
+const BACKEND_PT = {edge: 'Edge (online)', local: 'Kokoro (local)', elevenlabs: 'ElevenLabs'};
+let _voicesPoll = null;
+
+function openVoices() {
+  switchTab('settings');
+  const section = document.getElementById('voices-section');
+  section.querySelector('.settings-body').style.display = '';
+  section.scrollIntoView({behavior: 'smooth', block: 'start'});
+}
+
+function setChannelVoice(backend, voice) {
+  if (!confirm('Trocar a voz do canal? A narração existente fica desatualizada e precisa ser refeita.')) return;
+  fetch('/api/voices/channel', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({backend, voice})}).then(r => r.json()).then(x => {
+      if (!x.ok) { alert(x.error); return; }
+      loadVoices(); refreshProject();
+    });
+}
+
+function voiceStats(row) {
+  if (row.rtf == null && row.coverage == null) return '';
+  const parts = [`RTF ${row.rtf ?? '—'}`, `cobertura ${row.coverage != null ? Math.round(row.coverage * 1000) / 10 + '%' : '—'}`];
+  if (row.drift_ms != null) parts.push(`deriva ${Math.round(row.drift_ms)} ms`);
+  if (row.lufs != null) parts.push(`${row.lufs} LUFS`);
+  return parts.join(' · ');
+}
+
 function loadVoices() {
-  // Phase 3.9-A: audition samples side by side; one click makes a voice the channel voice.
+  // Phase 3.9.1-B: every catalogue voice with a ▶ preview, its stats and licence; one click makes it the channel voice.
   fetch('/api/voices').then(r => r.json()).then(d => {
     const channel = d.channel;
-    document.getElementById('voices-channel').textContent =
-      `Voz do canal: ${channel.backend} · ${channel.voice}` + (d.narration_stale ? ' — a narração deste projeto está desatualizada' : '');
+    const current = (d.voices || []).find(v => v.current);
+    document.getElementById('voices-channel').innerHTML =
+      `Voz do canal: <b>${_esc(current ? current.label : channel.voice)}</b> <span class="help-text" style="margin:0">${_esc(BACKEND_PT[channel.backend] || channel.backend)} · ${_esc(channel.voice)}</span>`
+      + (d.narration_stale ? ' <span class="sbadge stale">narração deste projeto desatualizada (voz mudou)</span>' : '');
     const list = document.getElementById('voices-list');
     list.innerHTML = '';
-    (d.audition.rows || []).forEach(row => {
+    (d.voices || []).forEach(row => {
       const line = document.createElement('div');
-      line.style.cssText = 'display:flex;gap:8px;align-items:center;flex-wrap:wrap';
-      const label = document.createElement('span');
-      label.style.minWidth = '220px';
-      label.textContent = `${row.backend} · ${row.voice}` + (row.error ? ` — ${row.error}` :
-        ` — RTF ${row.rtf} · VRAM ${row.vram_mib ?? '—'} MiB · cobertura ${row.coverage ?? '—'} · deriva ${row.drift_ms ?? '—'} ms · ${row.lufs ?? '—'} LUFS`);
-      label.title = row.licence || '';
-      line.appendChild(label);
-      if (row.file) {
+      line.className = 'voice-row' + (row.current ? ' current' : '');
+      line.innerHTML = `<div class="voice-name"><b></b><span class="help-text" style="margin:0"></span></div>
+        <div class="voice-player"></div><div class="voice-stats help-text" style="margin:0"></div><div class="voice-action"></div>`;
+      line.querySelector('b').textContent = row.label;
+      line.querySelector('.voice-name span').textContent = `${BACKEND_PT[row.backend] || row.backend} · ${row.voice}`;
+      line.querySelector('.voice-name').title = row.licence || '';
+      const player = line.querySelector('.voice-player');
+      if (row.url) {
         const audio = document.createElement('audio');
         audio.controls = true;
-        audio.src = '/api/voices/sample/' + encodeURIComponent(row.file);
-        line.appendChild(audio);
+        audio.preload = 'none';
+        audio.src = row.url;
+        player.appendChild(audio);
+      } else {
+        player.innerHTML = '<span class="help-text" style="margin:0">sem prévia — use “Gerar prévias”</span>';
+      }
+      const stats = line.querySelector('.voice-stats');
+      stats.textContent = row.error ? `✗ ${row.error}` : voiceStats(row);
+      if (row.error) stats.style.color = 'var(--red)';
+      const action = line.querySelector('.voice-action');
+      if (row.current) {
+        action.innerHTML = '<span class="sbadge done">✓ voz do canal</span>';
+      } else {
         const use = document.createElement('button');
         use.className = 'btn btn-ghost';
-        use.style.cssText = 'font-size:11px;padding:2px 8px';
-        const current = row.backend === channel.backend && row.voice === channel.voice;
-        use.textContent = current ? '✓ voz do canal' : 'Usar como voz do canal';
-        use.disabled = current;
-        use.onclick = () => {
-          if (!confirm('Trocar a voz do canal? A narração existente fica desatualizada e precisa ser refeita.')) return;
-          fetch('/api/voices/channel', {method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({backend: row.backend, voice: row.voice})}).then(r => r.json()).then(x => {
-              if (!x.ok) { alert(x.error); return; }
-              loadVoices(); refreshProject();
-            });
-        };
-        line.appendChild(use);
+        use.textContent = 'Usar como voz do canal';
+        use.onclick = () => setChannelVoice(row.backend, row.voice);
+        action.appendChild(use);
       }
       list.appendChild(line);
     });
-    if (!(d.audition.rows || []).length) list.textContent = 'Nenhuma amostra ainda.';
+    if (!(d.voices || []).length) list.innerHTML = '<div class="empty-state">Nenhuma voz disponível.</div>';
+    const picker = document.getElementById('voices-picker');
+    if (!picker.dataset.filled) {
+      picker.innerHTML = '';
+      (d.voices || []).filter(v => BACKEND_PT[v.backend]).forEach(row => {
+        const label = document.createElement('label');
+        label.className = 'step-check';
+        label.innerHTML = '<input type="checkbox"> <span></span>';
+        label.querySelector('input').value = `${row.backend}:${row.voice}`;
+        label.querySelector('input').checked = !row.url;
+        label.querySelector('span').textContent = `${row.label} — ${BACKEND_PT[row.backend]}`;
+        picker.appendChild(label);
+      });
+      picker.dataset.filled = '1';
+      document.getElementById('voices-text').placeholder = d.preview_text
+        ? `Texto da prévia (vazio = briefs/voice-preview.txt): ${d.preview_text.slice(0, 90)}…` : 'Texto da prévia';
+    }
+    showVoiceJob(d.job);
+    const wizard = document.getElementById('wizard-voice');
+    if (wizard) wizard.innerHTML = `Voz do canal: <b>${_esc(current ? current.label : channel.voice)}</b> (${_esc(BACKEND_PT[channel.backend] || channel.backend)}) — trocar em <a href="#" onclick="openVoices();return false">Settings → Vozes</a>`;
     document.getElementById('voice-ref-list').textContent = (d.references || []).map(item =>
       `${item.name}: ${item.usable ? 'ok' : item.error}`).join(' · ');
   });
+}
+
+function showVoiceJob(job) {
+  const box = document.getElementById('voices-job');
+  const button = document.getElementById('voices-generate-btn');
+  if (!job) return;
+  button.disabled = !!job.running;
+  if (job.running) {
+    box.textContent = `Gerando ${job.done}/${job.total}${job.current ? ' — ' + job.current : ''}`;
+    if (!_voicesPoll) _voicesPoll = setInterval(loadVoices, 2000);
+  } else {
+    if (_voicesPoll) { clearInterval(_voicesPoll); _voicesPoll = null; }
+    box.textContent = job.total ? `Concluído: ${job.done}/${job.total}` + ((job.log || []).some(l => l.startsWith('Erro')) ? ' (com erros)' : '') : '';
+  }
+}
+
+function generateVoicePreviews() {
+  const voices = [...document.querySelectorAll('#voices-picker input:checked')].map(i => i.value);
+  if (!voices.length) { alert('Marque pelo menos uma voz.'); return; }
+  fetch('/api/voices/previews', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({voices, text: document.getElementById('voices-text').value})})
+    .then(r => r.json()).then(d => {
+      if (!d.ok) { alert(d.error); return; }
+      showVoiceJob({running: true, done: 0, total: d.total});
+      loadVoices();
+    });
 }
 
 function uploadVoiceReference() {
@@ -3127,7 +3189,6 @@ function loadSettings() {
     document.getElementById('s-channel-desc').value = d.channel_desc|| '';
     fetch('/api/description-template').then(r => r.json()).then(t => {
       document.getElementById('s-desc-template').value = t.template || ''; });
-    document.getElementById('s-voice').value        = d.voice_id    || 'en-US-AndrewNeural';
     document.getElementById('s-wpm-info').textContent = d.calibrated_wpm
       ? `Planning: ${d.planning_wpm} wpm measured for this voice and rate (configured ${d.configured_wpm}).`
       : `Planning: ${d.planning_wpm} wpm configured (no measurement yet for this voice and rate).`;
@@ -3159,8 +3220,6 @@ function loadSettings() {
     const mvol = Math.round((parseFloat(d.music_volume) || 0.12) * 100);
     document.getElementById('s-music-vol').value = mvol;
     document.getElementById('s-music-vol-val').textContent = mvol + '%';
-    // Sync quick-voice dropdown
-    document.getElementById('quick-voice').value = d.voice_id || 'en-US-AndrewNeural';
     document.getElementById('quick-privacy').value = d.privacy || 'public';
     document.getElementById('upload-privacy').value = d.privacy || 'public';
 
@@ -3275,7 +3334,6 @@ function saveSettings() {
       stock_license_log: document.getElementById('s-stock-license').checked,
       channel_name: document.getElementById('s-channel-name').value,
       channel_desc: document.getElementById('s-channel-desc').value,
-      voice_id:     document.getElementById('s-voice').value,
       voice_rate:   rate,
       voice_pitch:  pitch,
       gemini_model: document.getElementById('s-model').value,
@@ -3306,14 +3364,6 @@ function saveSettings() {
       msg.textContent = '✗ '+d.error;
     }
     setTimeout(()=>{msg.style.display='none';},3000);
-  });
-}
-
-function applyQuickVoice(val) {
-  document.getElementById('s-voice').value = val;
-  fetch('/api/save-settings', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({voice_id: val})
   });
 }
 
@@ -3499,13 +3549,16 @@ function refreshProject() {
         buttons.push(`<button class="btn btn-ghost" onclick="openApproval('${APPROVALS[s.stage][1]}')">${APPROVALS[s.stage][0]}</button>`);
       if (d.project && s.status !== 'done' && s.status !== 'skipped')
         buttons.push(`<button class="btn btn-ghost" onclick="runStage('${s.stage}','skip')">Pular</button>`);
-      const text = stageStatusText(s, d);
+      let text = stageStatusText(s, d);
       const css = text === STATUS_PT.running ? 'stale' : text === STATUS_PT.waiting ? 'partial' : s.status;
+      if (s.stage === 'narration' && s.status === 'stale' && /voice/.test(s.detail || '')) text += ' (voz mudou)';
+      const voice = s.stage === 'narration' && d.channel_voice
+        ? `<div class="help-text" style="margin:0">Voz: ${_esc(d.channel_voice.voice)} · <a href="#" onclick="openVoices();return false">trocar</a></div>` : '';
       return `<div class="project-stage ${next && next.stage === s.stage ? 'next' : ''}">
         <div style="font-weight:600">${meta.position ? meta.position + '. ' : ''}${_esc(s.label)}
           <span class="help-text" style="margin:0 0 0 6px">${LANE_PT[meta.lane] || ''}</span></div>
         <span class="sbadge ${css}">${text}</span>
-        <div class="help-text" style="margin:0">${_esc(s.detail)}${when ? ' · ' + when : ''}</div>
+        <div class="help-text" style="margin:0">${_esc(s.detail)}${when ? ' · ' + when : ''}</div>${voice}
         <div class="flex-row">${buttons.join('')}</div></div>`;
     }).join('');
   });
