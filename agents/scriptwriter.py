@@ -20,12 +20,14 @@ from agents.narrative import (
     SCHEMA_VERSION,
     NarrativeValidationError,
     atomic_write_json,
+    brief_scene_ids,
     deterministic_review,
     format_scene_issues,
     load_json,
     merge_editorial_review,
     outline_scene_issues,
     rebalance_scene_word_targets,
+    scene_word_bounds,
     stable_hash,
     validate_character_bible,
     validate_editorial_assessment,
@@ -145,7 +147,8 @@ characters_present (IDs from the bible), initial_dramatic_situation, character_o
 obstacle, dramatic_action, decision, consequence, new_information, dramatic_function,
 emotional_turn, causal_link to the next scene, chronology_marker (specific relative time),
 continuity_updates (array of explicit changes to knowledge, ownership, objects, relationships or
-story rules; empty only when nothing changes), target_words,
+story rules; empty only when nothing changes), target_words, pace ("brief" for a coda or epilogue,
+or a final scene the brief wants abrupt, with 40-110 words; otherwise "normal"),
 arc_movements (array of values from {json.dumps(list(ARC_MOVEMENTS))}; {movement_rule}),
 visual_direction, and image_queries (an array of exactly 3 nonempty string stock-search phrases centered on settings,
 objects, gestures, environments or silhouettes). The first scene must function as an opening;
@@ -162,6 +165,8 @@ chapter summary, bullet lesson, generic CTA, or unsupported twist.""" + _author_
         stage="outline", temperature_key="outline",
         scene_scope=SceneScope(issues=lambda value: outline_scene_issues(value, bible, True)),
     )
+    if premise_brief.abrupt_ending(brief.get("author_brief")) and outline.get("scenes"):
+        outline["scenes"][-1]["pace"] = "brief"        # the author's ending stops short: no padding
     outline = rebalance_scene_word_targets(outline, target_words)
     outline["source_hash"] = source_hash
     outline["target_word_count"] = target_words
@@ -194,19 +199,44 @@ def _author_rule(brief: dict, stage: str) -> str:
                    "and every detail of its ending beat into a scene; never use a must_avoid item; keep its "
                    "setting and tone.",
         "scenes": "Honour the STORY BRIEF's author_brief: its tone, every must_include item placed in its "
-                  "planned scene, never a must_avoid item, names and ages exactly as given. Every line quoted "
-                  "in its beats is spoken verbatim, as direct speech in double quotes, in the scene that "
-                  "delivers that beat; every detail of its ending beat appears on the page in the final scenes.",
-        "review": "The STORY BRIEF has an author_brief: also check faithfulness to it (must_include present, "
-                  "must_avoid absent, beats mapped, the beats' quoted lines spoken as direct dialogue, every "
-                  "ending detail on the page, names/ages/relationships unchanged); report each violation "
-                  "with issue_type brief_faithfulness and the scene_ids to change.",
+                  "planned scene, never a must_avoid item, names and ages exactly as given. Its beats say WHAT "
+                  "MUST HAPPEN: dramatise them, never copy their sentences, which are instructions, not prose. "
+                  "Stage directions in the ending ('cut before he answers', 'a long silence') are intent: end "
+                  "the scene at that moment, and never describe the edit. REQUIRED LINES, word for word:"
+                  + _required_lines(brief) + _style_rule(brief),
+        "review": "The STORY BRIEF has an author_brief: also check faithfulness to it (must_avoid absent, "
+                  "beats dramatised, the REQUIRED LINES present, names/ages/relationships unchanged); report "
+                  "each violation with issue_type brief_faithfulness and the scene_ids to change.",
     }
     return "\n" + rules[stage]
 
 
+def _required_lines(brief: dict) -> str:
+    """The lines the author wants verbatim, each said the way its kind requires."""
+    how = {"dialogue": "spoken aloud, in double quotes", "thought": "a heard thought, in single quotes",
+           "narrated": "said by the narrator, without quotes", "term": "a term used anywhere"}
+    lines = premise_brief.required_lines(brief.get("author_brief") or {})
+    return "".join(f"\n- ({how[item['kind']]}) {item['line']}" for item in lines) or " none."
+
+
+def _style_rule(brief: dict) -> str:
+    """Phase 3.9.2-A/E: how the author wants it written; the heard-thought convention when it applies."""
+    author = brief.get("author_brief") or {}
+    rule = ""
+    constraints = premise_brief.style_constraints(author)
+    if constraints:
+        rule += "\nHOW IT IS WRITTEN (not content to mention): " + "; ".join(constraints) + "."
+    if premise_brief.heard_thoughts_on(author, brief.get("narrative_type")):
+        rule += ("\nHEARD THOUGHTS go in single quotes, 'like this'; speech goes in double quotes; the narrator "
+                 "stays unquoted.")
+    return rule
+
+
+DRAMATISE_RULE = "\nDramatise, don't copy: the brief's sentences are instructions, not prose."
+
+
 def _write_scene_batch(brief: dict, bible: dict, outline: dict, scenes: list[dict],
-                       previous_ending: str) -> list[dict]:
+                       previous_ending: str, extra_rule: str = "") -> list[dict]:
     contract = f"""You are the scene writer for Private Gravity. Write broadcast-ready English
 narration for ONLY the SCENES TO WRITE supplied after this contract. The narrator tells an
 original cinematic story; never explains psychology to the audience. Preserve character identity,
@@ -227,8 +257,9 @@ function from the outline), narration, setting, characters_present, dramatic_fun
 visual_direction, image_query, image_query_2, image_query_3, caption_text, on_screen_text.
 Search queries must depict story-world environments/objects/actions and not educational diagrams.
 Use on_screen_text only for diegetic or dramatically necessary text; otherwise empty string.
-No placeholders, headings inside narration, moral summary, subscribe request or bullet points.""" + \
-        _author_rule(brief, "scenes")
+No placeholders, headings inside narration, moral summary, subscribe request or bullet points. The
+narrator never describes the edit or the camera. A character's wardrobe belongs to the shots: mention it
+only when it matters to the action.""" + _author_rule(brief, "scenes") + extra_rule
     context = f"""STORY BRIEF: {compact_json(brief)}
 CHARACTER BIBLE: {compact_json(bible)}
 FULL OUTLINE: {compact_json(outline)}
@@ -285,6 +316,21 @@ PREVIOUS BATCH ENDING: {previous_ending or 'This is the opening batch.'}"""
     )
 
 
+def _rewrite_pasted_scenes(written: list[dict], brief: dict, bible: dict, outline: dict, batch: list[dict],
+                           previous_ending: str) -> list[dict]:
+    """Phase 3.9.2-B: a generated scene that copies the brief is written once more; if it still copies,
+    it stays as it is and ``brief_paste`` flags it in the review."""
+    source = {**(brief.get("author_brief") or {}), "logline": brief.get("logline", "")}
+    pasted = [plan for scene, plan in zip(written, batch) if premise_brief.paste_spans(scene.get("narration", ""), source)]
+    if not pasted or not brief.get("author_brief"):
+        return written
+    print(f"   -> Scenes {[plan['scene_id'] for plan in pasted]} copied the brief; writing them once more")
+    fresh = _write_scene_batch(brief, bible, outline, pasted, previous_ending, DRAMATISE_RULE)
+    replaced = {plan["scene_id"]: scene for plan, scene in zip(pasted, fresh)
+                if not premise_brief.paste_spans(scene.get("narration", ""), source)}
+    return [replaced.get(plan["scene_id"], scene) for scene, plan in zip(written, batch)]
+
+
 def _measurements(deterministic: dict | None) -> dict:
     """Deterministic facts the editor must take as given (never re-counted)."""
     report = deterministic or {}
@@ -298,6 +344,9 @@ def _measurements(deterministic: dict | None) -> dict:
             for item in report.get("scene_budgets") or []
         ],
         "style_lint": report.get("style_lint", {}),
+        "confirmed_findings": [{key: item.get(key) for key in ("issue_type", "scene_ids", "claim", "evidence")}
+                               for item in report.get("major_issues") or []
+                               if item.get("issue_type") in ("chronology", "lecture", "brief_paste", "screen_direction")],
     }
 
 
@@ -339,7 +388,17 @@ major finding with issue_type "lecture".
 WORD COUNTS AND DURATION ARE PRE-COMPUTED: the DETERMINISTIC MEASUREMENTS below are exact and
 authoritative. Do not count words, estimate runtime or report duration, length or word-count
 findings; those verdicts belong to the deterministic checks. Use style_lint as context when
-scoring literary_style.""" + _author_rule(brief, "review")
+scoring literary_style.
+
+confirmed_findings in the measurements are established facts. A dimension cannot score above 6 while
+a related one exists: chronological_continuity for chronology, dialogue_and_subtext for lecture,
+literary_style for brief_paste and screen_direction.
+
+Also return checklist: an array answering each of these with {{"item", "answer", "evidence"}}: (1) the
+time order of the scenes; (2) any sentence that reads as an instruction rather than story; (3) the
+reversal's realisation spent before the reversal scene (a minor finding, issue_type "spent_reversal");
+(4) the narrator explaining the theme. A character called by a role that contradicts the bible is a
+minor finding with issue_type "role_slip".""" + _author_rule(brief, "review") + _brief_check_rule(deterministic)
     context = f"""DETERMINISTIC MEASUREMENTS: {compact_json(_measurements(deterministic))}
 STORY BRIEF: {compact_json(brief)}
 CHARACTER BIBLE: {compact_json(bible)}
@@ -352,36 +411,49 @@ SCREENPLAY: {compact_json(script)}"""
     )
 
 
+def _brief_check_rule(deterministic: dict | None) -> str:
+    """Phase 3.9.2-A: what the lexical check could not find, confirmed in the same editorial call."""
+    pending = (deterministic or {}).get("faithfulness_candidates") or []
+    if not pending:
+        return ""
+    return ("\n\nAlso return brief_check: one {\"item\", \"present\": true|false, \"scene_id\", \"evidence_quote\"} for "
+            "each of the items below, keeping each item's text exactly. evidence_quote is copied word for word from "
+            "the screenplay. Judge meaning, not wording. A stage direction is present when the scene ends at that "
+            "point, without being written down.\nITEMS: "
+            + compact_json([{"item": item["item"], "question": item["question"]} for item in pending]))
+
+
+def _merge_editorial(review: dict, assessment: dict | None, bible: dict, script: dict) -> dict:
+    merged = merge_editorial_review(review, assessment, bible)
+    return premise_brief.resolve_candidates(merged, (assessment or {}).get("brief_check"), script) \
+        if assessment is not None else merged
+
+
 def _expand_underlength_scenes(script: dict, brief: dict, bible: dict,
                                outline: dict) -> tuple[dict, list[dict]]:
-    """Make bounded, surgical expansion passes and preserve unaffected scenes exactly."""
+    """Bounded, surgical expansion, preserving unaffected scenes exactly (Phase 3.9.2-D): at most one
+    attempt per scene, never a brief scene, never when the total is already in range. A scene that stays
+    short is reported by the review as minor, with the reason."""
     if script.get("video_type") == "shorts" or not getattr(
             config, "NARRATIVE_AUTO_REVISION_ENABLED", True):
         return script, []
     report = deterministic_review(
-        script, float(script.get("target_duration_minutes", 15)), outline
+        script, float(script.get("target_duration_minutes", 15)), outline, None, brief
     )
+    if report["deterministic_checks"]["total_word_budget"]:
+        return script, []
     deficient = [
         item for item in report["scene_budgets"]
         if item["status"] == "under_target"
     ]
     batch_size = max(1, int(getattr(config, "NARRATIVE_EXPANSION_BATCH_SIZE", 3)))
     max_calls = max(0, int(getattr(config, "NARRATIVE_EXPANSION_MAX_CALLS", 3)))
-    single_calls = max(0, int(getattr(config, "NARRATIVE_EXPANSION_SINGLE_RETRIES", 3)))
     revised = script
     attempts = []
     batches = [deficient[offset:offset + batch_size] for offset in range(0, len(deficient), batch_size)]
     for batch in batches[:max_calls]:
         revised, attempt = _expansion_pass(revised, batch, brief, bible, outline)
         attempts.append(attempt)
-        if len(batch) > 1 and not attempt["success"]:        # retry the scenes still short, one by one
-            for item in batch:
-                if item["scene_id"] in attempt["accepted"] or single_calls <= 0:
-                    continue
-                single_calls -= 1
-                revised, single = _expansion_pass(revised, [item], brief, bible, outline)
-                single["kind"] = "single_scene_expansion"
-                attempts.append(single)
     return revised, attempts
 
 
@@ -416,7 +488,8 @@ unsupported twists. {STACKED_MODIFIER_RULE}
 EXACT DEFICITS: {compact_json(batch)}"""
     context = f"""SELECTED SCENES: {compact_json(selected)}
 NEIGHBOR CONTEXT: {compact_json(neighbors)}
-STORY BRIEF: {compact_json(brief)}
+STORY BRIEF: {compact_json(premise_brief.without_beats(brief))}
+AUTHOR INTENT: {premise_brief.intent_block(brief.get("author_brief") or {})}
 CHARACTER BIBLE: {compact_json(bible)}
 OUTLINE: {compact_json(outline)}"""
 
@@ -429,6 +502,7 @@ OUTLINE: {compact_json(outline)}"""
             if not isinstance(scene, dict) or not isinstance(scene.get("narration"), str) \
                     or not scene["narration"].strip():
                 raise NarrativeValidationError("targeted expansion requires narration")
+            _reject_paste(scene["narration"], brief)
         return scenes
 
     try:
@@ -475,6 +549,17 @@ OUTLINE: {compact_json(outline)}"""
     return revised, attempt
 
 
+def _reject_paste(narration: str, brief: dict) -> None:
+    """A revision that copies the brief fails validation: the one repair call gets this instruction,
+    and when that fails too the previous version of the scene stays (Phase 3.9.2-B)."""
+    author = brief.get("author_brief")
+    if not author:
+        return
+    spans = premise_brief.paste_spans(narration, {**author, "logline": brief.get("logline", "")})
+    if spans:
+        raise NarrativeValidationError(f"Dramatise, don't copy; these sentences are instructions, not prose: {spans[0]!r}")
+
+
 SEMANTIC_REVISION_TYPES = (
     "lecture", "continuity", "unintroduced_character", "character_consistency", "agency",
     "causality", "repetition", "style", "brief_faithfulness",
@@ -495,7 +580,8 @@ _SEMANTIC_ALIASES = {
     "repetition": "repetition", "repetition_control": "repetition", "repetitive": "repetition",
     "style": "style", "literary_style": "style", "prose_style": "style",
     "brief_faithfulness": "brief_faithfulness", "faithfulness": "brief_faithfulness",
-    "author_brief": "brief_faithfulness",
+    "author_brief": "brief_faithfulness", "brief_paste": "brief_faithfulness",
+    "chronology": "continuity", "screen_direction": "style",
 }
 
 
@@ -525,6 +611,15 @@ def eligible_semantic_findings(review: dict, script: dict) -> dict[int, list[dic
             if scene_id is not None:
                 by_scene.setdefault(scene_id, []).append(finding)
     return by_scene
+
+
+def _finding_for_revision(finding: dict) -> dict:
+    """A finding as a revision sees it. Its evidence from the brief is intent, not text to include."""
+    fields = {key: finding.get(key) for key in ("severity", "issue_type", "scene_ids", "claim", "evidence",
+                                                "recommendation")}
+    if finding.get("issue_type") == "brief_faithfulness":
+        fields["evidence"] = [f"<intent>{item}</intent>" for item in finding.get("evidence") or []]
+    return fields
 
 
 def _semantic_revision(script: dict, brief: dict, bible: dict, outline: dict, review: dict,
@@ -558,6 +653,8 @@ def _semantic_revision(script: dict, brief: dict, bible: dict, outline: dict, re
                 if finding not in findings:
                     findings.append(finding)
         budgets = {scene["id"]: scene["target_words"] for scene in selected}
+        on_brief_pace = brief_scene_ids(revised["sections"], outline, brief)
+        bounds = {scene_id: scene_word_bounds(words, scene_id in on_brief_pace) for scene_id, words in budgets.items()}
         contract = f"""You are performing one bounded editorial revision of a Private Gravity screenplay.
 Return ONLY the SELECTED SCENES supplied after this contract, in order, as {{"scenes": [...]}} with
 the same keys. Fix exactly the problems in the EDITORIAL FINDINGS by following their
@@ -568,19 +665,19 @@ twists. Never let the narrator explain psychology or cite thinkers academically.
 
 {identity_block(brief.get("narrative_type"))}
 
-WORD BUDGETS (each revised narration must stay between 85% and 115% of its target):
-{compact_json([{"id": i, "target_words": w, "minimum": int(w * .85) + 1, "maximum": int(w * 1.15)}
-               for i, w in budgets.items()])}
+WORD BUDGETS (each revised narration must stay within its minimum and maximum):
+{compact_json([{"id": i, "target_words": budgets[i], "minimum": low, "maximum": high}
+               for i, (low, high) in bounds.items()])}
 
 EDITORIAL FINDINGS:
-{compact_json([{key: finding.get(key) for key in ("severity", "issue_type", "scene_ids", "claim",
-                "evidence", "recommendation")} for finding in findings])}"""
+{compact_json([_finding_for_revision(finding) for finding in findings])}"""
         context = f"""SELECTED SCENES: {compact_json(selected)}
 NEIGHBOR SCENES (read-only): {compact_json(neighbors)}
-STORY BRIEF: {compact_json(brief)}
+STORY BRIEF: {compact_json(premise_brief.without_beats(brief))}
+AUTHOR INTENT: {premise_brief.intent_block(brief.get("author_brief") or {})}
 CHARACTER BIBLE: {compact_json(bible)}"""
 
-        def validate_revision(value, ids=ids, budgets=budgets):
+        def validate_revision(value, ids=ids, budgets=budgets, bounds=bounds):
             scenes = value.get("scenes")
             if not isinstance(scenes, list) or [scene.get("id") for scene in scenes] != ids:
                 raise NarrativeValidationError(
@@ -589,12 +686,14 @@ CHARACTER BIBLE: {compact_json(bible)}"""
             for scene in scenes:
                 if not isinstance(scene.get("narration"), str):
                     raise NarrativeValidationError(f"revised scene {scene['id']} requires narration")
-                ratio = len(scene["narration"].split()) / budgets[scene["id"]]
-                if ratio < .85 or ratio > 1.15:
+                words = len(scene["narration"].split())
+                low, high = bounds[scene["id"]]
+                if words < low or words > high:
                     raise NarrativeValidationError(
-                        f"revised scene {scene['id']} is outside 85%-115% of its "
-                        f"{budgets[scene['id']]}-word budget ({ratio:.1%})"
+                        f"revised scene {scene['id']} has {words} words, outside its "
+                        f"{low}-{high} budget (target {budgets[scene['id']]})"
                     )
+                _reject_paste(scene["narration"], brief)
             return scenes
 
         record = {
@@ -649,8 +748,8 @@ CHARACTER BIBLE: {compact_json(bible)}"""
     rereview = {"performed": False}
     if getattr(config, "NARRATIVE_SEMANTIC_REREVIEW", True):
         print("   -> Re-running editorial review after the semantic revision...")
-        new_review = merge_editorial_review(
-            new_review, _editorial_review(revised, brief, bible, outline, new_review), bible
+        new_review = _merge_editorial(
+            new_review, _editorial_review(revised, brief, bible, outline, new_review), bible, revised
         )
         rereview = {
             "performed": True, "status": new_review["status"],
@@ -723,6 +822,7 @@ def _write_script(brief: dict, video_type: str, output: Path, target: float,
         batch = outline["scenes"][offset:offset + 3]
         print(f"   -> Writing scenes {offset + 1}-{offset + len(batch)}...")
         written = _write_scene_batch(brief, bible, outline, batch, previous_ending)
+        written = _rewrite_pasted_scenes(written, brief, bible, outline, batch, previous_ending)
         for scene, plan in zip(written, batch):
             scene["id"] = int(plan["order"])
             scene["outline_scene_id"] = plan["scene_id"]
@@ -766,8 +866,8 @@ def _write_script(brief: dict, video_type: str, output: Path, target: float,
                   if narrative_review is None else narrative_review)
     if use_editor:
         print("   -> Running optional editorial quality review...")
-        review = merge_editorial_review(
-            review, _editorial_review(script, brief, bible, outline, review), bible
+        review = _merge_editorial(
+            review, _editorial_review(script, brief, bible, outline, review), bible, script
         )
         revised, review = _semantic_revision(
             script, brief, bible, outline, review, output, target, repair_attempts

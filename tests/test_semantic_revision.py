@@ -95,7 +95,7 @@ class SemanticRevisionTests(unittest.TestCase):
         self.assertEqual(call.call_count, 2)                         # attempt + its one repair
         record = new_review["semantic_revisions"][0]
         self.assertFalse(record["success"])
-        self.assertIn("outside 85%-115%", record["error"])
+        self.assertIn("outside its", record["error"])
         self.assertEqual(new_review["status"], "revision_required")
 
     def test_discarded_and_ineligible_findings_never_trigger_revision(self):

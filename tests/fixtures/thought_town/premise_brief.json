@@ -1,0 +1,42 @@
+{
+  "working_title": "Everyone Heard What He Thought",
+  "narrative_type": "philosophical_thought_experiment",
+  "logline": "In a town where every passing thought can be heard, the kindest man alive lets one honest thought slip, and discovers that a mind which is always listened to may never have been his own.",
+  "protagonist": "Thomas Wren, 56, the town baker, short grey beard, white flour-dusted apron, sleeves rolled. His thoughts have been the gentlest in town for thirty years. Wound: punished as a boy for a cruel thought he never acted on. Desire: to be good all the way through. Inner belief: \"If my thoughts are clean, I am clean.\"",
+  "other_characters": [
+    "Nell Wren, 54, his wife of 26 years, seamstress, long silver braid, dark green wool coat. Calm, warm, always pleasant thoughts. She has a private life he knows nothing about.",
+    "Townsfolk: never named, only a few soft background figures in the bakery."
+  ],
+  "setting": "Wickham's Rest, an isolated stone town on the English moors, timeless present, no phones on screen. The rule: inside the town, anyone within a few steps hears your surface thoughts as a quiet voice. Beyond the old boundary stones on the moor (\"the Line\"), there is silence. Never explained. Locations: the bakery at dawn, the Wrens' kitchen at night, the boundary stones under a cold sky.",
+  "beats": {
+    "hook": "dawn, a queue in the bakery. Thomas hands over a loaf, and a thought escapes him that everyone hears: \"I don't want to be here.\" The room goes silent: nobody has ever heard Thomas think anything unkind.",
+    "strategy_works": "the town lives by \"clean thinking\". Children learn to think gently; there is no lying, no crime, and Thomas and Nell have never argued in 26 years. Next morning he thinks warm, perfect thoughts, and the queue forgives him.",
+    "hidden_cost": "now he can hear the effort. An editor in his head rewrites every thought before it forms, and he hears the same editor in everyone. At supper Nell thinks \"what a lovely evening\" while her face looks exhausted. He starts walking to the Line at night.",
+    "reversal": "beyond the stones, in total silence, Thomas waits for his real thoughts to arrive. Nothing comes, only the same gentle sentences, even with no one to hear them. Then footsteps: Nell crosses the Line behind him. Unable to hear each other for the first time, she speaks aloud: \"I've been coming here for years.\" He has never known her, only her clean thoughts, and she has only known his.",
+    "philosophical_layer": "Are we our thoughts, or what we do with them? Is a kindness you are forced to think still yours? Maybe a self needs a place where no one is listening.",
+    "ending": "they stand in the dark beyond the stones. Nell asks quietly: \"What do you actually think, Thomas?\" A long silence; he opens his mouth. Cut before he answers. One final narrated line turns the question to the viewer, without explaining it: \"There is a thought in your head right now that no one will ever hear. Is that one you, or is the one keeping it quiet?\""
+  },
+  "tone": "Quiet, intimate, unsettling, contemplative. The dread is inward: viewers keep testing themselves (\"what would I have thought?\") through Thomas, never through lectures. Let key lines breathe.",
+  "must_include": [
+    "the slipped thought in the bakery queue, heard by everyone",
+    "heard thoughts as quoted inner lines, quieter than speech",
+    "the \"editor\" Thomas notices in his head",
+    "Nell's pleasant thought contradicting her tired face",
+    "the boundary stones and the silence beyond them",
+    "the unanswered final question"
+  ],
+  "must_avoid": [
+    "explaining the phenomenon (science, magic, technology)",
+    "villains, violence, crime or a mob turning on Thomas",
+    "death or grief as a central theme",
+    "visible text, glowing words or symbols in images to show thoughts",
+    "a neat resolution or revealing what Thomas answers"
+  ],
+  "target_minutes": 12.0,
+  "title_ideas": [
+    "Everyone Heard What He Thought",
+    "In This Town, Everyone Can Hear Your Thoughts"
+  ],
+  "thumbnail_idea": "Thomas frozen behind the counter, loaf in hand, blurred townsfolk staring at him. Text: \"Everyone heard it.\"",
+  "hash": "a858fc2a4733819fa3ae76ff4e877a1c416d29b8ffaeb3be3e673e58e6e69bc7"
+}

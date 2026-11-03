@@ -1,0 +1,65 @@
+{
+  "characters": [
+    {
+      "character_id": "thomas_wren",
+      "name": "Thomas Wren",
+      "role": "protagonist",
+      "age": "56",
+      "background": "The respected town baker of Wickham's Rest who was severely punished in childhood for an unacted cruel thought, driving him to spend thirty years obsessively curating an unblemished inner monologue.",
+      "personality": "Gentle, hyper-vigilant, outwardly serene, inwardly exhausted and deeply self-censored.",
+      "core_desire": "To maintain absolute inner moral purity so he remains entirely safe and irreproachable in his community.",
+      "underlying_need": "To experience genuine, uncurated selfhood without fear of rejection or condemnation.",
+      "central_fear": "That a single uncurated thought will reveal him to be flawed, unkind, or fundamentally unlovable.",
+      "psychological_wound": "A traumatic childhood punishment after an involuntary, unacted-on cruel thought was overheard by the town.",
+      "internal_contradiction": "He believes his clean thoughts prove he is a good man, yet those clean thoughts are precisely what prevent him from having an authentic self.",
+      "behavioral_patterns": "Pre-edits every thought before letting it reach surface consciousness; obsessively rolls his sleeves and wipes flour from his hands when anxious.",
+      "relationships": [
+        "Nell Wren: beloved wife of 26 years whose surface thoughts have always seemed placid and comforting"
+      ],
+      "initial_state": "Serene on the surface, meticulously controlling every mental sentence to preserve his long record of kindness.",
+      "development_arc": "After an honest thought slips in public, he begins noticing the internal censor in himself and others, driving him across the boundary stones to seek true cognitive silence.",
+      "final_state": "Standing beyond the Line in complete silence, stripped of his automatic mental filter and facing the terrifying prospect of speaking as himself.",
+      "visual_identity": "Flour-dusted white apron over dark woolens, short grey beard, rolled sleeves, and quiet hands.",
+      "distinctive_details": [
+        "Flour marks on forearms and apron edge",
+        "Micro-pauses before letting a thought form",
+        "Gentle, deliberate touch when handling loaves"
+      ]
+    },
+    {
+      "character_id": "nell_wren",
+      "name": "Nell Wren",
+      "role": "deuteragonist",
+      "age": "54",
+      "background": "A skilled seamstress in Wickham's Rest and Thomas's wife of 26 years, who has secretly slipped past the town boundary stones for years to escape forced cognitive transparency.",
+      "personality": "Calm, warm, highly perceptive, patient, and privately resilient.",
+      "core_desire": "To protect her domestic harmony while maintaining a private inner sanctuary away from public scrutiny.",
+      "underlying_need": "To be truly known and loved for her authentic human reality rather than her curated surface thoughts.",
+      "central_fear": "That her quarter-century marriage is built entirely on mutual mental performances rather than genuine intimacy.",
+      "psychological_wound": "Decades of maintaining pleasant surface thoughts while suppressing her real fatigue and grief to maintain social peace.",
+      "internal_contradiction": "She projects serene thoughts to keep Thomas safe, while secretly escaping into the unmonitored dark to experience true solitude.",
+      "behavioral_patterns": "Projects reassuring, pleasant surface thoughts even when physically exhausted; smooths the fabric of her coat when holding back spoken words.",
+      "relationships": [
+        "Thomas Wren: husband of 26 years whose gentle thoughts she has cherished yet secretly questioned"
+      ],
+      "initial_state": "Quietly dutiful seamstress broadcasting serene surface thoughts while nursing profound, hidden exhaustion.",
+      "development_arc": "Follows Thomas into the quiet moorland, revealing her long-standing secret trips and confronting him with unmonitored spoken honesty.",
+      "final_state": "Standing in the dark beyond the stones, stepping out from behind her mental filter to ask Thomas what he truly thinks.",
+      "visual_identity": "Long silver braid resting over one shoulder, dark green wool coat, precise posture, and tired eyes.",
+      "distinctive_details": [
+        "Neat silver braid pulled over her coat collar",
+        "Calloused fingers from needlework",
+        "Quiet, unwavering gaze when speaking out loud"
+      ]
+    }
+  ],
+  "speculative_rules": [
+    "Within the boundaries of Wickham's Rest, surface thoughts are automatically broadcast as soft, audible voices heard by anyone standing a few paces away.",
+    "Beyond the ancient boundary stones on the moor ('the Line'), the mental broadcast completely ceases, restoring total cognitive privacy.",
+    "The phenomenon cannot be blocked by technology or willpower; townsfolk survive it by training an internal mental 'editor' to rewrite raw thoughts before they reach surface awareness."
+  ],
+  "schema_version": 2,
+  "content_mode": "cinematic_fiction",
+  "source_story_hash": "628aab5a1ecb0253efcc024d487915541c4f182598243ee1ba646d1f3eec5a9e",
+  "source_hash": "628aab5a1ecb0253efcc024d487915541c4f182598243ee1ba646d1f3eec5a9e"
+}

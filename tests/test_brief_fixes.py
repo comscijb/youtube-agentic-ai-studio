@@ -130,13 +130,20 @@ class ExpansionTests(unittest.TestCase):
         self.assertEqual(attempts[0]["kept_best"], [1])
         self.assertFalse(attempts[0]["success"])
 
-    def test_a_failed_batch_is_retried_scene_by_scene(self):
-        _, revised, attempts, calls = self.expand(
-            [answer(76), answer(76), answer(77), answer(78)], counts=(40, 40, 80), batch=3)
-        self.assertEqual(calls, 4)                       # batch + its repair (wrong count), then one per scene
+    def test_one_attempt_per_scene_and_never_a_loop(self):
+        script, revised, attempts, calls = self.expand([answer(76), answer(76)], counts=(40, 40, 80), batch=3)
+        self.assertEqual(calls, 2)                       # the batch + its one repair (wrong count); no more
         self.assertIn("exactly 2 scene(s)", attempts[0]["error"])
-        self.assertEqual([item["kind"] for item in attempts[1:]], ["single_scene_expansion"] * 2)
-        self.assertEqual([len(scene["narration"].split()) for scene in revised["sections"]], [77, 78, 80])
+        self.assertEqual(len(attempts), 1)
+        self.assertEqual([len(scene["narration"].split()) for scene in revised["sections"]], [40, 40, 80])
+
+    def test_no_expansion_when_the_total_is_in_range(self):
+        script, plan = expansion_script([60, 100, 100], [80, 80, 80])
+        script["target_duration_minutes"] = 2.0                               # 260/250 words, one scene short
+        with patch.object(scriptwriter, "generate", side_effect=AssertionError("no call")):
+            revised, attempts = scriptwriter._expand_underlength_scenes(script, story_brief(), bible(), plan)
+        self.assertEqual(attempts, [])
+        self.assertIs(revised, script)
 
 
 class DialogueAndEndingTests(unittest.TestCase):
@@ -147,7 +154,7 @@ class DialogueAndEndingTests(unittest.TestCase):
     def check(self, first, last):
         script = {"sections": [{"id": 1, "outline_scene_id": "s01", "narration": first},
                                {"id": 2, "outline_scene_id": "s02", "narration": last}]}
-        return premise_brief.faithfulness(self.BRIEF, bible=None, outline=self.OUTLINE, script=script)
+        return premise_brief.faithfulness(self.BRIEF, bible=None, outline=self.OUTLINE, script=script) +             premise_brief.candidates(self.BRIEF, outline=self.OUTLINE, script=script)
 
     def test_items(self):
         self.assertEqual(premise_brief.beat_quotes(self.BRIEF)[0],
@@ -165,12 +172,13 @@ class DialogueAndEndingTests(unittest.TestCase):
                       "\"That's the best conversation I've had in two years.\"", claims)
         quoted = next(item for item in found if "I'm here whenever" in item["claim"])
         self.assertEqual(quoted["scene_ids"], [2])
+        self.assertEqual(scriptwriter.semantic_issue_type(quoted["issue_type"]), "brief_faithfulness")
         ending = [item for item in found if item["claim"].startswith("ending detail missing")]
         self.assertEqual([item["claim"] for item in ending],
                          ["ending detail missing: 'He turns it face down and plays one wrong note on the piano'",
                           "ending detail missing: 'who will he call tomorrow?'"])
         self.assertEqual(ending[0]["scene_ids"], [2])
-        self.assertEqual(scriptwriter.semantic_issue_type(ending[0]["issue_type"]), "brief_faithfulness")
+        self.assertEqual(ending[0]["kind"], "ending")                  # a lexical miss is only a candidate
 
     def test_a_faithful_script_has_no_findings(self):
         found = self.check(
@@ -180,7 +188,9 @@ class DialogueAndEndingTests(unittest.TestCase):
         self.assertEqual(found, [])
 
     def test_scene_contracts_ask_for_quoted_dialogue(self):
-        self.assertIn("in double quotes", scriptwriter._author_rule({"author_brief": {"x": 1}}, "scenes"))
+        rule = scriptwriter._author_rule({"author_brief": {"beats": {"hook": 'Nell says: "Stay."'}}}, "scenes")
+        self.assertIn("(spoken aloud, in double quotes) Stay.", rule)
+        self.assertIn("never copy their sentences", rule)
 
 
 class RegenerationTests(unittest.TestCase):
