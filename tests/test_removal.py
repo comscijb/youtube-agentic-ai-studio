@@ -179,18 +179,26 @@ class PipelineTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             generator = FakeGenerator()
             _, shot, action = self.run_removal(temp, generator, FakeDetector(dirty=99))
-        self.assertEqual([job.denoise for job in generator.jobs], [.45, .45, .55])
+        self.assertEqual([round(job.denoise, 2) for job in generator.jobs], [.75, .75, .85])      # the OpenCV stand-in
         self.assertEqual([item["name"] for item in removal.PROFILES], ["base", "máscara maior", "denoise 0,55", "só apagar"])
         kept = shot["removal"]["candidates"]
         self.assertLessEqual(len(kept), removal.MAX_RESULTS)
         self.assertTrue(any(item["profile"] == "só apagar" for item in kept))     # the free fallback
         self.assertEqual(action["clean"], 0)
 
+    def test_lama_runs_the_profiles_as_written(self):
+        with tempfile.TemporaryDirectory() as temp, patch("video.qa.removal.erase_onnx", side_effect=lambda image, mask: image):
+            folder = project(temp)
+            generator = FakeGenerator()
+            removal.run(generator, folder, json.loads(json.dumps(SHOT)), VB, {"box": BOX}, detector=FakeDetector(dirty=99),
+                        engine="lama_onnx", progress=lambda _: None)
+        self.assertEqual([job.denoise for job in generator.jobs], [.45, .45, .55])
+
     def test_a_clean_removal_keeps_the_base_profile(self):
         with tempfile.TemporaryDirectory() as temp:
             generator = FakeGenerator()
             self.run_removal(temp, generator, FakeDetector())
-        self.assertEqual([job.denoise for job in generator.jobs], [.45, .45, .45])
+        self.assertEqual([round(job.denoise, 2) for job in generator.jobs], [.75, .75, .75])
         self.assertEqual(len({job.seed for job in generator.jobs}), 3)
 
     def test_klein_down_still_gives_the_erased_result(self):

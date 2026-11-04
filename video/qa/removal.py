@@ -41,6 +41,9 @@ PROFILES = ({"name": "base", "grow": GROW, "denoise": 0.45},
             {"name": "máscara maior", "grow": 0.25, "denoise": 0.45},
             {"name": "denoise 0,55", "grow": 0.25, "denoise": 0.55},
             {"name": "só apagar", "grow": 0.25, "denoise": 0.0})
+# OpenCV leaves a smooth smear with no structure: measured on s02_01 and s07_03, Klein only blurs it at 0.45-0.6 and
+# redraws it from 0.75. The denoise of the profiles is for LaMa, whose fill already has the surface.
+ENGINE_DENOISE_SHIFT = {"opencv": 0.30}
 SEED_OFFSET = 5_000_011
 PERSON_WORDS = re.compile(r"\b(?:person|people|figures?|man|men|woman|women|boy|girl|child|children|someone|anyone|nobody|"
                           r"silhouettes?|baker|customers?|crowd|townsfolk|guests?|staff|remove|removed|removal|erase|erased|"
@@ -181,10 +184,11 @@ def surroundings(text: str) -> str:
 def restore_prompt(vb: dict, shot: dict) -> str:
     """Positive wording, the surroundings only: naming people draws them when the negative is zeroed."""
     location = vbible.location(vb, shot.get("location")) or {}
-    parts = [surroundings(location.get("descriptor", "")), surroundings(shot.get("setting_condition", ""))]
+    parts = list(dict.fromkeys(part for part in (surroundings(location.get("descriptor", "")),
+                                                 surroundings(shot.get("setting_condition", ""))) if part))
     exterior = bool(location) and not vbible.location_interior(location)
     style = surroundings(identity.style_suffix(figures=False, exterior=exterior))
-    place = ", ".join(part for part in parts if part)
+    place = ", ".join(parts)
     return f"{place}. Continue the surface and the light, ink hatching. {style}".strip(". ") + "."
 
 
@@ -221,12 +225,13 @@ def attempt(generator, output: Path, shot: dict, vb: dict, source: Image.Image, 
     erased.save(erased_path)
     started = time.monotonic()
     finished = erased
-    if profile["denoise"] > 0:
+    denoise = profile["denoise"] + ENGINE_DENOISE_SHIFT.get(engine, 0.0) if profile["denoise"] > 0 else 0.0
+    if denoise > 0:
         location_ref = vbible.approved_reference(vb, "location", shot.get("location") or "", output)
         after = folder / f"{stem}_restored.jpg"
         generator.generate(ImageJob(job_id=f"{shot['shot_id']}_remove{number}", prompt=restore_prompt(vb, shot), seed=seed,
                                     output_path=str(after), kind="masked_restore", size=size, final_size=size,
-                                    denoise=profile["denoise"],
+                                    denoise=denoise,
                                     references=[str(erased_path), str(folder / f"{stem}_crop_mask.png")]
                                     + ([location_ref] if location_ref else [])))
         with Image.open(after) as restored:
@@ -238,7 +243,7 @@ def attempt(generator, output: Path, shot: dict, vb: dict, source: Image.Image, 
         raise region.NoEffect(f"nothing changed inside the mask (mean difference {change:.1f})")
     path = folder / f"{stem}_candidate.jpg"
     result.save(path, "JPEG", quality=93)
-    return {"path": (FOLDER / path.name).as_posix(), "profile": profile["name"], "denoise": profile["denoise"], "engine": engine,
+    return {"path": (FOLDER / path.name).as_posix(), "profile": profile["name"], "denoise": round(denoise, 2), "engine": engine,
             "seed": seed, "inside_change": round(change, 2), "box": box, "crop": list(crop),
             "erase_seconds": round(erase_seconds, 2), "restore_seconds": round(restore_seconds, 2)}
 
