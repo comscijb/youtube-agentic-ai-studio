@@ -1,4 +1,6 @@
 """Phase 3.3.2: identity-only references — clean descriptors and outfits, neutral character sheets."""
+import config
+from unittest.mock import patch
 import io
 import json
 import tempfile
@@ -106,6 +108,7 @@ class CharacterSheetTests(unittest.TestCase):
                                                       "elena_vance", output))
 
 
+@patch.object(config, "FACELESS_PORTRAIT_REFERENCE", {"faceless": "keep"})  # composition with the portrait
 class ShotWardrobeAndPeopleTests(unittest.TestCase):
     def shot(self, scene, **extra):
         value = {"shot_id": f"{scene}_01", "scene_id": scene, "shot_type": "medium",

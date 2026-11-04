@@ -1,4 +1,6 @@
 """Phase 3.4-B: clean prompts — one sentence per character, scene-scoped states, no repeats."""
+import config
+from unittest.mock import patch
 import json
 import unittest
 
@@ -54,6 +56,7 @@ def people_part(prompt: str) -> str:
     return prompt.split(" single full-bleed illustration", 1)[0]
 
 
+@patch.object(config, "FACELESS_PORTRAIT_REFERENCE", {"faceless": "keep"})  # composition with the portrait
 class S03_02Tests(unittest.TestCase):
     def test_the_evidence_shot_is_clean(self):
         prompt = shots_module.compose_shot(S03_02, evidence_vb(), "unused", assume_references=True)["prompt"]

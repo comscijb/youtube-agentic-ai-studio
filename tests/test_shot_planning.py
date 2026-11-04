@@ -186,6 +186,7 @@ def planned_shots(segments, full=1):
             "shots": shots}
 
 
+@patch.object(config, "FACELESS_PORTRAIT_REFERENCE", {"faceless": "keep"})  # composition with the portrait
 class ShotListTests(unittest.TestCase):
     def setUp(self):
         self._fixed = patch.object(config, "PACING_VARIETY", False)   # fixtures assume the 6-9 s window

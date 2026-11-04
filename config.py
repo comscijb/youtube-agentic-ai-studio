@@ -159,6 +159,10 @@ TTS_LOCAL_ENGINE = os.getenv("TTS_LOCAL_ENGINE", "kokoro")      # kokoro (Apache
 TTS_LOCAL_DEVICE = os.getenv("TTS_LOCAL_DEVICE", "auto")        # auto | cpu | cuda
 TTS_LOCAL_PYTHON = os.getenv("TTS_LOCAL_PYTHON", "")              # Kokoro in its own venv (numpy 2); default .venv-tts
 TTS_KOKORO_MODEL = "models/tts/kokoro-v1.0.onnx"                 # kokoro-onnx weights (with voices-v1.0.bin)
+TTS_LOCAL_SPEED  = float(os.getenv("TTS_LOCAL_SPEED", "0.88"))    # Kokoro's own speed (never atempo); replaces VOICE_RATE for it
+# Seconds of silence in the narration: the only silence between pieces (Phase 3.9.4-G). major_scene: before a
+# climax or aftermath scene; final: the hold before the closing line.
+NARRATION_PAUSES = {"sentence": 0.35, "paragraph": 0.7, "scene": 1.5, "major_scene": 2.0, "final": 2.5}
 TTS_LOCAL_VOICE  = "am_michael"                                  # Kokoro stock voice when TTS_VOICE is empty
 TTS_REFERENCE_CLIP = os.getenv("TTS_REFERENCE_CLIP", "")         # assets/voice/<clip> (Chatterbox; provenance note required)
 ELEVENLABS_MODEL = "eleven_multilingual_v2"                      # key: ELEVENLABS_API_KEY in .env
@@ -249,6 +253,10 @@ PACING_MAX_SECONDS = 16.0
 MOTION_STYLE = os.getenv("MOTION_STYLE", "parallax")
 AMBIENT_ENABLED = os.getenv("AMBIENT_ENABLED", "true").lower() in ("1", "true", "yes", "on")
 SHOT_TRANSITIONS = "smart"
+# Phase 3.9.4-A: send the character's portrait for faceless and distant shots? A portrait pulls the character
+# into a close-up the shot did not ask for. "keep" | "none" (text identity, wardrobe and the location reference).
+# Probe (docs/reports/3.9.4): wide with portrait 3/3 extra people and a close-up, without 0/3 and the shot asked for.
+FACELESS_PORTRAIT_REFERENCE = {"wide": "none", "silhouette": "none", "over_the_shoulder": "keep", "faceless": "keep"}
 KEY_MOMENT_CLIPS = 0
 # "reference": approved character portraits drive identity, faces may be visible.
 # "limited_faces": mostly none/partial faces, at most IMAGEGEN_MAX_FULL_FACE_SHOTS hero shots.

@@ -1,4 +1,5 @@
 """Phase 3.4-A: every listed character gets its reference; anchor, then location, are dropped first."""
+import config
 import io
 import json
 import unittest
@@ -18,6 +19,7 @@ def shot(characters, face="none", shot_type="silhouette"):
             "seed": 1, "seed_offset": 0}
 
 
+@patch.object(config, "FACELESS_PORTRAIT_REFERENCE", {"faceless": "keep"})  # composition with the portrait
 class CoverageTests(unittest.TestCase):
     def test_hidden_faces_still_get_their_references(self):
         for face, shot_type in (("none", "silhouette"), ("none", "wide"), ("partial", "hands"),
