@@ -119,12 +119,17 @@ def tone_ring(hard_crop: Image.Image) -> Image.Image:
 
 # ── Erase ────────────────────────────────────────────────────────────────────
 
+def _lama_models(object_info: dict) -> list[str]:
+    """big-lama options of the loader, in either /object_info shape: [[...]] or ["COMBO", {"options": [...]}]."""
+    spec = object_info.get(LAMA_NODES[0], {}).get("input", {}).get("required", {}).get("model_name") or [[]]
+    options = spec[1].get("options", []) if spec[0] == "COMBO" and len(spec) > 1 else spec[0]
+    return [str(option) for option in options if LAMA_NAME in str(option)]
+
+
 def eraser_available(object_info: dict) -> str:
     """"lama_comfy" with the node pack and big-lama, "lama_onnx" with a local model, else "opencv"."""
-    if all(name in object_info for name in LAMA_NODES):
-        spec = object_info[LAMA_NODES[0]].get("input", {}).get("required", {}).get("model_name", [[]])
-        if any(LAMA_NAME in str(option) for option in (spec[0] if spec else [])):
-            return "lama_comfy"
+    if all(name in object_info for name in LAMA_NODES) and _lama_models(object_info):
+        return "lama_comfy"
     if Path(ONNX_MODEL).is_file():
         return "lama_onnx"
     return "opencv"
@@ -151,8 +156,7 @@ def erase_onnx(image: Image.Image, mask: Image.Image, model_path=ONNX_MODEL) -> 
 
 def lama_graph(image_name: str, mask_name: str, seed: int, object_info: dict, prefix: str) -> dict:
     """LaMa through the comfyui-inpaint-nodes pack."""
-    options = object_info[LAMA_NODES[0]]["input"]["required"]["model_name"][0]
-    model = next(option for option in options if LAMA_NAME in str(option))
+    model = _lama_models(object_info)[0]
     inputs = {"inpaint_model": ["1", 0], "image": ["2", 0], "mask": ["3", 0]}
     if "seed" in object_info[LAMA_NODES[1]]["input"]["required"]:
         inputs["seed"] = int(seed) % (2 ** 63)

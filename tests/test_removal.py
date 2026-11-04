@@ -141,6 +141,10 @@ class WorkflowTests(unittest.TestCase):
         graph = removal.lama_graph("a.png", "m.png", 3, info, "p")
         self.assertEqual(templates.validate_graph(graph, info), [])
         self.assertEqual(graph["1"]["inputs"]["model_name"], "big-lama.pt")
+        combo = {**info, "INPAINT_LoadInpaintModel": {"input": {"required": {"model_name": [
+            "COMBO", {"multiselect": False, "options": ["big-lama.pt"]}]}}}}             # as this ComfyUI answers
+        self.assertEqual(removal.eraser_available(combo), "lama_comfy")
+        self.assertEqual(removal.lama_graph("a.png", "m.png", 3, combo, "p")["1"]["inputs"]["model_name"], "big-lama.pt")
         self.assertEqual(removal.eraser_available(OBJECT_INFO), "opencv")
         no_weights = dict(info, INPAINT_LoadInpaintModel={"input": {"required": {"model_name": [[]]}}})
         self.assertEqual(removal.eraser_available(no_weights), "opencv")
