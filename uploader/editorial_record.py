@@ -38,6 +38,7 @@ def build(run_dir) -> dict:
     edited = sorted(sid for sid, kinds in human_actions.items() if "edit" in kinds)
     rewritten = sorted(shot["shot_id"] for shot in shots if shot.get("action_edited_by_human"))
     reviewed = sum(1 for shot in shots if (shot.get("qa") or {}).get("reviewed"))
+    imported = sorted(shot["shot_id"] for shot in shots if shot.get("source") == "external")
     references = sorted((vb.get("references") or {}).keys())
     selected = next((item for item in thumbnails.get("variants", []) if item.get("number") == thumbnails.get("selected")), None)
     return {
@@ -46,6 +47,7 @@ def build(run_dir) -> dict:
         "script_edits": [{"scene": edit.get("scene_id"), "applied_at": edit.get("applied_at")} for edit in edits],
         "shots_total": len(shots), "shots_reviewed": reviewed,
         "shots_edited": edited, "shots_regenerated": regenerated, "shot_descriptions_rewritten": rewritten,
+        "shots_imported": imported,
         "references_approved": references,
         "title": {"chosen": titles.get("selected") or script.get("title", ""),
                   "how": titles.get("selected_reason", "scored"),
@@ -68,6 +70,7 @@ def summary(record: dict) -> str:
     lines.append(f"{record.get('shots_reviewed', 0)} of {record.get('shots_total', 0)} shots reviewed by hand"
                  + (f"; {len(record['shots_edited'])} edited" if record.get("shots_edited") else "")
                  + (f"; {len(record['shots_regenerated'])} regenerated" if record.get("shots_regenerated") else "")
+                 + (f"; {len(record['shots_imported'])} edited outside and imported" if record.get("shots_imported") else "")
                  + (f"; {len(record['shot_descriptions_rewritten'])} shot descriptions rewritten"
                     if record.get("shot_descriptions_rewritten") else "") + ".")
     if record.get("references_approved"):

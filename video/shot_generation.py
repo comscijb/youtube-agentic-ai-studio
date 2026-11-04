@@ -598,6 +598,7 @@ def _render_shot(generator: ImageGenerator, output: Path, vb: dict, shot: dict, 
         shot["provider"] = record.get("provider", "comfyui")
         shot["generated_at"] = _now()
         shot.pop("qa", None)                              # a new image starts a new QA budget
+        shot.pop("source", None)
         checks = record.get("image_checks") or {}
         labels = image_labels(checks)
         shot.pop("image_flags", None)

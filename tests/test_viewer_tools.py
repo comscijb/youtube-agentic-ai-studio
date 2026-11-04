@@ -161,6 +161,37 @@ class ViewerToolTests(unittest.TestCase):
             self.assertGreater(image.convert("RGB").getpixel((5, 5))[1], 70)
         self.assertEqual(problems, [])
 
+    def test_import_with_a_choice_of_crop(self):
+        from playwright.sync_api import sync_playwright
+        wide = Path(self.temp.name) / "edited.png"
+        Image.new("RGB", (1024, 1024), (10, 200, 10)).save(wide)
+        problems = []
+        with sync_playwright() as playwright:
+            browser, page = self.viewer(playwright, problems)
+            page.wait_for_selector("text=Importar imagem editada")
+            with page.expect_file_chooser() as chooser:
+                page.click("text=Importar imagem editada")
+            with page.expect_response("**/import"):
+                chooser.value.set_files(str(wide))
+            page.wait_for_selector("#igv-importbox")
+            before = page.locator("#igv-importbox").bounding_box()
+            page.mouse.move(before["x"] + 20, before["y"] + 20)
+            page.mouse.down()
+            page.mouse.move(before["x"] + 20, before["y"] + 60)
+            page.mouse.up()
+            self.assertGreater(page.locator("#igv-importbox").bounding_box()["y"], before["y"])
+            with page.expect_response("**/import"):
+                page.click("text=Usar este recorte")
+            page.wait_for_function("document.getElementById('igv-head').innerText.includes('editada fora')")
+            browser.close()
+        saved = self.shot()
+        self.assertEqual(saved["source"], "external")
+        self.assertEqual(saved["qa"]["actions"][-1]["fit"]["fit"], "crop")
+        self.assertTrue((self.output / saved["qa"]["actions"][-1]["original"]).is_file())
+        with Image.open(self.output / SHOT["image_path"]) as image:
+            self.assertEqual(image.size, (1920, 1080))
+        self.assertEqual(problems, [])
+
 
 if __name__ == "__main__":
     unittest.main()

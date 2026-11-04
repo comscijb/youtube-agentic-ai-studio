@@ -1834,6 +1834,67 @@ def imagegen_removal_discard(shot_id):
     return jsonify({"ok": True})
 
 
+def _open_folder(path) -> None:
+    """Show a folder in the file manager (best effort: exporting worked either way)."""
+    try:
+        if sys.platform == "win32":
+            os.startfile(str(path))
+    except OSError:
+        pass
+
+
+@app.route("/api/imagegen/shot/<shot_id>/export", methods=["POST"])
+def imagegen_export(shot_id):
+    """"Exportar para edição": the shot at full size, or the crop around a box, in exports/."""
+    from video import external_images
+    from video.qa import review
+    found, error = _review_shot(shot_id)
+    if error:
+        return error
+    try:
+        box = review.clean_box((request.get_json(force=True) or {}).get("box"))
+        target = external_images.export_image(config.OUTPUT_DIR, found[2], box)
+    except (ValueError, OSError) as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    _open_folder(target.parent)
+    return jsonify({"ok": True, "path": Path(target).relative_to(config.OUTPUT_DIR).as_posix()})
+
+
+@app.route("/api/imagegen/shot/<shot_id>/import", methods=["POST"])
+def imagegen_import(shot_id):
+    """"Importar imagem editada": any size; an aspect far from 16:9 answers 409 until the user picks crop or blur."""
+    import tempfile
+    from video import external_images
+    from video.qa import fixes
+    if _state.get("imagegen_busy"):
+        return jsonify({"ok": False, "error": "Wait for the running generation"}), 409
+    found, error = _review_shot(shot_id)
+    if error:
+        return error
+    path, shot_list, shot = found
+    upload = request.files.get("file")
+    if not upload or not upload.filename:
+        return jsonify({"ok": False, "error": "No file"}), 400
+    try:
+        position = float(request.form.get("position", 0.5))
+    except ValueError:
+        position = 0.5
+    with tempfile.TemporaryDirectory() as temp:
+        held = Path(temp) / "upload"
+        upload.save(held)
+        try:
+            action = external_images.import_image(config.OUTPUT_DIR, shot, held, upload.filename, mode=request.form.get("mode", ""),
+                                                  position=position, detector=fixes._detector())
+        except external_images.NeedsChoice as exc:
+            return jsonify({"ok": False, "needs_choice": True, "width": exc.size[0], "height": exc.size[1],
+                            "difference": round(exc.difference, 4)}), 409
+        except (ValueError, OSError) as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 400
+    atomic_write_json(path, shot_list)
+    Path(config.OUTPUT_DIR, "final_video.mp4").unlink(missing_ok=True)
+    return jsonify({"ok": True, "action": action, "warnings": shot.get("image_flags", [])})
+
+
 @app.route("/api/imagegen/shot/<shot_id>/queue", methods=["POST"])
 def imagegen_queue_edit(shot_id):
     """"Remover figura", "Adicionar marcador", "Remover marcas", "Instrução livre", "Gerar de novo":

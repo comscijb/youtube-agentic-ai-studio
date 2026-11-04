@@ -1873,6 +1873,13 @@ function igViewerDom() {
   document.body.appendChild(root);
   document.getElementById('igv-legend').textContent = IG_KEYS;
   const stage = document.getElementById('igv-stage');
+  stage.addEventListener('dragover', event => { event.preventDefault(); });
+  stage.addEventListener('drop', event => {
+    event.preventDefault();
+    const file = event.dataTransfer && event.dataTransfer.files[0];
+    const shot = _igView && igShot(_igView.id);
+    if (file && shot) igImport(shot, file);
+  });
   stage.addEventListener('wheel', event => {
     if (!_igView || !_igView.nat) return;
     event.preventDefault();
@@ -2047,7 +2054,8 @@ function igRenderViewer() {
   const info = document.createElement('span');
   info.style.color = '#aaa';
   info.textContent = `${igTime(shot.start)}–${igTime(shot.end)} · ${shot.shot_type || ''} · cena ${shot.scene_id || '—'}` +
-    (shot.location ? ` · ${shot.location}` : '') + `  (${_igOrder.indexOf(shot.shot_id) + 1}/${_igOrder.length})`;
+    (shot.location ? ` · ${shot.location}` : '') + (shot.source === 'external' ? ' · editada fora' : '') +
+    `  (${_igOrder.indexOf(shot.shot_id) + 1}/${_igOrder.length})`;
   title.appendChild(info);
   const [status, colour] = igViewerStatus(shot);
   const badge = document.createElement('span');
@@ -2074,6 +2082,7 @@ function igRenderViewer() {
   igSideCharacters(side, shot);
   igSideHints(side, shot);
   igSideActions(side, shot);
+  igSideExternal(side, shot);
   igSideHistory(side, shot, previous);
   igSideDetails(side, shot);
   side.scrollTop = scroll;
@@ -2263,6 +2272,111 @@ function igSideHistory(side, shot, previous) {
     strip.appendChild(cell);
   });
   block.appendChild(strip);
+}
+
+// Images edited outside (3.9.4-D): export the shot or a crop, bring the result back by file picker or drop.
+function igSideExternal(side, shot) {
+  const block = igSection(side, 'Edição externa');
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px';
+  igButton(row, 'Exportar para edição', 'Salva o plano em tamanho cheio em exports/ e abre a pasta',
+           () => igExport(shot));
+  igButton(row, 'Exportar recorte', 'Marque uma caixa: salva o recorte em volta dela', async () => {
+    const box = await igViewerBox([], false, 'Exportar recorte');
+    if (box) igExport(shot, box);
+  });
+  igButton(row, 'Importar imagem editada', 'PNG, JPG ou WEBP de qualquer tamanho; também pode soltar o arquivo sobre a imagem',
+           () => {
+             const input = document.createElement('input');
+             input.type = 'file';
+             input.id = 'igv-import';
+             input.accept = '.png,.jpg,.jpeg,.webp';
+             input.style.display = 'none';
+             input.onchange = () => { if (input.files[0]) igImport(shot, input.files[0]); input.remove(); };
+             document.body.appendChild(input);
+             input.click();
+           });
+  block.appendChild(row);
+}
+
+function igExport(shot, box) {
+  fetch(`/api/imagegen/shot/${shot.shot_id}/export`, {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({box: box || null})}).then(r => r.json()).then(d => {
+    if (!d.ok) alert(d.error || 'Não foi possível exportar');
+  });
+}
+
+function igImport(shot, file, choice) {
+  const form = new FormData();
+  form.append('file', file);
+  if (choice) { form.append('mode', choice.mode); form.append('position', choice.position); }
+  fetch(`/api/imagegen/shot/${shot.shot_id}/import`, {method: 'POST', body: form}).then(r => r.json().then(d => [r.status, d])).then(([status, d]) => {
+    if (status === 409 && d.needs_choice) { igImportChoice(shot, file, d); return; }
+    if (!d.ok) { alert(d.error || 'Não foi possível importar'); return; }
+    if ((d.warnings || []).length) alert('Imagem importada, com avisos:\n' + d.warnings.join('\n'));
+    if (_igView) _igView.src = '';
+    loadImagegen();
+  });
+}
+
+// Aspect far from 16:9: a draggable 16:9 box over the imported image, or extend with a blur fill.
+function igImportChoice(shot, file, info) {
+  const url = URL.createObjectURL(file);
+  const shade = document.createElement('div');
+  shade.id = 'igv-importchoice';
+  shade.style.cssText = 'position:fixed;inset:0;z-index:1100;background:#000d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#eee';
+  const title = document.createElement('div');
+  title.textContent = `${info.width}×${info.height} está ${Math.round(info.difference * 100)} % longe de 16:9: arraste o recorte ou estenda com fundo desfocado.`;
+  shade.appendChild(title);
+  const holder = document.createElement('div');
+  holder.style.cssText = 'position:relative;overflow:hidden;line-height:0';
+  const img = document.createElement('img');
+  img.src = url;
+  img.draggable = false;
+  img.style.cssText = 'max-width:80vw;max-height:70vh;display:block;user-select:none';
+  holder.appendChild(img);
+  const box = document.createElement('div');
+  box.id = 'igv-importbox';
+  box.style.cssText = 'position:absolute;border:3px solid #4af;box-shadow:0 0 0 9999px #0009;cursor:move;box-sizing:border-box';
+  holder.appendChild(box);
+  shade.appendChild(holder);
+  const wide = info.width / info.height > 16 / 9;
+  let position = 0.5, dragging = null;
+  const place = () => {
+    const w = img.clientWidth, h = img.clientHeight;
+    if (wide) {
+      const bw = h * 16 / 9;
+      Object.assign(box.style, {left: (w - bw) * position + 'px', top: '0', width: bw + 'px', height: h + 'px'});
+    } else {
+      const bh = w * 9 / 16;
+      Object.assign(box.style, {left: '0', top: (h - bh) * position + 'px', width: w + 'px', height: bh + 'px'});
+    }
+  };
+  img.onload = place;
+  box.addEventListener('mousedown', event => { event.preventDefault(); dragging = {x: event.clientX, y: event.clientY, position}; });
+  const move = event => {
+    if (!dragging) return;
+    const free = wide ? img.clientWidth - box.offsetWidth : img.clientHeight - box.offsetHeight;
+    const delta = wide ? event.clientX - dragging.x : event.clientY - dragging.y;
+    position = Math.min(Math.max(dragging.position + delta / Math.max(free, 1), 0), 1);
+    place();
+  };
+  const up = () => { dragging = null; };
+  window.addEventListener('mousemove', move);
+  window.addEventListener('mouseup', up);
+  const close = () => {
+    window.removeEventListener('mousemove', move);
+    window.removeEventListener('mouseup', up);
+    URL.revokeObjectURL(url);
+    shade.remove();
+  };
+  const bar = document.createElement('div');
+  bar.style.cssText = 'display:flex;gap:6px';
+  igButton(bar, 'Usar este recorte', '', () => { close(); igImport(shot, file, {mode: 'crop', position}); });
+  igButton(bar, 'Estender com blur', 'A imagem inteira sobre uma cópia desfocada dela', () => { close(); igImport(shot, file, {mode: 'blur', position: 0.5}); });
+  igButton(bar, 'Cancelar', '', close);
+  shade.appendChild(bar);
+  document.body.appendChild(shade);
 }
 
 function igSideDetails(side, shot) {

@@ -110,6 +110,10 @@ def save_version(output, item: dict, image_path: Path) -> dict:
     shutil.copy2(image_path, target)
     entry = {"version": number, "path": relative.as_posix(), "verdict": qa.get("verdict"),
              "blocking": len(base.blocking(qa)), "issues": qa.get("issues", []), "at": _now()}
+    if item.pop("source", None) == "external":            # imported from outside: the image leaving the shot, not the next one
+        entry["source"] = "external"
+        from video.shot_generation import update_provenance
+        update_provenance(output, item["shot_id"], source=None)
     qa["history"].append(entry)
     return entry
 
@@ -285,6 +289,8 @@ def restore_version(output, item: dict, image_path, number: int) -> dict:
         raise FileNotFoundError(f"no version {number} for {item['shot_id']}")
     saved = save_version(output, item, image_path)
     shutil.copy2(output / entry["path"], image_path)
+    if entry.get("source"):
+        item["source"] = entry["source"]
     action = {"action": "restore", "version": entry["version"], "replaced_version": saved["version"], "at": _now()}
     qa["actions"].append(action)
     qa.update(issues=entry.get("issues", []), verdict="recheck", status="pending",
