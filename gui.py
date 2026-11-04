@@ -1545,7 +1545,7 @@ def imagegen_status():
                                                    "characters", "face_visibility", "reuse_of",
                                                    "action", "prompt", "image_path", "provider",
                                                    "flags", "warnings", "qa", "edit_queue",
-                                                   "image_flags", "copy_check",
+                                                   "image_flags", "copy_check", "removal", "source",
                                                    "narration_excerpt", "location", "generated_at")}
                   for shot in shots],
     })
@@ -1756,6 +1756,84 @@ def _review_shot(shot_id: str):
     return (path, shot_list, shot), None
 
 
+def _save_brush_mask(shot: dict, data_url: str) -> str:
+    """A brush mask from the viewer (PNG data URL): saved with the shot, its relative path returned."""
+    import base64
+    from PIL import Image
+    from video.qa import removal
+    try:
+        raw = base64.b64decode(str(data_url).split(",", 1)[-1])
+        with Image.open(io.BytesIO(raw)) as image:
+            mask = image.convert("RGBA").getchannel("A") if "A" in image.getbands() else image.convert("L")
+    except (ValueError, OSError) as exc:
+        raise ValueError("the mask is not a readable image") from exc
+    if not mask.getbbox():
+        raise ValueError("the mask is empty: paint over the figure")
+    relative = removal.FOLDER / f"{shot['shot_id']}_brush_{int(time.time() * 1000)}.png"
+    target = Path(config.OUTPUT_DIR, relative)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    mask.save(target, "PNG")
+    return relative.as_posix()
+
+
+@app.route("/api/imagegen/shot/<shot_id>/mask_preview", methods=["POST"])
+def imagegen_mask_preview(shot_id):
+    """The mask a box becomes (refined to the person, dilated, with the shadow), to show and edit before running."""
+    import base64
+    from PIL import Image
+    from video.qa import fixes, removal, review
+    found, error = _review_shot(shot_id)
+    if error:
+        return error
+    _, _, shot = found
+    try:
+        box = review.clean_box((request.get_json(force=True) or {}).get("box"))
+        if not box:
+            raise ValueError("Draw a box")
+    except ValueError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    image_path = Path(config.OUTPUT_DIR, shot["image_path"])
+    detector = fixes._detector()
+    persons = detector.detect(image_path).get("persons", []) if detector else []
+    with Image.open(image_path) as image:
+        size = image.size
+    hard = removal.build_mask(size, box, persons=persons)
+    buffer = io.BytesIO()
+    hard.save(buffer, "PNG")
+    return jsonify({"ok": True, "mask": "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("ascii"),
+                    "box": removal.mask_box(hard), "refined": removal.refine_box(box, persons)[1]})
+
+
+@app.route("/api/imagegen/shot/<shot_id>/removal/choose", methods=["POST"])
+def imagegen_removal_choose(shot_id):
+    """"Usar este": a removal result becomes the shot; the image before it stays in the history."""
+    from video.qa import removal
+    if _state.get("imagegen_busy"):
+        return jsonify({"ok": False, "error": "Wait for the running generation"}), 409
+    found, error = _review_shot(shot_id)
+    if error:
+        return error
+    path, shot_list, shot = found
+    try:
+        action = removal.choose(config.OUTPUT_DIR, shot, int((request.get_json(force=True) or {}).get("index", -1)))
+    except (IndexError, ValueError) as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    atomic_write_json(path, shot_list)
+    Path(config.OUTPUT_DIR, "final_video.mp4").unlink(missing_ok=True)
+    return jsonify({"ok": True, "action": action})
+
+
+@app.route("/api/imagegen/shot/<shot_id>/removal/discard", methods=["POST"])
+def imagegen_removal_discard(shot_id):
+    found, error = _review_shot(shot_id)
+    if error:
+        return error
+    path, shot_list, shot = found
+    shot.pop("removal", None)
+    atomic_write_json(path, shot_list)
+    return jsonify({"ok": True})
+
+
 @app.route("/api/imagegen/shot/<shot_id>/queue", methods=["POST"])
 def imagegen_queue_edit(shot_id):
     """"Remover figura", "Adicionar marcador", "Remover marcas", "Instrução livre", "Gerar de novo":
@@ -1769,9 +1847,10 @@ def imagegen_queue_edit(shot_id):
     body = request.get_json(force=True) or {}
     vb = load_json(Path(config.OUTPUT_DIR, vbible.FILE_NAME)) or {}
     try:
+        mask = _save_brush_mask(shot, body.get("mask")) if body.get("mask") else ""
         entry = review.make_request(str(body.get("kind", "")), vb, box=body.get("box"),
                                     character=str(body.get("character", "")), marker=str(body.get("marker", "")),
-                                    text=str(body.get("text", "")))
+                                    text=str(body.get("text", "")), mask=mask)
     except ValueError as exc:
         return jsonify({"ok": False, "error": str(exc)}), 400
     queue = review.enqueue(shot, entry)

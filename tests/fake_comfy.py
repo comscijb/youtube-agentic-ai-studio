@@ -27,6 +27,9 @@ OBJECT_INFO = {
         "seed", "steps", "cfg", "denoise", "model", "positive", "negative", "latent_image")} | {
         "sampler_name": [["euler", "dpmpp_2m"]], "scheduler": [["simple", "normal"]]}}},
     "VAEDecode": {"input": {"required": {"samples": ["LATENT"], "vae": ["VAE"]}}},
+    "VAEEncode": {"input": {"required": {"pixels": ["IMAGE"], "vae": ["VAE"]}}},
+    "LoadImageMask": {"input": {"required": {"image": [["x.png"]], "channel": [["red", "alpha"]]}}},
+    "SetLatentNoiseMask": {"input": {"required": {"samples": ["LATENT"], "mask": ["MASK"]}}},
     "SaveImage": {"input": {"required": {"filename_prefix": ["STRING", {}], "images": ["IMAGE"]}}},
     "LoadImage": {"input": {"required": {"image": [["example.png"]]}}},
     "ReferenceMultiLatent": {"input": {"required": {

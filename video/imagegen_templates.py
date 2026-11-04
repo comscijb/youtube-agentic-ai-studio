@@ -234,6 +234,21 @@ def build_region_edit(*, instruction: str, seed: int, shot: str, references: lis
     return graph
 
 
+def build_masked_restore(*, prompt: str, seed: int, image: str, mask: str, denoise: float, references: list[str] = (),
+                         width: int = DEFAULT_SIZE[0], height: int = DEFAULT_SIZE[1], steps: int | None = None,
+                         filename_prefix: str = "private_gravity", folder=WORKFLOWS) -> dict:
+    """Klein on an already erased crop, inside the mask only (SetLatentNoiseMask), at low denoise (Phase 3.9.4-B)."""
+    graph = build_graph("ref" if references else "t2i", prompt=prompt, seed=seed, width=width, height=height, steps=steps,
+                        references=list(references), latent_source="reference", filename_prefix=filename_prefix, folder=folder)
+    graph.pop("44", None)
+    graph["61"] = {"class_type": "LoadImage", "inputs": {"image": image}, "_meta": _meta("Erased crop")}
+    graph["62"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["61", 0], "vae": ["3", 0]}}
+    graph["63"] = {"class_type": "LoadImageMask", "inputs": {"image": mask, "channel": "red"}, "_meta": _meta("Mask")}
+    graph["64"] = {"class_type": "SetLatentNoiseMask", "inputs": {"samples": ["62", 0], "mask": ["63", 0]}}
+    graph["7"]["inputs"].update(latent_image=["64", 0], denoise=float(denoise))
+    return graph
+
+
 def graph_hash(graph: dict) -> str:
     return hashlib.sha256(json.dumps(graph, sort_keys=True).encode("utf-8")).hexdigest()
 

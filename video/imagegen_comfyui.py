@@ -174,6 +174,8 @@ class ImageJob:
     # kind "region_edit": prompt is the edit instruction, references[0] the shot to edit,
     # edit_boxes [(normalized box, description)] become <obj_1>, <obj_2>…
     edit_boxes: list = field(default_factory=list)
+    # kind "masked_restore": references[0] the erased crop, references[1] its mask, the rest references.
+    denoise: float = 1.0
 
 
 def aspect_tolerance() -> float:
@@ -221,6 +223,11 @@ class ImageGenerator:
         self._validated: set[str] = set()
 
     def _graph(self, job: ImageJob, seed: int, uploaded: list[str]) -> dict:
+        if job.kind == "masked_restore":
+            return templates.build_masked_restore(
+                prompt=job.prompt, seed=seed, image=uploaded[0], mask=uploaded[1], references=uploaded[2:], denoise=job.denoise,
+                width=job.size[0], height=job.size[1], steps=getattr(config, "IMAGEGEN_STEPS", None),
+                filename_prefix=f"private_gravity/{job.job_id}")
         if job.kind == "region_edit":
             return templates.build_region_edit(
                 instruction=job.prompt, seed=seed, shot=uploaded[0], references=uploaded[1:],
@@ -282,7 +289,13 @@ class ImageGenerator:
                 checks, used_seed = saved.get("image_checks", {}), saved.get("seed", seed)
             except (OSError, ValueError):
                 pass
-        if not hit:
+        if not hit and job.kind == "masked_restore":     # a crop on its way to the composite: no frame checks apply
+            uploaded = [self.client.upload_image(path) for path in job.references]
+            image, graph = self._render(job, seed, uploaded)
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
+            image.save(cached, "PNG")
+            sidecar.write_text(json.dumps({"seed": used_seed, "image_checks": checks}), encoding="utf-8")
+        elif not hit:
             uploaded = [self.client.upload_image(self._clean_reference(path)) for path in job.references]
             image, used_seed, graph, checks = self._render_checked(job, seed, uploaded)
             image, used_seed, graph, checks = self._quality_pass(job, image, used_seed, graph, checks, uploaded)
