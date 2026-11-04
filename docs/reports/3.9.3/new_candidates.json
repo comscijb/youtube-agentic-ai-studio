@@ -1,0 +1,50 @@
+[
+ {
+  "id": "village_bakery",
+  "number": 7,
+  "path": "projects\\2026-11-03-everyone-heard-what-he-thought\\location_refs\\candidates\\village_bakery_7.jpg",
+  "matches": 1,
+  "edge": 0.239,
+  "of": "board_4.png",
+  "flagged": false,
+  "margin": false,
+  "people": 0,
+  "flags": []
+ },
+ {
+  "id": "village_bakery",
+  "number": 8,
+  "path": "projects\\2026-11-03-everyone-heard-what-he-thought\\location_refs\\candidates\\village_bakery_8.jpg",
+  "matches": 2,
+  "edge": 0.201,
+  "of": "board_6.png",
+  "flagged": false,
+  "margin": false,
+  "people": 0,
+  "flags": []
+ },
+ {
+  "id": "the_moor",
+  "number": 5,
+  "path": "projects\\2026-11-03-everyone-heard-what-he-thought\\location_refs\\candidates\\the_moor_5.jpg",
+  "matches": 0,
+  "edge": 0.0,
+  "of": "",
+  "flagged": false,
+  "margin": false,
+  "people": 0,
+  "flags": []
+ },
+ {
+  "id": "the_moor",
+  "number": 6,
+  "path": "projects\\2026-11-03-everyone-heard-what-he-thought\\location_refs\\candidates\\the_moor_6.jpg",
+  "matches": 0,
+  "edge": 0.0,
+  "of": "",
+  "flagged": false,
+  "margin": false,
+  "people": 0,
+  "flags": []
+ }
+]

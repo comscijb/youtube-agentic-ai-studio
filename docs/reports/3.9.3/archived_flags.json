@@ -1,0 +1,113 @@
+{
+ "2026-10-21-the-man-who-needed-everyone-to-envy-him": {
+  "images": 67,
+  "copies": [
+   [
+    "s01_06.jpg",
+    28,
+    0.193,
+    "board_4.png"
+   ],
+   [
+    "s06_05.jpg",
+    275,
+    0.577,
+    "board_4.png"
+   ],
+   [
+    "s07_02.jpg",
+    607,
+    0.668,
+    "board_4.png"
+   ],
+   [
+    "s07_03.jpg",
+    692,
+    0.857,
+    "board_4.png"
+   ]
+  ],
+  "margins": [],
+  "red_patches": [
+   [
+    "s08_02.jpg",
+    0.0063
+   ]
+  ]
+ },
+ "2026-10-29-he-lied-about-his-dead-wife-to-see-what-it-would-say": {
+  "images": 79,
+  "copies": [
+   [
+    "s03_03.jpg",
+    125,
+    0.417,
+    "board_6.png"
+   ],
+   [
+    "s03_04.jpg",
+    116,
+    0.513,
+    "board_6.png"
+   ],
+   [
+    "s03_09.jpg",
+    102,
+    0.503,
+    "board_6.png"
+   ],
+   [
+    "s07_07.jpg",
+    107,
+    0.49,
+    "board_6.png"
+   ],
+   [
+    "hallway.png",
+    219,
+    0.665,
+    "board_6.png"
+   ]
+  ],
+  "margins": [],
+  "red_patches": []
+ },
+ "thought_town_red": [
+  [
+   "s01_06.jpg",
+   0.0076
+  ],
+  [
+   "s01_09.jpg",
+   0.0096
+  ],
+  [
+   "s02_01.jpg",
+   0.0077
+  ],
+  [
+   "s02_06.jpg",
+   0.01
+  ],
+  [
+   "s03_01.jpg",
+   0.0074
+  ],
+  [
+   "s03_02.jpg",
+   0.0062
+  ],
+  [
+   "s03_03.jpg",
+   0.0075
+  ],
+  [
+   "s03_06.jpg",
+   0.0129
+  ],
+  [
+   "s04_05.jpg",
+   0.0062
+  ]
+ ]
+}
