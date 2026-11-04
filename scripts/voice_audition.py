@@ -117,6 +117,16 @@ def cached(backend: str, voice: str, text: str, out: Path = OUT) -> dict | None:
 
 
 def audition(text: str, backend_name: str, voice: str, out: Path) -> dict:
+    """``voice`` may carry a Kokoro speed: "bm_lewis@0.88"."""
+    from unittest.mock import patch
+    name, _, speed = voice.partition("@")
+    if speed:
+        with patch.object(config, "TTS_LOCAL_SPEED", float(speed)):
+            return {**_audition(text, backend_name, name, out, sample=voice), "voice": voice, "speed": float(speed)}
+    return _audition(text, backend_name, voice, out, sample=voice)
+
+
+def _audition(text: str, backend_name: str, voice: str, out: Path, sample: str) -> dict:
     row = {"backend": backend_name, "voice": voice, "text_hash": text_hash(text),
            "licence": LICENCES.get(f"local:{getattr(config, 'TTS_LOCAL_ENGINE', 'kokoro')}" if backend_name == "local"
                                    else backend_name, "")}
@@ -128,7 +138,7 @@ def audition(text: str, backend_name: str, voice: str, out: Path) -> dict:
     row["detail"] = detail
     if not ok:
         return {**row, "error": detail}
-    path = Path(out) / sample_name(backend_name, voice, text)
+    path = Path(out) / sample_name(backend_name, sample, text)
     spoken = pronunciations.apply(text, backend_name)
     started = time.monotonic()
     try:

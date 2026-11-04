@@ -121,8 +121,7 @@ class PronunciationAndDeliveryTests(unittest.TestCase):
                 narrator.synthesise_scene(text, str(Path(temp, "a.mp3")), "", section)
             styled = FakeBackend(supports_style=True)
             with patch.object(tts, "get", return_value=styled), patch.object(narrator, "_concat"), \
-                    patch.object(narrator, "AudioFileClip") as clip:
-                clip.return_value.duration = 1.0
+                    patch.object(narrator.assembly, "decode", return_value=[0.0] * narrator.assembly.RATE):
                 events = narrator.synthesise_scene(text, str(Path(temp, "b.mp3")), "", section)
         self.assertEqual([call["text"] for call in plain.calls], ['Shiv-awn waited. "Are you there?" she asked.'])
         self.assertEqual([(call["text"], call["style"]) for call in styled.calls],

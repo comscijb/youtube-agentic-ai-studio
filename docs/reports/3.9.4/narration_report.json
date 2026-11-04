@@ -1,0 +1,160 @@
+{
+ "estimates": {
+  "pauses only (same speed)": {
+   "seconds": 474.7,
+   "minutes": 7.91,
+   "speech_seconds": 409.3,
+   "pause_seconds": 65.4
+  },
+  "pauses + 0.90": {
+   "seconds": 497.4,
+   "minutes": 8.29,
+   "speech_seconds": 432.1,
+   "pause_seconds": 65.4
+  },
+  "pauses + 0.88": {
+   "seconds": 507.3,
+   "minutes": 8.45,
+   "speech_seconds": 441.9,
+   "pause_seconds": 65.4
+  }
+ },
+ "before": {
+  "ok": false,
+  "bursts": [
+   {
+    "at": 63.62,
+    "seconds": 0.08,
+    "level_db": -26.8
+   },
+   {
+    "at": 113.69,
+    "seconds": 0.11,
+    "level_db": -24.1
+   },
+   {
+    "at": 221.2,
+    "seconds": 0.09,
+    "level_db": -18.6
+   },
+   {
+    "at": 449.03,
+    "seconds": 0.08,
+    "level_db": -19.8
+   }
+  ],
+  "short_gaps": [
+   {
+    "at": 63.32,
+    "gap": 0.38,
+    "wanted": 1.5,
+    "scenes": [
+     1,
+     2
+    ]
+   },
+   {
+    "at": 113.48,
+    "gap": 0.31,
+    "wanted": 1.5,
+    "scenes": [
+     2,
+     3
+    ]
+   },
+   {
+    "at": 164.41,
+    "gap": 0.38,
+    "wanted": 1.5,
+    "scenes": [
+     3,
+     4
+    ]
+   },
+   {
+    "at": 221.07,
+    "gap": 0.22,
+    "wanted": 1.5,
+    "scenes": [
+     4,
+     5
+    ]
+   },
+   {
+    "at": 277.79,
+    "gap": 0.24,
+    "wanted": 1.5,
+    "scenes": [
+     5,
+     6
+    ]
+   },
+   {
+    "at": 335.69,
+    "gap": 0.37,
+    "wanted": 2.0,
+    "scenes": [
+     6,
+     7
+    ]
+   },
+   {
+    "at": 401.89,
+    "gap": 0.07,
+    "wanted": 2.0,
+    "scenes": [
+     7,
+     8
+    ]
+   },
+   {
+    "at": 448.74,
+    "gap": 0.36,
+    "wanted": 2.0,
+    "scenes": [
+     8,
+     9
+    ]
+   }
+  ]
+ },
+ "after": {
+  "ok": false,
+  "bursts": [
+   {
+    "at": 231.77,
+    "seconds": 0.11,
+    "level_db": -24.0
+   }
+  ],
+  "short_gaps": []
+ },
+ "total": 512.44,
+ "pauses": [
+  {
+   "at": 2.81,
+   "seconds": 0.35,
+   "kind": "sentence"
+  },
+  {
+   "at": 8.54,
+   "seconds": 0.35,
+   "kind": "sentence"
+  },
+  {
+   "at": 14.97,
+   "seconds": 0.35,
+   "kind": "sentence"
+  },
+  {
+   "at": 18.82,
+   "seconds": 0.35,
+   "kind": "sentence"
+  },
+  {
+   "at": 21.95,
+   "seconds": 0.35,
+   "kind": "sentence"
+  }
+ ]
+}

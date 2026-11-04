@@ -275,6 +275,7 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
         if "script" in steps:
             _stage("script", "running")
             _log(f"Generating {'Shorts' if video_type == 'shorts' else 'normal'} script…")
+            voice_calibration.ensure_measured(progress=lambda line: _log(str(line).strip()))
             script = write_script(
                 research, video_type=video_type, output_dir=config.OUTPUT_DIR,
                 target_duration_minutes=target_duration,
@@ -422,7 +423,13 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
             _state["thumb_path"] = thumb if os.path.exists(thumb) else None
             _stage("video", "running")
             image_map_int = {int(k): v for k, v in _state["image_map"].items()}
-            _state["video_path"] = create_video(script, audio, out, image_map_int, video_type=video_type)
+            from video.creator import RenderStopped
+            try:
+                _state["video_path"] = create_video(script, audio, out, image_map_int, video_type=video_type,
+                                                    should_stop=_stop_event.is_set)
+            except RenderStopped as exc:
+                _stage("video", "interrompido")
+                raise InterruptedError(str(exc)) from exc
             _stage("video", "done")
 
         def job_shorts():
@@ -1019,12 +1026,19 @@ def project_stage(stage):
     return jsonify({"ok": True, "steps": steps})
 
 
+@app.route("/api/video/preflight")
+def video_preflight():
+    """What the Video stage checks before it renders."""
+    from video import render_check
+    return jsonify({"ok": True, **render_check.preflight(config.OUTPUT_DIR)})
+
+
 @app.route("/api/stop", methods=["POST"])
 def stop_pipeline():
-    """Request the pipeline to stop after the current stage finishes."""
+    """Stop: the running video encode ends at once and the other stages at their next checkpoint."""
     _stop_event.set()
     _state["stop_requested"] = True
-    _log("⏹ Stop requested — will halt after current step completes…", "warn")
+    _log("⏹ Parada pedida (botão Parar): um vídeo em render é interrompido; outras etapas param no próximo ponto seguro", "warn")
     return jsonify({"ok": True})
 
 
@@ -2285,6 +2299,7 @@ def voices_status():
     stale = projects.is_project(config.OUTPUT_DIR) and projects.narration_voice_changed(config.OUTPUT_DIR)
     text = DEFAULT_TEXT.read_text(encoding="utf-8").strip() if DEFAULT_TEXT.is_file() else ""
     return jsonify({"ok": True, "channel": tts.identity(), "voices": voice_rows(), "backends": backends,
+                    "speed_choices": [0.85, 0.88, 0.92],
                     "references": voices.references(), "narration_stale": bool(stale),
                     "preview_text": text, "job": {key: value for key, value in _voice_job.items() if key != "errors"}})
 
@@ -2342,9 +2357,21 @@ def voices_channel():
     backend, voice = str(body.get("backend", "")), str(body.get("voice", "")).strip()
     if backend not in tts.BACKENDS or not voice:
         return jsonify({"ok": False, "error": "Choose a backend and a voice"}), 400
+    voice, _, chosen_speed = voice.partition("@")
+    settings = {"TTS_BACKEND": backend, "TTS_VOICE": voice}
+    speed = body.get("speed") or chosen_speed
+    if speed:
+        try:
+            speed = float(speed)
+        except (TypeError, ValueError):
+            return jsonify({"ok": False, "error": "Speed must be a number"}), 400
+        if not 0.7 <= speed <= 1.2:
+            return jsonify({"ok": False, "error": "Speed must be between 0.7 and 1.2"}), 400
+        config.TTS_LOCAL_SPEED = speed
+        settings["TTS_LOCAL_SPEED"] = str(speed)
     config.TTS_BACKEND, config.TTS_VOICE = backend, voice
     try:
-        _write_env_settings({"TTS_BACKEND": backend, "TTS_VOICE": voice})
+        _write_env_settings(settings)
     except OSError as exc:
         return jsonify({"ok": False, "error": f"Could not save the voice: {exc}"}), 500
     stale = projects.is_project(config.OUTPUT_DIR) and projects.narration_voice_changed(config.OUTPUT_DIR)

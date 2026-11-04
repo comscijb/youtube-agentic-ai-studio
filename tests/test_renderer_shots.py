@@ -62,7 +62,9 @@ class ShotScheduleTests(unittest.TestCase):
     def test_incomplete_or_missing_shot_list_keeps_old_behaviour(self):
         self.shots[2]["image_path"] = "images/shots/missing.jpg"
         self.write()
-        self.assertIsNone(self.schedule())
+        from video import render_check
+        with self.assertRaises(render_check.ShotImagesMissing):       # never stock or gradients (3.9.4-F)
+            self.schedule()
         (self.output / "shot_list.json").unlink()
         self.assertIsNone(self.schedule())
 

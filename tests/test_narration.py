@@ -185,12 +185,10 @@ class FakeClip:
         pass
 
 
-class FakeCombined:
-    def write_audiofile(self, path, **kwargs):
-        Path(path).write_bytes(b"audio")
-
-    def close(self):
-        pass
+def tone(path, rate=24000):
+    """3 seconds of signal for any decoded file."""
+    import numpy as np
+    return (0.2 * np.sin(np.arange(3 * rate) * 0.1)).astype(np.float32)
 
 
 class GenerateNarrationTests(unittest.TestCase):
@@ -205,17 +203,16 @@ class GenerateNarrationTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp, \
                 patch.object(narrator, "synthesise_scene", side_effect=fake_synth), \
-                patch.object(narrator, "AudioFileClip", FakeClip), \
-                patch.object(narrator, "concatenate_audioclips", return_value=FakeCombined()), \
+                patch.object(narrator.assembly, "decode", side_effect=tone), \
+                patch.object(narrator.assembly, "encode", side_effect=lambda samples, path, rate=0: Path(path).write_bytes(b"x")), \
+                patch.object(narrator.joins, "check", return_value={"ok": True, "bursts": [], "short_gaps": []}), \
                 patch.object(narrator, "_get_audio_duration_ms", return_value=30000.0), \
                 patch.object(config, "VOICE_CALIBRATION_FILE", str(Path(temp, "cal.json"))):
             _, output = quiet(narrator.generate_narration, script, temp)
             srt =Path(temp, "narration.srt").read_text(encoding="utf-8")
             calibration = json.loads(Path(temp, "cal.json").read_text(encoding="utf-8"))
-            cached = list(Path(temp, ".tts_cache").glob("*.mp3"))
+            cached = [path for path in Path(temp, ".tts_cache").iterdir() if path.suffix in (".mp3", ".wav")]
         self.assertIn("Elena didn’t move.", srt)
-        # Scene 2 starts 3 s in; the lead-in never reaches back into scene 1.
-        self.assertIn("00:00:03,000 --> 00:00:03,800\nElena didn’t move.", srt)
         self.assertNotIn("Microsoft server change", output)
         entry = calibration["voices"][voice_calibration.voice_key()]
         self.assertEqual((entry["words"], entry["seconds"], entry["wpm"]), (63, 30.0, 126.0))
@@ -230,8 +227,9 @@ class GenerateNarrationTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp, \
                 patch.object(narrator, "synthesise_scene", side_effect=no_words), \
-                patch.object(narrator, "AudioFileClip", FakeClip), \
-                patch.object(narrator, "concatenate_audioclips", return_value=FakeCombined()), \
+                patch.object(narrator.assembly, "decode", side_effect=tone), \
+                patch.object(narrator.assembly, "encode", side_effect=lambda samples, path, rate=0: Path(path).write_bytes(b"x")), \
+                patch.object(narrator.joins, "check", return_value={"ok": True, "bursts": [], "short_gaps": []}), \
                 patch.object(narrator, "_get_audio_duration_ms", return_value=3000.0), \
                 patch.object(config, "VOICE_CALIBRATION_FILE", str(Path(temp, "cal.json"))):
             _, output = quiet(narrator.generate_narration, script, temp)
@@ -246,7 +244,9 @@ class CalibrationTests(unittest.TestCase):
             path = str(Path(temp, "cal.json"))
             with patch.object(config, "VOICE_CALIBRATION_FILE", path), \
                     patch.object(config, "VOICE_ID", "en-US-AndrewNeural"), \
-                    patch.object(config, "VOICE_RATE", "-5%"):
+                    patch.object(config, "TTS_BACKEND", "edge"), patch.object(config, "TTS_VOICE", ""), \
+                    patch.object(config, "VOICE_RATE", "-5%"), \
+                    patch.object(voice_calibration, "audition_wpm", return_value=None):
                 self.assertEqual(voice_calibration.planning_wpm(), config.NARRATION_WPM)
                 entry = voice_calibration.record(1558, 616.52)
                 self.assertEqual(entry["wpm"], 151.6)

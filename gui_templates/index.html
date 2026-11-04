@@ -727,6 +727,12 @@ a:hover{color:var(--text)}
           <div class="settings-body" id="voices-panel">
             <div id="voices-channel" class="voices-channel"></div>
             <div class="help-text">Ouça cada voz e escolha a voz do canal. Trocar a voz marca a narração dos projetos como desatualizada.</div>
+            <div id="voices-speed" class="flex-row" style="display:none;gap:8px;align-items:center;margin-top:6px">
+              <div class="field-label" style="margin:0">Velocidade da voz (Kokoro)</div>
+              <input type="number" id="voices-speed-value" min="0.7" max="1.2" step="0.01" style="width:80px">
+              <button class="btn btn-ghost" style="font-size:11px" onclick="saveVoiceSpeed()">Salvar</button>
+              <button class="btn btn-ghost" style="font-size:11px" onclick="previewVoiceSpeeds()">Prévia em 0,85 / 0,88 / 0,92</button>
+            </div>
             <div id="voices-list" class="voices-list"></div>
             <details class="voices-generate">
               <summary class="field-label" style="cursor:pointer">Gerar prévias</summary>
@@ -1289,6 +1295,10 @@ function loadVoices() {
   fetch('/api/voices').then(r => r.json()).then(d => {
     const channel = d.channel;
     const current = (d.voices || []).find(v => v.current);
+    const speeds = document.getElementById('voices-speed');
+    speeds.style.display = channel.backend === 'local' ? '' : 'none';
+    const speedValue = document.getElementById('voices-speed-value');
+    if (document.activeElement !== speedValue && channel.speed) speedValue.value = channel.speed;
     document.getElementById('voices-channel').innerHTML =
       `Voz do canal: <b>${_esc(current ? current.label : channel.voice)}</b> <span class="help-text" style="margin:0">${_esc(BACKEND_PT[channel.backend] || channel.backend)} · ${_esc(channel.voice)}</span>`
       + (d.narration_stale ? ' <span class="sbadge stale">narração deste projeto desatualizada (voz mudou)</span>' : '');
@@ -1349,6 +1359,26 @@ function loadVoices() {
     if (wizard) wizard.innerHTML = `Voz do canal: <b>${_esc(current ? current.label : channel.voice)}</b> (${_esc(BACKEND_PT[channel.backend] || channel.backend)}) — trocar em <a href="#" onclick="openVoices();return false">Configurações → Vozes</a>`;
     document.getElementById('voice-ref-list').textContent = (d.references || []).map(item =>
       `${item.name}: ${item.usable ? 'ok' : item.error}`).join(' · ');
+  });
+}
+
+function saveVoiceSpeed() {
+  fetch('/api/voices').then(r => r.json()).then(d => {
+    const channel = d.channel;
+    return fetch('/api/voices/channel', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({backend: channel.backend, voice: channel.voice, speed: Number(document.getElementById('voices-speed-value').value)})});
+  }).then(r => r.json()).then(x => { if (!x.ok) alert(x.error); loadVoices(); refreshProject(); });
+}
+
+function previewVoiceSpeeds() {
+  fetch('/api/voices').then(r => r.json()).then(d => {
+    const voices = (d.speed_choices || []).map(speed => `${d.channel.backend}:${d.channel.voice}@${speed}`);
+    return fetch('/api/voices/previews', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({voices})}).then(r => r.json()).then(x => {
+        if (!x.ok) { alert(x.error); return; }
+        showVoiceJob({running: true, done: 0, total: x.total});
+        loadVoices();
+      });
   });
 }
 
@@ -3650,6 +3680,8 @@ function refreshProject() {
         buttons.push(`<button class="btn btn-primary" onclick="runStage('${s.stage}','${done ? 'rerun' : 'run'}')">${done ? 'Refazer' : 'Rodar'}</button>`);
         buttons.push(`<button class="btn btn-ghost" onclick="runStage('${s.stage}','from_here')" title="Este estágio e todos os seguintes">Rodar a partir daqui</button>`);
       }
+      if (s.stage === 'video' && d.project)
+        buttons.push(`<button class="btn btn-ghost" onclick="checkVideoStage()" title="Imagens, tamanho, margens e tempos, sem renderizar">Verificar</button>`);
       if (s.stage === 'references')
         buttons.push(`<button class="btn btn-ghost" onclick="runStage('references','run')">Gerar candidatos</button>`);
       if (APPROVALS[s.stage])
@@ -3669,6 +3701,13 @@ function refreshProject() {
         <div class="flex-row">${buttons.join('')}</div></div>`;
     }).join('');
     return d;
+  });
+}
+
+function checkVideoStage() {
+  fetch('/api/video/preflight').then(r => r.json()).then(d => {
+    alert((d.ok ? 'Pronto para renderizar.' : 'Falta resolver antes de renderizar.') + '\n\n' +
+      d.checks.map(item => `${item.ok ? '✓' : '⚠'} ${item.name}: ${item.detail}`).join('\n'));
   });
 }
 

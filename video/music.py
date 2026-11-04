@@ -171,6 +171,9 @@ def choose_track(tracks: list[dict], episode: dict | None = None) -> dict | None
 #  FILTER GRAPH AND LOUDNESS
 # ══════════════════════════════════════════════════════════════
 
+PAUSE_KEY_LEVEL = 0.085    # amplitude of the key tone: -24.6 dB RMS, ~5 dB of reduction at threshold 0.03, ratio 8
+
+
 def music_filter(duration: float, track_duration: float, volume: float) -> tuple[str, int]:
     """ffmpeg filter_complex: looped/crossfaded bed, fades, ducking, mix.
 
@@ -201,9 +204,13 @@ def music_filter(duration: float, track_duration: float, volume: float) -> tuple
     )
     ratio = float(getattr(config, "MUSIC_DUCKING_RATIO", 8))
     threshold = float(getattr(config, "MUSIC_DUCKING_THRESHOLD", 0.03))
-    parts.append("[0:a]asplit=2[narr][key]")
+    parts.append("[0:a]asplit=2[narr][speech]")
+    # Phase 3.9.4-G: in a pause the music comes up about 4 dB and no further, like a breath, not a dropout: a
+    # low steady tone in the key alone keeps the compressor partly closed. Speech is far above it.
+    parts.append(f"sine=frequency=110:sample_rate=48000:duration={duration:.3f},volume={PAUSE_KEY_LEVEL}[tone]")
+    parts.append("[speech][tone]amix=inputs=2:duration=first:normalize=0[key]")
     parts.append(f"[bed][key]sidechaincompress=threshold={threshold}:ratio={ratio}:"
-                 f"attack=20:release=400[ducked]")
+                 f"attack=20:release=900[ducked]")
     parts.append("[narr][ducked]amix=inputs=2:duration=first:normalize=0[mix]")
     return ";".join(parts), loops
 

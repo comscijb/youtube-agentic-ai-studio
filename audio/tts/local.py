@@ -167,6 +167,12 @@ def speed(rate: str) -> float:
         return 1.0
 
 
+def channel_speed() -> float:
+    """Kokoro's native ``speed`` for the channel voice (Phase 3.9.4-G): explicit, instead of VOICE_RATE, and
+    never a post-process atempo."""
+    return round(float(getattr(config, "TTS_LOCAL_SPEED", 1.0)), 3)
+
+
 class LocalBackend:
     name = "local"
     audio_ext = "wav"
@@ -188,7 +194,7 @@ class LocalBackend:
 
     def cache_tag(self) -> str:
         reference = getattr(config, "TTS_REFERENCE_CLIP", "") if engine() == "chatterbox" else ""
-        return f"local {engine()} ref={Path(reference).name if reference else ''}"
+        return f"local {engine()} ref={Path(reference).name if reference else ''} speed={channel_speed()}"
 
     def synthesize(self, text: str, out_path: str, *, voice: str, rate: str, pitch: str,
                    style: str | None = None, label: str = "") -> dict:
@@ -196,11 +202,11 @@ class LocalBackend:
         target = str(out_path)
         out_path = target if target.lower().endswith(".wav") else target + ".wav"
         if engine() == "kokoro" and not _kokoro_in_process():
-            _kokoro_worker().synthesize(text, voice, speed(rate), out_path)
+            _kokoro_worker().synthesize(text, voice, channel_speed(), out_path)
         elif engine() == "kokoro":
             pipeline = _kokoro(voice)
             import numpy as np
-            pieces = [audio for _, _, audio in pipeline(text, voice=voice, speed=speed(rate))]
+            pieces = [audio for _, _, audio in pipeline(text, voice=voice, speed=channel_speed())]
             write_wav(out_path, np.concatenate([np.asarray(piece) for piece in pieces]) if pieces else [], 24000)
         else:
             from audio.tts import voices

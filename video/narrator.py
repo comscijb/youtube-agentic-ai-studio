@@ -21,14 +21,16 @@ import shutil
 import tempfile
 
 import config
-from moviepy.editor import AudioFileClip, concatenate_audioclips
+from moviepy.editor import AudioFileClip
 from agents.narrative import assert_no_mojibake
 from agents.voice_calibration import record as record_calibration
-from audio import heard_thoughts, tts
+from audio import assembly, heard_thoughts, tts
+from audio.qa import joins
 from audio.tts import delivery, pronunciations
 from audio.tts.edge import edge_tts_version, supports_word_boundary  # noqa: F401  (render_preflight, tests)
+from video import retime
 from video.captions import align_words, build_cues, mark_thoughts, proportional_words
-from video.timeline import write_shifted_srt, write_timeline
+from video.timeline import write_timeline
 
 # Voices known to emit WordBoundary events (needed for word-synced captions).
 # scripts/render_preflight.py reads this literal without importing the module.
@@ -104,15 +106,13 @@ def scene_cues(text: str, events: list[dict], duration_s: float, thoughts: bool 
 # ══════════════════════════════════════════════════════════════
 
 def _concat(parts: list[str], out_path: str) -> None:
-    """Join per-line audio pieces into one scene file (no inserted silence)."""
-    clips = [AudioFileClip(part) for part in parts]
-    try:
-        joined = concatenate_audioclips(clips)
-        joined.write_audiofile(out_path, codec="libmp3lame", verbose=False, logger=None)
-        joined.close()
-    finally:
-        for clip in clips:
-            clip.close()
+    """Join per-line audio pieces in PCM into one scene file, faded at each join, no inserted silence
+    (WAV inside, whatever the name says: ffmpeg reads it by its content)."""
+    samples = assembly.join([assembly.decode(part) for part in parts])
+    from video.tape import ffmpeg_exe
+    import subprocess
+    subprocess.run([ffmpeg_exe(), "-y", "-loglevel", "error", "-f", "f32le", "-ar", str(assembly.RATE), "-ac", "1", "-i", "-",
+                    "-c:a", "pcm_s16le", "-f", "wav", out_path], input=samples.tobytes(), check=True, capture_output=True)
 
 
 def synthesise_scene(text: str, audio_path: str, label: str = "", section: dict | None = None) -> list[dict]:
@@ -131,9 +131,7 @@ def synthesise_scene(text: str, audio_path: str, label: str = "", section: dict 
             part = os.path.join(temp, f"line_{number:03d}.mp3")
             result = backend.synthesize(pronunciations.apply(line, backend.name, entries), part, style=style,
                                         **common)
-            clip = AudioFileClip(part)
-            duration = float(clip.duration)
-            clip.close()
+            duration = len(assembly.decode(part)) / assembly.RATE
             events += [{**item, "start_ms": item["start_ms"] + offset, "end_ms": item["end_ms"] + offset}
                        for item in result["words"]]
             parts.append(part)
@@ -154,7 +152,7 @@ def cached_scene(text: str, cache_dir: str, scene_audio: str, label: str,
                  section: dict | None = None) -> tuple[list, bool]:
     """Copy a cached synthesis into ``scene_audio`` or synthesise and cache it."""
     key = cache_key(text)
-    cached_audio = os.path.join(cache_dir, f"{key}.mp3")
+    cached_audio = os.path.join(cache_dir, f"{key}{os.path.splitext(scene_audio)[1] or '.mp3'}")
     cached_events = os.path.join(cache_dir, f"{key}.json")
     if os.path.isfile(cached_audio) and os.path.isfile(cached_events):
         try:
@@ -179,9 +177,9 @@ def cached_scene(text: str, cache_dir: str, scene_audio: str, label: str,
 
 def generate_narration(script: dict, output_dir: str) -> str:
     """
-    Synthesises each scene independently (cached), then concatenates without
-    inserting silence. Exact scene durations drive both the SRT offsets and
-    video timeline. Returns path to the saved audio file.
+    Synthesises each scene independently (cached), then assembles them in PCM (``audio.assembly``): trimmed
+    pieces, equal-power fades, the configured pauses, one encode at the end. Exact scene durations drive
+    both the SRT offsets and video timeline. Returns path to the saved audio file.
     """
     assert_no_mojibake(script, "speech synthesis")
     os.makedirs(output_dir, exist_ok=True)
@@ -192,49 +190,49 @@ def generate_narration(script: dict, output_dir: str) -> str:
     audio_path = os.path.join(output_dir, "narration.mp3")
     srt_path   = os.path.join(output_dir, "narration.srt")
     cache_dir  = os.path.join(output_dir, ".tts_cache")
-    clips = []
-    durations = []
-    scene_srts = []
-    timed_words = []                      # narration_words.json (Phase 3.7: Shorts cut on sentences)
-    cursor = 0.0
+    scenes = []
     scenes_without_words = []
     thoughts = heard_thoughts.enabled(output_dir, script)
+    words_path = os.path.join(output_dir, "narration_words.json")
+    if os.path.isfile(words_path):                  # the Shorts re-snap needs the old timings
+        shutil.copyfile(words_path, os.path.join(output_dir, retime.PREVIOUS_WORDS))
     with tempfile.TemporaryDirectory(prefix="private_gravity_tts_") as temp_dir:
         try:
             for index, section in enumerate(sections, 1):
                 text = section["narration"].strip()
-                scene_audio = os.path.join(temp_dir, f"scene_{index:03d}.mp3")
-                scene_srt = os.path.join(temp_dir, f"scene_{index:03d}.srt")
+                extension = getattr(tts.get(), "audio_ext", "mp3")
+                scene_audio = os.path.join(temp_dir, f"scene_{index:03d}.{extension}")
                 label = f"scene {index}/{len(sections)}"
                 events, hit = cached_scene(text, cache_dir, scene_audio, label, section)
                 print(f"   → {'Reused' if hit else 'Synthesised'} {label} "
                       f"({len(text.split())} words, {len(events)} word timings)")
-                clip = AudioFileClip(scene_audio)
-                duration = float(clip.duration)
-                clips.append(clip)
+                samples = assembly.decode(scene_audio)
+                duration = len(samples) / assembly.RATE
                 if not events:
                     scenes_without_words.append(index)
-                _write_srt_blocks(scene_cues(text, events, duration, thoughts), scene_srt)
-                timed_words += [{**word, "start": round(word["start"] + cursor, 3), "end": round(word["end"] + cursor, 3),
-                                 "scene_id": section.get("id")}
-                                for word in scene_words(text, events, duration, thoughts)]
-                durations.append(duration)
-                scene_srts.append((scene_srt, cursor))
-                cursor += duration
-            combined = concatenate_audioclips(clips)
-            combined.write_audiofile(audio_path, codec="libmp3lame", verbose=False, logger=None)
-            combined.close()
-            write_shifted_srt(srt_path, scene_srts)
+                scenes.append({"id": section.get("id"), "text": text, "samples": samples,
+                               "section_type": section.get("section_type", ""),
+                               "words": scene_words(text, events, duration, thoughts)})
         finally:
-            for clip in clips:
-                clip.close()
             backend = tts.get()
             if hasattr(backend, "close"):
                 backend.close()                     # a local model gives the VRAM back
+        built = assembly.assemble(scenes)
+        timed_words = built["words"]
+        durations = built["durations"]
+        pcm = os.path.join(temp_dir, "narration.wav")
+        assembly.encode(built["samples"], pcm)
+        if thoughts:                                # gain and filters only: every timing above stays valid
+            treated = heard_thoughts.apply(pcm, heard_thoughts.intervals(timed_words))
+            print(f"   → Heard thoughts: {treated} span(s) delivered quieter than speech")
+        assembly.encode(assembly.decode(pcm), audio_path)    # the one encode
 
-    if thoughts:                                    # gain and filters only: every timing above stays valid
-        treated = heard_thoughts.apply(audio_path, heard_thoughts.intervals(timed_words))
-        print(f"   → Heard thoughts: {treated} span(s) delivered quieter than speech")
+    cues, cursor = [], 0.0
+    for section, duration in zip(sections, durations):
+        scene_timed = [word for word in timed_words if word.get("scene_id") == section.get("id")]
+        cues += build_cues(scene_timed, end_limit=cursor + duration)
+        cursor += duration
+    _write_srt_blocks(cues, srt_path)
 
     if scenes_without_words:
         print(f"   ⚠ No WordBoundary events for scene(s) {scenes_without_words} "
@@ -242,14 +240,27 @@ def generate_narration(script: dict, output_dir: str) -> str:
               f"Communicate(boundary=\"WordBoundary\"), supported: {supports_word_boundary()}). "
               "Those captions use proportional timing.")
 
-    # The concatenated file can differ by a few codec milliseconds. Pin the
+    # The encoded file can differ by a few codec milliseconds. Pin the
     # last scene to the exact duration MoviePy will later attach to the video.
     rendered_duration = _get_audio_duration_ms(audio_path) / 1000
     durations[-1] += rendered_duration - sum(durations)
     write_timeline(os.path.join(output_dir, "scene_timeline.json"), sections, durations)
-    with open(os.path.join(output_dir, "narration_words.json"), "w", encoding="utf-8") as handle:
-        json.dump({"words": timed_words, "total_duration": round(rendered_duration, 3),
+    with open(words_path, "w", encoding="utf-8") as handle:
+        json.dump({"words": timed_words, "total_duration": round(rendered_duration, 3), "pauses": built["pauses"],
                    "voice": tts.identity()}, handle, ensure_ascii=False)
+
+    report = joins.check(audio_path, timed_words, sections)
+    with open(os.path.join(output_dir, "narration_joins.json"), "w", encoding="utf-8") as handle:
+        json.dump(report, handle, indent=1)
+    for warning in joins.describe(report):
+        print(f"   ⚠ Narração: {warning}")
+    if report["ok"]:
+        print("   → Junções da narração: sem ruídos, pausas como configurado")
+
+    try:
+        retime.retime_project(output_dir)
+    except retime.RetimeError as exc:
+        print(f"   ⚠ Os planos não puderam ser re-sincronizados: {exc}")
 
     words = sum(len(section["narration"].split()) for section in sections)
     entry = record_calibration(words, rendered_duration)

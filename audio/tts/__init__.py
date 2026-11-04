@@ -76,6 +76,8 @@ def identity(backend: str | None = None, voice: str | None = None) -> dict:
     backend = backend_name(backend)
     found = {"backend": backend, "voice": voice or channel_voice(backend),
              "rate": getattr(config, "VOICE_RATE", "+0%"), "pitch": getattr(config, "VOICE_PITCH", "+0Hz")}
+    if backend == "local":
+        found["speed"] = round(float(getattr(config, "TTS_LOCAL_SPEED", 1.0)), 3)
     reference = getattr(config, "TTS_REFERENCE_CLIP", "")
     if backend == "local" and reference and str(getattr(config, "TTS_LOCAL_ENGINE", "")).lower() == "chatterbox":
         found["reference"] = Path(reference).name        # a cloned voice: the disclosure rule checks it

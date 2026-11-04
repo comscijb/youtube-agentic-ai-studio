@@ -251,6 +251,26 @@ def narration_voice_changed(path) -> bool:
     return (made.get("backend"), made.get("voice")) != (now["backend"], now["voice"])
 
 
+def _narration_estimate(path, script: dict) -> str:
+    """How long the narration would run with the current voice, speed and pauses, before anything is made."""
+    from agents import voice_calibration
+    from audio import assembly, tts
+    words_file = load_json(Path(path) / "narration_words.json") or {}
+    sections = [section for section in script.get("sections", []) if str(section.get("narration", "")).strip()]
+    words = words_file.get("words") or []
+    if words and words[0].get("scene_id") is not None and sections:
+        current, previous = tts.identity(), words_file.get("voice") or {}
+        was = float(previous.get("speed") or 0)
+        if not was and previous.get("backend") == "local":      # made with VOICE_RATE before explicit speeds
+            from audio.tts.local import speed
+            was = speed(previous.get("rate", "+0%"))
+        same_voice = previous.get("voice") == current.get("voice") and current.get("speed")
+        ratio = was / float(current["speed"]) if same_voice and was else 1.0
+        return f"estimated {assembly.estimate(sections, words, ratio)['minutes']:.1f} min with the current voice and pauses"
+    count = sum(len(str(section.get("narration", "")).split()) for section in sections)
+    return f"estimated {count / voice_calibration.planning_wpm():.1f} min at {voice_calibration.planning_wpm():.0f} wpm" if count else ""
+
+
 def stage_status(path) -> list[dict]:
     path = Path(path)
     data = load(path)
@@ -291,17 +311,21 @@ def stage_status(path) -> list[dict]:
 
     narration_files = [files[name] for name in ("narration.mp3", "narration.srt", "scene_timeline.json")]
     present = [item for item in narration_files if item.is_file()]
+    estimate = _narration_estimate(path, script) if script else ""
     if not present:
-        result.append(_entry("narration", "missing"))
+        result.append(_entry("narration", "missing", estimate))
     elif len(present) < len(narration_files):
         result.append(_entry("narration", "partial", f"{len(present)}/{len(narration_files)} files"))
     elif _newer([files["script.json"]], files["scene_timeline.json"]):
         result.append(_entry("narration", "stale", "the script changed after the narration"))
     elif narration_voice_changed(path):
-        result.append(_entry("narration", "stale", "the channel voice changed after the narration"))
+        result.append(_entry("narration", "stale", "the channel voice changed after the narration; " + estimate))
     else:
         timeline = load_json(files["scene_timeline.json"]) or {}
-        result.append(_entry("narration", "done", f"{float(timeline.get('total_duration', 0)) / 60:.1f} min"))
+        joins = load_json(path / "narration_joins.json") or {}
+        notes = len(joins.get("bursts", [])) + len(joins.get("short_gaps", []))
+        result.append(_entry("narration", "done", f"{float(timeline.get('total_duration', 0)) / 60:.1f} min"
+                             + (f"; {notes} aviso(s) de junção" if notes else "")))
 
     if not files["narration_mixed.mp3"].is_file():
         result.append(_entry("music", "missing"))
@@ -372,7 +396,12 @@ def stage_status(path) -> list[dict]:
         wanted = [item for item in plan.get("segments", []) if item.get("include", True)]
         rendered = [item for item in wanted if (path / shorts_module.FOLDER / f"{item['id']}.mp4").is_file()]
         status = "done" if wanted and len(rendered) == len(wanted) else "partial"
-        result.append(_entry("shorts", status, f"{len(rendered)}/{len(wanted)} Shorts rendered"))
+        plan_file = path / shorts_module.FOLDER / shorts_module.PLAN_FILE
+        outdated = [item for item in rendered if _newer([plan_file], path / shorts_module.FOLDER / f"{item['id']}.mp4")]
+        if outdated and plan.get("retimed"):        # re-synced to a new narration: same sentences, new cuts
+            result.append(_entry("shorts", "stale", "the narration changed: render the Shorts again"))
+        else:
+            result.append(_entry("shorts", status, f"{len(rendered)}/{len(wanted)} Shorts rendered"))
 
     published = data.get("published_video_id")
     result.append(_entry("publish", "done" if published else "missing",

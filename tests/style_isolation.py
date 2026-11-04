@@ -32,6 +32,7 @@ def setUpModule():
         # the API (found in 3.9: the GUI pipeline tests reached the thumbnail concepts call).
         patch.object(config, "GEMINI_API_KEY", ""),
         patch.object(config, "EPISODE_PROFILES_FILE", os.path.join(_state["temp"].name, "profiles.json"), create=True),
+        patch.object(config, "MEASURE_NEW_VOICE", False, create=True),      # no TTS before a mocked script
         patch.object(config, "GUI_STATE_FILE", os.path.join(_state["temp"].name, "gui_state.json"), create=True),
         # No real depth model either: with transformers installed it would download and run on the fixtures.
         patch.object(motion, "estimate", side_effect=motion.DepthUnavailable("no depth model in tests")),
