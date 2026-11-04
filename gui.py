@@ -1917,8 +1917,10 @@ def imagegen_run_queue():
             job_factory=lambda shot: (lambda offset: shotgen.shot_job(shot, vb, output, offset)[0]),
             save=lambda: atomic_write_json(path, current), progress=_imagegen_progress,
             on_shot=lambda shot_id: _state.update(imagegen_current=shot_id))
-        Path(config.OUTPUT_DIR, "final_video.mp4").unlink(missing_ok=True)
-        _imagegen_progress(f"Fila: {summary['edits']} edição(ões), {summary['regenerations']} nova(s) seed(s)"
+        if summary["edits"] or summary["regenerations"]:      # a removal changes nothing until a result is chosen
+            Path(config.OUTPUT_DIR, "final_video.mp4").unlink(missing_ok=True)
+        _imagegen_progress(f"Fila: {summary.get('removals', 0)} remoção(ões) a escolher, "
+                           f"{summary['edits']} edição(ões), {summary['regenerations']} nova(s) seed(s)"
                            + (f"; falharam (original mantido): {', '.join(summary['failed'])}" if summary["failed"]
                               else ""))
     return _imagegen_run(work)

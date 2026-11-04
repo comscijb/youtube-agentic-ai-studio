@@ -152,7 +152,7 @@ class GuiImagegenTests(unittest.TestCase):
         self.assertTrue(qa["issues"][0]["hint"])
         self.assertEqual(self.status()["hinted"], 1)
         page = self.client.get("/").get_data(as_text=True)
-        for text in ("Remover figura", "Adicionar marcador", "Remover marcas", "Instrução livre", "Gerar de novo",
+        for text in ("Remover figura", "Adicionar marcador", "Remover marcas", "Editar região", "Gerar de novo",
                      "Ignorar", "Marcar OK", "Executar fila", "Antes / depois", "Restaurar v", "igViewerBox",
                      "mostrar incertos", "revisados", "Z ajustar/100 %", "H histórico", "Esc fechar"):
             self.assertIn(text, page)
