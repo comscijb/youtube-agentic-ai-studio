@@ -142,8 +142,9 @@ _PUNCTUATION = ("red", "Dusty Crimson")
 
 DARK_ILLUSTRATION = {
     "medium": "dark hand-drawn illustration: ink drawing with scratchboard and engraving-like "
-              "hatching and cross-hatching, charcoal and dry-brush gouache washes, visible paper "
-              "grain, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic",
+              "hatching and cross-hatching, charcoal and dry-brush gouache washes, fine grain and ink "
+              "texture across the whole picture, hand-drawn imperfection, painterly smoke and fog; "
+              "illustrated, not photographic",
     # Worded positively: with zeroed negative conditioning, naming "monsters" or
     # "creatures" here would invite them.
     "atmosphere": "cosmic dread carried only by space and light: oppressive scale with small figures "
@@ -163,6 +164,20 @@ FIGURE_FREE_ATMOSPHERE = ("cosmic dread carried only by space and light: oppress
                           "towering doorways and endless staircases, deep pooled shadows, a single dominant "
                           "light source, smoke and fog tendrils and formless shadows, subtly wrong geometry "
                           "(corridors too long, ceilings lost in darkness), stillness, isolation")
+# Phase 3.9.3-F: outdoors the same dread comes from the land. A wording variant of the same visual identity:
+# the style hash is computed from the interior text.
+EXTERIOR_ATMOSPHERE = ("cosmic dread carried only by space and light: oppressive scale of the land with small "
+                       "figures under a vast sky, great distance, cold weather moving across it, deep pooled "
+                       "shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest "
+                       "an unseen presence and stay formless, stillness, isolation")
+FIGURE_FREE_EXTERIOR = ("cosmic dread carried only by space and light: oppressive scale of the land under a vast "
+                        "sky, great distance, cold weather moving across it, deep pooled shadows, a single dominant "
+                        "light source, smoke and fog tendrils and formless shadows, stillness, isolation")
+# Phase 3.9.3-E: "visible paper grain" made the model draw a print on paper (probe: margins 4/24 before, 1/24 after).
+# A wording fix, not a new style: the style hash keeps the old text so every approval stays valid.
+_HASHED_TEXTURE = ("fine grain and ink texture across the whole picture", "visible paper grain")
+_INTERIOR_TECHNIQUE = (("figures small within towering architecture", "figures small within the vast land"),
+                       ("the edges of the room", "the edges of the picture"))
 _FIGURE_WORDS = re.compile(r"\b(?:figures?|people|persons?|faces?|presence|silhouettes?)\b", re.I)
 CINEMATIC_PHOTO = {
     "medium": "cinematic still, low-key lighting, muted palette, 35 mm film grain, shallow depth of "
@@ -220,7 +235,7 @@ def negative_terms(style: str | None = None) -> tuple:
 
 
 def style_suffix(style: str | None = None, variant: str | None = None, *,
-                 crimson_examples: str = CRIMSON_EXAMPLES, figures: bool = True) -> str:
+                 crimson_examples: str = CRIMSON_EXAMPLES, figures: bool = True, exterior: bool = False) -> str:
     """Appended to every image prompt.
 
     The FLUX graphs zero out the negative conditioning (cfg 1), so naming the
@@ -233,12 +248,26 @@ def style_suffix(style: str | None = None, variant: str | None = None, *,
         return f"{CINEMATIC_PHOTO['medium']}, no lettering, no watermark"
     variant = variant or style_variant()
     spec = DARK_ILLUSTRATION
+    technique = STYLE_VARIANTS[variant]
+    if exterior:
+        for indoors, outdoors in _INTERIOR_TECHNIQUE:
+            technique = technique.replace(indoors, outdoors)
     if not figures:
-        technique = ", ".join(part for part in STYLE_VARIANTS[variant].split(", ") if not _FIGURE_WORDS.search(part))
-        return (f"{FULL_BLEED}. {spec['medium']}; {technique}. {FIGURE_FREE_ATMOSPHERE}. "
+        technique = ", ".join(part for part in technique.split(", ") if not _FIGURE_WORDS.search(part))
+        atmosphere = FIGURE_FREE_EXTERIOR if exterior else FIGURE_FREE_ATMOSPHERE
+        return (f"{FULL_BLEED}. {spec['medium']}; {technique}. {atmosphere}. "
                 f"{palette_text(crimson_examples)}. Clean image without lettering or watermark.")
-    return (f"{FULL_BLEED}. {spec['medium']}; {STYLE_VARIANTS[variant]}. {spec['atmosphere']}. "
+    atmosphere = EXTERIOR_ATMOSPHERE if exterior else spec["atmosphere"]
+    return (f"{FULL_BLEED}. {spec['medium']}; {technique}. {atmosphere}. "
             f"{spec['people']}. {palette_text(crimson_examples)}. Clean image without lettering or watermark.")
+
+
+def lead_with_full_bleed(prompt: str) -> str:
+    """The full-bleed clause first in the prompt: at the end it did not stop the margins."""
+    if FULL_BLEED not in prompt or prompt.startswith(FULL_BLEED):
+        return prompt
+    body = " ".join(prompt.replace(f"{FULL_BLEED}. ", "", 1).split())
+    return f"{FULL_BLEED}. {body}"
 
 
 def sheet_style_suffix(style: str | None = None, variant: str | None = None) -> str:
@@ -350,5 +379,5 @@ def style_hash(style: str | None = None, variant: str | None = None) -> str:
     import hashlib
     style = style or visual_style()
     payload = f"{STYLE_VERSION}|{style}|{variant or style_variant() if style == 'dark_illustration' else ''}|" \
-              f"{style_suffix(style, variant, crimson_examples=_HASHED_CRIMSON_EXAMPLES)}"
+              f"{style_suffix(style, variant, crimson_examples=_HASHED_CRIMSON_EXAMPLES).replace(*_HASHED_TEXTURE)}"
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]

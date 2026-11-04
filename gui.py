@@ -1531,6 +1531,7 @@ def imagegen_status():
                                                    "characters", "face_visibility", "reuse_of",
                                                    "action", "prompt", "image_path", "provider",
                                                    "flags", "warnings", "qa", "edit_queue",
+                                                   "image_flags", "copy_check",
                                                    "narration_excerpt", "location", "generated_at")}
                   for shot in shots],
     })

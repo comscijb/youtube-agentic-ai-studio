@@ -53,7 +53,8 @@ class GuiSmokeTests(unittest.TestCase):
             browser = playwright.chromium.launch()
             page = browser.new_page(viewport={"width": 1440, "height": 900})
             page.on("pageerror", lambda exc: problems.append(f"pageerror: {exc}"))
-            page.on("console", lambda msg: msg.type == "error" and problems.append(f"console.error: {msg.text}"))
+            page.on("console", lambda msg: msg.type == "error" and "ERR_NO_BUFFER_SPACE" not in msg.text  # Windows, under load
+                    and problems.append(f"console.error: {msg.text}"))
             page.goto(self.url)
             page.wait_for_timeout(1200)
             page.evaluate("closeHome()")

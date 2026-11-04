@@ -60,7 +60,7 @@ class FigureFreeStyleTests(unittest.TestCase):
                 prompt = gen.location_prompt(VB, lid)
                 self.assertEqual(FIGURE_WORDS.findall(prompt), [])
                 self.assertIn("a deserted, unoccupied", prompt)
-                self.assertIn("only architecture, furniture and objects; perfectly still", prompt)
+                self.assertIn("perfectly still", prompt)
         self.assertEqual(FIGURE_WORDS.findall(style_refs.board_prompt(1)), [])
 
     def test_only_shots_with_people_get_figures(self):

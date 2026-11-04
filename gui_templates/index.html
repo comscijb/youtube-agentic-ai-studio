@@ -1789,6 +1789,12 @@ function igRenderGrid() {
       meta.appendChild(badge);
     }
     card.appendChild(meta);
+    (shot.image_flags || []).forEach(label => {
+      const mark = document.createElement('div');
+      mark.style.cssText = 'font-size:10px;color:var(--red)';
+      mark.textContent = `⚠ ${label}`;
+      card.appendChild(mark);
+    });
     const first = (shot.flags || []).length ? `⛔ ${shot.flags[0]}` :
       (igCollapse(igWarnings(shot)).map(igIssueText)[0] || '');
     if (first) {
@@ -2225,6 +2231,13 @@ function igSideDetails(side, shot) {
       (qa.checked_at ? ` · ${qa.checked_at.replace('T', ' ').slice(0, 16)}` : '');
     block.appendChild(line);
   }
+  if (shot.copy_check) {
+    const line = document.createElement('div');
+    line.style.color = shot.copy_check.flagged ? 'var(--red)' : '#999';
+    line.textContent = `Semelhança com a referência de estilo: ${shot.copy_check.matches} pontos (${shot.copy_check.of || '—'})` +
+      (shot.copy_check.flagged ? ` · ${shot.copy_check.label || 'cópia'}` : '');
+    block.appendChild(line);
+  }
   const details = document.createElement('details');
   details.innerHTML = '<summary style="cursor:pointer;color:#aaa">Prompt composto</summary>';
   const pre = document.createElement('div');
@@ -2503,6 +2516,12 @@ function loadImagegen() {
             warn.textContent = `⚠ ${c.people} pessoa(s) detectada(s)`;
             cell.appendChild(warn);
           }
+          (c.image_flags || []).forEach(label => {
+            const warn = document.createElement('div');
+            warn.style.cssText = 'font-size:10px;color:var(--red)';
+            warn.textContent = `⚠ ${label}`;
+            cell.appendChild(warn);
+          });
           const btn = document.createElement('button');
           btn.className = 'btn btn-ghost';
           btn.style.cssText = 'font-size:10px;padding:2px 6px;width:100%;margin-top:2px';

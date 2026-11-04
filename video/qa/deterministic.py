@@ -211,11 +211,46 @@ def layer1(detection: dict, expected: dict, image: Image.Image | None = None) ->
                                       "(the detector may miss hands-only or very stylized figures)",
                                  source="deterministic"))
     if image is not None:
+        issues += red_patch_issues(image, persons)
         issues += blank_issues(image)
         report = image_checks.inspect(image)
         if report["bordered"] or report["panels"]:
             issues.append(base.issue("border", note="paper margins or comic panels", source="deterministic"))
         issues += ocr_issues(image)
+    return issues
+
+
+# Calibrated on episodes 2-3: Thomas's shoulder patches (s03_01, s02_06, s01_09) are 0.7-1 % of his box; a wine
+# glass taken for a small "person" is not a figure. Dusty Crimson is muted, hence the low saturation floor.
+RED_PATCH_SHARE = 0.006    # of the person's box
+RED_PATCH_MIN_BOX = 0.05   # of the frame: only real figures
+
+
+def red_patch_issues(image: Image.Image, persons: list[dict]) -> list[dict]:
+    """Advisory, never auto-fixed (Phase 3.9.3-G): a crimson patch on a person may read as blood, against the
+    art direction. A hint for the reviewer."""
+    import cv2
+    rgb = np.asarray(image.convert("RGB"))
+    height, width = rgb.shape[:2]
+    hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
+    crimson = ((hsv[..., 0] <= 6) | (hsv[..., 0] >= 172)) & (hsv[..., 1] >= 70) & (hsv[..., 2] >= 45)
+    issues = []
+    for person in persons:
+        x0, y0, x1, y1 = person["box"]
+        if base.area(person["box"]) < RED_PATCH_MIN_BOX:
+            continue
+        left, top, right, bottom = int(x0 * width), int(y0 * height), int(x1 * width), int(y1 * height)
+        region = crimson[top:bottom, left:right].astype(np.uint8)
+        if not region.size:
+            continue
+        count, _, stats, _ = cv2.connectedComponentsWithStats(region, connectivity=8)
+        largest = int(stats[1:, cv2.CC_STAT_AREA].max()) if count > 1 else 0
+        if largest / region.size > RED_PATCH_SHARE:
+            found = base.issue("other", severity="advisory", box=person["box"],
+                               note="mancha vermelha na roupa (parece sangue?)", source="deterministic")
+            found["hint"] = True
+            found["red_patch"] = round(largest / region.size, 4)
+            issues.append(found)
     return issues
 
 

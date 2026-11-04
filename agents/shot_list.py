@@ -829,11 +829,14 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
                              f"{ORDINALS[len(references) - 1]} image"
     location = vbible.location(vb, shot.get("location")) or {}
     location_text = location.get("descriptor", "")
+    exterior = bool(location) and not vbible.location_interior(location)    # Phase 3.9.3-F: no rooms on a moor
+    if exterior and shot.get("shot_type") == "wide":
+        framing = "wide shot, the figures small within the vast land"
     location_ref = vbible.approved_reference(vb, "location", location.get("location_id", ""), output_dir)
     if location_ref and len(references) < 4 and shot.get("shot_type") not in {"insert", "hands"}:
         references.append(location_ref)
         slots.append({"slot": len(references) - 1, "kind": "location", "id": location.get("location_id")})
-        location_text = f"in the room from the {ORDINALS[len(references) - 1]} image"
+        location_text = f"in the {'room' if not exterior else 'place'} from the {ORDINALS[len(references) - 1]} image"
     location_text = _setting_text(location_text, shot.get("setting_condition", ""))
     others = shot.get("others_present")
     if others is None:      # shot lists before version 2 have no others_present
@@ -841,7 +844,7 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
     # Small figures only in shots with people; objects, inserts and empty rooms get the figure-free
     # suffix and only anchors with nobody in them.
     figures = bool(characters or others) and shot.get("shot_type") != "insert"
-    style = identity.style_suffix(figures=figures)
+    style = identity.style_suffix(figures=figures, exterior=exterior)
     anchors = style_refs.approved_paths() if figures else style_refs.empty_paths()
     style_text = ""
     # Hotfix (3.9.3): never a style board as the only reference (it gets copied); it only joins

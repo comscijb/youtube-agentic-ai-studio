@@ -266,7 +266,7 @@ class GenerationInStyleTests(StyleTestCase):
         atomic_write_json(self.output / vbible.FILE_NAME, vb)
         quiet(gen.generate_thumbnail_image, self.output, generator(self.output, fake))
         prompt = fake.prompts[-1]["4"]["inputs"]["text"]
-        self.assertTrue(prompt.startswith("Create an illustration of the man from the first image"))
+        self.assertIn(". Create an illustration of the man from the first image", prompt)     # after the full-bleed clause
         graph = fake.prompts[-1]
         loads = [node["inputs"]["image"] for key, node in sorted(graph.items())
                  if node["class_type"] == "LoadImage"]
