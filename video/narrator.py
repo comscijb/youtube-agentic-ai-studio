@@ -8,7 +8,8 @@ Narrator — the channel voice through a pluggable TTS backend (audio/tts, Phase
 - Backends that take delivery hints get the scene split into narration and quoted dialogue (quieter
   narration where the scene's emotional tone says so); the others read the scene in one piece.
 - Each scene is synthesised separately and cached by hash(text, backend, voice, rate, pitch, engine
-  version, pronunciations): re-running narration only re-synthesises scenes whose text changed.
+  version, pronunciations): re-running narration only re-synthesises scenes whose text changed. Kokoro goes one
+  sentence at a time instead (audio.tts.sentences), checked for stutter and cached per sentence.
 - Measured delivery (words per minute) is recorded per backend + voice for planning, and the voice is
   stored with the narration (a channel-voice change marks it stale).
 Uses MoviePy's AudioFileClip for duration — guaranteed to match the video render.
@@ -140,6 +141,35 @@ def synthesise_scene(text: str, audio_path: str, label: str = "", section: dict 
     return events
 
 
+def write_stutter_report(output_dir: str, stats: dict, pieces: list[dict]) -> dict:
+    """narration_stutter.json: what the stage card shows. Hits move to episode time; a clip stays playable."""
+    report = {"sentences": 0, "reused": 0, "resynthesized": 0, "flagged": [], "scene_seconds": {}}
+    placed = {(piece["scene_id"], piece["index"]): piece for piece in pieces}
+    for scene_id, scene in stats.items():
+        report["sentences"] += scene["sentences"]
+        report["reused"] += scene["reused"]
+        report["resynthesized"] += scene["resynthesized"]
+        report["scene_seconds"][str(scene_id)] = scene["seconds"]
+        for item in scene["flagged"]:
+            piece = placed.get((scene_id, item["index"]), {"start": 0.0, "lead": 0.0})
+            clip = os.path.relpath(item["clip"], output_dir).replace(os.sep, "/") if item.get("clip") else ""
+            hits = [{"kind": hit["kind"], "word": hit.get("word", ""), "at": round(piece["start"] + float(hit.get("at", 0.0)) - piece["lead"], 2)}
+                    for hit in item["hits"]]
+            report["flagged"].append({"at": hits[0]["at"] if hits else piece["start"], "scene_id": scene_id, "text": item["text"], "hits": hits,
+                                      "tries": item.get("tries", 0), "clip": clip})
+    path = os.path.join(output_dir, "narration_stutter.json")
+    if stats:
+        with open(path, "w", encoding="utf-8") as handle:
+            json.dump(report, handle, indent=1, ensure_ascii=False)
+        for item in report["flagged"]:
+            kinds = ", ".join(f"{hit['kind']} '{hit['word']}'" for hit in item["hits"])
+            print(f"   ! Narracao: possivel gagueira em {item['at']:.2f} s ({kinds}): {item['text'][:70]}")
+        print(f"   -> Gagueira: {report['sentences']} frases, {report['resynthesized']} re-sintetizadas, {len(report['flagged'])} ainda marcadas")
+    elif os.path.isfile(path):                      # another backend made this narration
+        os.remove(path)
+    return report
+
+
 def cache_key(text: str) -> str:
     backend = tts.get()
     payload = json.dumps([text, backend.name, tts.channel_voice(backend.name), config.VOICE_RATE,
@@ -193,6 +223,7 @@ def generate_narration(script: dict, output_dir: str) -> str:
     scenes = []
     scenes_without_words = []
     thoughts = heard_thoughts.enabled(output_dir, script)
+    sentence_stats = {}
     words_path = os.path.join(output_dir, "narration_words.json")
     if os.path.isfile(words_path):                  # the Shorts re-snap needs the old timings
         shutil.copyfile(words_path, os.path.join(output_dir, retime.PREVIOUS_WORDS))
@@ -203,6 +234,21 @@ def generate_narration(script: dict, output_dir: str) -> str:
                 extension = getattr(tts.get(), "audio_ext", "mp3")
                 scene_audio = os.path.join(temp_dir, f"scene_{index:03d}.{extension}")
                 label = f"scene {index}/{len(sections)}"
+                current = tts.get()
+                if getattr(current, "sentence_mode", False):
+                    entries = pronunciations.load()
+                    synthesis = current.sentence_synthesis(tts.channel_voice(current.name), os.path.join(cache_dir, "sentences"),
+                                                           lambda part: pronunciations.apply(part, current.name, entries))
+                    made = synthesis.scene(text, label)
+                    sentence_stats[section.get("id")] = made["stats"]
+                    duration = len(made["samples"]) / assembly.RATE
+                    stats = made["stats"]
+                    print(f"   -> {label}: {stats['sentences']} sentences ({stats['reused']} reused, {stats['resynthesized']} re-synthesized, "
+                          f"{len(stats['flagged'])} still flagged) in {stats['seconds']:.1f} s")
+                    scenes.append({"id": section.get("id"), "text": text, "samples": made["samples"], "cuts": made["cuts"],
+                                   "section_type": section.get("section_type", ""),
+                                   "words": scene_words(text, made["events"], duration, thoughts)})
+                    continue
                 events, hit = cached_scene(text, cache_dir, scene_audio, label, section)
                 print(f"   → {'Reused' if hit else 'Synthesised'} {label} "
                       f"({len(text.split())} words, {len(events)} word timings)")
@@ -249,7 +295,8 @@ def generate_narration(script: dict, output_dir: str) -> str:
         json.dump({"words": timed_words, "total_duration": round(rendered_duration, 3), "pauses": built["pauses"],
                    "voice": tts.identity()}, handle, ensure_ascii=False)
 
-    report = joins.check(audio_path, timed_words, sections)
+    write_stutter_report(output_dir, sentence_stats, built["pieces"])
+    report = joins.check(audio_path, timed_words, sections, built["pauses"])
     with open(os.path.join(output_dir, "narration_joins.json"), "w", encoding="utf-8") as handle:
         json.dump(report, handle, indent=1)
     for warning in joins.describe(report):

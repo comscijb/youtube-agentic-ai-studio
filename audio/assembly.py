@@ -22,7 +22,8 @@ TRIM_DB = -50.0
 KEEP_SECONDS = 0.04
 FADE_SECONDS = 0.008
 WINDOW_SECONDS = 0.01
-DEFAULT_PAUSES = {"sentence": 0.35, "paragraph": 0.7, "scene": 1.5, "major_scene": 2.0, "final": 2.5}
+DEFAULT_PAUSES = {"clause": 0.12, "sentence": 0.35, "paragraph": 0.7, "scene": 1.5, "major_scene": 2.0, "final": 2.5}
+CUT_SEARCH_SECONDS = 0.12
 MAJOR_SCENES = {"climax", "aftermath"}
 
 
@@ -105,8 +106,12 @@ def paragraph_ends(text: str, words: list[dict]) -> set[int]:
 
 
 def _cut_between(samples: np.ndarray, rate: int, end: float, start: float) -> int:
-    """The quietest sample position between the end of one word and the start of the next."""
+    """The quietest sample position between the end of one word and the start of the next. The recogniser often
+    reports two words as touching and can be a phoneme off, so a narrow gap is searched wider: a cut must never fall on
+    speech, because the pause goes right there (Phase 3.9.5)."""
     first, last = int(end * rate), max(int(start * rate), int(end * rate) + 1)
+    if start - end < 2 * CUT_SEARCH_SECONDS:
+        first, last = first - int(CUT_SEARCH_SECONDS * rate), last + int(CUT_SEARCH_SECONDS * rate)
     first, last = max(0, first), min(len(samples), last)
     if last - first <= 1:
         return first
@@ -119,8 +124,17 @@ def _cut_between(samples: np.ndarray, rate: int, end: float, start: float) -> in
 
 
 def _scene_pieces(scene: dict, rate: int) -> list[dict]:
-    """A scene cut at its sentence ends: [{"samples", "offset", "words", "after"}]; "after" names the pause."""
+    """A scene cut at its sentence ends: [{"samples", "offset", "words", "after"}]; "after" names the pause. A scene
+    made of sentence clips carries its "cuts" ([{"end" (seconds), "after"}]): nothing has to be guessed from word timings."""
     samples, words = scene["samples"], scene["words"]
+    if scene.get("cuts"):
+        pieces, begin = [], 0
+        for cut in scene["cuts"]:
+            stop = int(round(float(cut["end"]) * rate))
+            inside = [word for word in words if begin <= (float(word["start"]) + float(word["end"])) / 2 * rate < stop]
+            pieces.append({"samples": samples[begin:stop], "offset": begin, "words": inside, "after": cut["after"]})
+            begin = stop
+        return pieces
     breaks = paragraph_ends(scene.get("text", ""), words)
     pieces, begin_sample, begin_word = [], 0, 0
     for index, word in enumerate(words[:-1]):
@@ -141,9 +155,9 @@ def assemble(scenes: list[dict], rate: int = RATE, settings: dict | None = None)
 
     Returns {"samples", "words" (global times, "pause_after" on the last word before a pause), "durations"
     (a scene ends in the middle of the pause after it, so a transition is centred in the silence),
-    "pauses" ([{"at", "seconds", "kind"}])}."""
-    wanted = settings or pauses()
-    chunks, placed_words, pause_log, durations = [], [], [], []
+    "pauses" ([{"at", "seconds", "kind"}]), "pieces" ([{"scene_id", "index", "start", "lead"}])}."""
+    wanted = {**DEFAULT_PAUSES, **(settings or pauses())}
+    chunks, placed_words, pause_log, durations, placed_pieces = [], [], [], [], []
     cursor, scene_start = 0, 0.0
     for number, scene in enumerate(scenes):
         pieces = _scene_pieces(scene, rate)
@@ -154,6 +168,7 @@ def assemble(scenes: list[dict], rate: int = RATE, settings: dict | None = None)
             lead = (piece["offset"] + first) / rate
             length = len(body) / rate
             base = cursor / rate
+            placed_pieces.append({"scene_id": scene.get("id"), "index": position, "start": round(base, 3), "lead": round(lead - piece["offset"] / rate, 3)})
             for word in piece["words"]:
                 start = min(max(float(word["start"]) - lead, 0.0), length)
                 end = min(max(float(word["end"]) - lead, start), length)
@@ -181,7 +196,7 @@ def assemble(scenes: list[dict], rate: int = RATE, settings: dict | None = None)
             cursor += gap
     durations.append(cursor / rate - scene_start)
     samples = np.concatenate(chunks) if chunks else np.zeros(0, dtype=np.float32)
-    return {"samples": samples, "words": placed_words, "durations": durations, "pauses": pause_log}
+    return {"samples": samples, "words": placed_words, "durations": durations, "pauses": pause_log, "pieces": placed_pieces}
 
 
 def estimate(sections: list[dict], words: list[dict], speed_ratio: float = 1.0, settings: dict | None = None) -> dict:

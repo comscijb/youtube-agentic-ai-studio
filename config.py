@@ -159,6 +159,7 @@ TTS_LOCAL_ENGINE = os.getenv("TTS_LOCAL_ENGINE", "kokoro")      # kokoro (Apache
 TTS_LOCAL_DEVICE = os.getenv("TTS_LOCAL_DEVICE", "auto")        # auto | cpu | cuda
 TTS_LOCAL_PYTHON = os.getenv("TTS_LOCAL_PYTHON", "")              # Kokoro in its own venv (numpy 2); default .venv-tts
 TTS_KOKORO_MODEL = "models/tts/kokoro-v1.0.onnx"                 # kokoro-onnx weights (with voices-v1.0.bin)
+TTS_STUTTER_CHECK = os.getenv("TTS_STUTTER_CHECK", "1") != "0"     # ASR + acoustic check of every Kokoro sentence
 TTS_LOCAL_SPEED  = float(os.getenv("TTS_LOCAL_SPEED", "0.88"))    # Kokoro's own speed (never atempo); replaces VOICE_RATE for it
 # Seconds of silence in the narration: the only silence between pieces (Phase 3.9.4-G). major_scene: before a
 # climax or aftermath scene; final: the hold before the closing line.

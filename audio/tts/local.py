@@ -11,7 +11,8 @@
   ``assets/voice/`` (provenance note required) and an ``exaggeration`` control used for delivery
   hints; runs on the GPU in ~5-7 GB.
 
-Neither returns word boundaries, so the audio goes through forced alignment (``audio.tts.align``).
+Neither returns word boundaries, so the audio goes through forced alignment (``audio.tts.align``). Kokoro gets one
+sentence per call (``audio.tts.sentences``): whole scenes turn into hidden batch joins inside its output.
 On the GPU the model runs in this process, never inside ComfyUI: ComfyUI's models are freed first
 (``/free``) and the TTS model is unloaded by ``close()`` when the narration is done.
 """
@@ -125,6 +126,15 @@ class KokoroWorker:
         if not reply.get("ok"):
             raise TTSUnavailable(f"Kokoro failed: {reply.get('error')}")
 
+    def phonemes(self, text: str, voice: str) -> int:
+        """Length by the model's own tokenizer."""
+        self.process.stdin.write(json.dumps({"op": "phonemes", "text": text, "voice": voice}) + "\n")
+        self.process.stdin.flush()
+        reply = self._reply()
+        if not reply.get("ok"):
+            raise TTSUnavailable(f"Kokoro failed: {reply.get('error')}")
+        return int(reply["phonemes"])
+
     def close(self) -> None:
         try:
             self.process.stdin.close()
@@ -159,6 +169,28 @@ def _chatterbox():
     return _loaded["chatterbox"]
 
 
+def phoneme_count(text: str, voice: str) -> int:
+    """Phonemes of ``text``. In process there is no tokenizer to ask: KPipeline chunks by itself, characters are close."""
+    return _kokoro_worker().phonemes(text, voice) if not _kokoro_in_process() else len(text)
+
+
+def kokoro_clip(text: str, voice: str, speed_factor: float, out_path: str) -> None:
+    """One sentence to a WAV."""
+    if not _kokoro_in_process():
+        _kokoro_worker().synthesize(text, voice, speed_factor, out_path)
+        return
+    import numpy as np
+    pieces = [audio for _, _, audio in _kokoro(voice)(text, voice=voice, speed=speed_factor)]
+    write_wav(out_path, np.concatenate([np.asarray(piece) for piece in pieces]) if pieces else [], 24000)
+
+
+def kokoro_scene(voice: str, cache_dir=None, apply=None, progress=print):
+    """The per-sentence synthesis of one channel voice."""
+    from audio.tts.sentences import SceneSynthesis
+    return SceneSynthesis(voice=voice, speed=channel_speed(), synth=kokoro_clip, count=lambda text: phoneme_count(text, voice), cache_dir=cache_dir,
+                          model=kokoro_files()[0].name, apply=apply, check=bool(getattr(config, "TTS_STUTTER_CHECK", True)), progress=progress)
+
+
 def speed(rate: str) -> float:
     """Edge-style "+10%" / "-5%" → a speed factor."""
     try:
@@ -181,6 +213,13 @@ class LocalBackend:
     def supports_style(self) -> bool:
         return engine() == "chatterbox"
 
+    @property
+    def sentence_mode(self) -> bool:
+        return engine() == "kokoro"
+
+    def sentence_synthesis(self, voice: str, cache_dir=None, apply=None, progress=print):
+        return kokoro_scene(voice, cache_dir, apply, progress)
+
     def available(self) -> tuple[bool, str]:
         import importlib.util
         if engine() == "kokoro" and not _kokoro_in_process():
@@ -194,21 +233,17 @@ class LocalBackend:
 
     def cache_tag(self) -> str:
         reference = getattr(config, "TTS_REFERENCE_CLIP", "") if engine() == "chatterbox" else ""
-        return f"local {engine()} ref={Path(reference).name if reference else ''} speed={channel_speed()}"
+        return f"local {engine()} ref={Path(reference).name if reference else ''} speed={channel_speed()}" \
+            + (" sentences" if engine() == "kokoro" else "")
 
     def synthesize(self, text: str, out_path: str, *, voice: str, rate: str, pitch: str,
                    style: str | None = None, label: str = "") -> dict:
         from audio.tts import align
+        if engine() == "kokoro":
+            return self._by_sentence(text, str(out_path), voice, label)
         target = str(out_path)
         out_path = target if target.lower().endswith(".wav") else target + ".wav"
-        if engine() == "kokoro" and not _kokoro_in_process():
-            _kokoro_worker().synthesize(text, voice, channel_speed(), out_path)
-        elif engine() == "kokoro":
-            pipeline = _kokoro(voice)
-            import numpy as np
-            pieces = [audio for _, _, audio in pipeline(text, voice=voice, speed=channel_speed())]
-            write_wav(out_path, np.concatenate([np.asarray(piece) for piece in pieces]) if pieces else [], 24000)
-        else:
+        if True:
             from audio.tts import voices
             reference = getattr(config, "TTS_REFERENCE_CLIP", "")
             model = _chatterbox()
@@ -228,6 +263,21 @@ class LocalBackend:
                             "-q:a", "2", target], check=True)
             Path(out_path).unlink(missing_ok=True)
         return {"audio": target, "words": events, "aligned": True, "alignment": report}
+
+    def _by_sentence(self, text: str, target: str, voice: str, label: str) -> dict:
+        """Auditions and previews: the same per-sentence path as a narration, placed with the same pauses."""
+        from audio import assembly
+        from video.captions import align_words
+        scene = kokoro_scene(voice).scene(text, label)
+        words = align_words(text, scene["events"])
+        built = assembly.assemble([{"samples": scene["samples"], "words": words, "text": text, "cuts": scene["cuts"]}])
+        assembly.encode(built["samples"], target)
+        events = [{"text": word["text"], "start_ms": word["start"] * 1000, "end_ms": word["end"] * 1000} for word in built["words"]]
+        coverage = scene["stats"]["coverage"]
+        report = {"coverage": coverage, "monotonic": True, "drift_ms": None, "ok": coverage >= align.MIN_COVERAGE} if False else None
+        from audio.tts import align as aligner
+        report = {"coverage": coverage, "monotonic": True, "drift_ms": None, "ok": coverage >= aligner.MIN_COVERAGE}
+        return {"audio": target, "words": events, "aligned": True, "alignment": report, "stutter": scene["stats"]}
 
     def close(self) -> None:
         """Unload the model (and give the VRAM back to ComfyUI)."""

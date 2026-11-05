@@ -3,6 +3,8 @@
 * **Bursts:** a short non-silent island (30-150 ms) between two near-silent regions, the moviepy
   end-of-file glitch: digital silence, ~80 ms at a flat -30 dB, silence again.
 * **Short gaps:** less silence than the configured pause at a scene join (needs the word timings).
+* **Clipped edges:** speech still loud right at the edge of a pause: the cut fell on a word (Phase 3.9.5; heard as a
+  stutter). A natural sentence has decayed to about -57 dB there; the cuts measured on speech were at -20 to -38 dB.
 """
 from __future__ import annotations
 
@@ -19,6 +21,9 @@ SIDE_SILENCE = 0.02
 EDGE_JUMP_DB = 20.0
 GAP_TOLERANCE = 0.1
 WORD_MARGIN = 0.02
+EDGE_DB = -40.0
+EDGE_SKIP = 0.01
+EDGE_WINDOW = 0.02
 
 
 def _levels(samples: np.ndarray, rate: int = RATE) -> np.ndarray:
@@ -80,8 +85,25 @@ def short_gaps(words: list[dict], sections: list[dict], settings: dict | None = 
     return found
 
 
-def check(path, words: list[dict] | None = None, sections: list[dict] | None = None) -> dict:
-    """{"ok", "bursts", "short_gaps"} of a finished narration file."""
+def _level(samples: np.ndarray, rate: int, begin: float, end: float) -> float:
+    piece = samples[max(0, int(begin * rate)):max(0, int(end * rate))]
+    return 10 * float(np.log10(np.mean(np.square(piece)) + 1e-12)) if len(piece) else -120.0
+
+
+def clipped_edges(samples: np.ndarray, pauses: list[dict], rate: int = RATE) -> list[dict]:
+    """Pauses with speech loud right before them or right after them, read just past the fades."""
+    found = []
+    for pause in pauses:
+        at, seconds = float(pause["at"]), float(pause["seconds"])
+        before = _level(samples, rate, at - EDGE_SKIP - EDGE_WINDOW, at - EDGE_SKIP)
+        after = _level(samples, rate, at + seconds + EDGE_SKIP, at + seconds + EDGE_SKIP + EDGE_WINDOW)
+        if before > EDGE_DB or after > EDGE_DB:
+            found.append({"at": round(at, 2), "before_db": round(before, 1), "after_db": round(after, 1), "kind": pause.get("kind")})
+    return found
+
+
+def check(path, words: list[dict] | None = None, sections: list[dict] | None = None, pauses: list[dict] | None = None) -> dict:
+    """{"ok", "bursts", "short_gaps", "clipped_edges"} of a finished narration file."""
     samples = assembly.decode(path, RATE)
     found = bursts(samples)
     if words:                                       # a short word alone between two pauses is speech, not a glitch
@@ -89,7 +111,8 @@ def check(path, words: list[dict] | None = None, sections: list[dict] | None = N
             float(word["start"]) - WORD_MARGIN <= item["at"] + item["seconds"] and float(word["end"]) + WORD_MARGIN >= item["at"]
             for word in words)]
     gaps = short_gaps(words, sections) if words and sections else []
-    return {"ok": not found and not gaps, "bursts": found, "short_gaps": gaps}
+    edges = clipped_edges(samples, pauses) if pauses else []
+    return {"ok": not found and not gaps and not edges, "bursts": found, "short_gaps": gaps, "clipped_edges": edges}
 
 
 def describe(report: dict) -> list[str]:
@@ -98,4 +121,6 @@ def describe(report: dict) -> list[str]:
              for item in report.get("bursts", [])]
     lines += [f"junção curta em {item['at']:.2f} s: {item['gap']:.2f} s de pausa (configurado {item['wanted']:.1f} s)"
               for item in report.get("short_gaps", [])]
+    lines += [f"fala cortada na pausa de {item['at']:.2f} s ({item['before_db']:.0f} dB antes, {item['after_db']:.0f} dB depois)"
+              for item in report.get("clipped_edges", [])]
     return lines
