@@ -118,6 +118,17 @@ class AudioAndRenderTests(unittest.TestCase):
         self.assertAlmostEqual(report["output_integrated_lufs"], -14.0, delta=1.0)
         self.assertLessEqual(report["output_true_peak_dbtp"], -1.0)
 
+    def test_a_late_slice_is_not_faded_to_silence(self):
+        # Regression (2026-11-05): with output seeking the fade-out sat on the source timeline, so a slice
+        # starting after its own length was silent and loudnorm failed with measured_I=-inf.
+        with tempfile.TemporaryDirectory() as temp:
+            source = Path(temp, "mix.mp3")
+            self.tone(source, 30)
+            report = render.audio_slice(source, Path(temp, "late.mp3"), 20.0, 26.0)
+            seconds = self.duration(Path(temp, "late.mp3"))
+        self.assertAlmostEqual(seconds, 6.0, delta=0.08)
+        self.assertAlmostEqual(report["output_integrated_lufs"], -14.0, delta=1.0)
+
     def test_a_tiny_short_renders_at_1080x1920(self):
         with tempfile.TemporaryDirectory() as temp:
             folder = Path(temp)

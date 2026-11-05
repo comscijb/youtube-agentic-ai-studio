@@ -114,7 +114,9 @@ input[type=range]{width:100%;accent-color:var(--primary)}
 /* ── Review tab ── */
 .review-layout{display:grid;grid-template-columns:1fr 380px;height:100%;overflow:hidden}
 .review-left{display:flex;flex-direction:column;padding:16px;gap:12px;overflow-y:auto}
-.review-right{border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.review-right{border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;min-height:0}
+/* the whole right column scrolls: the approval gate (with its Shorts) can never push the upload out of reach */
+.review-right > *{flex-shrink:0}
 
 .video-wrap{position:relative;background:#000;border-radius:var(--r);overflow:hidden;aspect-ratio:16/9}
 .video-wrap video{width:100%;height:100%;display:block}
@@ -127,7 +129,7 @@ input[type=range]{width:100%;accent-color:var(--primary)}
 .thumb-wrap .no-thumb{display:flex;align-items:center;justify-content:center;
   height:100%;color:var(--muted);font-size:12px}
 
-.edit-panel{display:flex;flex-direction:column;overflow-y:auto;padding:16px;gap:14px}
+.edit-panel{display:flex;flex-direction:column;padding:16px;gap:14px}
 .tag-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .tag{background:rgba(99,102,241,.15);color:var(--accent);border:1px solid rgba(99,102,241,.3);
   border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer}
@@ -3474,7 +3476,7 @@ function loadReviewGate() {
       // Phase 3.7-B: each Short reviewed in the gate; include/exclude is in "Shorts do episódio".
       const card = document.createElement('div');
       card.style.cssText = 'display:flex;gap:8px;align-items:flex-start;border:1px solid var(--border);border-radius:6px;padding:6px;font-size:11px';
-      card.innerHTML = `<video src="/imagegen/file?path=${encodeURIComponent(short.video)}" controls style="height:180px"></video>
+      card.innerHTML = `<video src="/imagegen/file?path=${encodeURIComponent(short.video)}" controls preload="none" style="height:120px;flex-shrink:0;background:#000"></video>
         <div><b></b><div class="hook"></div><div class="desc" style="color:var(--muted)"></div>
         <button class="btn btn-ghost" style="font-size:10px;padding:1px 6px;margin-top:4px">Excluir deste upload</button></div>`;
       card.querySelector('b').textContent = `${short.id} · ${short.title}`;

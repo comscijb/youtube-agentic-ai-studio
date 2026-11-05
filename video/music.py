@@ -242,6 +242,8 @@ def measure_loudness(path: str) -> dict:
 def normalize_loudness(source: str, destination: str) -> dict:
     """Two-pass loudnorm to the configured target; returns before/after measurements."""
     first = _loudnorm_json(_run(["-i", source, "-af", _loudnorm_filter(), "-f", "null", "-"]).stderr)
+    if str(first.get("input_i", "")).strip() in ("-inf", "inf", "nan"):
+        raise RuntimeError(f"loudnorm: {Path(source).name} is silent (measured -inf LUFS); check the slice times")
     result = _run(["-y", "-i", source, "-af", _loudnorm_filter(first), "-ar", "44100",
                    "-c:a", "libmp3lame", "-b:a", "192k", destination])
     if result.returncode != 0:

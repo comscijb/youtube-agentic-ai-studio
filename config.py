@@ -149,7 +149,7 @@ NARRATIVE_SEMANTIC_REVISION_TYPES = (
 #    en-US-BrianNeural    — US, calm, documentary
 #    en-US-GuyNeural      — US, clear, neutral
 # ─────────────────────────────────────────
-VOICE_ID    = "en-US-AndrewNeural"
+VOICE_ID    = "en-GB-SoniaNeural"
 # Phase 3.9-A: the channel voice. TTS_BACKEND = edge | local | elevenlabs; TTS_VOICE is the voice of that
 # backend (empty = VOICE_ID for edge). Pick it in the GUI → Vozes after
 # python -m scripts.voice_audition --text-file briefs/audition.txt

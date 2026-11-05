@@ -205,8 +205,11 @@ def audio_slice(source, destination, start: float, end: float) -> dict:
     from video import music
     raw = Path(destination).with_suffix(".raw.wav")
     duration = end - start
-    result = subprocess.run([music.ffmpeg_exe(), "-y", "-loglevel", "error", "-i", str(source), "-ss", f"{start:.3f}",
-                             "-t", f"{duration:.3f}", "-af",
+    # -ss/-t BEFORE -i (input seeking): the slice starts at t=0 for the filters. With output seeking the
+    # afade timestamps stay on the source timeline, so a slice starting after `duration - 0.3` s was faded
+    # to silence (short_02/03: loudnorm measured -inf).
+    result = subprocess.run([music.ffmpeg_exe(), "-y", "-loglevel", "error", "-ss", f"{start:.3f}",
+                             "-t", f"{duration:.3f}", "-i", str(source), "-af",
                              f"afade=t=in:d=0.05,afade=t=out:st={max(0.0, duration - 0.3):.3f}:d=0.3",
                              "-ar", "44100", str(raw)], capture_output=True, text=True)
     if result.returncode != 0:
