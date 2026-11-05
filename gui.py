@@ -2482,6 +2482,19 @@ def voices_previews():
     return jsonify({"ok": True, "total": len(pairs)})
 
 
+@app.route("/api/narration/flagged/<int:index>")
+def narration_flagged(index):
+    """Play a sentence the stutter check still flags (Phase 3.9.5-B)."""
+    output = Path(config.OUTPUT_DIR).resolve()
+    flagged = (load_json(output / "narration_stutter.json") or {}).get("flagged") or []
+    if index >= len(flagged) or not flagged[index].get("clip"):
+        abort(404)
+    path = (output / flagged[index]["clip"]).resolve()
+    if output not in path.parents or path.suffix.lower() != ".wav" or not path.is_file():
+        abort(404)
+    return send_file(str(path), conditional=True)
+
+
 @app.route("/api/voices/sample/<name>")
 def voices_sample(name):
     folder = _audition_dir().resolve()

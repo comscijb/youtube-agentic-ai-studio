@@ -709,6 +709,20 @@ Every feature below can be switched off; the previous behaviour stays available.
     worker process. Set it up once with `python -m venv .venv-tts`, then
     `.venv-tts/Scripts/pip install kokoro-onnx`. Put `kokoro-v1.0.onnx` and `voices-v1.0.bin` (from
     the kokoro-onnx releases) in `models/tts/`. To use another interpreter, set `TTS_LOCAL_PYTHON`.
+  - Kokoro gets **one sentence per call**. `Kokoro.create` cuts anything over 510 phonemes into
+    batches with no context between them and joins them with no fade, so a whole scene (about 1000
+    phonemes) would carry hidden joins. Whole scenes also had to be cut at word timings to place the
+    pauses, and a recogniser that reports two words as touching puts that cut on speech, which is
+    heard as a stutter. Sentence clips need neither. A sentence over about 350 phonemes is split at a
+    clause boundary (a 0.12 s pause), the worker refuses anything at 500 or more, and `trim=False`
+    leaves the trimming to `assembly.trim_bounds`. Clips are cached per sentence in
+    `.tts_cache/sentences/`, so editing one sentence re-synthesizes only that one.
+  - **Stutter check** (`audio/qa/stutter.py`, `TTS_STUTTER_CHECK`): each clip is transcribed and
+    compared with its text (repetitions, a content word inserted or left out, a word far too long),
+    and the waveform is searched for a segment that repeats itself. A hit is re-synthesized at most
+    3 times: speed -0.02, a comma near the hit, a split at a clause. The best attempt stays, and
+    what is still flagged is listed with a player in the Narração card (`narration_stutter.json`).
+    `python -m scripts.check_stutter --project <slug>` runs the check on a finished narration.
   - Word timings come from the backend, or from forced alignment with faster-whisper
     (`ALIGNER_MODEL`). An alignment is used only when it covers at least 98 % of the script with a
     drift under 80 ms.

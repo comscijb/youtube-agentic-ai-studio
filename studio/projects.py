@@ -240,6 +240,17 @@ def _entry(stage: str, status: str, detail: str = "") -> dict:
     return {"stage": stage, "label": label, "status": status, "detail": detail, "optional": optional}
 
 
+def stutter_note(path) -> tuple[str, list[dict]]:
+    """The Narração card: sentences, re-synthesized and still flagged (Phase 3.9.5), and what to play."""
+    report = load_json(Path(path) / "narration_stutter.json") or {}
+    if not report.get("sentences"):
+        return "", []
+    flagged = report.get("flagged") or []
+    note = f"; {report['sentences']} frases, {report.get('resynthesized', 0)} re-sintetizadas, {len(flagged)} com possível gagueira"
+    return note, [{"at": item.get("at"), "text": item.get("text", ""), "kinds": ", ".join(f"{hit.get('kind')}: {hit.get('word')}" for hit in item.get("hits", [])),
+                   "url": f"/api/narration/flagged/{index}"} for index, item in enumerate(flagged)]
+
+
 def narration_voice_changed(path) -> bool:
     """The narration was made with another backend/voice than the channel voice (Phase 3.9-A).
     Narrations from before 3.9 record no voice and are never marked by this."""
@@ -323,9 +334,10 @@ def stage_status(path) -> list[dict]:
     else:
         timeline = load_json(files["scene_timeline.json"]) or {}
         joins = load_json(path / "narration_joins.json") or {}
-        notes = len(joins.get("bursts", [])) + len(joins.get("short_gaps", []))
-        result.append(_entry("narration", "done", f"{float(timeline.get('total_duration', 0)) / 60:.1f} min"
-                             + (f"; {notes} aviso(s) de junção" if notes else "")))
+        notes = len(joins.get("bursts", [])) + len(joins.get("short_gaps", [])) + len(joins.get("clipped_edges", []))
+        stutter, flagged = stutter_note(path)
+        result.append({**_entry("narration", "done", f"{float(timeline.get('total_duration', 0)) / 60:.1f} min"
+                                + (f"; {notes} aviso(s) de junção" if notes else "") + stutter), "flagged": flagged})
 
     if not files["narration_mixed.mp3"].is_file():
         result.append(_entry("music", "missing"))

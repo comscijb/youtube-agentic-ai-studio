@@ -10,7 +10,8 @@ hash>.mp3, results.json and index.html (listen side by side; the GUI → Setting
 files). A sample that already exists for the same voice and text is reused, not rendered again; a
 voice that fails is recorded with its error and the others go on. For each sample: render time,
 real-time factor, peak VRAM (nvidia-smi), word-timing coverage and drift (native timings vs forced
-alignment when both exist), integrated loudness and the engine licence. Pick the channel voice in the GUI.
+alignment when both exist), integrated loudness, the engine licence and, for Kokoro, the stutter-check hits. Pick the
+channel voice in the GUI.
 """
 from __future__ import annotations
 
@@ -96,7 +97,15 @@ def text_hash(text: str) -> str:
 
 
 def sample_name(backend: str, voice: str, text: str) -> str:
-    return f"{safe_filename(backend)}_{safe_filename(voice)}_{text_hash(text)}.mp3"
+    """"_s" on local samples: they are rendered sentence by sentence; earlier files have Kokoro's batch joins inside."""
+    suffix = "_s" if backend == "local" else ""
+    return f"{safe_filename(backend)}_{safe_filename(voice)}_{text_hash(text)}{suffix}.mp3"
+
+
+def stutter_hits(result: dict) -> int | None:
+    """Stutter-check hits left in a sample; None when the backend has no such check."""
+    report = result.get("stutter")
+    return None if report is None else sum(len(item.get("hits", [])) for item in report.get("flagged", []))
 
 
 def load_results(out: Path = OUT) -> dict:
@@ -154,7 +163,7 @@ def _audition(text: str, backend_name: str, voice: str, out: Path, sample: str) 
     seconds = time.monotonic() - started
     row.update(file=path.name, vram_mib=vram.mib)
     try:
-        return {**row, **measure(path, text, result, seconds)}
+        return {**row, **measure(path, text, result, seconds), "stutter_hits": stutter_hits(result)}
     except Exception as exc:                             # noqa: BLE001 — the sample is still playable
         return {**row, "error": f"measuring failed: {str(exc)[:200]}"}
 
@@ -187,7 +196,7 @@ def write_page(rows: list[dict], text: str, out: Path) -> Path:
     body = "".join(
         f"<tr><td>{cell(row['backend'])}</td><td>{cell(row['voice'])}</td><td>{sample(row)}</td>"
         f"<td>{cell(row.get('rtf'))}</td><td>{cell(row.get('vram_mib'))}</td><td>{cell(row.get('coverage'))}</td>"
-        f"<td>{cell(row.get('drift_ms'))}</td><td>{cell(row.get('lufs'))}</td><td>{cell(row.get('licence'))}</td></tr>"
+        f"<td>{cell(row.get('drift_ms'))}</td><td>{cell(row.get('lufs'))}</td><td>{cell(row.get('stutter_hits'))}</td><td>{cell(row.get('licence'))}</td></tr>"
         for row in rows)
     page = Path(out) / "index.html"
     page.write_text(
@@ -195,7 +204,7 @@ def write_page(rows: list[dict], text: str, out: Path) -> Path:
         "<style>body{font-family:sans-serif;margin:24px;background:#0c1218;color:#f4f0e8}td,th{padding:6px 10px;"
         "border-bottom:1px solid #333;text-align:left}</style><h1>Voice audition</h1>"
         f"<p style='max-width:70ch'>{html.escape(text)}</p><table><tr><th>Backend</th><th>Voice</th><th>Sample</th>"
-        "<th>RTF</th><th>VRAM MiB</th><th>Coverage</th><th>Drift ms</th><th>LUFS</th><th>Licence</th></tr>"
+        "<th>RTF</th><th>VRAM MiB</th><th>Coverage</th><th>Drift ms</th><th>LUFS</th><th>Stutter</th><th>Licence</th></tr>"
         f"{body}</table>", encoding="utf-8")
     return page
 
@@ -216,7 +225,7 @@ def run(pairs: list[tuple[str, str]], text: str, out: Path = OUT, progress=print
             except Exception as exc:                     # noqa: BLE001
                 row = {"backend": backend, "voice": voice, "text_hash": text_hash(text), "error": str(exc)[:300]}
             progress("   " + (row.get("error") or f"RTF {row.get('rtf')} | VRAM {row.get('vram_mib')} MiB | coverage "
-                                                  f"{row.get('coverage')} | drift {row.get('drift_ms')} ms | {row.get('lufs')} LUFS"))
+                                                  f"{row.get('coverage')} | drift {row.get('drift_ms')} ms | {row.get('lufs')} LUFS | stutter {row.get('stutter_hits')}"))
         else:
             progress("   cached sample reused")
         rows.append(row)

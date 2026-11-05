@@ -4053,11 +4053,16 @@ function refreshProject() {
       if (s.stage === 'narration' && s.status === 'stale' && /voice/.test(s.detail || '')) text += ' (voz mudou)';
       const voice = s.stage === 'narration' && d.channel_voice
         ? `<br>Voz: ${_esc(d.channel_voice.voice)} · <a href="#" onclick="openVoices();return false">trocar</a>` : '';
+      const flagged = s.stage === 'narration' && (s.flagged || []).length
+        ? '<div class="help-text" style="margin:4px 0 0">' + s.flagged.map(item =>
+            `<div style="margin:4px 0">⚠ ${formatSeconds(item.at)} · ${_esc(item.kinds)} · “${_esc(item.text)}”<br>` +
+            `<audio controls preload="none" src="${_esc(item.url)}" style="height:28px;max-width:100%"></audio></div>`).join('') + '</div>'
+        : '';
       return `<div class="project-stage ${next && next.stage === s.stage ? 'next' : ''}">
         <div style="font-weight:600">${meta.position ? meta.position + '. ' : ''}${_esc(s.label)}
           <span class="help-text" style="margin:0 0 0 6px">${LANE_PT[meta.lane] || ''}</span></div>
         <span class="sbadge ${css}">${text}</span>
-        <div class="help-text" style="margin:0">${_esc(s.detail)}${when ? ' · ' + when : ''}${voice}</div>
+        <div class="help-text" style="margin:0">${_esc(s.detail)}${when ? ' · ' + when : ''}${voice}</div>${flagged}
         <div class="flex-row">${buttons.join('')}</div></div>`;
     }).join('');
     return d;
