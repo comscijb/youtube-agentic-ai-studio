@@ -190,11 +190,14 @@ class SpeedTests(unittest.TestCase):
                 calls.append(speed)
                 local.write_wav(path, [0.0] * 10, 24000)
 
+            def phonemes(self, text, voice):
+                return len(text)
+
         with tempfile.TemporaryDirectory() as temp, patch.object(config, "TTS_LOCAL_SPEED", .88), \
                 patch.object(config, "TTS_LOCAL_ENGINE", "kokoro"), \
                 patch.object(local, "_kokoro_in_process", return_value=False), \
                 patch.object(local, "_kokoro_worker", return_value=Worker()), \
-                patch("audio.tts.align.align", return_value=([], {"ok": True})):
+                patch("audio.tts.align.transcribe", return_value=[]):
             local.LocalBackend().synthesize("Hello.", str(Path(temp, "a.wav")), voice="bm_lewis", rate="-5%", pitch="+0Hz")
         self.assertEqual(calls, [.88])
 

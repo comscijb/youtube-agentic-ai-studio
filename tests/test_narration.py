@@ -191,6 +191,7 @@ def tone(path, rate=24000):
     return (0.2 * np.sin(np.arange(3 * rate) * 0.1)).astype(np.float32)
 
 
+@patch.object(config, "TTS_BACKEND", "edge")
 class GenerateNarrationTests(unittest.TestCase):
     def test_end_to_end_with_mocks_writes_word_cues_and_calibration(self):
         script = {"sections": [{"id": 1, "narration": " ".join(["word"] * 60) + "."},
