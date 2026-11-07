@@ -105,6 +105,52 @@ class ViewerToolTests(unittest.TestCase):
             self.assertIsNotNone(mask.convert("L").getbbox())
         self.assertEqual(problems, [])
 
+    def test_substituir_por_is_sent_and_typing_it_does_not_trigger_shortcuts(self):
+        from playwright.sync_api import sync_playwright
+        problems = []
+        with sync_playwright() as playwright:
+            browser, page = self.viewer(playwright, problems)
+            page.keyboard.press("f")
+            page.wait_for_selector("#igv-mask")
+            self.paint(page)
+            page.click("#igv-replace")
+            page.keyboard.type("dark water, box")                       # "x" and "b" are shortcuts outside the field
+            self.assertIn("Pincel (X)", page.inner_text("#igv-drawbar"))
+            with page.expect_request("**/api/imagegen/queue/run"):
+                page.keyboard.press("Enter")
+            page.wait_for_timeout(200)
+            browser.close()
+        entry = self.shot()["edit_queue"][0]
+        self.assertEqual(entry["replace"], "dark water, box")
+        self.assertEqual(problems, [])
+
+    def test_a_large_mask_offers_regeneration_first(self):
+        from playwright.sync_api import sync_playwright
+        problems = []
+        with sync_playwright() as playwright:
+            browser, page = self.viewer(playwright, problems)
+            page.keyboard.press("f")
+            page.wait_for_selector("#igv-mask")
+            regen = page.locator("#igv-drawbar button", has_text="Gerar o plano de novo sem a figura")
+            self.paint(page)
+            self.assertFalse(regen.is_visible())                         # a small stroke: repainting is fine
+            for _ in range(6):
+                page.keyboard.press("]")
+            frame = page.locator("#igv-frame").bounding_box()
+            for row in range(8):
+                y = frame["y"] + frame["height"] * (.1 + row * .1)
+                page.mouse.move(frame["x"] + frame["width"] * .1, y)
+                page.mouse.down()
+                page.mouse.move(frame["x"] + frame["width"] * .6, y, steps=5)
+                page.mouse.up()
+            page.wait_for_function("[...document.querySelectorAll('#igv-drawbar button')].some(b => b.textContent.includes('Gerar o plano de novo') && b.offsetParent)")
+            with page.expect_request("**/api/imagegen/queue/run"):
+                regen.click()
+            page.wait_for_timeout(200)
+            browser.close()
+        self.assertEqual(self.shot()["edit_queue"][0]["kind"], "regenerate_without")
+        self.assertEqual(problems, [])
+
     def test_esc_cancels_and_a_box_seeds_the_mask(self):
         from playwright.sync_api import sync_playwright
         problems = []
@@ -137,7 +183,8 @@ class ViewerToolTests(unittest.TestCase):
             Image.new("RGB", (1920, 1080), colour).save(path, quality=95)
             candidates.append({"path": f"images/shots/removal/c{index}.jpg", "profile": "base", "engine": "opencv", "clean": index != 2,
                                "people_inside": [1, 0 if index != 2 else 1], "box": [.1, .1, .2, .2], "crop": [0, 0, 100, 100],
-                               "mask": "images/shots/removal/m.png"})
+                               "mask": "images/shots/removal/m.png", "ghost": {"ghost": index == 2, "texture": 0.2 if index == 2 else 1.1,
+                                                                            "contour": 1.0, "blocks": 1.1, "tone": 0.1}})
         Image.new("L", (1920, 1080), 0).save(folder / "m.png")
         self.save([{**SHOT, "removal": {"candidates": candidates, "at": "t"}}])
         problems = []
@@ -148,6 +195,7 @@ class ViewerToolTests(unittest.TestCase):
             tops = [page.locator("#igv-results img").nth(n).bounding_box()["y"] for n in range(3)]
             self.assertEqual(len(set(tops)), 1)                                          # side by side
             self.assertEqual(page.locator("#igv-results button", has_text="Usar este").count(), 3)
+            self.assertIn("silhueta visível", page.inner_text("#igv-results"))
             page.locator("#igv-results img").nth(1).click()
             page.wait_for_function("document.getElementById('igv-img').src.includes('c1.jpg')")
             with page.expect_response("**/removal/choose"):
