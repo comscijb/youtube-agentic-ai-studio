@@ -1,0 +1,145 @@
+[
+ {
+  "shot": "s01_04",
+  "denoise": 0.75,
+  "differential": true,
+  "start": "blur",
+  "people_inside": [
+   4,
+   0
+  ],
+  "seconds": 39.4,
+  "texture": 0.137,
+  "contour": 0.593,
+  "blocks": 1.37,
+  "tone": 1.284,
+  "ghost": true,
+  "failed": [
+   "texture",
+   "blocks",
+   "tone"
+  ]
+ },
+ {
+  "shot": "s01_04",
+  "denoise": 0.85,
+  "differential": true,
+  "start": "blur",
+  "people_inside": [
+   4,
+   0
+  ],
+  "seconds": 32.3,
+  "texture": 1.559,
+  "contour": 1.004,
+  "blocks": 1.18,
+  "tone": 0.251,
+  "ghost": false,
+  "failed": []
+ },
+ {
+  "shot": "s01_04",
+  "denoise": 0.95,
+  "differential": true,
+  "start": "blur",
+  "people_inside": [
+   4,
+   0
+  ],
+  "seconds": 32.3,
+  "texture": 1.949,
+  "contour": 1.1,
+  "blocks": 1.07,
+  "tone": 0.214,
+  "ghost": false,
+  "failed": []
+ },
+ {
+  "shot": "s01_04",
+  "denoise": 0.85,
+  "differential": false,
+  "start": "blur",
+  "people_inside": [
+   4,
+   0
+  ],
+  "seconds": 32.3,
+  "texture": 1.99,
+  "contour": 1.084,
+  "blocks": 1.17,
+  "tone": 0.225,
+  "ghost": false,
+  "failed": []
+ },
+ {
+  "shot": "s07_07",
+  "denoise": 0.75,
+  "differential": true,
+  "start": "blur",
+  "people_inside": [
+   2,
+   1
+  ],
+  "seconds": 36.2,
+  "texture": 0.087,
+  "contour": 0.929,
+  "blocks": 1.15,
+  "tone": 1.344,
+  "ghost": true,
+  "failed": [
+   "texture",
+   "tone"
+  ]
+ },
+ {
+  "shot": "s07_07",
+  "denoise": 0.85,
+  "differential": true,
+  "start": "blur",
+  "people_inside": [
+   2,
+   1
+  ],
+  "seconds": 34.0,
+  "texture": 1.437,
+  "contour": 1.007,
+  "blocks": 1.04,
+  "tone": 0.223,
+  "ghost": false,
+  "failed": []
+ },
+ {
+  "shot": "s07_07",
+  "denoise": 0.95,
+  "differential": true,
+  "start": "blur",
+  "people_inside": [
+   2,
+   1
+  ],
+  "seconds": 35.2,
+  "texture": 1.7,
+  "contour": 0.998,
+  "blocks": 1.04,
+  "tone": 0.305,
+  "ghost": false,
+  "failed": []
+ },
+ {
+  "shot": "s07_07",
+  "denoise": 0.85,
+  "differential": false,
+  "start": "blur",
+  "people_inside": [
+   2,
+   1
+  ],
+  "seconds": 35.1,
+  "texture": 1.447,
+  "contour": 1.029,
+  "blocks": 1.04,
+  "tone": 0.261,
+  "ghost": false,
+  "failed": []
+ }
+]

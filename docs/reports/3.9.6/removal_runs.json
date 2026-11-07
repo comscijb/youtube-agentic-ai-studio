@@ -1,0 +1,226 @@
+{
+ "s01_04": {
+  "seconds": 108.0,
+  "replace": "",
+  "action": {
+   "results": 3,
+   "clean": 3,
+   "ghosts": 0
+  },
+  "candidates": [
+   {
+    "profile": "base",
+    "denoise": 0.85,
+    "engine": "blur",
+    "differential": true,
+    "people_inside": [
+     4,
+     0
+    ],
+    "clean": true,
+    "erase_seconds": 0.36,
+    "restore_seconds": 35.76,
+    "ghost": {
+     "texture": 1.382,
+     "contour": 1.097,
+     "blocks": 1.16,
+     "tone": 0.201,
+     "ghost": false,
+     "failed": []
+    }
+   },
+   {
+    "profile": "base",
+    "denoise": 0.85,
+    "engine": "blur",
+    "differential": true,
+    "people_inside": [
+     4,
+     0
+    ],
+    "clean": true,
+    "erase_seconds": 0.41,
+    "restore_seconds": 30.58,
+    "ghost": {
+     "texture": 0.942,
+     "contour": 0.972,
+     "blocks": 1.08,
+     "tone": 0.521,
+     "ghost": false,
+     "failed": []
+    }
+   },
+   {
+    "profile": "base",
+    "denoise": 0.85,
+    "engine": "blur",
+    "differential": true,
+    "people_inside": [
+     4,
+     1
+    ],
+    "clean": true,
+    "erase_seconds": 0.36,
+    "restore_seconds": 29.65,
+    "ghost": {
+     "texture": 1.436,
+     "contour": 1.049,
+     "blocks": 1.08,
+     "tone": 0.051,
+     "ghost": false,
+     "failed": []
+    }
+   }
+  ]
+ },
+ "s01_04 +replace": {
+  "seconds": 106.3,
+  "replace": "dark river water, low mist",
+  "action": {
+   "results": 3,
+   "clean": 3,
+   "ghosts": 0
+  },
+  "candidates": [
+   {
+    "profile": "base",
+    "denoise": 0.85,
+    "engine": "blur",
+    "differential": true,
+    "people_inside": [
+     4,
+     0
+    ],
+    "clean": true,
+    "erase_seconds": 0.34,
+    "restore_seconds": 36.5,
+    "ghost": {
+     "texture": 1.372,
+     "contour": 1.068,
+     "blocks": 1.19,
+     "tone": 0.239,
+     "ghost": false,
+     "failed": []
+    }
+   },
+   {
+    "profile": "base",
+    "denoise": 0.85,
+    "engine": "blur",
+    "differential": true,
+    "people_inside": [
+     4,
+     0
+    ],
+    "clean": true,
+    "erase_seconds": 0.36,
+    "restore_seconds": 29.63,
+    "ghost": {
+     "texture": 0.972,
+     "contour": 0.984,
+     "blocks": 1.09,
+     "tone": 0.539,
+     "ghost": false,
+     "failed": []
+    }
+   },
+   {
+    "profile": "base",
+    "denoise": 0.85,
+    "engine": "blur",
+    "differential": true,
+    "people_inside": [
+     4,
+     1
+    ],
+    "clean": true,
+    "erase_seconds": 0.34,
+    "restore_seconds": 29.48,
+    "ghost": {
+     "texture": 1.44,
+     "contour": 1.033,
+     "blocks": 1.09,
+     "tone": 0.07,
+     "ghost": false,
+     "failed": []
+    }
+   }
+  ]
+ },
+ "s07_07": {
+  "seconds": 129.5,
+  "replace": "",
+  "action": {
+   "results": 3,
+   "clean": 2,
+   "ghosts": 1
+  },
+  "candidates": [
+   {
+    "profile": "denoise 0,92",
+    "denoise": 0.92,
+    "engine": "blur",
+    "differential": true,
+    "people_inside": [
+     2,
+     1
+    ],
+    "clean": true,
+    "erase_seconds": 0.34,
+    "restore_seconds": 33.48,
+    "ghost": {
+     "texture": 1.674,
+     "contour": 1.083,
+     "blocks": 1.05,
+     "tone": 0.321,
+     "ghost": false,
+     "failed": []
+    }
+   },
+   {
+    "profile": "denoise 0,92",
+    "denoise": 0.92,
+    "engine": "blur",
+    "differential": true,
+    "people_inside": [
+     2,
+     1
+    ],
+    "clean": true,
+    "erase_seconds": 0.34,
+    "restore_seconds": 45.5,
+    "ghost": {
+     "texture": 1.331,
+     "contour": 1.031,
+     "blocks": 1.03,
+     "tone": 0.303,
+     "ghost": false,
+     "failed": []
+    }
+   },
+   {
+    "profile": "base",
+    "denoise": 0.85,
+    "engine": "blur",
+    "differential": true,
+    "people_inside": [
+     2,
+     2
+    ],
+    "clean": false,
+    "erase_seconds": 0.35,
+    "restore_seconds": 33.49,
+    "ghost": {
+     "texture": 0.401,
+     "contour": 1.331,
+     "blocks": 1.14,
+     "tone": 0.595,
+     "ghost": true,
+     "failed": [
+      "texture"
+     ]
+    }
+   }
+  ]
+ }
+}
