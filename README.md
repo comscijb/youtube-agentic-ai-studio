@@ -606,6 +606,17 @@ with the models named in `workflows/flux3_klein_edit_api.json` (UNET
   next), G regenerate, I instruction, F remove figure, M marker, B boxes, Z fit/100 %, H history,
   Esc close.
 
+  **Remover figura** (`video/qa/removal.py`, 3.9.4/3.9.6) paints a mask (or seeds it from a box), grows it ~22 %
+  beyond the figure and **repaints** it with Klein at denoise 0.85+ through differential diffusion, starting from LaMa
+  for small masks or from the blurred surroundings for large ones. A low-denoise "restore" keeps its input's layout,
+  and a fill on dense hatching is a smear in the figure's shape: that is the silhouette users saw. "Substituir por"
+  says what belongs there (it opens the fill prompt, which never names a person). Each result is checked by the
+  person detector and the **ghost detector** (`video/qa/ghosts.py`: texture deficit, contour, grid blocks, tone step);
+  "silhueta visível" results are never ranked first. The automatic ladder is 0.85, 0.92 with a new seed, a bigger mask
+  at 0.95, then **"Gerar o plano de novo sem a figura"** (new seed, `others_present: false`, the headcount stated).
+  A mask over ~15 % of the frame or on a listed character offers regeneration first; queued with "Só enfileirar",
+  such masks regenerate in the batch. "Só apagar" (LaMa only) is manual.
+
   **Gemini second opinion** (optional, live): "Segunda opinião (Gemini)" on a card or for every shot
   with hints, or `python -m scripts.qa_shots --backend gemini [--only sNN_MM]`. Stored beside the
   local result, advisory only.

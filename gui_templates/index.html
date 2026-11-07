@@ -2541,8 +2541,43 @@ function igViewerMask(shot, suggestions) {
     const eraseButton = igButton(bar, '', 'Alterna pincel e borracha', () => { erase = !erase; boxMode = false; render(); });
     const boxButton = igButton(bar, 'Caixa (B)', 'Arraste uma caixa: ela vira a máscara, ajustada à pessoa detectada', () => { boxMode = !boxMode; render(); });
     igButton(bar, 'Limpar', '', () => { context.clearRect(0, 0, width, height); render(); });
+    const replace = document.createElement('input');
+    replace.id = 'igv-replace';
+    replace.placeholder = 'Substituir por (ex.: névoa, cais vazio, água escura)';
+    replace.title = 'O que deve aparecer no lugar da figura: vai no começo do prompt da repintura';
+    replace.style.cssText = 'width:230px;font-size:11px';
+    bar.appendChild(replace);
     const queueButton = igButton(bar, 'Só enfileirar', 'Marque outros planos e execute a fila de uma vez', () => finish(false));
-    const runButton = igButton(bar, 'Executar (Enter)', '', () => finish(true));
+    const runButton = igButton(bar, 'Executar (Enter)', 'Repinta a região: até 3 resultados', () => finish(true));
+    const eraseOnly = igButton(bar, 'Só apagar', 'Só o LaMa, sem repintar (manual)', () => finish(true, {erase_only: true}));
+    const regenButton = igButton(bar, 'Gerar o plano de novo sem a figura', 'Figura grande ou personagem da lista: um plano novo, com nova seed e a contagem de pessoas explícita',
+                                 () => { const found = bounds(); done({regenerate: true, box: found}); }, ';background:#2a5;color:#fff');
+    bar.insertBefore(regenButton, bar.children[1]);
+    regenButton.style.display = 'none';
+    let large = false, overlaps = false, checked = '';
+    const suggest = async () => {                      // over ~15 % of the frame or on a listed character: regenerate first
+      const found = bounds();
+      if (!found) { large = overlaps = false; regenButton.style.display = 'none'; return; }
+      large = coverage() > 0.15;
+      const key = found.join(',');
+      if (key !== checked) {
+        checked = key;
+        try {
+          const r = await fetch(`/api/imagegen/shot/${shot.shot_id}/check_box`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({box: found})});
+          const d = await r.json();
+          overlaps = !!(d.ok && (d.warnings || []).length);
+        } catch (e) { overlaps = false; }
+      }
+      regenButton.style.display = large || overlaps ? '' : 'none';
+      regenButton.title = (large ? 'A máscara cobre mais de 15 % do quadro. ' : '') + (overlaps ? 'A máscara cobre um personagem da lista. ' : '') +
+        'Repintar uma área assim costuma deixar marca: gerar o plano de novo é a primeira opção.';
+    };
+    const coverage = () => {
+      const pixels = context.getImageData(0, 0, width, height).data;
+      let count = 0;
+      for (let i = 3; i < pixels.length; i += 16) if (pixels[i] > 127) count++;
+      return count / (pixels.length / 16);
+    };
     igButton(bar, 'Cancelar (Esc)', '', () => done(undefined));
     const bounds = () => {
       const pixels = context.getImageData(0, 0, width, height).data;
@@ -2563,6 +2598,8 @@ function igViewerMask(shot, suggestions) {
       const empty = !bounds();
       runButton.disabled = empty;
       queueButton.disabled = empty;
+      eraseOnly.disabled = empty;
+      suggest();
     };
     const point = event => {
       const r = frame.getBoundingClientRect();
@@ -2658,9 +2695,9 @@ function igViewerMask(shot, suggestions) {
       if (_igView) _igView.draw = null;
       resolve(value);
     };
-    const finish = run => {
+    const finish = (run, extra = {}) => {
       const found = bounds();
-      if (found) done({mask: canvas.toDataURL('image/png'), box: found, run});
+      if (found) done({mask: canvas.toDataURL('image/png'), box: found, run, replace: replace.value.trim(), large: !run && (large || overlaps), ...extra});
     };
     layer.addEventListener('mousedown', down);
     window.addEventListener('mousemove', move);
@@ -2680,7 +2717,9 @@ function igViewerMask(shot, suggestions) {
 function igRemovalAction(shot, picked) {
   if (_igView) _igView.waiting[shot.shot_id] = 'queued';
   return fetch(`/api/imagegen/shot/${shot.shot_id}/queue`, {method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({kind: 'remove_figure', mask: picked.mask, box: picked.box})}).then(r => r.json()).then(d => {
+    body: JSON.stringify(picked.regenerate ? {kind: 'regenerate_without'} :
+      {kind: 'remove_figure', mask: picked.mask, box: picked.box, replace: picked.replace || '', erase_only: !!picked.erase_only, large: !!picked.large})})
+    .then(r => r.json()).then(d => {
     if (!d.ok) { alert(d.error || 'Não foi possível enfileirar'); return; }
     if (picked.run) igPost('/api/imagegen/queue/run', {}); else loadImagegen();
   });
@@ -2720,7 +2759,10 @@ function igRenderResults(shot) {
     const [before, after] = item.people_inside || [0, 0];
     const caption = document.createElement('div');
     caption.style.cssText = `font-size:10px;color:${item.clean ? '#8c8' : 'var(--red)'}`;
-    caption.textContent = `${item.clean ? '✓' : '⚠'} pessoas na máscara ${before} → ${after} · ${item.profile} · ${item.engine}`;
+    const ghost = item.ghost && item.ghost.ghost;
+    caption.textContent = `${item.clean ? '✓' : '⚠'} pessoas na máscara ${before} → ${after}` + (ghost ? ' · silhueta visível' : '') +
+      ` · ${item.profile} · ${item.engine}`;
+    caption.title = item.ghost ? `textura ${item.ghost.texture} · contorno ${item.ghost.contour} · blocos ${item.ghost.blocks} · tom ${item.ghost.tone}` : '';
     cell.appendChild(caption);
     igButton(cell, 'Usar este', 'Vira a imagem do plano; a atual fica no histórico',
              () => { _igView.preview = null; igPost(`/api/imagegen/shot/${shot.shot_id}/removal/choose`, {index}); }, ';font-size:11px');
@@ -2760,7 +2802,8 @@ const IG_ACTIONS = {
   // Every edit joins the batch queue; "Executar fila" runs them with Klein loaded once.
   async figure(shot) {
     const picked = await igViewerMask(shot, igSuggested(shot, ['extra_person', 'duplicate_person']));
-    if (picked && await igBoxCoversCharacter(shot, picked.box)) await igRemovalAction(shot, picked);
+    if (picked && picked.regenerate) await igRemovalAction(shot, {...picked, run: true});
+    else if (picked && await igBoxCoversCharacter(shot, picked.box)) await igRemovalAction(shot, picked);
   },
   async marker(shot) {
     const select = document.getElementById('igv-marker');
@@ -2795,6 +2838,7 @@ document.addEventListener('keydown', event => {
     if (_igView.draw) {                                // drawing a box: only Enter / Esc
       if (event.key === 'Escape') { event.preventDefault(); _igView.draw.finish(undefined); }
       else if (event.key === 'Enter') { event.preventDefault(); _igView.draw.confirm(); }
+      else if (/INPUT|TEXTAREA/.test(tag)) return;      // typing "Substituir por"
       else if (_igView.draw.key) { event.preventDefault(); _igView.draw.key(event.key.toLowerCase()); }
       return;
     }

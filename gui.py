@@ -1781,7 +1781,7 @@ def imagegen_mask_preview(shot_id):
     """The mask a box becomes (refined to the person, dilated, with the shadow), to show and edit before running."""
     import base64
     from PIL import Image
-    from video.qa import fixes, removal, review
+    from video.qa import fixes, region, removal, review
     found, error = _review_shot(shot_id)
     if error:
         return error
@@ -1797,11 +1797,13 @@ def imagegen_mask_preview(shot_id):
     persons = detector.detect(image_path).get("persons", []) if detector else []
     with Image.open(image_path) as image:
         size = image.size
-    hard = removal.build_mask(size, box, persons=persons)
+    hard = removal.build_mask(size, box, persons=persons, grow=removal.FIGURE_GROW)
     buffer = io.BytesIO()
     hard.save(buffer, "PNG")
+    overlaps = bool(region.overlap_warnings({"persons": persons}, shot, box)) if persons else False
     return jsonify({"ok": True, "mask": "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("ascii"),
-                    "box": removal.mask_box(hard), "refined": removal.refine_box(box, persons)[1]})
+                    "box": removal.mask_box(hard), "refined": removal.refine_box(box, persons)[1],
+                    "regenerate_suggested": removal.regenerate_suggested(hard, overlaps)})
 
 
 @app.route("/api/imagegen/shot/<shot_id>/removal/choose", methods=["POST"])
@@ -1911,7 +1913,8 @@ def imagegen_queue_edit(shot_id):
         mask = _save_brush_mask(shot, body.get("mask")) if body.get("mask") else ""
         entry = review.make_request(str(body.get("kind", "")), vb, box=body.get("box"),
                                     character=str(body.get("character", "")), marker=str(body.get("marker", "")),
-                                    text=str(body.get("text", "")), mask=mask)
+                                    text=str(body.get("text", "")), mask=mask, replace=str(body.get("replace", "")),
+                                    erase_only=bool(body.get("erase_only")), large=bool(body.get("large")))
     except ValueError as exc:
         return jsonify({"ok": False, "error": str(exc)}), 400
     queue = review.enqueue(shot, entry)
