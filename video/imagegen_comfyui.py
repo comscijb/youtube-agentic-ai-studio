@@ -176,6 +176,7 @@ class ImageJob:
     edit_boxes: list = field(default_factory=list)
     # kind "masked_restore": references[0] the erased crop, references[1] its mask, the rest references.
     denoise: float = 1.0
+    differential: bool = False
 
 
 def aspect_tolerance() -> float:
@@ -226,6 +227,7 @@ class ImageGenerator:
         if job.kind == "masked_restore":
             return templates.build_masked_restore(
                 prompt=job.prompt, seed=seed, image=uploaded[0], mask=uploaded[1], references=uploaded[2:], denoise=job.denoise,
+                differential=job.differential,
                 width=job.size[0], height=job.size[1], steps=getattr(config, "IMAGEGEN_STEPS", None),
                 filename_prefix=f"private_gravity/{job.job_id}")
         if job.kind == "region_edit":

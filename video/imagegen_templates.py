@@ -236,8 +236,9 @@ def build_region_edit(*, instruction: str, seed: int, shot: str, references: lis
 
 def build_masked_restore(*, prompt: str, seed: int, image: str, mask: str, denoise: float, references: list[str] = (),
                          width: int = DEFAULT_SIZE[0], height: int = DEFAULT_SIZE[1], steps: int | None = None,
-                         filename_prefix: str = "private_gravity", folder=WORKFLOWS) -> dict:
-    """Klein on an already erased crop, inside the mask only (SetLatentNoiseMask), at low denoise (Phase 3.9.4-B)."""
+                         filename_prefix: str = "private_gravity", folder=WORKFLOWS, differential: bool = False) -> dict:
+    """Klein on a crop, inside the mask only (SetLatentNoiseMask). With ``differential`` the model goes through
+    DifferentialDiffusion, so a soft mask (full inside, a ring falling off outside) blends the repaint (Phase 3.9.6)."""
     graph = build_graph("ref" if references else "t2i", prompt=prompt, seed=seed, width=width, height=height, steps=steps,
                         references=list(references), latent_source="reference", filename_prefix=filename_prefix, folder=folder)
     graph.pop("44", None)
@@ -246,6 +247,9 @@ def build_masked_restore(*, prompt: str, seed: int, image: str, mask: str, denoi
     graph["63"] = {"class_type": "LoadImageMask", "inputs": {"image": mask, "channel": "red"}, "_meta": _meta("Mask")}
     graph["64"] = {"class_type": "SetLatentNoiseMask", "inputs": {"samples": ["62", 0], "mask": ["63", 0]}}
     graph["7"]["inputs"].update(latent_image=["64", 0], denoise=float(denoise))
+    if differential:
+        graph["65"] = {"class_type": "DifferentialDiffusion", "inputs": {"model": graph["7"]["inputs"]["model"]}}
+        graph["7"]["inputs"]["model"] = ["65", 0]
     return graph
 
 
