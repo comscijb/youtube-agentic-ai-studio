@@ -123,9 +123,9 @@
         "script": "eaa204c6b30836ae466aee42dabfebce15c983940ec08106883d9474cedc3e7a",
         "video": "1766027f61eaa178e0883db03642e88c2092b9bddc8758147d1373d3e2834ccb"
       },
-      "state": "uploaded_pending_publication",
-      "state_checked_at": null,
-      "published_at": null,
+      "state": "published",
+      "state_checked_at": "2026-11-05T22:41:20+00:00",
+      "published_at": "2026-11-05T22:41:20+00:00",
       "kind": "short",
       "parent_video_id": "WKswj78bnKo",
       "short_id": "short_01",
@@ -156,9 +156,9 @@
         "script": "eaa204c6b30836ae466aee42dabfebce15c983940ec08106883d9474cedc3e7a",
         "video": "85d59bcdad54f7849e8bedffa8c288723c18e4643c41a2a0f9f28777f71cc9ce"
       },
-      "state": "uploaded_pending_publication",
-      "state_checked_at": null,
-      "published_at": null,
+      "state": "published",
+      "state_checked_at": "2026-11-06T22:19:07+00:00",
+      "published_at": "2026-11-06T22:19:07+00:00",
       "kind": "short",
       "parent_video_id": "WKswj78bnKo",
       "short_id": "short_02",
@@ -189,9 +189,9 @@
         "script": "eaa204c6b30836ae466aee42dabfebce15c983940ec08106883d9474cedc3e7a",
         "video": "01717e7e6aedfd6869b8ac09037eba216570fe972e51506706f59824f86bd23a"
       },
-      "state": "uploaded_pending_publication",
-      "state_checked_at": null,
-      "published_at": null,
+      "state": "published",
+      "state_checked_at": "2026-11-07T21:02:59+00:00",
+      "published_at": "2026-11-07T21:02:59+00:00",
       "kind": "short",
       "parent_video_id": "WKswj78bnKo",
       "short_id": "short_03",
@@ -222,9 +222,9 @@
         "script": "eaa204c6b30836ae466aee42dabfebce15c983940ec08106883d9474cedc3e7a",
         "video": "5059b124f7e8167fb6f4aff4be0667f3ed76c02b4b37ea74fe97f6824abb7705"
       },
-      "state": "uploaded_pending_publication",
-      "state_checked_at": null,
-      "published_at": null,
+      "state": "published",
+      "state_checked_at": "2026-11-05T22:41:20+00:00",
+      "published_at": "2026-11-05T22:41:20+00:00",
       "review": {
         "approved_at": "2026-11-05T19:54:51+00:00",
         "narrative_status": "revision_required",
@@ -243,6 +243,146 @@
       ],
       "contains_synthetic_media": false,
       "synthetic_disclosure_reason": "stylised: all 61 generated image(s) are non-photorealistic illustration; the voice is not a real person"
+    },
+    {
+      "video_id": "Jndble0RgcY",
+      "url": "https://www.youtube.com/watch?v=Jndble0RgcY",
+      "run_dir": "projects\\2026-11-06-the-ferryman-who-took-memories-as-fare",
+      "project": "2026-11-06-the-ferryman-who-took-memories-as-fare",
+      "uploaded_at": "2026-11-08T00:20:21+00:00",
+      "scheduled_publish_at": null,
+      "title": "He Traded His Darkest Memory to a Ferryman #Shorts",
+      "thumbnail_text": "Pay with a memory.",
+      "premise": "In a river village where the ferry costs one memory, people pay gladly with their worst ones, until nobody remembers why the old bridge fell.",
+      "logline": "In a river village where the ferry costs one memory, people pay gladly with their worst ones, until nobody remembers why the old bridge fell.",
+      "psychological_theme": "guilt/shame",
+      "psychological_angle": "Erasing painful memories relieves immediate suffering but strips away the essential wisdom needed to avoid repeating destructive mistakes.",
+      "narrative_type": "dark_human_parable",
+      "central_contradiction": "The Ferryman takes their agony to keep them peaceful, yet by relieving their pain he deprives them of the caution required to survive.",
+      "source_hashes": {
+        "script": "9eda25be74c190116fa8bd5960b5ebaedbf8997a05b0f98cd5a8983b05f92b07",
+        "video": "9ab9683edbbe20b3267b8b62f4b0a3ec831624213ca292bf3e3deaf4286f3494"
+      },
+      "state": "published",
+      "state_checked_at": "2026-11-08T00:33:09+00:00",
+      "published_at": "2026-11-08T00:33:09+00:00",
+      "kind": "short",
+      "parent_video_id": "Fsy9Md4a4yw",
+      "short_id": "short_01",
+      "captions": {
+        "action": "inserted",
+        "id": "AUieDaZxg3ya9sSGXDLXOjPt-39wNrX15wlmbqNgdkojwSPIlnqZhRRG"
+      },
+      "language": "en",
+      "contains_synthetic_media": false,
+      "synthetic_disclosure_reason": "stylised: all 71 generated image(s) are non-photorealistic illustration; the voice is not a real person"
+    },
+    {
+      "video_id": "6rnKnbjXHDA",
+      "url": "https://www.youtube.com/watch?v=6rnKnbjXHDA",
+      "run_dir": "projects\\2026-11-06-the-ferryman-who-took-memories-as-fare",
+      "project": "2026-11-06-the-ferryman-who-took-memories-as-fare",
+      "uploaded_at": "2026-11-08T00:21:08+00:00",
+      "scheduled_publish_at": "2026-11-08T21:00:00Z",
+      "title": "The Mayor Traded His Mistakes Every Week #Shorts",
+      "thumbnail_text": "Pay with a memory.",
+      "premise": "In a river village where the ferry costs one memory, people pay gladly with their worst ones, until nobody remembers why the old bridge fell.",
+      "logline": "In a river village where the ferry costs one memory, people pay gladly with their worst ones, until nobody remembers why the old bridge fell.",
+      "psychological_theme": "guilt/shame",
+      "psychological_angle": "Erasing painful memories relieves immediate suffering but strips away the essential wisdom needed to avoid repeating destructive mistakes.",
+      "narrative_type": "dark_human_parable",
+      "central_contradiction": "The Ferryman takes their agony to keep them peaceful, yet by relieving their pain he deprives them of the caution required to survive.",
+      "source_hashes": {
+        "script": "9eda25be74c190116fa8bd5960b5ebaedbf8997a05b0f98cd5a8983b05f92b07",
+        "video": "9ffddfab9e8e076f210dc67749e02b8462201362781e9b4d0521e0b9c3d4632e"
+      },
+      "state": "uploaded_pending_publication",
+      "state_checked_at": "2026-11-08T01:04:04+00:00",
+      "published_at": null,
+      "kind": "short",
+      "parent_video_id": "Fsy9Md4a4yw",
+      "short_id": "short_02",
+      "captions": {
+        "action": "inserted",
+        "id": "AUieDaYebJ6yhAfFEHVik4XtAEEKhX5iOACVotaSjgKZEIFif7a1UDdK"
+      },
+      "language": "en",
+      "contains_synthetic_media": false,
+      "synthetic_disclosure_reason": "stylised: all 71 generated image(s) are non-photorealistic illustration; the voice is not a real person"
+    },
+    {
+      "video_id": "94Fgo7oE4MM",
+      "url": "https://www.youtube.com/watch?v=94Fgo7oE4MM",
+      "run_dir": "projects\\2026-11-06-the-ferryman-who-took-memories-as-fare",
+      "project": "2026-11-06-the-ferryman-who-took-memories-as-fare",
+      "uploaded_at": "2026-11-08T00:21:57+00:00",
+      "scheduled_publish_at": "2026-11-09T21:00:00Z",
+      "title": "The Mayor Ignored the Warning About the Bridge #Shorts",
+      "thumbnail_text": "Pay with a memory.",
+      "premise": "In a river village where the ferry costs one memory, people pay gladly with their worst ones, until nobody remembers why the old bridge fell.",
+      "logline": "In a river village where the ferry costs one memory, people pay gladly with their worst ones, until nobody remembers why the old bridge fell.",
+      "psychological_theme": "guilt/shame",
+      "psychological_angle": "Erasing painful memories relieves immediate suffering but strips away the essential wisdom needed to avoid repeating destructive mistakes.",
+      "narrative_type": "dark_human_parable",
+      "central_contradiction": "The Ferryman takes their agony to keep them peaceful, yet by relieving their pain he deprives them of the caution required to survive.",
+      "source_hashes": {
+        "script": "9eda25be74c190116fa8bd5960b5ebaedbf8997a05b0f98cd5a8983b05f92b07",
+        "video": "0a6d58988ac4c2fd1cf02803cd32dd7e5ff44a451614ea93b6736304e65aefd3"
+      },
+      "state": "uploaded_pending_publication",
+      "state_checked_at": "2026-11-08T01:04:04+00:00",
+      "published_at": null,
+      "kind": "short",
+      "parent_video_id": "Fsy9Md4a4yw",
+      "short_id": "short_03",
+      "captions": {
+        "action": "inserted",
+        "id": "AUieDaY9n-iBd4Ituy5tAQvc_kqY98s_TU8fG328ELnkJITgI7UXrXR1"
+      },
+      "language": "en",
+      "contains_synthetic_media": false,
+      "synthetic_disclosure_reason": "stylised: all 71 generated image(s) are non-photorealistic illustration; the voice is not a real person"
+    },
+    {
+      "video_id": "Fsy9Md4a4yw",
+      "url": "https://www.youtube.com/watch?v=Fsy9Md4a4yw",
+      "run_dir": "projects\\2026-11-06-the-ferryman-who-took-memories-as-fare",
+      "project": "2026-11-06-the-ferryman-who-took-memories-as-fare",
+      "uploaded_at": "2026-11-08T00:21:57+00:00",
+      "scheduled_publish_at": null,
+      "title": "They Paid the Ferryman to Forget",
+      "thumbnail_text": "Pay with a memory.",
+      "premise": "In a river village where the ferry costs one memory, people pay gladly with their worst ones, until nobody remembers why the old bridge fell.",
+      "logline": "In a river village where the ferry costs one memory, people pay gladly with their worst ones, until nobody remembers why the old bridge fell.",
+      "psychological_theme": "guilt/shame",
+      "psychological_angle": "Erasing painful memories relieves immediate suffering but strips away the essential wisdom needed to avoid repeating destructive mistakes.",
+      "narrative_type": "dark_human_parable",
+      "central_contradiction": "The Ferryman takes their agony to keep them peaceful, yet by relieving their pain he deprives them of the caution required to survive.",
+      "source_hashes": {
+        "script": "9eda25be74c190116fa8bd5960b5ebaedbf8997a05b0f98cd5a8983b05f92b07",
+        "video": "44a28f05f7fbabd585a1ae7d66a29e52deb882ee9d7f47059ff857deb5b7783b"
+      },
+      "state": "published",
+      "state_checked_at": "2026-11-08T00:33:09+00:00",
+      "published_at": "2026-11-08T00:33:09+00:00",
+      "review": {
+        "approved_at": "2026-11-08T00:11:44+00:00",
+        "narrative_status": "revision_required",
+        "status_override_reason": "False positive",
+        "title_override_reason": ""
+      },
+      "captions": {
+        "action": "inserted",
+        "id": "AUieDaZQUfv2f-70D1yjTI1htgog4rZnuFAgTdsBH9UwyxOU3MSq4D55"
+      },
+      "language": "en",
+      "shorts": [
+        "Jndble0RgcY",
+        "6rnKnbjXHDA",
+        "94Fgo7oE4MM"
+      ],
+      "contains_synthetic_media": false,
+      "synthetic_disclosure_reason": "stylised: all 71 generated image(s) are non-photorealistic illustration; the voice is not a real person"
     }
   ]
 }
