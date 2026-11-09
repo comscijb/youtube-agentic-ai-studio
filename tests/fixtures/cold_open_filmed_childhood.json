@@ -1,0 +1,39 @@
+{
+  "_note": "Recorded mock for Phase 3.9.7: an outline and the three scenes the cold-open checks read, written for briefs/filmed-childhood.md. Not a live Gemini output.",
+  "outline": {
+    "scenes": [
+      {"scene_id": "s00", "order": 0, "title": "One Clip Among Nine Thousand", "section_type": "cold_open",
+       "narrative_function": "flash-forward to the accidental kitchen clip", "summary": "Night at the editing desk; Hannah stops on one clip and covers her mouth.",
+       "setting": "Hannah's editing desk at night, two monitors", "characters_present": ["hannah_price"],
+       "source_scene_id": "s07", "withheld": "what the kitchen clip shows: Leo telling a dream while Hannah never looks up",
+       "moment_kind": "discovery", "cold_open_mode": "flash_forward", "target_words": 70, "arc_movements": ["cold_open"]},
+      {"scene_id": "s01", "order": 1, "title": "Three, Two, One", "section_type": "opening", "narrative_function": "Leo's twelfth birthday, the ring light on",
+       "summary": "Leo asks for one birthday that isn't content.", "setting": "the kitchen with the ring light", "characters_present": ["hannah_price", "leo_price"],
+       "decision": "Hannah keeps filming", "consequence": "Leo stops smiling", "target_words": 160, "arc_movements": ["hook"]},
+      {"scene_id": "s02", "order": 2, "title": "Paid For the House", "section_type": "setup", "decision": "she films everything", "consequence": "millions watch",
+       "target_words": 170, "arc_movements": ["mechanism", "escalation_success"]},
+      {"scene_id": "s03", "order": 3, "title": "Is This a Keeper?", "section_type": "development", "decision": "she reshoots the first tooth", "consequence": "Leo performs",
+       "target_words": 180, "arc_movements": ["hidden_cost"]},
+      {"scene_id": "s04", "order": 4, "title": "The Nickname", "section_type": "development", "decision": "she ignores the stranger", "consequence": "Leo goes quiet",
+       "target_words": 170, "arc_movements": ["hidden_cost"]},
+      {"scene_id": "s05", "order": 5, "title": "Agreeing to Stop", "section_type": "development", "decision": "she agrees to stop", "consequence": "the farewell compilation begins",
+       "target_words": 160},
+      {"scene_id": "s06", "order": 6, "title": "Nine Thousand Videos", "section_type": "development", "decision": "she keeps editing", "consequence": "she remembers no moment",
+       "target_words": 170},
+      {"scene_id": "s07", "order": 7, "title": "The Kitchen Counter", "section_type": "reversal", "decision": "she watches the accidental clip", "consequence": "she sees she never looked up",
+       "target_words": 190, "arc_movements": ["reversal", "philosophical_layer"]},
+      {"scene_id": "s08", "order": 8, "title": "The Drawer", "section_type": "climax", "decision": "she puts the phone in the drawer", "consequence": "they eat cake in silence",
+       "target_words": 170},
+      {"scene_id": "s09", "order": 9, "title": "Cut Before She Decides", "section_type": "resolution", "decision": "she looks at the buzzing drawer", "consequence": "Leo looks at her",
+       "target_words": 90, "pace": "brief", "arc_movements": ["ending"]}
+    ]
+  },
+  "sections": [
+    {"id": 0, "outline_scene_id": "s00", "section_type": "cold_open", "title": "One Clip Among Nine Thousand",
+     "narration": "It is past midnight, and the house is quiet except for the hum of two monitors. Hannah scrolls through the eleventh year, the ninth thousand video, faster than she can watch. Then she stops. One thumbnail, crooked, taken from the height of a kitchen counter. She presses play. Her hand rises to her mouth and stays there. In eleven years of video, there was only one where she could see her own face."},
+    {"id": 1, "outline_scene_id": "s01", "section_type": "opening", "title": "Three, Two, One",
+     "narration": "Three weeks earlier, Leo turned twelve. The ring light hummed above the kitchen table, and Hannah lifted the phone on its little gimbal. \"Three, two, one.\" Leo looked at the candles, not the lens. \"Mom, can I have one birthday that isn't content?\""},
+    {"id": 7, "outline_scene_id": "s07", "section_type": "reversal", "title": "The Kitchen Counter",
+     "narration": "The clip is four minutes long. The phone had been left on the counter, still recording, pointed at the kitchen table. Leo, six years old, is telling a long and serious dream about a whale that lived in the bathtub. At the edge of the frame, Hannah sits at her laptop, editing. She nods once. She never looks up. In eleven years of video, there was only one where she could see her own face. She watches it to the end, and then she watches it again."}
+  ]
+}
