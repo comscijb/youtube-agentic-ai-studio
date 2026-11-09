@@ -174,7 +174,16 @@ def build(output_dir, script: dict, brief: dict, parts: dict | None = None) -> s
     output = Path(output_dir)
     parts = parts or {}
     hook = str(parts.get("hook") or brief.get("logline") or script.get("description") or "").strip()
-    items = chapters(load_timeline(output / "scene_timeline.json"), parts.get("chapter_titles"))
+    from agents import cold_open
+    if cold_open.repeats_teaser(hook, script):          # Phase 3.9.7: the video already opens with that line
+        hook = next((str(item).strip() for item in (brief.get("logline"), script.get("description"))
+                     if item and not cold_open.repeats_teaser(str(item), script)), hook)
+    titles = list(parts.get("chapter_titles") or [])
+    script_sections = [section for section in (load_json(output / "script.json") or {}).get("sections", [])
+                       if str(section.get("narration", "")).strip()]
+    if titles and script_sections and script_sections[0].get("section_type") == "cold_open":
+        titles[0] = getattr(config, "COLD_OPEN_CHAPTER_TITLE", "Prologue")      # 0:00 over a teaser: never a spoiler
+    items = chapters(load_timeline(output / "scene_timeline.json"), titles)
     values = {"hook": hook, "chapters": chapter_block(items), "cta": cta_block(parts.get("comment_question", "")),
               "channel_line": channel_line(),
               "fiction_note": "This episode is an original work of fiction. Characters and events are fictional.",

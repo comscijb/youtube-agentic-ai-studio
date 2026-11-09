@@ -22,7 +22,8 @@ TRIM_DB = -50.0
 KEEP_SECONDS = 0.04
 FADE_SECONDS = 0.008
 WINDOW_SECONDS = 0.01
-DEFAULT_PAUSES = {"clause": 0.12, "sentence": 0.35, "paragraph": 0.7, "scene": 1.5, "major_scene": 2.0, "final": 2.5}
+DEFAULT_PAUSES = {"clause": 0.12, "sentence": 0.35, "paragraph": 0.7, "scene": 1.5, "major_scene": 2.0, "final": 2.5,
+                  "cold_open": 1.5}                # after the teaser: room for the music sting (Phase 3.9.7)
 CUT_SEARCH_SECONDS = 0.12
 MAJOR_SCENES = {"climax", "aftermath"}
 
@@ -179,7 +180,9 @@ def assemble(scenes: list[dict], rate: int = RATE, settings: dict | None = None)
             final_piece = position == len(pieces) - 1
             if final_piece and last_scene:
                 continue
-            if final_piece:
+            if final_piece and str(scene.get("section_type", "")) == "cold_open":
+                kind, seconds = "cold_open", wanted["cold_open"]
+            elif final_piece:
                 major = str(scenes[number + 1].get("section_type", "")) in MAJOR_SCENES
                 kind, seconds = "scene", wanted["major_scene" if major else "scene"]
             elif last_scene and position == len(pieces) - 2 and piece["after"] == "paragraph":

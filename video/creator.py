@@ -587,6 +587,24 @@ def shot_at(shots: list, t: float) -> int:
     return len(shots) - 1
 
 
+COLD_OPEN_DARKEN = 0.85        # the teaser's subtle treatment (Phase 3.9.7): slightly darker
+COLD_OPEN_SLOWER = 0.5         # and half the camera movement
+
+
+def cold_open_treatment(shots: list) -> list:
+    """Slower motion and a darker frame for the cold open's shots, so the jump in time reads."""
+    treated = []
+    for shot in shots:
+        zoom = shot.get("zoom", (1.0, 1.0))
+        middle = (zoom[0] + zoom[1]) / 2
+        movement = dict(shot.get("motion") or {})
+        if "amount" in movement:
+            movement["amount"] = movement["amount"] * COLD_OPEN_SLOWER
+        treated.append({**shot, "zoom": (middle + (zoom[0] - middle) * COLD_OPEN_SLOWER, middle + (zoom[1] - middle) * COLD_OPEN_SLOWER),
+                        "motion": movement, "darken": COLD_OPEN_DARKEN})
+    return treated
+
+
 def _shot_frame(shot: dict, t: float) -> np.ndarray:
     local = max(0.0, t - shot["start"])
     duration = max(shot["end"] - shot["start"], 0.001)
@@ -602,6 +620,8 @@ def _shot_frame(shot: dict, t: float) -> np.ndarray:
         from video import ambient
         if ambient.enabled():
             frame = ambient.apply(frame, ambient.loop_uint8(shot["ambient"]), local)
+    if shot.get("darken"):
+        frame = (frame.astype(np.float32) * shot["darken"]).astype(np.uint8)
     return _apply_overlay(frame, shot["opacity"])
 
 
@@ -1156,6 +1176,8 @@ def create_video(script: dict, audio_path: str, output_dir: str,
                 print(f"          ⚠ no images for section {section['id']} — gradient fallback")
 
             section_shots = _prepare_shots(schedule.get(section["id"], [])) if schedule else None
+            if section_shots and section.get("section_type") == "cold_open":
+                section_shots = cold_open_treatment(section_shots)
             clip = _make_clip(section, duration, bg_images, i + 1, total_sections,
                               captions=frame_captions, section_start_t=section_start_t,
                               cinematic=cinematic, shots=section_shots)

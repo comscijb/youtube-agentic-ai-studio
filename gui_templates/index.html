@@ -908,6 +908,29 @@ a:hover{color:var(--text)}
             </div>
 
             <div class="settings-field">
+              <div class="field-label">Cold open por tipo</div>
+              <div class="help-text" style="margin:0 0 4px">O episódio abre no momento mais dramático e depois volta ao começo. Um bloco "Cold open" no briefing sempre vale.</div>
+              <label style="display:flex;gap:6px;align-items:center;margin:2px 0">Tipo A
+                <select id="s-cold-a" class="form-control" style="max-width:340px">
+                  <option value="flash_forward">Flash-forward (teaser da virada)</option>
+                  <option value="omen">Presságio (uma ou duas linhas, sem salto)</option>
+                  <option value="off">Desligado (como antes)</option>
+                </select></label>
+              <label style="display:flex;gap:6px;align-items:center;margin:2px 0">Tipo B
+                <select id="s-cold-b" class="form-control" style="max-width:340px">
+                  <option value="flash_forward">Flash-forward (teaser da virada)</option>
+                  <option value="omen">Presságio (uma ou duas linhas, sem salto)</option>
+                  <option value="off">Desligado (como antes)</option>
+                </select></label>
+              <label style="display:flex;gap:6px;align-items:center;margin:2px 0">Tipo C
+                <select id="s-cold-c" class="form-control" style="max-width:340px">
+                  <option value="flash_forward">Flash-forward (teaser da virada)</option>
+                  <option value="omen">Presságio (uma ou duas linhas, sem salto)</option>
+                  <option value="off">Desligado (como antes)</option>
+                </select></label>
+            </div>
+
+            <div class="settings-field">
               <div class="field-label">Efeito de filme</div>
               <select id="s-film-effect">
                 <option value="off">Desligado</option>
@@ -3376,7 +3399,12 @@ function loadReviewData() {
     (d.sections||[]).forEach(s => {
       const el = document.createElement('div');
       el.style.cssText='padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);font-size:12px';
-      el.innerHTML = `<span style="color:var(--accent);font-weight:600">[${s.id}]</span> <span style="color:var(--text)">${s.title||''}</span><button class="btn btn-ghost" style="float:right;padding:2px 7px;font-size:10px" onclick="regenerateScene(${s.id})">↻ Scene</button><div style="color:var(--muted);margin-top:2px;font-size:11px">${(s.narration||'').substring(0,80)}…</div>`;
+      const teaser = s.section_type === 'cold_open'
+        ? (() => { const plan = ((d.story_outline || {}).cold_open) || {};
+                   return ` <span class="sbadge partial" title="${_esc('Mostra: cena ' + (plan.source_scene_id || '—') + ' · não revela: ' + (plan.withheld || '—'))}">cold open · ${plan.mode === 'omen' ? 'presságio' : 'flash-forward'}${plan.status === 'proposed' ? ' · proposto' : ''}</span>`; })()
+        : '';
+      if (teaser) el.style.borderColor = 'var(--amber)';
+      el.innerHTML = `<span style="color:var(--accent);font-weight:600">[${s.id}]</span> <span style="color:var(--text)">${s.title||''}</span>${teaser}<button class="btn btn-ghost" style="float:right;padding:2px 7px;font-size:10px" onclick="regenerateScene(${s.id})">↻ Scene</button><div style="color:var(--muted);margin-top:2px;font-size:11px">${(s.narration||'').substring(0,80)}…</div>`;
       si.appendChild(el);
     });
     const artifacts = {
@@ -3716,6 +3744,7 @@ function loadSettings() {
     document.getElementById('s-end-card').checked = !!d.end_credit_card;
     document.getElementById('s-about-text').value = d.about_text || '';
     document.getElementById('s-ambient').checked = !!d.ambient_enabled;
+    ['a', 'b', 'c'].forEach(k => { const el = document.getElementById('s-cold-' + k); if (el && d.cold_open) el.value = d.cold_open[k.toUpperCase()] || 'off'; });
 
     // B-roll interval (stored as float seconds, slider is integer seconds)
     const bri = Math.round(parseFloat(d.broll_interval) || 10);
@@ -3834,6 +3863,7 @@ function saveSettings() {
       credit_line:   document.getElementById('s-credit-line').value,
       end_credit_card: document.getElementById('s-end-card').checked,
       ambient_enabled: document.getElementById('s-ambient').checked,
+      cold_open: {A: document.getElementById('s-cold-a').value, B: document.getElementById('s-cold-b').value, C: document.getElementById('s-cold-c').value},
       broll_interval: parseInt(document.getElementById('s-broll-interval').value),
       broll_xfade:    parseInt(document.getElementById('s-broll-xfade').value) / 10,
     })

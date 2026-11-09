@@ -471,6 +471,19 @@ def _ambient_rule() -> str:
             "one per shot; most shots have none.")
 
 
+def _cold_open_note(scene: dict) -> str:
+    """Phase 3.9.7: the teaser's shots read as a jump in time and never show what it withholds."""
+    if scene.get("section_type") != "cold_open":
+        return ""
+    if scene.get("cold_open_mode") == "omen":
+        return ("\nCOLD OPEN (omen): one or two quiet establishing images of the place, no characters in close-up; a slower, "
+                "darker look is added at render.")
+    return ("\nCOLD OPEN (flash-forward to scene " + str(scene.get("source_scene_id", "")) + "): 2-3 shots of that later moment, "
+            "seen from another angle or closer than the scene itself will show it (a slower, darker look is added at render). "
+            "NEVER SHOW: " + str(scene.get("withheld") or "the payoff") + " (keep it out of frame, a soft glow, or seen only "
+            "in a character's face).")
+
+
 def _scene_context(scene_id: str, scene_segments: list[dict], vb: dict, outline: dict) -> str:
     scene = next((item for item in outline.get("scenes", []) if item.get("scene_id") == scene_id), {})
     return f"""VISUAL BIBLE: {compact_json({key: vb.get(key) for key in ("characters", "locations")})}
@@ -478,7 +491,7 @@ SCENE_ID: {scene_id}
 SCENE: {compact_json({"setting": scene.get("setting", ""), "summary": scene.get("summary", ""),
                       "cast": scene.get("characters_present", []),
                       "default_location": (vbible.location_for_scene(vb, scene_id) or {}).get("location_id")})}
-SCENE NARRATION: {" ".join(segment["text"] for segment in scene_segments)}
+SCENE NARRATION: {" ".join(segment["text"] for segment in scene_segments)}{_cold_open_note(scene)}
 SEGMENTS ({len(scene_segments)}; return exactly {len(scene_segments)} shots): {compact_json(
         [{"n": number, "seconds": round(segment["end"] - segment["start"], 1), "narration": segment["text"]}
          for number, segment in enumerate(scene_segments, 1)])}"""

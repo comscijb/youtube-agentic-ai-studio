@@ -2388,6 +2388,7 @@ def get_settings():
         "end_credit_card": bool(getattr(config, "END_CREDIT_CARD", True)),
         "about_text":      __import__("video.description", fromlist=["about_text"]).about_text(),
         "ambient_enabled": bool(getattr(config, "AMBIENT_ENABLED", True)),
+        "cold_open":       __import__("agents.cold_open", fromlist=["configured"]).configured(),
         "banned_topics":   load_banned_topics(),
     })
 
@@ -2661,6 +2662,14 @@ def save_settings():
     if "ambient_enabled" in body:
         config.AMBIENT_ENABLED = bool(body["ambient_enabled"])
         stock_env["AMBIENT_ENABLED"] = str(config.AMBIENT_ENABLED).lower()
+    if isinstance(body.get("cold_open"), dict):            # Phase 3.9.7: mode per narrative type
+        from agents import cold_open
+        current = dict(getattr(config, "COLD_OPEN", {}) or {})
+        for letter, mode in body["cold_open"].items():
+            if letter in cold_open.DEFAULTS and mode in cold_open.MODES:
+                current[letter] = mode
+                stock_env[f"COLD_OPEN_{letter}"] = mode
+        config.COLD_OPEN = current
     if "credit_line" in body:                          # Phase 3.9-D: one line, kept in .env
         line = " ".join(str(body["credit_line"]).split())
         if not line:
