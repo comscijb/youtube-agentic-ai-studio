@@ -1,0 +1,12 @@
+RULE SENT TO THE OUTLINE (excerpt): COLD OPEN: put ONE extra scene FIRST, before the opening scene, with section_type "cold_open", scene_id "s00", order 1 (the other scenes follow from 2), pace "brief", target_words 75 (50-100 words; it has its own budget and takes nothing from the climax), arc_ ...
+OUTLINE cold_open: {"mode": "flash_forward", "scene_id": "s00", "source_scene_id": "s07", "withheld": "what the kitchen clip shows: Leo telling a dream while Hannah never looks up", "moment_kind": "discovery", "status": "from_brief"}
+teaser target 70 | story words 1576 | total 1576
+TEASER: It is past midnight, and the house is quiet except for the hum of two monitors. Hannah scrolls through the eleventh year, the ninth thousand video, faster than she can watch. Then she stops. One thumbnail, crooked, taken from the height of a kitchen counter. She presses play. Her hand rises to her mouth and stays there. In eleven years of video, there was only one where she could see her own face.
+RETURN: Three weeks earlier, Leo turned twelve.
+CHECKS: []
+
+PUBLISHED EPISODES (example only):
+- The Man Who Needed Everyone to Envy Him [A -> flash_forward]: from s06: Elena returns to the table, quiet and stiff. Marcus notices her pale silence and needles Julian, asking if the curator's paradise has suffered a domestic disagreement. Pa
+- He Cut Off His Daughter for a Warm Glow [A -> flash_forward]: from s06: Alone at the untuned piano, Walter tells Ada a deliberate, cruel lie: that Margaret hated music and never once listened to him play. Ada validates it instantly.
+- Everyone Heard What He Thought [B -> flash_forward]: from s05: At the kitchen table, Nell broadcasts a pleasant surface thought about warm broth. Thomas looks at her face and sees deep physical and emotional exhaustion. He realizes h
+- They Paid the Ferryman to Forget [C -> omen]: omen; source Unwilling to carry the anxiety of the Ferryman's caution, the Mayor boards the ferry and whispers the memory of the Ferryman's warning into his hand. 

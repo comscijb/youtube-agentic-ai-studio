@@ -1,0 +1,99 @@
+{
+ "before": {
+  "sentences": 130,
+  "hits": [
+   {
+    "kind": "omission",
+    "word": "mind",
+    "index": 0,
+    "at": 143.83,
+    "sentence": "'Mind the step, it's icy.'"
+   },
+   {
+    "kind": "insertion",
+    "word": "fine",
+    "at": 470.25,
+    "sentence": "Gentle, true enough, and not one of them his."
+   }
+  ],
+  "acoustic_at_0.90": [
+   74.99,
+   123.86,
+   317.44,
+   340.88,
+   376.37,
+   416.12
+  ],
+  "clipped_edges": [
+   {
+    "at": 114.33,
+    "before_db": -19.6,
+    "after_db": -20.1,
+    "kind": "sentence"
+   },
+   {
+    "at": 147.65,
+    "before_db": -20.7,
+    "after_db": -26.1,
+    "kind": "paragraph"
+   },
+   {
+    "at": 231.88,
+    "before_db": -30.6,
+    "after_db": -34.1,
+    "kind": "paragraph"
+   },
+   {
+    "at": 268.62,
+    "before_db": -20.4,
+    "after_db": -24.0,
+    "kind": "sentence"
+   },
+   {
+    "at": 420.48,
+    "before_db": -38.6,
+    "after_db": -38.9,
+    "kind": "sentence"
+   },
+   {
+    "at": 460.93,
+    "before_db": -28.8,
+    "after_db": -33.1,
+    "kind": "sentence"
+   },
+   {
+    "at": 469.98,
+    "before_db": -20.5,
+    "after_db": -23.6,
+    "kind": "sentence"
+   }
+  ],
+  "duration": 512.44
+ },
+ "after": {
+  "sentences": 130,
+  "hits": [
+   {
+    "kind": "omission",
+    "word": "stone",
+    "index": 29,
+    "at": 73.26,
+    "sentence": "Thomas stands motionless behind the timber, clutching the edge of the flour board while the silence stretches until the ticking of the wall clock sounds like a hammer against stone."
+   },
+   {
+    "kind": "insertion",
+    "word": "day",
+    "at": 462.26,
+    "sentence": "When you think I'm at the chapel.\""
+   }
+  ],
+  "acoustic_at_0.90": [
+   85.57,
+   89.35,
+   172.34,
+   450.62
+  ],
+  "clipped_edges": [],
+  "duration": 583.94
+ }
+}

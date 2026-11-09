@@ -171,10 +171,25 @@ def choose_track(tracks: list[dict], episode: dict | None = None) -> dict | None
 #  FILTER GRAPH AND LOUDNESS
 # ══════════════════════════════════════════════════════════════
 
-def music_filter(duration: float, track_duration: float, volume: float) -> tuple[str, int]:
+PAUSE_KEY_LEVEL = 0.085    # amplitude of the key tone: -24.6 dB RMS, ~5 dB of reduction at threshold 0.03, ratio 8
+
+
+STING_GAIN = 1.0               # a swell to twice the bed (+6 dB) at the middle of the pause after the cold open
+STING_HALF_WIDTH = 0.9
+
+
+def stings(output_dir) -> list[float]:
+    """Centres of the pauses after a cold open (Phase 3.9.7), from narration_words.json."""
+    from agents.narrative import load_json
+    saved = load_json(os.path.join(str(output_dir), "narration_words.json")) or {}
+    return [round(float(pause["at"]) + float(pause["seconds"]) / 2, 3) for pause in saved.get("pauses", []) if pause.get("kind") == "cold_open"]
+
+
+def music_filter(duration: float, track_duration: float, volume: float, swells=()) -> tuple[str, int]:
     """ffmpeg filter_complex: looped/crossfaded bed, fades, ducking, mix.
 
-    Input 0 is the narration, input 1 the music track. Returns (graph, loops).
+    Input 0 is the narration, input 1 the music track. Returns (graph, loops). ``swells`` are times (s) where the
+    ducked bed rises briefly, after the ducking so the key tone cannot hold it down: the sting after a cold open.
     """
     loops = 1
     if track_duration > 0 and track_duration < duration:
@@ -201,9 +216,18 @@ def music_filter(duration: float, track_duration: float, volume: float) -> tuple
     )
     ratio = float(getattr(config, "MUSIC_DUCKING_RATIO", 8))
     threshold = float(getattr(config, "MUSIC_DUCKING_THRESHOLD", 0.03))
-    parts.append("[0:a]asplit=2[narr][key]")
+    parts.append("[0:a]asplit=2[narr][speech]")
+    # Phase 3.9.4-G: in a pause the music comes up about 4 dB and no further, like a breath, not a dropout: a
+    # low steady tone in the key alone keeps the compressor partly closed. Speech is far above it.
+    parts.append(f"sine=frequency=110:sample_rate=48000:duration={duration:.3f},volume={PAUSE_KEY_LEVEL}[tone]")
+    parts.append("[speech][tone]amix=inputs=2:duration=first:normalize=0[key]")
     parts.append(f"[bed][key]sidechaincompress=threshold={threshold}:ratio={ratio}:"
-                 f"attack=20:release=400[ducked]")
+                 f"attack=20:release=900[ducked]")
+    if swells:
+        bumps = "+".join(f"{STING_GAIN}*max(0,1-abs(t-{centre:.3f})/{STING_HALF_WIDTH})" for centre in swells)
+        parts.append(f"[ducked]volume=eval=frame:volume='1+{bumps}'[lifted]")
+        parts.append("[narr][lifted]amix=inputs=2:duration=first:normalize=0[mix]")
+        return ";".join(parts), loops
     parts.append("[narr][ducked]amix=inputs=2:duration=first:normalize=0[mix]")
     return ";".join(parts), loops
 
@@ -235,6 +259,8 @@ def measure_loudness(path: str) -> dict:
 def normalize_loudness(source: str, destination: str) -> dict:
     """Two-pass loudnorm to the configured target; returns before/after measurements."""
     first = _loudnorm_json(_run(["-i", source, "-af", _loudnorm_filter(), "-f", "null", "-"]).stderr)
+    if str(first.get("input_i", "")).strip() in ("-inf", "inf", "nan"):
+        raise RuntimeError(f"loudnorm: {Path(source).name} is silent (measured -inf LUFS); check the slice times")
     result = _run(["-y", "-i", source, "-af", _loudnorm_filter(first), "-ar", "44100",
                    "-c:a", "libmp3lame", "-b:a", "192k", destination])
     if result.returncode != 0:
@@ -321,7 +347,8 @@ def prepare_final_audio(narration_path: str, output_path: str, *, episode: dict 
                 print(f"   ⚠ {NO_MUSIC_MESSAGE} (library: {library})")
             if track:
                 duration = media_duration(narration_path)
-                graph, loops = music_filter(duration, media_duration(track["path"]), volume)
+                swells = stings(os.path.dirname(narration_path) or output_dir)
+                graph, loops = music_filter(duration, media_duration(track["path"]), volume, swells)
                 mixed = os.path.join(temp, "mix.wav")
                 result = _run(["-y", "-i", narration_path, "-i", track["path"],
                                "-filter_complex", graph, "-map", "[mix]", mixed])
@@ -330,7 +357,7 @@ def prepare_final_audio(narration_path: str, output_path: str, *, episode: dict 
                 record.update({
                     "track": track["file"], "moods": track["moods"], "license": track["license"],
                     "source_url": track["source_url"], "attribution": track["attribution"],
-                    "volume": volume, "loops": loops,
+                    "volume": volume, "loops": loops, "stings": swells,
                     "ducking_ratio": float(getattr(config, "MUSIC_DUCKING_RATIO", 8)),
                 })
                 if not track["license"]:

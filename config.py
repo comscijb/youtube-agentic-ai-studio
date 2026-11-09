@@ -91,8 +91,16 @@ END_CREDIT_SECONDS = 4.0
 # Narrative development defaults. Regular episodes can be set from 12 to 20
 # minutes in the GUI; Shorts use their own fixed pacing contract.
 NARRATIVE_TYPE = os.getenv("NARRATIVE_TYPE", "auto")
+# Phase 3.9.7: open each episode on its most dramatic moment. Per narrative type: flash_forward (a 50-100 word teaser
+# from the reversal/climax), omen (one or two lines that foretell the ending, no jump in time) or off. Settings edits it.
+COLD_OPEN = {"A": os.getenv("COLD_OPEN_A", "flash_forward"), "B": os.getenv("COLD_OPEN_B", "flash_forward"),
+             "C": os.getenv("COLD_OPEN_C", "omen")}
+COLD_OPEN_CHAPTER_TITLE = os.getenv("COLD_OPEN_CHAPTER_TITLE", "Prologue")   # chapter 0:00 over a cold open: never a spoiler
 PSYCHOLOGICAL_THEME = os.getenv("PSYCHOLOGICAL_THEME", "")
 TARGET_DURATION_MINUTES = float(os.getenv("TARGET_DURATION_MINUTES", "15"))
+# Allowed length of a regular episode (was 12-20). Parables run ~8 min and some A/B episodes ~11; 8 keeps
+# mid-roll ad eligibility. One place for the CLI, the GUI, the brief and the scriptwriter.
+EPISODE_MINUTES = (8.0, 20.0)
 NARRATION_WPM = int(os.getenv("NARRATION_WPM", "125"))
 # Planning uses the measured delivery of the configured voice + rate from
 # data/voice_calibration.json (updated after every narration) when available;
@@ -149,7 +157,7 @@ NARRATIVE_SEMANTIC_REVISION_TYPES = (
 #    en-US-BrianNeural    — US, calm, documentary
 #    en-US-GuyNeural      — US, clear, neutral
 # ─────────────────────────────────────────
-VOICE_ID    = "en-US-AndrewNeural"
+VOICE_ID    = "en-GB-SoniaNeural"
 # Phase 3.9-A: the channel voice. TTS_BACKEND = edge | local | elevenlabs; TTS_VOICE is the voice of that
 # backend (empty = VOICE_ID for edge). Pick it in the GUI → Vozes after
 # python -m scripts.voice_audition --text-file briefs/audition.txt
@@ -159,12 +167,20 @@ TTS_LOCAL_ENGINE = os.getenv("TTS_LOCAL_ENGINE", "kokoro")      # kokoro (Apache
 TTS_LOCAL_DEVICE = os.getenv("TTS_LOCAL_DEVICE", "auto")        # auto | cpu | cuda
 TTS_LOCAL_PYTHON = os.getenv("TTS_LOCAL_PYTHON", "")              # Kokoro in its own venv (numpy 2); default .venv-tts
 TTS_KOKORO_MODEL = "models/tts/kokoro-v1.0.onnx"                 # kokoro-onnx weights (with voices-v1.0.bin)
+TTS_STUTTER_CHECK = os.getenv("TTS_STUTTER_CHECK", "1") != "0"     # ASR + acoustic check of every Kokoro sentence
+TTS_LOCAL_SPEED  = float(os.getenv("TTS_LOCAL_SPEED", "0.88"))    # Kokoro's own speed (never atempo); replaces VOICE_RATE for it
+# Seconds of silence in the narration: the only silence between pieces (Phase 3.9.4-G). major_scene: before a
+# climax or aftermath scene; final: the hold before the closing line.
+NARRATION_PAUSES = {"sentence": 0.35, "paragraph": 0.7, "scene": 1.5, "major_scene": 2.0, "final": 2.5}
 TTS_LOCAL_VOICE  = "am_michael"                                  # Kokoro stock voice when TTS_VOICE is empty
 TTS_REFERENCE_CLIP = os.getenv("TTS_REFERENCE_CLIP", "")         # assets/voice/<clip> (Chatterbox; provenance note required)
 ELEVENLABS_MODEL = "eleven_multilingual_v2"                      # key: ELEVENLABS_API_KEY in .env
 ALIGNER_MODEL = "base.en"                                        # faster-whisper model for forced alignment
 VOICE_RATE  = "-5%"     # slow down slightly for narration feel
 VOICE_PITCH = "-3Hz"    # slightly deeper = more cinematic
+# Phase 3.9.2-E: heard thoughts (single quotes, where the brief's rule involves thoughts) delivered quieter
+# than speech, in italics in the captions. "soft" | "off".
+HEARD_THOUGHT_STYLE = os.getenv("HEARD_THOUGHT_STYLE", "soft")
 
 # ─────────────────────────────────────────
 #  AI Model
@@ -246,6 +262,10 @@ PACING_MAX_SECONDS = 16.0
 MOTION_STYLE = os.getenv("MOTION_STYLE", "parallax")
 AMBIENT_ENABLED = os.getenv("AMBIENT_ENABLED", "true").lower() in ("1", "true", "yes", "on")
 SHOT_TRANSITIONS = "smart"
+# Phase 3.9.4-A: send the character's portrait for faceless and distant shots? A portrait pulls the character
+# into a close-up the shot did not ask for. "keep" | "none" (text identity, wardrobe and the location reference).
+# Probe (docs/reports/3.9.4): wide with portrait 3/3 extra people and a close-up, without 0/3 and the shot asked for.
+FACELESS_PORTRAIT_REFERENCE = {"wide": "none", "silhouette": "none", "over_the_shoulder": "keep", "faceless": "keep"}
 KEY_MOMENT_CLIPS = 0
 # "reference": approved character portraits drive identity, faces may be visible.
 # "limited_faces": mostly none/partial faces, at most IMAGEGEN_MAX_FULL_FACE_SHOTS hero shots.

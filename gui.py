@@ -255,6 +255,7 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
             atomic_write_json(f"{config.OUTPUT_DIR}/research.json", research)
             if projects.is_project(config.OUTPUT_DIR):     # a new project gets its title-based name
                 projects.activate(projects.retitle(config.OUTPUT_DIR, research["video_title"]))
+                _remember_active(Path(config.OUTPUT_DIR).name)
             _stage("research", "done")
             _log(f"Topic: {research['video_title']}")
         else:
@@ -274,6 +275,7 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
         if "script" in steps:
             _stage("script", "running")
             _log(f"Generating {'Shorts' if video_type == 'shorts' else 'normal'} script…")
+            voice_calibration.ensure_measured(progress=lambda line: _log(str(line).strip()))
             script = write_script(
                 research, video_type=video_type, output_dir=config.OUTPUT_DIR,
                 target_duration_minutes=target_duration,
@@ -421,7 +423,13 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
             _state["thumb_path"] = thumb if os.path.exists(thumb) else None
             _stage("video", "running")
             image_map_int = {int(k): v for k, v in _state["image_map"].items()}
-            _state["video_path"] = create_video(script, audio, out, image_map_int, video_type=video_type)
+            from video.creator import RenderStopped
+            try:
+                _state["video_path"] = create_video(script, audio, out, image_map_int, video_type=video_type,
+                                                    should_stop=_stop_event.is_set)
+            except RenderStopped as exc:
+                _stage("video", "interrompido")
+                raise InterruptedError(str(exc)) from exc
             _stage("video", "done")
 
         def job_shorts():
@@ -534,6 +542,8 @@ def stream():
 def run_pipeline():
     if _state["running"]:
         return jsonify({"ok": False, "error": "Pipeline already running"})
+    if _state.get("draft"):
+        return jsonify({"ok": False, "error": "Crie o projeto para começar (Novo projeto → Criar projeto e abrir)"}), 409
     body       = request.get_json(force=True) or {}
     steps       = body.get("steps", ["research","script","images","narration","music","video"])
     if not isinstance(steps, list) or not steps:
@@ -555,8 +565,9 @@ def run_pipeline():
         return jsonify({"ok": False, "error": "Invalid narrative type"}), 400
     if video_type not in ("normal", "shorts"):
         return jsonify({"ok": False, "error": "Invalid video format"}), 400
-    if video_type == "normal" and not 12 <= target_duration <= 20:
-        return jsonify({"ok": False, "error": "Regular episodes must target 12-20 minutes"}), 400
+    low, high = config.EPISODE_MINUTES
+    if video_type == "normal" and not low <= target_duration <= high:
+        return jsonify({"ok": False, "error": f"Regular episodes must target {low:g}-{high:g} minutes"}), 400
     guard = _regeneration_guard(steps, body)
     if guard:
         return guard
@@ -609,13 +620,74 @@ def _running_stages() -> list[str]:
     return sorted({stage_graph.stage_for_step(name) or name for name in names})
 
 
+GUI_STATE_FILE = Path(__file__).resolve().parent / "data" / "gui_state.json"
+
+
+def _remember_active(slug: str | None) -> None:
+    """The GUI's active project (data/gui_state.json); None = a blank "Novo projeto" draft."""
+    try:
+        atomic_write_json(Path(getattr(config, "GUI_STATE_FILE", GUI_STATE_FILE)), {"active": slug})
+    except OSError:
+        pass
+
+
+def _remembered_active() -> str | None:
+    state = load_json(Path(getattr(config, "GUI_STATE_FILE", GUI_STATE_FILE)))
+    return state.get("active") if state else projects.active_slug()
+
+
+def _enter_draft() -> None:
+    """A blank "Novo projeto (não criado)": no project is loaded, so every panel shows its empty state
+    (an empty scratch folder stands in for the project folder until the wizard creates one)."""
+    import tempfile
+    projects.activate(Path(tempfile.mkdtemp(prefix="pg-draft-")))
+    _state["draft"] = True
+    _reload_state_from_disk()
+
+
+def _switch_project(path) -> None:
+    """Make ``path`` the project every panel reads (server side), and remember it."""
+    path = projects.activate(path)
+    _state["draft"] = False
+    projects.set_active(path.name)
+    _remember_active(path.name)
+    _reload_state_from_disk()
+
+
+def startup() -> None:
+    """Open the last project unless it is archived or gone; then the GUI starts on a blank draft and the
+    home screen lists the projects."""
+    slug = _remembered_active()
+    try:
+        path = projects.path_for(slug) if slug else None
+    except projects.ProjectNotFound:
+        path = None
+    if path is None or projects.is_archived(path):
+        _enter_draft()
+    else:
+        _switch_project(path)
+
+
+@app.after_request
+def _project_header(response):
+    """Every API answer says which project it is about, so the GUI drops late answers for another one."""
+    if request.path.startswith("/api/"):
+        out = Path(config.OUTPUT_DIR)
+        response.headers["X-Project-Slug"] = "" if _state.get("draft") or not projects.is_project(out) else out.name
+    return response
+
+
 def _current_summary() -> dict:
+    from audio import tts
     out = Path(config.OUTPUT_DIR)
+    if _state.get("draft"):
+        return {"project": False, "draft": True, "slug": None, "title": "Novo projeto (não criado)", "stages": [],
+                "next_step": None, "thumbnail": None, "channel_voice": tts.identity()}
     if projects.is_project(out):
-        return {"project": True, **projects.summary(out), "running": _running_stages()}
+        return {"project": True, **projects.summary(out), "running": _running_stages(), "channel_voice": tts.identity()}
     statuses = projects.stage_status(out)
     return {"project": False, "slug": None, "title": "output/ (legacy folder)", "stages": statuses,
-            "next_step": projects.next_step(statuses), "thumbnail": None}
+            "next_step": projects.next_step(statuses), "thumbnail": None, "channel_voice": tts.identity()}
 
 
 @app.route("/api/stages")
@@ -630,7 +702,7 @@ def list_projects():
     legacy = Path(projects.LEGACY_DIR)
     return jsonify({
         "projects": [projects.summary(path) for path in projects.all_paths()],
-        "active": projects.active_slug(),
+        "active": None if _state.get("draft") else projects.active_slug(),
         "current": Path(config.OUTPUT_DIR).name if projects.is_project(config.OUTPUT_DIR) else None,
         "legacy_unmigrated": (legacy / "script.json").is_file() or (legacy / "story_brief.json").is_file(),
     })
@@ -696,10 +768,35 @@ def open_project():
         path = projects.path_for(slug)
     except projects.ProjectNotFound as exc:
         return jsonify({"ok": False, "error": str(exc)}), 404
-    projects.activate(path)
-    projects.set_active(slug)
-    _reload_state_from_disk()
+    if projects.is_archived(path):
+        return jsonify({"ok": False, "archived": True, "slug": slug,
+                        "error": "Este projeto está arquivado. Use “Restaurar” antes de abrir para edição."}), 409
+    _switch_project(path)
     return jsonify({"ok": True, **_current_summary()})
+
+
+@app.route("/api/projects/draft", methods=["POST"])
+def draft_project():
+    """"Novo projeto": a blank draft until the wizard creates the project."""
+    if _state["running"] or _state.get("imagegen_busy"):
+        return jsonify({"ok": False, "error": "Wait for the running step to finish"}), 409
+    _enter_draft()
+    _remember_active(None)
+    return jsonify({"ok": True, **_current_summary()})
+
+
+@app.route("/api/projects/restore", methods=["POST"])
+def restore_project_endpoint():
+    """"Restaurar": copy an archived project back from the archive (a background job)."""
+    from studio import archive
+    slug = str((request.get_json(force=True) or {}).get("slug", ""))
+    try:
+        path = projects.path_for(slug)
+    except projects.ProjectNotFound as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 404
+    if not projects.is_archived(path):
+        return jsonify({"ok": False, "error": "This project is not archived"}), 400
+    return _imagegen_run(lambda: archive.restore_project(slug, log=lambda line: _log(line)))
 
 
 @app.route("/api/projects/new", methods=["POST"])
@@ -725,8 +822,9 @@ def new_project():
         except premise_brief.BriefError as exc:
             return jsonify({"ok": False, "error": str(exc)}), 400
         target = premise_brief.target_minutes(brief, target) or target
-    if video_type == "normal" and not 12 <= target <= 20:
-        return jsonify({"ok": False, "error": "Regular episodes must target 12-20 minutes"}), 400
+    low, high = config.EPISODE_MINUTES
+    if video_type == "normal" and not low <= target <= high:
+        return jsonify({"ok": False, "error": f"Regular episodes must target {low:g}-{high:g} minutes"}), 400
     path = projects.create(str(body.get("title", "") or (brief or {}).get("working_title", "")),
                            video_type=video_type, target_duration=target)
     # "Novo projeto" (Phase 3.8-C): the wizard's choices; the Story Brief stage uses them.
@@ -736,9 +834,7 @@ def new_project():
     projects.save(path, data)
     if brief:
         premise_brief.save(path, brief)
-    projects.activate(path)
-    projects.set_active(path.name)
-    _reload_state_from_disk()
+    _switch_project(path)
     return jsonify({"ok": True, **_current_summary()})
 
 
@@ -861,9 +957,9 @@ def discard_project_endpoint():
         projects.discard(path)
     except (ValueError, OSError) as exc:
         return jsonify({"ok": False, "error": str(exc)}), 400
-    if current:                                   # fall back to the most recent project (or legacy output/)
-        projects.activate(projects.resolve())
-        _reload_state_from_disk()
+    if current:                                   # nothing loaded: a blank draft
+        _enter_draft()
+        _remember_active(None)
     return jsonify({"ok": True})
 
 
@@ -872,6 +968,8 @@ def project_stage(stage):
     """Run / re-run / skip one stage of the current project, respecting existing artifacts."""
     if stage not in projects.STAGE_KEYS:
         return jsonify({"ok": False, "error": f"Unknown stage {stage}"}), 404
+    if _state.get("draft"):
+        return jsonify({"ok": False, "error": "Crie o projeto para começar"}), 409
     body = request.get_json(force=True) or {}
     action = body.get("action", "run")
     out = Path(config.OUTPUT_DIR)
@@ -930,12 +1028,19 @@ def project_stage(stage):
     return jsonify({"ok": True, "steps": steps})
 
 
+@app.route("/api/video/preflight")
+def video_preflight():
+    """What the Video stage checks before it renders."""
+    from video import render_check
+    return jsonify({"ok": True, **render_check.preflight(config.OUTPUT_DIR)})
+
+
 @app.route("/api/stop", methods=["POST"])
 def stop_pipeline():
-    """Request the pipeline to stop after the current stage finishes."""
+    """Stop: the running video encode ends at once and the other stages at their next checkpoint."""
     _stop_event.set()
     _state["stop_requested"] = True
-    _log("⏹ Stop requested — will halt after current step completes…", "warn")
+    _log("⏹ Parada pedida (botão Parar): um vídeo em render é interrompido; outras etapas param no próximo ponto seguro", "warn")
     return jsonify({"ok": True})
 
 
@@ -1442,6 +1547,7 @@ def imagegen_status():
                                                    "characters", "face_visibility", "reuse_of",
                                                    "action", "prompt", "image_path", "provider",
                                                    "flags", "warnings", "qa", "edit_queue",
+                                                   "image_flags", "copy_check", "removal", "source",
                                                    "narration_excerpt", "location", "generated_at")}
                   for shot in shots],
     })
@@ -1652,6 +1758,147 @@ def _review_shot(shot_id: str):
     return (path, shot_list, shot), None
 
 
+def _save_brush_mask(shot: dict, data_url: str) -> str:
+    """A brush mask from the viewer (PNG data URL): saved with the shot, its relative path returned."""
+    import base64
+    from PIL import Image
+    from video.qa import removal
+    try:
+        raw = base64.b64decode(str(data_url).split(",", 1)[-1])
+        with Image.open(io.BytesIO(raw)) as image:
+            mask = image.convert("RGBA").getchannel("A") if "A" in image.getbands() else image.convert("L")
+    except (ValueError, OSError) as exc:
+        raise ValueError("the mask is not a readable image") from exc
+    if not mask.getbbox():
+        raise ValueError("the mask is empty: paint over the figure")
+    relative = removal.FOLDER / f"{shot['shot_id']}_brush_{int(time.time() * 1000)}.png"
+    target = Path(config.OUTPUT_DIR, relative)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    mask.save(target, "PNG")
+    return relative.as_posix()
+
+
+@app.route("/api/imagegen/shot/<shot_id>/mask_preview", methods=["POST"])
+def imagegen_mask_preview(shot_id):
+    """The mask a box becomes (refined to the person, dilated, with the shadow), to show and edit before running."""
+    import base64
+    from PIL import Image
+    from video.qa import fixes, region, removal, review
+    found, error = _review_shot(shot_id)
+    if error:
+        return error
+    _, _, shot = found
+    try:
+        box = review.clean_box((request.get_json(force=True) or {}).get("box"))
+        if not box:
+            raise ValueError("Draw a box")
+    except ValueError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    image_path = Path(config.OUTPUT_DIR, shot["image_path"])
+    detector = fixes._detector()
+    persons = detector.detect(image_path).get("persons", []) if detector else []
+    with Image.open(image_path) as image:
+        size = image.size
+    hard = removal.build_mask(size, box, persons=persons, grow=removal.FIGURE_GROW)
+    buffer = io.BytesIO()
+    hard.save(buffer, "PNG")
+    overlaps = bool(region.overlap_warnings({"persons": persons}, shot, box)) if persons else False
+    return jsonify({"ok": True, "mask": "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("ascii"),
+                    "box": removal.mask_box(hard), "refined": removal.refine_box(box, persons)[1],
+                    "regenerate_suggested": removal.regenerate_suggested(hard, overlaps)})
+
+
+@app.route("/api/imagegen/shot/<shot_id>/removal/choose", methods=["POST"])
+def imagegen_removal_choose(shot_id):
+    """"Usar este": a removal result becomes the shot; the image before it stays in the history."""
+    from video.qa import removal
+    if _state.get("imagegen_busy"):
+        return jsonify({"ok": False, "error": "Wait for the running generation"}), 409
+    found, error = _review_shot(shot_id)
+    if error:
+        return error
+    path, shot_list, shot = found
+    try:
+        action = removal.choose(config.OUTPUT_DIR, shot, int((request.get_json(force=True) or {}).get("index", -1)))
+    except (IndexError, ValueError) as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    atomic_write_json(path, shot_list)
+    Path(config.OUTPUT_DIR, "final_video.mp4").unlink(missing_ok=True)
+    return jsonify({"ok": True, "action": action})
+
+
+@app.route("/api/imagegen/shot/<shot_id>/removal/discard", methods=["POST"])
+def imagegen_removal_discard(shot_id):
+    found, error = _review_shot(shot_id)
+    if error:
+        return error
+    path, shot_list, shot = found
+    shot.pop("removal", None)
+    atomic_write_json(path, shot_list)
+    return jsonify({"ok": True})
+
+
+def _open_folder(path) -> None:
+    """Show a folder in the file manager (best effort: exporting worked either way)."""
+    try:
+        if sys.platform == "win32":
+            os.startfile(str(path))
+    except OSError:
+        pass
+
+
+@app.route("/api/imagegen/shot/<shot_id>/export", methods=["POST"])
+def imagegen_export(shot_id):
+    """"Exportar para edição": the shot at full size, or the crop around a box, in exports/."""
+    from video import external_images
+    from video.qa import review
+    found, error = _review_shot(shot_id)
+    if error:
+        return error
+    try:
+        box = review.clean_box((request.get_json(force=True) or {}).get("box"))
+        target = external_images.export_image(config.OUTPUT_DIR, found[2], box)
+    except (ValueError, OSError) as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    _open_folder(target.parent)
+    return jsonify({"ok": True, "path": Path(target).relative_to(config.OUTPUT_DIR).as_posix()})
+
+
+@app.route("/api/imagegen/shot/<shot_id>/import", methods=["POST"])
+def imagegen_import(shot_id):
+    """"Importar imagem editada": any size; an aspect far from 16:9 answers 409 until the user picks crop or blur."""
+    import tempfile
+    from video import external_images
+    from video.qa import fixes
+    if _state.get("imagegen_busy"):
+        return jsonify({"ok": False, "error": "Wait for the running generation"}), 409
+    found, error = _review_shot(shot_id)
+    if error:
+        return error
+    path, shot_list, shot = found
+    upload = request.files.get("file")
+    if not upload or not upload.filename:
+        return jsonify({"ok": False, "error": "No file"}), 400
+    try:
+        position = float(request.form.get("position", 0.5))
+    except ValueError:
+        position = 0.5
+    with tempfile.TemporaryDirectory() as temp:
+        held = Path(temp) / "upload"
+        upload.save(held)
+        try:
+            action = external_images.import_image(config.OUTPUT_DIR, shot, held, upload.filename, mode=request.form.get("mode", ""),
+                                                  position=position, detector=fixes._detector())
+        except external_images.NeedsChoice as exc:
+            return jsonify({"ok": False, "needs_choice": True, "width": exc.size[0], "height": exc.size[1],
+                            "difference": round(exc.difference, 4)}), 409
+        except (ValueError, OSError) as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 400
+    atomic_write_json(path, shot_list)
+    Path(config.OUTPUT_DIR, "final_video.mp4").unlink(missing_ok=True)
+    return jsonify({"ok": True, "action": action, "warnings": shot.get("image_flags", [])})
+
+
 @app.route("/api/imagegen/shot/<shot_id>/queue", methods=["POST"])
 def imagegen_queue_edit(shot_id):
     """"Remover figura", "Adicionar marcador", "Remover marcas", "Instrução livre", "Gerar de novo":
@@ -1665,9 +1912,11 @@ def imagegen_queue_edit(shot_id):
     body = request.get_json(force=True) or {}
     vb = load_json(Path(config.OUTPUT_DIR, vbible.FILE_NAME)) or {}
     try:
+        mask = _save_brush_mask(shot, body.get("mask")) if body.get("mask") else ""
         entry = review.make_request(str(body.get("kind", "")), vb, box=body.get("box"),
                                     character=str(body.get("character", "")), marker=str(body.get("marker", "")),
-                                    text=str(body.get("text", "")))
+                                    text=str(body.get("text", "")), mask=mask, replace=str(body.get("replace", "")),
+                                    erase_only=bool(body.get("erase_only")), large=bool(body.get("large")))
     except ValueError as exc:
         return jsonify({"ok": False, "error": str(exc)}), 400
     queue = review.enqueue(shot, entry)
@@ -1734,8 +1983,10 @@ def imagegen_run_queue():
             job_factory=lambda shot: (lambda offset: shotgen.shot_job(shot, vb, output, offset)[0]),
             save=lambda: atomic_write_json(path, current), progress=_imagegen_progress,
             on_shot=lambda shot_id: _state.update(imagegen_current=shot_id))
-        Path(config.OUTPUT_DIR, "final_video.mp4").unlink(missing_ok=True)
-        _imagegen_progress(f"Fila: {summary['edits']} edição(ões), {summary['regenerations']} nova(s) seed(s)"
+        if summary["edits"] or summary["regenerations"]:      # a removal changes nothing until a result is chosen
+            Path(config.OUTPUT_DIR, "final_video.mp4").unlink(missing_ok=True)
+        _imagegen_progress(f"Fila: {summary.get('removals', 0)} remoção(ões) a escolher, "
+                           f"{summary['edits']} edição(ões), {summary['regenerations']} nova(s) seed(s)"
                            + (f"; falharam (original mantido): {', '.join(summary['failed'])}" if summary["failed"]
                               else ""))
     return _imagegen_run(work)
@@ -2120,7 +2371,6 @@ def get_settings():
         "music_library":   getattr(config, "MUSIC_LIBRARY_DIR", ""),
         "channel_name":    config.CHANNEL_NAME,
         "channel_desc":    config.CHANNEL_DESCRIPTION,
-        "voice_id":        config.VOICE_ID,
         "voice_rate":      config.VOICE_RATE,
         "voice_pitch":     config.VOICE_PITCH,
         "configured_wpm":  voice_calibration.configured_wpm(),
@@ -2140,6 +2390,7 @@ def get_settings():
         "end_credit_card": bool(getattr(config, "END_CREDIT_CARD", True)),
         "about_text":      __import__("video.description", fromlist=["about_text"]).about_text(),
         "ambient_enabled": bool(getattr(config, "AMBIENT_ENABLED", True)),
+        "cold_open":       __import__("agents.cold_open", fromlist=["configured"]).configured(),
         "banned_topics":   load_banned_topics(),
     })
 
@@ -2151,19 +2402,103 @@ def _audition_dir() -> Path:
     return OUT
 
 
+_voice_job = {"running": False, "done": 0, "total": 0, "current": "", "log": [], "errors": {}}
+
+
+def voice_rows() -> list[dict]:
+    """The catalogue voices installed here plus any other auditioned voice, each with its latest sample
+    (play URL), stats and error, and whether it is the channel voice."""
+    from audio import tts
+    from audio.tts import catalogue
+    channel = tts.identity()
+    results = {catalogue.key(row["backend"], row["voice"]): row
+               for row in (load_json(_audition_dir() / "results.json") or {}).get("rows", [])}
+    entries = catalogue.catalogue()
+    known = {catalogue.key(entry["backend"], entry["voice"]) for entry in entries}
+    if catalogue.key(channel["backend"], channel["voice"]) not in known:   # the channel voice is always listed
+        entries.insert(0, {"backend": channel["backend"], "voice": channel["voice"], "label": channel["voice"],
+                           "licence": catalogue.LICENCES.get(channel["backend"], "")})
+        known.add(catalogue.key(channel["backend"], channel["voice"]))
+    entries += [{"backend": row["backend"], "voice": row["voice"], "label": row["voice"], "licence": row.get("licence", "")}
+                for key, row in results.items() if key not in known]
+    rows = []
+    for entry in entries:
+        key = catalogue.key(entry["backend"], entry["voice"])
+        result = results.get(key, {})
+        has_file = bool(result.get("file")) and (_audition_dir() / result["file"]).is_file()
+        rows.append({**entry, **{name: result.get(name) for name in ("rtf", "coverage", "drift_ms", "lufs", "vram_mib")},
+                     "error": result.get("error") or _voice_job["errors"].get(key),
+                     "url": f"/api/voices/sample/{result['file']}" if has_file else "",
+                     "current": entry["backend"] == channel["backend"] and entry["voice"] == channel["voice"]})
+    return rows
+
+
 @app.route("/api/voices")
 def voices_status():
-    """"Vozes": the channel voice, the audition samples, the backends and the reference clips."""
+    """"Vozes": the channel voice, every catalogue voice with its preview, the backends, the reference
+    clips and the "Gerar prévias" job."""
     from audio import tts
     from audio.tts import voices
-    results = load_json(_audition_dir() / "results.json") or {"rows": []}
+    from scripts.voice_audition import DEFAULT_TEXT
     backends = []
     for name in tts.BACKENDS:
         ok, detail = tts.get(name).available()
         backends.append({"name": name, "available": ok, "detail": detail})
     stale = projects.is_project(config.OUTPUT_DIR) and projects.narration_voice_changed(config.OUTPUT_DIR)
-    return jsonify({"ok": True, "channel": tts.identity(), "audition": results, "backends": backends,
-                    "references": voices.references(), "narration_stale": bool(stale)})
+    text = DEFAULT_TEXT.read_text(encoding="utf-8").strip() if DEFAULT_TEXT.is_file() else ""
+    return jsonify({"ok": True, "channel": tts.identity(), "voices": voice_rows(), "backends": backends,
+                    "speed_choices": [0.85, 0.88, 0.92],
+                    "references": voices.references(), "narration_stale": bool(stale),
+                    "preview_text": text, "job": {key: value for key, value in _voice_job.items() if key != "errors"}})
+
+
+@app.route("/api/voices/previews", methods=["POST"])
+def voices_previews():
+    """"Gerar prévias": render the chosen voices in the background (cached samples are reused; a failing
+    voice is recorded and the others go on)."""
+    from scripts import voice_audition
+    body = request.get_json(force=True) or {}
+    pairs = [tuple(str(item).split(":", 1)) for item in body.get("voices") or [] if ":" in str(item)]
+    if not pairs:
+        return jsonify({"ok": False, "error": "Escolha pelo menos uma voz"}), 400
+    if _voice_job["running"]:
+        return jsonify({"ok": False, "error": "As prévias já estão sendo geradas"}), 409
+    text = str(body.get("text") or "").strip() or voice_audition.DEFAULT_TEXT.read_text(encoding="utf-8").strip()
+    _voice_job.update(running=True, done=0, total=len(pairs), current="", log=[], errors={})
+
+    def progress(line):
+        _voice_job["log"] = (_voice_job["log"] + [line])[-40:]
+        if line.startswith("["):
+            _voice_job["current"] = line.split("] ", 1)[-1]
+        elif line.startswith("   "):
+            _voice_job["done"] += 1
+
+    def work():
+        try:
+            for row in voice_audition.run(pairs, text, _audition_dir(), progress=progress):
+                if row.get("error"):
+                    _voice_job["errors"][f"{row['backend']}:{row['voice']}"] = row["error"]
+        except Exception as exc:                         # noqa: BLE001 — shown in the panel
+            progress(f"Erro: {exc}")
+            _log(f"Voice previews: {exc}", "error")
+        finally:
+            _voice_job.update(running=False, current="")
+
+    threading.Thread(target=work, daemon=True).start()
+    return jsonify({"ok": True, "total": len(pairs)})
+
+
+@app.route("/api/narration/flagged/<int:index>")
+def narration_flagged(index):
+    """Play a sentence the stutter check still flags (Phase 3.9.5-B)."""
+    output = Path(config.OUTPUT_DIR).resolve()
+    flagged = (load_json(output / "narration_stutter.json") or {}).get("flagged") or []
+    if index >= len(flagged) or not flagged[index].get("clip"):
+        abort(404)
+    path = (output / flagged[index]["clip"]).resolve()
+    if output not in path.parents or path.suffix.lower() != ".wav" or not path.is_file():
+        abort(404)
+    return send_file(str(path), conditional=True)
 
 
 @app.route("/api/voices/sample/<name>")
@@ -2183,9 +2518,21 @@ def voices_channel():
     backend, voice = str(body.get("backend", "")), str(body.get("voice", "")).strip()
     if backend not in tts.BACKENDS or not voice:
         return jsonify({"ok": False, "error": "Choose a backend and a voice"}), 400
+    voice, _, chosen_speed = voice.partition("@")
+    settings = {"TTS_BACKEND": backend, "TTS_VOICE": voice}
+    speed = body.get("speed") or chosen_speed
+    if speed:
+        try:
+            speed = float(speed)
+        except (TypeError, ValueError):
+            return jsonify({"ok": False, "error": "Speed must be a number"}), 400
+        if not 0.7 <= speed <= 1.2:
+            return jsonify({"ok": False, "error": "Speed must be between 0.7 and 1.2"}), 400
+        config.TTS_LOCAL_SPEED = speed
+        settings["TTS_LOCAL_SPEED"] = str(speed)
     config.TTS_BACKEND, config.TTS_VOICE = backend, voice
     try:
-        _write_env_settings({"TTS_BACKEND": backend, "TTS_VOICE": voice})
+        _write_env_settings(settings)
     except OSError as exc:
         return jsonify({"ok": False, "error": f"Could not save the voice: {exc}"}), 500
     stale = projects.is_project(config.OUTPUT_DIR) and projects.narration_voice_changed(config.OUTPUT_DIR)
@@ -2265,7 +2612,6 @@ def save_settings():
         "music_volume":  "MUSIC_VOLUME",
         "channel_name":  "CHANNEL_NAME",
         "channel_desc":  "CHANNEL_DESCRIPTION",
-        "voice_id":      "VOICE_ID",
         "voice_rate":    "VOICE_RATE",
         "voice_pitch":   "VOICE_PITCH",
         "gemini_model":  "GEMINI_MODEL",
@@ -2318,6 +2664,14 @@ def save_settings():
     if "ambient_enabled" in body:
         config.AMBIENT_ENABLED = bool(body["ambient_enabled"])
         stock_env["AMBIENT_ENABLED"] = str(config.AMBIENT_ENABLED).lower()
+    if isinstance(body.get("cold_open"), dict):            # Phase 3.9.7: mode per narrative type
+        from agents import cold_open
+        current = dict(getattr(config, "COLD_OPEN", {}) or {})
+        for letter, mode in body["cold_open"].items():
+            if letter in cold_open.DEFAULTS and mode in cold_open.MODES:
+                current[letter] = mode
+                stock_env[f"COLD_OPEN_{letter}"] = mode
+        config.COLD_OPEN = current
     if "credit_line" in body:                          # Phase 3.9-D: one line, kept in .env
         line = " ".join(str(body["credit_line"]).split())
         if not line:
@@ -2368,9 +2722,8 @@ if __name__ == "__main__":
     port = 7070
     print(f"\n🎬  YouTube AI Agent Studio")
     print(f"   Opening at  http://localhost:{port}\n")
-    # Continue where the user left off: the active (or most recent) project, else legacy output/.
-    projects.activate(projects.resolve())
-    _reload_state_from_disk()
+    # Continue where the user left off, unless that project is archived or gone (then a blank draft).
+    startup()
     print(f"   Project folder: {config.OUTPUT_DIR}\n")
     threading.Timer(1.4, lambda: webbrowser.open(f"http://localhost:{port}")).start()
     # Sync publication states now and every PUBLICATION_SYNC_INTERVAL_MINUTES.

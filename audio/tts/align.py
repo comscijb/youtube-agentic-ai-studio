@@ -111,8 +111,13 @@ def decode(audio_path: str):
 
 def transcribe(audio_path: str) -> list[dict]:
     """Recognised words with timings (ms) from faster-whisper."""
-    segments, _ = _whisper().transcribe(decode(audio_path), word_timestamps=True, language="en",
-                                        vad_filter=False, beam_size=1)
+    _whisper()                                           # says so plainly when the aligner is missing
+    return transcribe_samples(decode(audio_path))
+
+
+def transcribe_samples(samples) -> list[dict]:
+    """Recognised words with timings (ms) from 16 kHz mono float32 samples."""
+    segments, _ = _whisper().transcribe(samples, word_timestamps=True, language="en", vad_filter=False, beam_size=1)
     return [{"text": word.word.strip(), "start_ms": word.start * 1000, "end_ms": word.end * 1000}
             for segment in segments for word in (segment.words or [])]
 

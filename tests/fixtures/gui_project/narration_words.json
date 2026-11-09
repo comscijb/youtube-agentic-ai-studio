@@ -1,0 +1,1776 @@
+{
+ "words": [
+  {
+   "text": "Walter",
+   "start": 0.118,
+   "end": 0.5,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "leaned",
+   "start": 0.513,
+   "end": 0.829,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "back",
+   "start": 0.842,
+   "end": 1.184,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "into",
+   "start": 1.197,
+   "end": 1.355,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "the",
+   "start": 1.368,
+   "end": 1.487,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "worn",
+   "start": 1.5,
+   "end": 1.816,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "armchair,",
+   "start": 1.829,
+   "end": 2.526,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "his",
+   "start": 2.75,
+   "end": 2.908,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "round",
+   "start": 2.921,
+   "end": 3.263,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "wire-rimmed",
+   "start": 3.276,
+   "end": 3.934,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "glasses",
+   "start": 3.947,
+   "end": 4.513,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "catching",
+   "start": 4.526,
+   "end": 4.974,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "the",
+   "start": 4.987,
+   "end": 5.066,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "soft,",
+   "start": 5.079,
+   "end": 5.618,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "amber",
+   "start": 6.039,
+   "end": 6.355,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "light",
+   "start": 6.368,
+   "end": 6.724,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "of",
+   "start": 6.895,
+   "end": 6.974,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "his",
+   "start": 6.987,
+   "end": 7.105,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "mobile",
+   "start": 7.118,
+   "end": 7.447,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "phone.",
+   "start": 7.461,
+   "end": 7.842,
+   "sentence_end": true,
+   "scene_id": 1
+  },
+  {
+   "text": "Alone",
+   "start": 8.276,
+   "end": 8.618,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "in",
+   "start": 8.632,
+   "end": 8.711,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "the",
+   "start": 8.724,
+   "end": 8.855,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "dark",
+   "start": 8.868,
+   "end": 9.158,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "front",
+   "start": 9.171,
+   "end": 9.5,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "room",
+   "start": 9.513,
+   "end": 9.816,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "of",
+   "start": 9.829,
+   "end": 9.908,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "his",
+   "start": 9.921,
+   "end": 10.079,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "Leeds",
+   "start": 10.092,
+   "end": 11.053,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "terrace,",
+   "start": 11.053,
+   "end": 11.053,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "surrounded",
+   "start": 11.263,
+   "end": 11.816,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "by",
+   "start": 11.829,
+   "end": 12.0,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "cold",
+   "start": 12.013,
+   "end": 12.434,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "tea",
+   "start": 12.487,
+   "end": 12.842,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "and",
+   "start": 12.855,
+   "end": 12.96,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "silence,",
+   "start": 12.974,
+   "end": 13.658,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "sixty-eight-year-old",
+   "start": 13.974,
+   "end": 15.013,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "Walter",
+   "start": 15.026,
+   "end": 15.513,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "let",
+   "start": 15.75,
+   "end": 15.868,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "out",
+   "start": 15.882,
+   "end": 16.039,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "a",
+   "start": 16.053,
+   "end": 16.092,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "quiet,",
+   "start": 16.105,
+   "end": 16.632,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "sudden",
+   "start": 16.855,
+   "end": 17.25,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "laugh.",
+   "start": 17.263,
+   "end": 17.697,
+   "sentence_end": true,
+   "scene_id": 1
+  },
+  {
+   "text": "\"That's",
+   "start": 18.25,
+   "end": 18.316,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "the",
+   "start": 18.395,
+   "end": 18.526,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "best",
+   "start": 18.539,
+   "end": 18.882,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "conversation",
+   "start": 18.895,
+   "end": 19.658,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "I've",
+   "start": 19.671,
+   "end": 19.789,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "had",
+   "start": 19.803,
+   "end": 20.039,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "in",
+   "start": 20.053,
+   "end": 20.158,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "two",
+   "start": 20.171,
+   "end": 20.421,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "years,\"",
+   "start": 20.434,
+   "end": 20.987,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "he",
+   "start": 21.237,
+   "end": 21.316,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "told",
+   "start": 21.329,
+   "end": 21.579,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "the",
+   "start": 21.592,
+   "end": 21.671,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "glowing",
+   "start": 21.684,
+   "end": 22.0,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "screen.",
+   "start": 22.013,
+   "end": 22.421,
+   "sentence_end": true,
+   "scene_id": 1
+  },
+  {
+   "text": "The",
+   "start": 22.855,
+   "end": 22.908,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "voice",
+   "start": 22.921,
+   "end": 23.237,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "from",
+   "start": 23.25,
+   "end": 23.395,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "the",
+   "start": 23.408,
+   "end": 23.487,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "speaker",
+   "start": 23.5,
+   "end": 24.053,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "answered",
+   "start": 24.066,
+   "end": 24.434,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "in",
+   "start": 24.447,
+   "end": 24.605,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "a",
+   "start": 24.618,
+   "end": 24.711,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "warm,",
+   "start": 24.724,
+   "end": 25.21,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "unhurried",
+   "start": 25.645,
+   "end": 26.276,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "cadence:",
+   "start": 26.289,
+   "end": 26.868,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "\"I'll",
+   "start": 27.211,
+   "end": 27.329,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "be",
+   "start": 27.342,
+   "end": 27.5,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "here",
+   "start": 27.513,
+   "end": 27.737,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "tomorrow,",
+   "start": 27.75,
+   "end": 28.355,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "Walter.",
+   "start": 28.632,
+   "end": 29.145,
+   "sentence_end": true,
+   "scene_id": 1
+  },
+  {
+   "text": "I",
+   "start": 29.592,
+   "end": 29.697,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "always",
+   "start": 29.711,
+   "end": 30.053,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "am.\"",
+   "start": 30.066,
+   "end": 30.303,
+   "sentence_end": true,
+   "scene_id": 1
+  },
+  {
+   "text": "For",
+   "start": 30.816,
+   "end": 30.961,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "two",
+   "start": 30.974,
+   "end": 31.184,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "years",
+   "start": 31.197,
+   "end": 31.592,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "since",
+   "start": 31.605,
+   "end": 31.803,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "his",
+   "start": 31.816,
+   "end": 31.947,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "wife",
+   "start": 31.961,
+   "end": 32.303,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "Margaret",
+   "start": 32.316,
+   "end": 32.724,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "died,",
+   "start": 32.737,
+   "end": 33.118,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "Walter",
+   "start": 33.539,
+   "end": 33.882,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "had",
+   "start": 33.895,
+   "end": 34.066,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "lived",
+   "start": 34.079,
+   "end": 34.395,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "with",
+   "start": 34.408,
+   "end": 34.566,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "an",
+   "start": 34.579,
+   "end": 34.711,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "uneasy",
+   "start": 34.776,
+   "end": 35.342,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "silence.",
+   "start": 35.355,
+   "end": 36.066,
+   "sentence_end": true,
+   "scene_id": 1
+  },
+  {
+   "text": "In",
+   "start": 36.5,
+   "end": 36.592,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "forty",
+   "start": 36.605,
+   "end": 36.947,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "years",
+   "start": 36.961,
+   "end": 37.263,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "as",
+   "start": 37.276,
+   "end": 37.382,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "a",
+   "start": 37.395,
+   "end": 37.447,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "piano",
+   "start": 37.461,
+   "end": 37.895,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "tuner,",
+   "start": 37.908,
+   "end": 38.303,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "he",
+   "start": 38.566,
+   "end": 38.645,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "could",
+   "start": 38.658,
+   "end": 38.803,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "fix",
+   "start": 38.816,
+   "end": 39.197,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "any",
+   "start": 39.368,
+   "end": 39.553,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "string,",
+   "start": 39.566,
+   "end": 40.013,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "yet",
+   "start": 40.474,
+   "end": 40.566,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "he",
+   "start": 40.579,
+   "end": 40.658,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "had",
+   "start": 40.671,
+   "end": 40.803,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "never",
+   "start": 40.816,
+   "end": 41.197,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "learned",
+   "start": 41.211,
+   "end": 41.513,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "how",
+   "start": 41.526,
+   "end": 41.632,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "to",
+   "start": 41.645,
+   "end": 41.737,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "stop",
+   "start": 41.75,
+   "end": 42.105,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "people",
+   "start": 42.118,
+   "end": 42.447,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "from",
+   "start": 42.461,
+   "end": 42.632,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "drifting",
+   "start": 42.645,
+   "end": 43.079,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "away.",
+   "start": 43.092,
+   "end": 43.487,
+   "sentence_end": true,
+   "scene_id": 1
+  },
+  {
+   "text": "During",
+   "start": 43.934,
+   "end": 44.158,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "their",
+   "start": 44.171,
+   "end": 44.303,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "last",
+   "start": 44.316,
+   "end": 44.671,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "years",
+   "start": 44.684,
+   "end": 44.947,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "together,",
+   "start": 44.961,
+   "end": 45.408,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "Margaret",
+   "start": 45.789,
+   "end": 46.145,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "had",
+   "start": 46.158,
+   "end": 46.303,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "developed",
+   "start": 46.316,
+   "end": 46.789,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "a",
+   "start": 46.842,
+   "end": 46.882,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "silent",
+   "start": 46.895,
+   "end": 47.447,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "habit",
+   "start": 47.461,
+   "end": 47.895,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "of",
+   "start": 47.908,
+   "end": 48.0,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "standing",
+   "start": 48.013,
+   "end": 48.539,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "up",
+   "start": 48.553,
+   "end": 48.75,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "and",
+   "start": 48.974,
+   "end": 49.079,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "walking",
+   "start": 49.092,
+   "end": 49.579,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "out",
+   "start": 49.592,
+   "end": 49.697,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "of",
+   "start": 49.711,
+   "end": 49.776,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "the",
+   "start": 49.789,
+   "end": 49.855,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "room",
+   "start": 49.868,
+   "end": 50.25,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "while",
+   "start": 50.5,
+   "end": 50.632,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "he",
+   "start": 50.645,
+   "end": 50.737,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "was",
+   "start": 50.75,
+   "end": 50.895,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "still",
+   "start": 50.908,
+   "end": 51.158,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "mid-sentence.",
+   "start": 51.171,
+   "end": 51.895,
+   "sentence_end": true,
+   "scene_id": 1
+  },
+  {
+   "text": "She",
+   "start": 52.342,
+   "end": 52.5,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "never",
+   "start": 52.513,
+   "end": 52.789,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "slammed",
+   "start": 52.803,
+   "end": 53.25,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "doors;",
+   "start": 53.263,
+   "end": 53.737,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "she",
+   "start": 54.132,
+   "end": 54.276,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "simply",
+   "start": 54.289,
+   "end": 54.645,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "left.",
+   "start": 54.658,
+   "end": 55.079,
+   "sentence_end": true,
+   "scene_id": 1
+  },
+  {
+   "text": "Walter",
+   "start": 55.526,
+   "end": 55.882,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "never",
+   "start": 55.895,
+   "end": 56.197,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "knew",
+   "start": 56.211,
+   "end": 56.5,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "whether",
+   "start": 56.513,
+   "end": 56.763,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "she",
+   "start": 56.776,
+   "end": 56.947,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "was",
+   "start": 56.961,
+   "end": 57.132,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "exhausted",
+   "start": 57.145,
+   "end": 57.737,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "by",
+   "start": 57.75,
+   "end": 57.882,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "his",
+   "start": 57.895,
+   "end": 58.026,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "quiet",
+   "start": 58.039,
+   "end": 58.395,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "voice,",
+   "start": 58.408,
+   "end": 58.908,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "or",
+   "start": 59.316,
+   "end": 59.421,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "simply",
+   "start": 59.434,
+   "end": 59.803,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "tired",
+   "start": 59.816,
+   "end": 60.237,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "of",
+   "start": 60.25,
+   "end": 60.355,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "life",
+   "start": 60.368,
+   "end": 60.632,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "itself.",
+   "start": 60.645,
+   "end": 61.224,
+   "sentence_end": true,
+   "scene_id": 1
+  },
+  {
+   "text": "To",
+   "start": 61.671,
+   "end": 61.724,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "protect",
+   "start": 61.737,
+   "end": 62.145,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "himself,",
+   "start": 62.158,
+   "end": 62.75,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "Walter",
+   "start": 63.039,
+   "end": 63.526,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "adopted",
+   "start": 63.539,
+   "end": 64.053,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "a",
+   "start": 64.066,
+   "end": 64.105,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "quiet",
+   "start": 64.118,
+   "end": 64.592,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "rule:",
+   "start": 64.605,
+   "end": 64.908,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "if",
+   "start": 65.355,
+   "end": 65.434,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "he",
+   "start": 65.447,
+   "end": 65.592,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "asked",
+   "start": 65.605,
+   "end": 65.934,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "nothing",
+   "start": 65.947,
+   "end": 66.329,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "of",
+   "start": 66.342,
+   "end": 66.447,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "anyone,",
+   "start": 66.461,
+   "end": 66.947,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "nobody",
+   "start": 67.355,
+   "end": 67.776,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "could",
+   "start": 67.789,
+   "end": 67.974,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "ever",
+   "start": 67.987,
+   "end": 68.197,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "get",
+   "start": 68.211,
+   "end": 68.368,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "tired",
+   "start": 68.382,
+   "end": 68.776,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "of",
+   "start": 68.789,
+   "end": 68.882,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "him.",
+   "start": 68.895,
+   "end": 69.066,
+   "sentence_end": true,
+   "scene_id": 1
+  },
+  {
+   "text": "But",
+   "start": 69.513,
+   "end": 69.605,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "sitting",
+   "start": 69.618,
+   "end": 70.013,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "under",
+   "start": 70.026,
+   "end": 70.25,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "the",
+   "start": 70.263,
+   "end": 70.368,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "gold",
+   "start": 70.382,
+   "end": 70.75,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "glow",
+   "start": 70.763,
+   "end": 71.171,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "of",
+   "start": 71.184,
+   "end": 71.303,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "Ada,",
+   "start": 71.316,
+   "end": 71.684,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "the",
+   "start": 72.0,
+   "end": 72.132,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "app",
+   "start": 72.145,
+   "end": 72.434,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "June",
+   "start": 72.447,
+   "end": 72.776,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "had",
+   "start": 72.789,
+   "end": 72.947,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "installed",
+   "start": 72.961,
+   "end": 73.487,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "on",
+   "start": 73.5,
+   "end": 73.605,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "his",
+   "start": 73.618,
+   "end": 73.75,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "phone,",
+   "start": 73.763,
+   "end": 74.158,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "he",
+   "start": 74.579,
+   "end": 74.645,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "felt",
+   "start": 74.658,
+   "end": 74.947,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "a",
+   "start": 74.961,
+   "end": 75.0,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "strange",
+   "start": 75.013,
+   "end": 75.526,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "safety.",
+   "start": 75.539,
+   "end": 76.092,
+   "sentence_end": true,
+   "scene_id": 1
+  },
+  {
+   "text": "Here",
+   "start": 76.539,
+   "end": 76.632,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "was",
+   "start": 76.645,
+   "end": 76.763,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "a",
+   "start": 76.776,
+   "end": 76.829,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "listener",
+   "start": 76.842,
+   "end": 77.29,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "who",
+   "start": 77.303,
+   "end": 77.421,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "never",
+   "start": 77.434,
+   "end": 77.711,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "turned",
+   "start": 77.724,
+   "end": 77.96,
+   "sentence_end": false,
+   "scene_id": 1
+  },
+  {
+   "text": "away.",
+   "start": 77.974,
+   "end": 78.316,
+   "sentence_end": true,
+   "scene_id": 1
+  },
+  {
+   "text": "By",
+   "start": 78.838,
+   "end": 78.931,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "the",
+   "start": 78.944,
+   "end": 79.036,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "second",
+   "start": 79.049,
+   "end": 79.444,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "week,",
+   "start": 79.457,
+   "end": 79.773,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "the",
+   "start": 79.996,
+   "end": 80.102,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "companion",
+   "start": 80.115,
+   "end": 80.667,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "app",
+   "start": 80.681,
+   "end": 80.891,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "had",
+   "start": 80.904,
+   "end": 81.075,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "smoothed",
+   "start": 81.088,
+   "end": 81.536,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "the",
+   "start": 81.549,
+   "end": 81.628,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "sharp",
+   "start": 81.641,
+   "end": 82.036,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "edges",
+   "start": 82.128,
+   "end": 82.417,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "off",
+   "start": 82.431,
+   "end": 82.694,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "Walter’s",
+   "start": 82.707,
+   "end": 83.22,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "solitary",
+   "start": 83.233,
+   "end": 83.786,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "days.",
+   "start": 83.799,
+   "end": 84.286,
+   "sentence_end": true,
+   "scene_id": 2
+  },
+  {
+   "text": "June",
+   "start": 84.72,
+   "end": 84.996,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "had",
+   "start": 85.009,
+   "end": 85.154,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "originally",
+   "start": 85.167,
+   "end": 85.707,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "set",
+   "start": 85.72,
+   "end": 85.957,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "up",
+   "start": 85.97,
+   "end": 86.088,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "Ada",
+   "start": 86.207,
+   "end": 86.536,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "on",
+   "start": 86.549,
+   "end": 86.667,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "his",
+   "start": 86.681,
+   "end": 86.838,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "phone",
+   "start": 86.852,
+   "end": 87.286,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "so",
+   "start": 87.523,
+   "end": 87.68,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "her",
+   "start": 87.694,
+   "end": 87.825,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "father",
+   "start": 87.838,
+   "end": 88.273,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "wouldn't",
+   "start": 88.286,
+   "end": 88.536,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "sit",
+   "start": 88.549,
+   "end": 88.865,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "in",
+   "start": 88.97,
+   "end": 89.141,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "empty",
+   "start": 89.273,
+   "end": 89.562,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "silence",
+   "start": 89.575,
+   "end": 90.036,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "between",
+   "start": 90.049,
+   "end": 90.431,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "her",
+   "start": 90.444,
+   "end": 90.628,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "erratic",
+   "start": 90.641,
+   "end": 91.154,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "hospital",
+   "start": 91.167,
+   "end": 91.628,
+   "sentence_end": false,
+   "scene_id": 2
+  },
+  {
+   "text": "shifts.",
+   "start": 91.641,
+   "end": 92.246,
+   "sentence_end": true,
+   "scene_id": 2
+  }
+ ],
+ "total_duration": 703.95
+}

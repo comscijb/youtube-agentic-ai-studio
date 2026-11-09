@@ -1,0 +1,442 @@
+{
+  "schema_version": 2,
+  "narrative_contract_version": 4,
+  "content_mode": "cinematic_fiction",
+  "video_type": "normal",
+  "title": "Everyone Heard What He Thought",
+  "description": "An original fictional story about identity. In a town where every passing thought can be heard, the kindest man alive lets one honest thought slip, and discovers that a mind which is always listened to may never have been his own. This episode is a work of fiction.",
+  "thumbnail_text": "Everyone heard it.",
+  "tags": [
+    "identity",
+    "loneliness",
+    "freedom"
+  ],
+  "narrative_type": "philosophical_thought_experiment",
+  "psychological_theme": "identity",
+  "planned_words_per_minute": 125.0,
+  "target_duration_minutes": 12.0,
+  "source_hash": "1f3071f208331ae03a8d600f84d7d81452325c1ce673f409c241d481b1ac619a",
+  "characters": [
+    {
+      "character_id": "thomas_wren",
+      "name": "Thomas Wren",
+      "role": "protagonist",
+      "age": "56",
+      "background": "The respected town baker of Wickham's Rest who was severely punished in childhood for an unacted cruel thought, driving him to spend thirty years obsessively curating an unblemished inner monologue.",
+      "personality": "Gentle, hyper-vigilant, outwardly serene, inwardly exhausted and deeply self-censored.",
+      "core_desire": "To maintain absolute inner moral purity so he remains entirely safe and irreproachable in his community.",
+      "underlying_need": "To experience genuine, uncurated selfhood without fear of rejection or condemnation.",
+      "central_fear": "That a single uncurated thought will reveal him to be flawed, unkind, or fundamentally unlovable.",
+      "psychological_wound": "A traumatic childhood punishment after an involuntary, unacted-on cruel thought was overheard by the town.",
+      "internal_contradiction": "He believes his clean thoughts prove he is a good man, yet those clean thoughts are precisely what prevent him from having an authentic self.",
+      "behavioral_patterns": "Pre-edits every thought before letting it reach surface consciousness; obsessively rolls his sleeves and wipes flour from his hands when anxious.",
+      "relationships": [
+        "Nell Wren: beloved wife of 26 years whose surface thoughts have always seemed placid and comforting"
+      ],
+      "initial_state": "Serene on the surface, meticulously controlling every mental sentence to preserve his long record of kindness.",
+      "development_arc": "After an honest thought slips in public, he begins noticing the internal censor in himself and others, driving him across the boundary stones to seek true cognitive silence.",
+      "final_state": "Standing beyond the Line in complete silence, stripped of his automatic mental filter and facing the terrifying prospect of speaking as himself.",
+      "visual_identity": "Flour-dusted white apron over dark woolens, short grey beard, rolled sleeves, and quiet hands.",
+      "distinctive_details": [
+        "Flour marks on forearms and apron edge",
+        "Micro-pauses before letting a thought form",
+        "Gentle, deliberate touch when handling loaves"
+      ]
+    },
+    {
+      "character_id": "nell_wren",
+      "name": "Nell Wren",
+      "role": "deuteragonist",
+      "age": "54",
+      "background": "A skilled seamstress in Wickham's Rest and Thomas's wife of 26 years, who has secretly slipped past the town boundary stones for years to escape forced cognitive transparency.",
+      "personality": "Calm, warm, highly perceptive, patient, and privately resilient.",
+      "core_desire": "To protect her domestic harmony while maintaining a private inner sanctuary away from public scrutiny.",
+      "underlying_need": "To be truly known and loved for her authentic human reality rather than her curated surface thoughts.",
+      "central_fear": "That her quarter-century marriage is built entirely on mutual mental performances rather than genuine intimacy.",
+      "psychological_wound": "Decades of maintaining pleasant surface thoughts while suppressing her real fatigue and grief to maintain social peace.",
+      "internal_contradiction": "She projects serene thoughts to keep Thomas safe, while secretly escaping into the unmonitored dark to experience true solitude.",
+      "behavioral_patterns": "Projects reassuring, pleasant surface thoughts even when physically exhausted; smooths the fabric of her coat when holding back spoken words.",
+      "relationships": [
+        "Thomas Wren: husband of 26 years whose gentle thoughts she has cherished yet secretly questioned"
+      ],
+      "initial_state": "Quietly dutiful seamstress broadcasting serene surface thoughts while nursing profound, hidden exhaustion.",
+      "development_arc": "Follows Thomas into the quiet moorland, revealing her long-standing secret trips and confronting him with unmonitored spoken honesty.",
+      "final_state": "Standing in the dark beyond the stones, stepping out from behind her mental filter to ask Thomas what he truly thinks.",
+      "visual_identity": "Long silver braid resting over one shoulder, dark green wool coat, precise posture, and tired eyes.",
+      "distinctive_details": [
+        "Neat silver braid pulled over her coat collar",
+        "Calloused fingers from needlework",
+        "Quiet, unwavering gaze when speaking out loud"
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "scene_id": "s01",
+      "title": "The Slip at the Counter",
+      "section_type": "opening",
+      "narrative_function": "Establish the speculative rule of broadcast surface thoughts in Wickham's Rest through an opening grounded in an object, culminating in Thomas's sudden, accidental thought leak.",
+      "narration": "A wooden flour peel scrapes across pine grain. Outside the tall narrow windows of Wickham's Rest, dawn filters over frost-rimmed slate. Thomas Wren slides a heavy rye loaf across the counter, his white apron dusted with fine powder. Around him, the quiet hum of the morning queue drifts through the air. Soft surface thoughts murmur like distant water. 'A fine crust today,' a customer thinks, three paces away. Thomas wipes his palms on his woolen trousers, his breathing measured. Thirty years of unblemished gentleness, thirty years of keeping his mind an untroubled lake. Then fatigue settles deep into his bones. His hand falters on the board. A rogue thought slips past his mental guard and spills into the room for everyone to hear: \"I don't want to be here.\" The shop freezes. The murmur stops dead. Every face turns toward him. Thomas stands motionless behind the timber, clutching the edge of the flour board while the silence stretches until the ticking of the wall clock sounds like a hammer against stone.",
+      "setting": "The village bakery in Wickham's Rest, dawnlight through tall narrow windows, pine counter, flour-dusted floorboards.",
+      "characters_present": [
+        "thomas_wren"
+      ],
+      "dramatic_function": "Launches the central conflict by shattering Thomas's reputation for perfect inner purity.",
+      "emotional_tone": "Sharp panic and public exposure",
+      "visual_direction": "Medium shot of a flour-dusted wooden peel resting on pine, panning up to Thomas's frozen expression as townsfolk turn toward him.",
+      "image_query": "baker hands flour on wooden counter morning light",
+      "image_query_2": "rustic village bakery interior pine counter mist",
+      "image_query_3": "older man baker white apron grey beard quiet posture",
+      "caption_text": "Thomas drops his guard for a single second.",
+      "on_screen_text": "",
+      "id": 1,
+      "outline_scene_id": "s01",
+      "target_words": 170,
+      "bullet_points": [],
+      "image_query_4": ""
+    },
+    {
+      "scene_id": "s02",
+      "title": "The Origin of the Censor",
+      "section_type": "setup",
+      "narrative_function": "Dramatize Thomas's childhood trauma and establish the mechanics of Wickham's Rest's cognitive transparency.",
+      "narration": "Thomas retreats to the dim flour storehouse at the back of the shop, his boots crunching on spilled grain. Burlap sacks lean against limestone walls. He sits on an overturned crate, his hands trembling against his apron. The memory strikes hard, cold as winter iron. When he was a boy of eight, a passing flash of anger had slipped from his mind into the schoolyard, and the elders had punished him for days, teaching him that an uncurated thought is a moral wound. He learned to build an internal supervisor, a tireless editor stationed at the gates of consciousness to rewrite every raw impulse before it reaches the surface. He traces a flour mark on his sleeve, whispering quiet, orderly sentences to himself until his pulse slows. He has not let a single one slip since. Not until this morning.",
+      "setting": "The rear flour store of the bakery, stacked burlap sacks, faint morning light through a high window.",
+      "characters_present": [
+        "thomas_wren"
+      ],
+      "dramatic_function": "Grounds the speculative rule in character psychological history.",
+      "emotional_tone": "Shame and hyper-vigilant resolve",
+      "visual_direction": "Close-up of flour-dusted fingers trembling against wool fabric, soft directional window light highlighting grey hair.",
+      "image_query": "older man sitting near burlap sacks flour storehouse",
+      "image_query_2": "flour dust on hands rustic storeroom soft light",
+      "image_query_3": "thoughtful older man in apron looking down dark interior",
+      "caption_text": "An internal supervisor polishes every thought.",
+      "on_screen_text": "",
+      "id": 2,
+      "outline_scene_id": "s02",
+      "target_words": 150,
+      "bullet_points": [],
+      "image_query_4": ""
+    },
+    {
+      "scene_id": "3",
+      "title": "The Curated Reassurances",
+      "section_type": "development",
+      "narrative_function": "Demonstrate that the strategy of clean thinking restores social approval, while raising the internal tension.",
+      "narration": "The next morning the queue forms again, slower than usual. People step inside and stand a little closer than they need to, listening. Thomas knows what they are waiting for.\n\nHe lifts the first tray from the oven and lets his mind fill with the things it has always held. The smell of rye. The Hollis boy's birthday. How good it is to see them all. 'Lovely to see you, Mrs Pell.' 'Mind the step, it's icy.' Small, warm, perfect thoughts.\n\nIn Wickham's Rest they call it clean thinking. Children learn it before they can read: think gently, and you will never need to lie. There is no crime here. In twenty-six years of marriage, Thomas and Nell have never once argued.\n\nBy the third customer, shoulders loosen. By the tenth, someone laughs. The queue has forgiven him.\n\nOnly Thomas notices how tired he is by noon. Not from the baking. From the thinking.",
+      "setting": "The bakery front counter, bright morning sunshine streaming across slate flooring.",
+      "characters_present": [
+        "thomas_wren"
+      ],
+      "dramatic_function": "Shows the short-term success of his coping mechanism before exposing its hidden cost.",
+      "emotional_tone": "High anxiety shifting to tense relief",
+      "visual_direction": "Wide shot of townspeople in wool coats standing near the wooden counter, relaxed postures, warm morning illumination.",
+      "image_query": "rustic bakery counter customers morning sunlight",
+      "image_query_2": "baker giving fresh bread loaf to customer",
+      "image_query_3": "traditional stone village bakery interior morning",
+      "caption_text": "Clean thoughts soothe community suspicion.",
+      "on_screen_text": "",
+      "id": 3,
+      "outline_scene_id": "s03",
+      "target_words": 160,
+      "bullet_points": [],
+      "image_query_4": ""
+    },
+    {
+      "scene_id": "4",
+      "title": "Hearing the Editor",
+      "section_type": "development",
+      "narrative_function": "Expose the hidden cost of constant internal editing in both Thomas and his neighbors.",
+      "narration": "In the afternoon he walks the bread round, as he has for thirty years. And now, because he is listening for it, he hears it everywhere.\n\nOutside the butcher's, a woman greets a neighbour with a smile. Her thought drifts across the lane: 'I can't bear another hour on my feet.' Then a catch, the smallest pause, and the sentence turns over and comes back bright: 'The weather is being kind to us today.'\n\nA man waiting by the post office: 'If he says that one more time, I'll...' A pause. 'Good of him to come.'\n\nIt is the same pause Thomas makes. A hand on the door before a thought is let out. An editor, working quietly behind every pair of eyes in town.\n\nHe stops in the middle of the lane, the basket heavy on his arm.\n\nNobody in Wickham's Rest has told a lie in forty years. But perhaps nobody here has been honest either. Perhaps they have only learned to edit.\n\nFor the first time in his life, Thomas wonders whether he would sound any different if no one could hear him.",
+      "setting": "Outside the bakery along the stone lane of Wickham's Rest, overcast afternoon sky.",
+      "characters_present": [
+        "thomas_wren"
+      ],
+      "dramatic_function": "Deepens the psychological theme by shifting focus from external safety to internal authenticity.",
+      "emotional_tone": "From relief to creeping dread and disillusionment.",
+      "visual_direction": "Medium shot of Thomas standing by a stone wall, looking at village passersby with subtle realization.",
+      "image_query": "old stone village street overcast sky gray atmosphere",
+      "image_query_2": "older man watching passersby on narrow cobble lane",
+      "image_query_3": "stone cottage alleyway northern England landscape",
+      "caption_text": "Every thought trimmed before it breathes.",
+      "on_screen_text": "",
+      "id": 4,
+      "outline_scene_id": "s04",
+      "target_words": 160,
+      "bullet_points": [],
+      "image_query_4": ""
+    },
+    {
+      "scene_id": "s05",
+      "title": "Supper in Silence",
+      "section_type": "reversal",
+      "narrative_function": "Confront the central tragedy of Thomas and Nell's marriage: twenty-six years of mutual cognitive performance.",
+      "narration": "Night settles over the kitchen table. Bowls of parsnip broth steam in the flickering lamp light. Across from Thomas, his wife of twenty-six years smooths the tablecloth with one hand. Her long silver braid rests over one shoulder. Her thought murmurs into the quiet room: 'What a lovely evening.' Thomas looks up from his bowl. He studies her eyes, seeing the exhaustion etched into the corners of her mouth. Her fingers tremble slightly against the ceramic rim. For twenty-six years, he has lived inside the music of her pleasant broadcasts, believing her mind was as tranquil as an untroubled pond. Now he hears the seam in the sound, the tiny hesitation before the warmth is put on. He wonders what she would think if no one were listening. In twenty-six years, he has never once wondered that. He sets his wooden spoon down on the trestle table. He says nothing. Later, when the house is dark, he takes his coat from the hook and walks out toward the moor.",
+      "setting": "The kitchen of the Wren home, wood stove, ceramic bowls on a trestle table, flickering lamp light.",
+      "characters_present": [
+        "thomas_wren",
+        "nell_wren"
+      ],
+      "dramatic_function": "Reverses the value of their peaceful marriage, framing it as a tragedy of mutual isolation.",
+      "emotional_tone": "From domestic calm to heartbreaking loneliness.",
+      "visual_direction": "Low-key lit interior shot of an old wooden dining table, lamp light casting soft glows on Nell's silver braid and tired expression.",
+      "image_query": "woman with silver braid sitting at rustic wooden table",
+      "image_query_2": "dimly lit cottage dining room evening mood",
+      "image_query_3": "older couple sitting quietly at kitchen table oil lamp",
+      "caption_text": "Twenty-six years of curated harmony.",
+      "on_screen_text": "",
+      "id": 5,
+      "outline_scene_id": "s05",
+      "target_words": 170,
+      "bullet_points": [],
+      "image_query_4": ""
+    },
+    {
+      "scene_id": "s06",
+      "title": "Crossing the Line",
+      "section_type": "reversal",
+      "narrative_function": "Test the speculative rule at the moorland boundary, revealing that the internal censor persists even in complete silence.",
+      "narration": "Thomas walks past the last stone cottage into the raw night wind of the moors. The earth rises toward the ancient granite boundary stones standing like silent teeth against the stars. He steps across the Line. Instantly, the murmur of the town vanishes. The silence is so complete it presses on his ears. No thoughts drift from the dark heather; no mental hum touches his ears. He sits on a cold mound of turf, pulling his wool coat tight, and waits for his true mind to arrive. He waits for the unedited voice of Thomas Wren to speak up in the dark. But nothing comes. The silence stretches, and out of habit, his mind begins generating polite, measured sentences about the cold, shaping phrases for an audience that isn't there. The editor hasn't stopped working; it has become the walls of his skull. He sits alone in the vast emptiness, realizing that even with no one left to listen, he no longer knows how to think without an editor.",
+      "setting": "The open moorland at night, cold wind, dark grass, ancient vertical granite boundary stones.",
+      "characters_present": [
+        "thomas_wren"
+      ],
+      "dramatic_function": "Delivers the core psychological reversal: privacy alone does not grant selfhood.",
+      "emotional_tone": "From desperate expectation to quiet horror.",
+      "visual_direction": "Wide shot of a solitary figure standing near tall ancient stone markers on a dark, desolate moor under a cold night sky.",
+      "image_query": "ancient standing stone marker on cold moorland night",
+      "image_query_2": "lonely man silhouette standing on dark moorland hill",
+      "image_query_3": "desolate nighttime moorland overcast twilight landscape",
+      "caption_text": "Silence beyond the boundary stones.",
+      "on_screen_text": "",
+      "id": 6,
+      "outline_scene_id": "s06",
+      "target_words": 180,
+      "bullet_points": [],
+      "image_query_4": ""
+    },
+    {
+      "scene_id": "s07",
+      "title": "Footsteps in the Dark",
+      "section_type": "climax",
+      "narrative_function": "Reunite Thomas and Nell beyond the Line, breaking their lifetime of mental performance through spoken words.",
+      "narration": "A dry rustle cuts through the damp heather behind him. Thomas freezes, his hands gripping the cold turf. Footsteps crunch softly on gravel and wild grass, stepping past the granite markers into the dark. Nell stands silhouetted against the starlight, her dark green wool coat pulled tight against the moorland wind, her silver braid resting over her shoulder. He hears nothing from her. Out here, he can't. In the total absence of mental noise, she opens her mouth and speaks out loud into the empty air, her voice clear and startlingly real. \"I've been coming here for years,\" Nell says. Thomas turns his head, staring up at her in the dim light. \"Years,\" he repeats.\n\n\"Every Thursday. When you think I'm at the chapel.\" She almost smiles. \"Out here I can think whatever I like, and nobody has to forgive me for it.\"\n\nTwenty-six years without a single argument. He had always believed it meant they understood each other. Standing in the silence, he understands what it really meant: he has only ever heard the version of her she was willing to let out. And she has only ever heard his.",
+      "setting": "Beyond the granite boundary stones on the moor, dim starlight, cold wind through grass.",
+      "characters_present": [
+        "thomas_wren",
+        "nell_wren"
+      ],
+      "dramatic_function": "Climactic revelation that transforms their relationship from curated performance to shared vulnerability.",
+      "emotional_turn": "From shock to profound, raw intimacy.",
+      "emotional_tone": "Intimate, revealing, and tense",
+      "visual_direction": "Two figures standing near an ancient stone marker on a dark moor, Nell's green wool coat caught in wind, stark starlight glow.",
+      "image_query": "man and woman standing on moor at night dark wool coat",
+      "image_query_2": "two silhouettes against dark night sky desolate field",
+      "image_query_3": "woman with silver braid standing in night wind",
+      "caption_text": "Footsteps in the Dark",
+      "on_screen_text": "",
+      "id": 7,
+      "outline_scene_id": "s07",
+      "target_words": 180,
+      "bullet_points": [],
+      "image_query_4": ""
+    },
+    {
+      "scene_id": "s08",
+      "title": "The Unspoken Answer",
+      "section_type": "climax",
+      "narrative_function": "Execute the climactic cut before Thomas answers Nell's direct question.",
+      "narration": "The wind moves through the heather. Nell sits down beside him on the cold turf, close enough to touch, and for once he has no idea what she is thinking. It frightens him. It is also the first time in twenty-six years that she has felt like a stranger, and he finds that he wants to know her.\n\n\"Can I ask you something?\" she says.\n\nHe nods.\n\n\"What do you actually think, Thomas?\"\n\nThe question lands in the silence and stays there. Inside him the editor wakes at once and starts offering sentences. I think you're tired. I think we should go home. I think everything is fine. Gentle, true enough, and not one of them his.\n\nHe lets them pass.\n\nHe breathes in the cold air. He opens his mouth.\n\nBehind them, the lights of Wickham's Rest go on burning, waiting for him to come back and be heard.",
+      "setting": "The edge of the boundary stones, deep night stillness, dark moorland silhouette.",
+      "characters_present": [
+        "thomas_wren",
+        "nell_wren"
+      ],
+      "dramatic_function": "Serves as the narrative climax, leaving the ultimate truth of his identity unspoken.",
+      "emotional_turn": "From tense hesitation to vulnerable surrender.",
+      "emotional_tone": "Suspenseful, raw, and unresolved",
+      "visual_direction": "Tight close-up on Thomas's face in deep shadow, mouth slightly parting, eyes reflecting dim moonlight, cutting abruptly to dark.",
+      "image_query": "close up older man face night shadow moonlight",
+      "image_query_2": "portrait man looking solemn dark night background",
+      "image_query_3": "shadowy silhouette profile man parting lips night",
+      "caption_text": "The Unspoken Answer",
+      "on_screen_text": "",
+      "id": 8,
+      "outline_scene_id": "s08",
+      "target_words": 170,
+      "bullet_points": [],
+      "image_query_4": ""
+    },
+    {
+      "scene_id": "s09",
+      "title": "The Hidden Mind",
+      "section_type": "aftermath",
+      "narrative_function": "Deliver the final philosophical thought experiment reflection, turning the core question directly to the audience.",
+      "narration": "We never hear what Thomas said.\n\nMaybe he told her the truth. Maybe he discovered he no longer had one. Or maybe he said something gentle and meant it, and that was the truth all along.\n\nIn Wickham's Rest they still think clean thoughts, and nobody has argued in a very long time.\n\nThere is a thought in your head right now that no one will ever hear. Is that one you, or is the one keeping it quiet?",
+      "setting": "Wide panoramic vista of the dark English moors under a vast night sky, faint distant village lights of Wickham's Rest.",
+      "characters_present": [],
+      "dramatic_function": "Provides philosophical aftermath and lingering psychological resonance.",
+      "emotional_turn": "From dramatic tension to quiet introspection.",
+      "emotional_tone": "Contemplative, haunting, and reflective",
+      "visual_direction": "Wide cinematic vista of vast dark moorland under stars, distant warm glow of village windows fading out.",
+      "image_query": "vast dark moorland night sky starry horizon",
+      "image_query_2": "distant village lights in dark valley night",
+      "image_query_3": "panoramic dark moorland twilight English landscape",
+      "caption_text": "The Hidden Mind",
+      "on_screen_text": "",
+      "id": 9,
+      "outline_scene_id": "s09",
+      "target_words": 160,
+      "bullet_points": [],
+      "image_query_4": ""
+    }
+  ],
+  "estimated_duration_seconds": 676,
+  "editorial_edits": [
+    {
+      "scene_id": 1,
+      "section_id": 1,
+      "find": "'A fine crust today,' echoes a baker three paces away.",
+      "replace": "'A fine crust today,' a customer thinks, three paces away.",
+      "author": "human_editorial",
+      "applied_at": "2026-11-03T20:04:19+00:00"
+    },
+    {
+      "scene_id": 1,
+      "section_id": 1,
+      "find": "spills aloud into the room:",
+      "replace": "spills into the room for everyone to hear:",
+      "author": "human_editorial",
+      "applied_at": "2026-11-03T20:04:19+00:00"
+    },
+    {
+      "scene_id": 1,
+      "section_id": 1,
+      "find": "Every customer stares.",
+      "replace": "Every face turns toward him.",
+      "author": "human_editorial",
+      "applied_at": "2026-11-03T20:04:19+00:00"
+    },
+    {
+      "scene_id": 2,
+      "section_id": 2,
+      "find": "Safety requires absolute vigilance.",
+      "replace": "He has not let a single one slip since. Not until this morning.",
+      "author": "human_editorial",
+      "applied_at": "2026-11-03T20:04:19+00:00"
+    },
+    {
+      "scene_id": 3,
+      "section_id": 3,
+      "find": "The next morning, sunshine streams across slate flooring as the queue reforms. Townsfolk step inside with cautious eyes, listening intently to the air around Thomas. He stands behind the pine counter, breathing steady, and consciously projects warm thoughts of morning light and wholesome rye. The town lives by \"clean thinking\". Children learn to think gently; there is no lying, no crime, and Thomas and Nell have never argued in 26 years. Next morning he thinks warm, perfect thoughts, and the queue forgives him. Customers catch the rhythm of placid monologue. Tense shoulders drop. They lean forward, accepting loaves with soft nods of forgiveness. His thirty-year record of gentleness is restored. Performative strategy works, even as effort of manufacturing constant sunshine leaves a hollow ache behind ribs. He smiles politely, meeting each gaze with carefully managed serenity, watching tension dissolve from the room while his private exhaustion deepens.",
+      "replace": "The next morning the queue forms again, slower than usual. People step inside and stand a little closer than they need to, listening. Thomas knows what they are waiting for.\n\nHe lifts the first tray from the oven and lets his mind fill with the things it has always held. The smell of rye. The Hollis boy's birthday. How good it is to see them all. 'Lovely to see you, Mrs Pell.' 'Mind the step, it's icy.' Small, warm, perfect thoughts.\n\nIn Wickham's Rest they call it clean thinking. Children learn it before they can read: think gently, and you will never need to lie. There is no crime here. In twenty-six years of marriage, Thomas and Nell have never once argued.\n\nBy the third customer, shoulders loosen. By the tenth, someone laughs. The queue has forgiven him.\n\nOnly Thomas notices how tired he is by noon. Not from the baking. From the thinking.",
+      "author": "human_editorial",
+      "applied_at": "2026-11-03T20:04:19+00:00"
+    },
+    {
+      "scene_id": 4,
+      "section_id": 4,
+      "find": "Afternoon light weighs heavy against the stone walls of Wickham's Rest. Thomas stands by the lane, watching neighbors pass. A woman stops to greet a butcher, her lips curved into a warm smile. But beneath her words, her surface thought drifts out: \"I cannot bear another hour on my feet.\" Then a micro-pause ripples through the air. The sentence catches, reverses, and re-forms into a bright broadcast: \"The weather treats us kindly today.\" Now he can hear the effort. An editor in his head rewrites every thought before it forms, and he hears the same editor in everyone. At supper Nell thinks \"what a lovely evening\" while her face looks exhausted. He starts walking to the Line at night. Men and women walking by, husbands greeting wives, children running past—all of them running an internal censor, shearing away every jagged edge of fatigue and frustration before it reaches the air. Wickham's Rest is not peaceful because its people are gentle. It is peaceful because every mind in town works in a quiet panic.",
+      "replace": "In the afternoon he walks the bread round, as he has for thirty years. And now, because he is listening for it, he hears it everywhere.\n\nOutside the butcher's, a woman greets a neighbour with a smile. Her thought drifts across the lane: 'I can't bear another hour on my feet.' Then a catch, the smallest pause, and the sentence turns over and comes back bright: 'The weather is being kind to us today.'\n\nA man waiting by the post office: 'If he says that one more time, I'll...' A pause. 'Good of him to come.'\n\nIt is the same pause Thomas makes. A hand on the door before a thought is let out. An editor, working quietly behind every pair of eyes in town.\n\nHe stops in the middle of the lane, the basket heavy on his arm.\n\nNobody in Wickham's Rest has told a lie in forty years. But perhaps nobody here has been honest either. Perhaps they have only learned to edit.\n\nFor the first time in his life, Thomas wonders whether he would sound any different if no one could hear him.",
+      "author": "human_editorial",
+      "applied_at": "2026-11-03T20:04:19+00:00"
+    },
+    {
+      "scene_id": 5,
+      "section_id": 5,
+      "find": "smooths the fabric of her dark green wool coat",
+      "replace": "smooths the tablecloth with one hand",
+      "author": "human_editorial",
+      "applied_at": "2026-11-03T20:04:19+00:00"
+    },
+    {
+      "scene_id": 5,
+      "section_id": 5,
+      "find": "Her surface thought murmurs into the quiet room: \"What a comforting meal after a long day.\"",
+      "replace": "Her thought murmurs into the quiet room: 'What a lovely evening.'",
+      "author": "human_editorial",
+      "applied_at": "2026-11-03T20:04:19+00:00"
+    },
+    {
+      "scene_id": 5,
+      "section_id": 5,
+      "find": "the deep, unyielding exhaustion",
+      "replace": "the exhaustion",
+      "author": "human_editorial",
+      "applied_at": "2026-11-03T20:04:19+00:00"
+    },
+    {
+      "scene_id": 5,
+      "section_id": 5,
+      "find": "He realizes he has never known her real mind at all; he has only known the performance she crafted to keep him safe.",
+      "replace": "He wonders what she would think if no one were listening. In twenty-six years, he has never once wondered that.",
+      "author": "human_editorial",
+      "applied_at": "2026-11-03T20:04:19+00:00"
+    },
+    {
+      "scene_id": 5,
+      "section_id": 5,
+      "find": "The domestic warmth turns to ash in his chest, and he knows he cannot stay inside the town's broadcast zone for another hour.",
+      "replace": "He says nothing. Later, when the house is dark, he takes his coat from the hook and walks out toward the moor.",
+      "author": "human_editorial",
+      "applied_at": "2026-11-03T20:04:19+00:00"
+    },
+    {
+      "scene_id": 6,
+      "section_id": 6,
+      "find": "The air holds absolute, crushing silence.",
+      "replace": "The silence is so complete it presses on his ears.",
+      "author": "human_editorial",
+      "applied_at": "2026-11-03T20:04:19+00:00"
+    },
+    {
+      "scene_id": 6,
+      "section_id": 6,
+      "find": "the raw, unedited voice",
+      "replace": "the unedited voice",
+      "author": "human_editorial",
+      "applied_at": "2026-11-03T20:04:19+00:00"
+    },
+    {
+      "scene_id": 6,
+      "section_id": 6,
+      "find": "out of sheer habit",
+      "replace": "out of habit",
+      "author": "human_editorial",
+      "applied_at": "2026-11-03T20:04:19+00:00"
+    },
+    {
+      "scene_id": 7,
+      "section_id": 7,
+      "find": "She does not broadcast a single welcoming thought.",
+      "replace": "He hears nothing from her. Out here, he can't.",
+      "author": "human_editorial",
+      "applied_at": "2026-11-03T20:04:19+00:00"
+    },
+    {
+      "scene_id": 7,
+      "section_id": 7,
+      "find": "He realizes he has known only her curated sentences for twenty-six years while she has carried an entire life away from the village. Both of them have spent decades hiding behind the safety of a broadcast they never authored.",
+      "replace": "\"Years,\" he repeats.\n\n\"Every Thursday. When you think I'm at the chapel.\" She almost smiles. \"Out here I can think whatever I like, and nobody has to forgive me for it.\"\n\nTwenty-six years without a single argument. He had always believed it meant they understood each other. Standing in the silence, he understands what it really meant: he has only ever heard the version of her she was willing to let out. And she has only ever heard his.",
+      "author": "human_editorial",
+      "applied_at": "2026-11-03T20:04:19+00:00"
+    },
+    {
+      "scene_id": 8,
+      "section_id": 8,
+      "find": "The wind carries a sharp chill across the heather. Nell holds his gaze, her tired eyes steady in the starlight. A long stillness falls over the moor, unbroken by any hum of thought or murmur of the town. She looks down at him and asks quietly, \"What do you actually think, Thomas?\" Thomas sits motionless on the cold turf. The interior editor in his skull screams for a safe phrase, a gentle sentence, a pleasant deflection to keep the peace. He inhales the biting moorland air, tasting true freedom for the first time in thirty years. He parts his lips to speak, willing an uncurated voice to rise from his throat, and the story cuts immediately to black.",
+      "replace": "The wind moves through the heather. Nell sits down beside him on the cold turf, close enough to touch, and for once he has no idea what she is thinking. It frightens him. It is also the first time in twenty-six years that she has felt like a stranger, and he finds that he wants to know her.\n\n\"Can I ask you something?\" she says.\n\nHe nods.\n\n\"What do you actually think, Thomas?\"\n\nThe question lands in the silence and stays there. Inside him the editor wakes at once and starts offering sentences. I think you're tired. I think we should go home. I think everything is fine. Gentle, true enough, and not one of them his.\n\nHe lets them pass.\n\nHe breathes in the cold air. He opens his mouth.\n\nBehind them, the lights of Wickham's Rest go on burning, waiting for him to come back and be heard.",
+      "author": "human_editorial",
+      "applied_at": "2026-11-03T20:04:19+00:00"
+    },
+    {
+      "scene_id": 9,
+      "section_id": 9,
+      "find": "The dark moorland stretches beneath an endless expanse of stars, far from the warm, glowing windows of Wickham's Rest. We are left suspended between the impulse we cannot control and the discipline we choose to maintain, wondering where the boundary truly lies between who we are and who we pretend to be. There is a thought in your head right now that no one will ever hear. Is that one you, or is the one keeping it quiet?",
+      "replace": "We never hear what Thomas said.\n\nMaybe he told her the truth. Maybe he discovered he no longer had one. Or maybe he said something gentle and meant it, and that was the truth all along.\n\nIn Wickham's Rest they still think clean thoughts, and nobody has argued in a very long time.\n\nThere is a thought in your head right now that no one will ever hear. Is that one you, or is the one keeping it quiet?",
+      "author": "human_editorial",
+      "applied_at": "2026-11-03T20:04:19+00:00"
+    }
+  ]
+}

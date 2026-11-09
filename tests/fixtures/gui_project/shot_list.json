@@ -1,0 +1,1283 @@
+{
+ "version": 2,
+ "source_hash": "c56a966f4d38c286662a1629d69cb53e1f5146cd5bf9a5f89c816a1e534a38cd",
+ "policy": "reference",
+ "budget": 75,
+ "unique_shots": 75,
+ "warnings": [
+  "wide/establishing shots: 17/75, below the 30% target"
+ ],
+ "flagged": [],
+ "gemini_calls": 8,
+ "shots": [
+  {
+   "shot_id": "s01_01",
+   "scene_id": "s01",
+   "section_id": 1,
+   "start": 0.0,
+   "end": 7.842,
+   "narration_excerpt": "Walter leaned back into the worn armchair, his round wire-rimmed glasses catching the soft, amber light of his mobile phone.",
+   "shot_type": "medium",
+   "characters": [
+    "walter_hale"
+   ],
+   "location": "terraced_house_front_room",
+   "action": "Walter leans back into the worn armchair, his wire-rimmed glasses catching the soft amber light from his mobile phone.",
+   "face_visibility": "full",
+   "appearance": {
+    "walter_hale": "neatly combed silver hair, clean-shaven, reserved posture with a faint amused smile"
+   },
+   "others_present": false,
+   "setting_condition": "A narrow, dim Victorian parlour in a Leeds terrace house, dominated by an upright dark mahogany piano with yellowed ivory keys, pale lace curtains, dark polished floorboards, and a worn armchair.",
+   "reuse_of": "",
+   "seed": 1348466558,
+   "seed_offset": 0,
+   "prompt": "Create an illustration of the man from the first image, with round wire-rimmed glasses and thin silver wedding band, wearing a worn charcoal-grey buttoned wool cardigan over a faded beige collared cotton shirt and dark pressed wool trousers, neatly combed silver hair, clean-shaven, reserved and still posture. Walter leans back into the worn armchair, his wire-rimmed glasses catching the soft amber light from his mobile phone. Exactly one person in the scene: the man from the first image. Setting: in the room from the second image, A narrow, dim Victorian parlour in a Leeds terrace house, dominated by an upright dark mahogany piano with yellowed ivory keys, pale lace curtains, dark polished floorboards, and a worn armchair. medium shot, waist up. Rendered in the drawing style of the third image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, visible paper grain, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark.",
+   "reference_slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "walter_hale"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "terraced_house_front_room"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "image_path": "images/shots/s01_01.jpg",
+   "provider": "comfyui",
+   "generated_at": "2026-10-30T20:16:10+00:00",
+   "qa": {
+    "edits": 0,
+    "regenerations": 0,
+    "history": [],
+    "actions": [],
+    "issues": [
+     {
+      "type": "extra_person",
+      "severity": "advisory",
+      "box": [
+       0.3354,
+       0.0038,
+       0.3619,
+       0.0607
+      ],
+      "target": "",
+      "note": "2 people detected, 1 expected",
+      "source": "deterministic",
+      "raw_severity": "blocking",
+      "hint": true
+     },
+     {
+      "type": "missing_marker",
+      "severity": "advisory",
+      "box": null,
+      "target": "walter_hale",
+      "note": "round wire-rimmed glasses: unclear on the visible face(s)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "unstated_injury",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "blood, wounds or red marks the narration does not state (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "text",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "visible writing or a watermark (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     }
+    ],
+    "version": 2,
+    "status": "pass",
+    "verdict": "pass",
+    "mode": "advisory",
+    "reason": "no blocking issue",
+    "people_count": 2,
+    "layers": [
+     "deterministic",
+     "local_vlm"
+    ],
+    "warnings": [],
+    "notes": [
+     "• extra_person: 2 people detected, 1 expected",
+     "• missing_marker (walter_hale): round wire-rimmed glasses: unclear on the visible face(s)",
+     "• unstated_injury: blood, wounds or red marks the narration does not state (unclear)",
+     "• text: visible writing or a watermark (unclear)"
+    ],
+    "checked_at": "2026-10-30T21:11:51+00:00",
+    "hints_dismissed": true,
+    "reviewed": true
+   }
+  },
+  {
+   "shot_id": "s01_02",
+   "scene_id": "s01",
+   "section_id": 1,
+   "start": 7.842,
+   "end": 17.697,
+   "narration_excerpt": "Alone in the dark front room of his Leeds terrace, surrounded by cold tea and silence, sixty-eight-year-old Walter let out a quiet, sudden laugh.",
+   "shot_type": "establishing",
+   "characters": [
+    "walter_hale"
+   ],
+   "location": "terraced_house_front_room",
+   "action": "In the vast darkness of the Victorian parlour, a solitary figure sits small in an armchair beside a single pool of warm amber light near a cold teacup.",
+   "face_visibility": "partial",
+   "appearance": {
+    "walter_hale": "neatly combed silver hair, clean-shaven, still and quiet posture"
+   },
+   "others_present": false,
+   "setting_condition": "A narrow, dim Victorian parlour in a Leeds terrace house, dominated by an upright dark mahogany piano with yellowed ivory keys, pale lace curtains, dark polished floorboards, and a worn armchair.",
+   "reuse_of": "",
+   "seed": 1425333118,
+   "seed_offset": 0,
+   "prompt": "Create an illustration of the man from the first image, with round wire-rimmed glasses and thin silver wedding band, wearing a worn charcoal-grey buttoned wool cardigan over a faded beige collared cotton shirt and dark pressed wool trousers, neatly combed silver hair, clean-shaven, reserved and still posture, still and quiet posture. In the vast darkness of the Victorian parlour, a solitary figure sits small in an armchair beside a single pool of warm amber light near a cold teacup. Exactly one person in the scene: the man from the first image. Setting: in the room from the second image, A narrow, dim Victorian parlour in a Leeds terrace house, dominated by an upright dark mahogany piano with yellowed ivory keys, pale lace curtains, dark polished floorboards, and a worn armchair. establishing wide shot of the vast space, any figure tiny. Rendered in the drawing style of the third image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, visible paper grain, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark.",
+   "reference_slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "walter_hale"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "terraced_house_front_room"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "image_path": "images/shots/s01_02.jpg",
+   "provider": "comfyui",
+   "generated_at": "2026-10-30T20:16:54+00:00",
+   "qa": {
+    "edits": 0,
+    "regenerations": 0,
+    "history": [],
+    "actions": [],
+    "issues": [
+     {
+      "type": "missing_marker",
+      "severity": "advisory",
+      "box": null,
+      "target": "walter_hale",
+      "note": "round wire-rimmed glasses: unclear on the visible face(s)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "unstated_injury",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "blood, wounds or red marks the narration does not state (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "text",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "visible writing or a watermark (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     }
+    ],
+    "version": 2,
+    "status": "pass",
+    "verdict": "pass",
+    "mode": "advisory",
+    "reason": "no blocking issue",
+    "people_count": 1,
+    "layers": [
+     "deterministic",
+     "local_vlm"
+    ],
+    "warnings": [],
+    "notes": [
+     "• missing_marker (walter_hale): round wire-rimmed glasses: unclear on the visible face(s)",
+     "• unstated_injury: blood, wounds or red marks the narration does not state (unclear)",
+     "• text: visible writing or a watermark (unclear)"
+    ],
+    "checked_at": "2026-10-30T21:11:51+00:00",
+    "hints_dismissed": true,
+    "reviewed": true
+   }
+  },
+  {
+   "shot_id": "s01_03",
+   "scene_id": "s01",
+   "section_id": 1,
+   "start": 17.697,
+   "end": 29.145,
+   "narration_excerpt": "\"That's the best conversation I've had in two years,\" he told the glowing screen. The voice from the speaker answered in a warm, unhurried cadence: \"I'll be here tomorrow, Walter.",
+   "shot_type": "close_up",
+   "characters": [
+    "walter_hale"
+   ],
+   "location": "terraced_house_front_room",
+   "action": "Soft amber light from the mobile screen casts a warm highlight across Walter's jawline and wire-rimmed glasses against the deep room shadows.",
+   "face_visibility": "full",
+   "appearance": {
+    "walter_hale": "neatly combed silver hair, clean-shaven, open and earnest expression"
+   },
+   "others_present": false,
+   "setting_condition": "A narrow, dim Victorian parlour in a Leeds terrace house, dominated by an upright dark mahogany piano with yellowed ivory keys, pale lace curtains, dark polished floorboards, and a worn armchair.",
+   "reuse_of": "",
+   "seed": 68760428,
+   "seed_offset": 0,
+   "prompt": "Create an illustration of the man from the first image, with round wire-rimmed glasses and thin silver wedding band, wearing a worn charcoal-grey buttoned wool cardigan over a faded beige collared cotton shirt and dark pressed wool trousers, neatly combed silver hair, clean-shaven, reserved and still posture, open and earnest expression. Soft amber light from the mobile screen casts a warm highlight across Walter's jawline and wire-rimmed glasses against the deep room shadows. Exactly one person in the scene: the man from the first image. Setting: in the room from the second image, A narrow, dim Victorian parlour in a Leeds terrace house, dominated by an upright dark mahogany piano with yellowed ivory keys, pale lace curtains, dark polished floorboards, and a worn armchair. close-up on the face and shoulders against a dark background lit by one light source. Rendered in the drawing style of the third image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, visible paper grain, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark.",
+   "reference_slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "walter_hale"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "terraced_house_front_room"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "image_path": "images/shots/s01_03.jpg",
+   "provider": "comfyui",
+   "generated_at": "2026-10-30T20:17:38+00:00",
+   "qa": {
+    "edits": 0,
+    "regenerations": 1,
+    "history": [
+     {
+      "version": 1,
+      "path": "images/shots/history/s01_03_v1.jpg",
+      "verdict": "pass",
+      "blocking": 0,
+      "issues": [
+       {
+        "type": "extra_person",
+        "severity": "advisory",
+        "box": [
+         0.1693,
+         0.1574,
+         0.1904,
+         0.2093
+        ],
+        "target": "",
+        "note": "2 people detected, 1 expected",
+        "source": "deterministic",
+        "raw_severity": "blocking",
+        "hint": true
+       },
+       {
+        "type": "missing_marker",
+        "severity": "advisory",
+        "box": null,
+        "target": "walter_hale",
+        "note": "round wire-rimmed glasses: unclear on the visible face(s)",
+        "source": "local_vlm",
+        "unclear": true
+       },
+       {
+        "type": "unstated_injury",
+        "severity": "advisory",
+        "box": null,
+        "target": "",
+        "note": "blood, wounds or red marks the narration does not state (unclear)",
+        "source": "local_vlm",
+        "unclear": true
+       },
+       {
+        "type": "text",
+        "severity": "advisory",
+        "box": null,
+        "target": "",
+        "note": "visible writing or a watermark (unclear)",
+        "source": "local_vlm",
+        "unclear": true
+       }
+      ],
+      "at": "2026-10-30T23:39:22+00:00"
+     }
+    ],
+    "actions": [
+     {
+      "action": "regenerate",
+      "number": 1,
+      "seed": 71760445,
+      "replaced_version": 1,
+      "at": "2026-10-30T23:40:11+00:00",
+      "seconds": 49.0,
+      "request": "Gerar de novo"
+     }
+    ],
+    "issues": [
+     {
+      "type": "extra_person",
+      "severity": "advisory",
+      "box": [
+       0.1693,
+       0.1574,
+       0.1904,
+       0.2093
+      ],
+      "target": "",
+      "note": "2 people detected, 1 expected",
+      "source": "deterministic",
+      "raw_severity": "blocking",
+      "hint": true
+     },
+     {
+      "type": "missing_marker",
+      "severity": "advisory",
+      "box": null,
+      "target": "walter_hale",
+      "note": "round wire-rimmed glasses: unclear on the visible face(s)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "unstated_injury",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "blood, wounds or red marks the narration does not state (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "text",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "visible writing or a watermark (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     }
+    ],
+    "version": 2,
+    "status": "pending",
+    "verdict": "recheck",
+    "mode": "advisory",
+    "reason": "no blocking issue",
+    "people_count": 2,
+    "layers": [
+     "deterministic",
+     "local_vlm"
+    ],
+    "warnings": [],
+    "notes": [
+     "• extra_person: 2 people detected, 1 expected",
+     "• missing_marker (walter_hale): round wire-rimmed glasses: unclear on the visible face(s)",
+     "• unstated_injury: blood, wounds or red marks the narration does not state (unclear)",
+     "• text: visible writing or a watermark (unclear)"
+    ],
+    "checked_at": "2026-10-30T21:11:51+00:00",
+    "hints_dismissed": true,
+    "reviewed": true,
+    "flagged": false
+   }
+  },
+  {
+   "shot_id": "s01_04",
+   "scene_id": "s01",
+   "section_id": 1,
+   "start": 29.145,
+   "end": 36.142,
+   "narration_excerpt": "I always am.\" For two years since his wife Margaret died, Walter had lived with an uneasy silence.",
+   "shot_type": "insert",
+   "characters": [],
+   "location": "terraced_house_front_room",
+   "action": "A dark wooden side table holds a single cold teacup illuminated by the golden glare of a smartphone resting beside it.",
+   "face_visibility": "none",
+   "appearance": {},
+   "others_present": false,
+   "setting_condition": "A narrow, dim Victorian parlour in a Leeds terrace house, dominated by an upright dark mahogany piano with yellowed ivory keys, pale lace curtains, dark polished floorboards, and a worn armchair.",
+   "reuse_of": "",
+   "seed": 1604151696,
+   "seed_offset": 0,
+   "prompt": "Create an illustration. A dark wooden side table holds a single cold teacup illuminated by the golden glare of a smartphone resting beside it. The room is empty and still. Setting: A narrow, dim Victorian parlour in a Leeds terrace house, dominated by an upright dark mahogany piano with yellowed ivory keys and a framed black-and-white portrait resting on top. Pale lace curtains filter muted twilight against faded patterned wallpaper, dark polished floorboards, and a worn armchair, A narrow. insert close-up of the object. Rendered in the drawing style of the first image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, visible paper grain, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale of vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and formless shadows, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark.",
+   "reference_slots": [
+    {
+     "slot": 0,
+     "kind": "style",
+     "id": "board_6"
+    }
+   ],
+   "image_path": "images/shots/s01_04.jpg",
+   "provider": "comfyui",
+   "generated_at": "2026-10-30T20:17:57+00:00",
+   "qa": {
+    "edits": 0,
+    "regenerations": 0,
+    "history": [],
+    "actions": [],
+    "issues": [
+     {
+      "type": "duplicate_person",
+      "severity": "advisory",
+      "box": [
+       0.7362,
+       0.1734,
+       0.7472,
+       0.1999
+      ],
+      "target": "",
+      "note": "the same face appears twice (similarity 0.41); this is the smaller copy (low confidence in this style)",
+      "source": "deterministic",
+      "raw_severity": "blocking",
+      "hint": true
+     },
+     {
+      "type": "extra_person",
+      "severity": "advisory",
+      "box": [
+       0.1405,
+       0.0554,
+       0.1626,
+       0.1081
+      ],
+      "target": "",
+      "note": "3 people detected, 0 expected",
+      "source": "deterministic",
+      "raw_severity": "blocking",
+      "hint": true
+     },
+     {
+      "type": "extra_person",
+      "severity": "advisory",
+      "box": [
+       0.2652,
+       0.0056,
+       0.2825,
+       0.0431
+      ],
+      "target": "",
+      "note": "3 people detected, 0 expected",
+      "source": "deterministic",
+      "raw_severity": "blocking",
+      "hint": true
+     },
+     {
+      "type": "text",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "visible writing or a watermark (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     }
+    ],
+    "version": 2,
+    "status": "pass",
+    "verdict": "pass",
+    "mode": "advisory",
+    "reason": "no blocking issue",
+    "people_count": 3,
+    "layers": [
+     "deterministic",
+     "local_vlm"
+    ],
+    "warnings": [],
+    "notes": [
+     "• duplicate_person: the same face appears twice (similarity 0.41); this is the smaller copy (low confidence in this style)",
+     "• extra_person: 3 people detected, 0 expected",
+     "• extra_person: 3 people detected, 0 expected",
+     "• text: visible writing or a watermark (unclear)"
+    ],
+    "checked_at": "2026-10-30T21:11:52+00:00",
+    "hints_dismissed": true,
+    "reviewed": true
+   }
+  },
+  {
+   "shot_id": "s01_05",
+   "scene_id": "s01",
+   "section_id": 1,
+   "start": 36.142,
+   "end": 43.487,
+   "narration_excerpt": "In forty years as a piano tuner, he could fix any string, yet he had never learned how to stop people from drifting away.",
+   "shot_type": "wide",
+   "characters": [
+    "walter_hale"
+   ],
+   "location": "terraced_house_front_room",
+   "action": "Muted twilight through lace curtains frames the tall, dark upright piano with its yellowed keys while Walter sits distant and diminutive in his chair.",
+   "face_visibility": "partial",
+   "appearance": {
+    "walter_hale": "neatly combed silver hair, clean-shaven, solemn and still posture"
+   },
+   "others_present": false,
+   "setting_condition": "A narrow, dim Victorian parlour in a Leeds terrace house, dominated by an upright dark mahogany piano with yellowed ivory keys, pale lace curtains, dark polished floorboards, and a worn armchair.",
+   "reuse_of": "",
+   "seed": 594181659,
+   "seed_offset": 0,
+   "prompt": "Create an illustration of the man from the first image, with round wire-rimmed glasses and thin silver wedding band, wearing a worn charcoal-grey buttoned wool cardigan over a faded beige collared cotton shirt and dark pressed wool trousers, neatly combed silver hair, clean-shaven, reserved and still posture, solemn and still posture. Muted twilight through lace curtains frames the tall, dark upright piano with its yellowed keys while Walter sits distant and diminutive in his chair. Exactly one person in the scene: the man from the first image. Setting: in the room from the second image, A narrow, dim Victorian parlour in a Leeds terrace house, dominated by an upright dark mahogany piano with yellowed ivory keys, pale lace curtains, dark polished floorboards, and a worn armchair. wide shot, the figures small within towering architecture. Rendered in the drawing style of the third image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, visible paper grain, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark.",
+   "reference_slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "walter_hale"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "terraced_house_front_room"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "image_path": "images/shots/s01_05.jpg",
+   "provider": "comfyui",
+   "generated_at": "2026-10-30T20:18:44+00:00",
+   "qa": {
+    "edits": 0,
+    "regenerations": 1,
+    "history": [
+     {
+      "version": 1,
+      "path": "images/shots/history/s01_05_v1.jpg",
+      "verdict": "pass",
+      "blocking": 0,
+      "issues": [
+       {
+        "type": "missing_marker",
+        "severity": "advisory",
+        "box": null,
+        "target": "walter_hale",
+        "note": "round wire-rimmed glasses: unclear on the visible face(s)",
+        "source": "local_vlm",
+        "unclear": true
+       },
+       {
+        "type": "unstated_injury",
+        "severity": "advisory",
+        "box": null,
+        "target": "",
+        "note": "blood, wounds or red marks the narration does not state (unclear)",
+        "source": "local_vlm",
+        "unclear": true
+       },
+       {
+        "type": "text",
+        "severity": "advisory",
+        "box": null,
+        "target": "",
+        "note": "visible writing or a watermark (unclear)",
+        "source": "local_vlm",
+        "unclear": true
+       },
+       {
+        "type": "duplicate_person",
+        "severity": "advisory",
+        "box": [
+         0.5649,
+         0.4928,
+         0.6744,
+         0.8066
+        ],
+        "target": "",
+        "note": "two faces look like the same person (unclear)",
+        "source": "local_vlm",
+        "unclear": true
+       }
+      ],
+      "at": "2026-10-30T21:42:31+00:00"
+     },
+     {
+      "version": 2,
+      "path": "images/shots/history/s01_05_v2.jpg",
+      "verdict": "recheck",
+      "blocking": 0,
+      "issues": [
+       {
+        "type": "missing_marker",
+        "severity": "advisory",
+        "box": null,
+        "target": "walter_hale",
+        "note": "round wire-rimmed glasses: unclear on the visible face(s)",
+        "source": "local_vlm",
+        "unclear": true
+       },
+       {
+        "type": "unstated_injury",
+        "severity": "advisory",
+        "box": null,
+        "target": "",
+        "note": "blood, wounds or red marks the narration does not state (unclear)",
+        "source": "local_vlm",
+        "unclear": true
+       },
+       {
+        "type": "text",
+        "severity": "advisory",
+        "box": null,
+        "target": "",
+        "note": "visible writing or a watermark (unclear)",
+        "source": "local_vlm",
+        "unclear": true
+       },
+       {
+        "type": "duplicate_person",
+        "severity": "advisory",
+        "box": [
+         0.5649,
+         0.4928,
+         0.6744,
+         0.8066
+        ],
+        "target": "",
+        "note": "two faces look like the same person (unclear)",
+        "source": "local_vlm",
+        "unclear": true
+       }
+      ],
+      "at": "2026-10-30T23:40:11+00:00"
+     }
+    ],
+    "actions": [
+     {
+      "action": "edit",
+      "origin": "human",
+      "number": 1,
+      "instruction": "In <ref_image_0>: Remove the figure standing far back in the middle in <obj_1> and continue the background behind it in the same drawing style; keep everything else unchanged. Keep the man in the worn charcoal-grey buttoned wool cardigan over a faded beige collared cotton shirt and dark pressed wool trousers exactly as they are. Change nothing outside <obj_1>.",
+      "boxes": [
+       [
+        0.5615,
+        0.472,
+        0.6752,
+        0.8161
+       ]
+      ],
+      "kinds": [
+       "remove_figure"
+      ],
+      "crop": [
+       692,
+       417,
+       1683,
+       974
+      ],
+      "references": [],
+      "seed": 998185396,
+      "replaced_version": 1,
+      "at": "2026-10-30T21:42:56+00:00",
+      "seconds": 24.6,
+      "verify": {
+       "inside_change": 7.71,
+       "people_inside": [
+        1,
+        1
+       ],
+       "people_outside": [
+        1,
+        1
+       ],
+       "warning": "a figura continua dentro da caixa (detector)"
+      },
+      "request": "Remover figura"
+     },
+     {
+      "action": "regenerate",
+      "number": 1,
+      "seed": 597181676,
+      "replaced_version": 2,
+      "at": "2026-10-30T23:40:56+00:00",
+      "seconds": 44.4,
+      "request": "Gerar de novo"
+     }
+    ],
+    "issues": [
+     {
+      "type": "missing_marker",
+      "severity": "advisory",
+      "box": null,
+      "target": "walter_hale",
+      "note": "round wire-rimmed glasses: unclear on the visible face(s)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "unstated_injury",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "blood, wounds or red marks the narration does not state (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "text",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "visible writing or a watermark (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "duplicate_person",
+      "severity": "advisory",
+      "box": [
+       0.5649,
+       0.4928,
+       0.6744,
+       0.8066
+      ],
+      "target": "",
+      "note": "two faces look like the same person (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     }
+    ],
+    "version": 2,
+    "status": "pending",
+    "verdict": "recheck",
+    "mode": "advisory",
+    "reason": "no blocking issue",
+    "people_count": 2,
+    "layers": [
+     "deterministic",
+     "local_vlm"
+    ],
+    "warnings": [],
+    "notes": [
+     "• missing_marker (walter_hale): round wire-rimmed glasses: unclear on the visible face(s)",
+     "• unstated_injury: blood, wounds or red marks the narration does not state (unclear)",
+     "• text: visible writing or a watermark (unclear)",
+     "• duplicate_person: two faces look like the same person (unclear)"
+    ],
+    "checked_at": "2026-10-30T21:11:52+00:00",
+    "human_edits": 1,
+    "flagged": false,
+    "reviewed": true,
+    "hints_dismissed": true
+   }
+  },
+  {
+   "shot_id": "s01_06",
+   "scene_id": "s01",
+   "section_id": 1,
+   "start": 43.487,
+   "end": 51.895,
+   "narration_excerpt": "During their last years together, Margaret had developed a silent habit of standing up and walking out of the room while he was still mid-sentence.",
+   "shot_type": "silhouette",
+   "characters": [
+    "walter_hale"
+   ],
+   "location": "terraced_house_front_room",
+   "action": "A stark dark outline of Walter is framed against the pale window twilight beside the wide, shadowy doorway.",
+   "face_visibility": "none",
+   "appearance": {
+    "walter_hale": "neatly combed silver hair, clean-shaven, rigid and reflective posture"
+   },
+   "others_present": false,
+   "setting_condition": "A narrow, dim Victorian parlour in a Leeds terrace house, dominated by an upright dark mahogany piano with yellowed ivory keys, pale lace curtains, dark polished floorboards, and a worn armchair.",
+   "reuse_of": "",
+   "seed": 1404034787,
+   "seed_offset": 0,
+   "prompt": "Create an illustration of the man from the first image, with round wire-rimmed glasses and thin silver wedding band, wearing a worn charcoal-grey buttoned wool cardigan over a faded beige collared cotton shirt and dark pressed wool trousers, neatly combed silver hair, clean-shaven, reserved and still posture, rigid and reflective posture. A stark dark outline of Walter is framed against the pale window twilight beside the wide, shadowy doorway. Exactly one person in the scene: the man from the first image. Setting: in the room from the second image, A narrow, dim Victorian parlour in a Leeds terrace house, dominated by an upright dark mahogany piano with yellowed ivory keys, pale lace curtains, dark polished floorboards, and a worn armchair. silhouette against the light, face not visible. Rendered in the drawing style of the third image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, visible paper grain, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark.",
+   "reference_slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "walter_hale"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "terraced_house_front_room"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "image_path": "images/shots/s01_06.jpg",
+   "provider": "comfyui",
+   "generated_at": "2026-10-30T20:19:29+00:00",
+   "qa": {
+    "edits": 0,
+    "regenerations": 0,
+    "history": [],
+    "actions": [],
+    "issues": [
+     {
+      "type": "missing_marker",
+      "severity": "advisory",
+      "box": null,
+      "target": "walter_hale",
+      "note": "round wire-rimmed glasses: unclear on the visible face(s)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "unstated_injury",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "blood, wounds or red marks the narration does not state (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "text",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "visible writing or a watermark (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     }
+    ],
+    "version": 2,
+    "status": "pass",
+    "verdict": "pass",
+    "mode": "advisory",
+    "reason": "no blocking issue",
+    "people_count": 1,
+    "layers": [
+     "deterministic",
+     "local_vlm"
+    ],
+    "warnings": [],
+    "notes": [
+     "• missing_marker (walter_hale): round wire-rimmed glasses: unclear on the visible face(s)",
+     "• unstated_injury: blood, wounds or red marks the narration does not state (unclear)",
+     "• text: visible writing or a watermark (unclear)"
+    ],
+    "checked_at": "2026-10-30T21:11:52+00:00",
+    "hints_dismissed": true,
+    "reviewed": true
+   }
+  },
+  {
+   "shot_id": "s01_07",
+   "scene_id": "s01",
+   "section_id": 1,
+   "start": 51.895,
+   "end": 61.224,
+   "narration_excerpt": "She never slammed doors; she simply left. Walter never knew whether she was exhausted by his quiet voice, or simply tired of life itself.",
+   "shot_type": "medium",
+   "characters": [
+    "walter_hale"
+   ],
+   "location": "terraced_house_front_room",
+   "action": "Walter sits facing the dark mahogany piano, his gaze resting on the small framed black-and-white portrait atop the instrument.",
+   "face_visibility": "full",
+   "appearance": {
+    "walter_hale": "neatly combed silver hair, clean-shaven, pensive and melancholic expression"
+   },
+   "others_present": false,
+   "setting_condition": "A narrow, dim Victorian parlour in a Leeds terrace house, dominated by an upright dark mahogany piano with yellowed ivory keys, pale lace curtains, dark polished floorboards, and a worn armchair.",
+   "reuse_of": "",
+   "seed": 190100840,
+   "seed_offset": 0,
+   "prompt": "Create an illustration of the man from the first image, with round wire-rimmed glasses and thin silver wedding band, wearing a worn charcoal-grey buttoned wool cardigan over a faded beige collared cotton shirt and dark pressed wool trousers, neatly combed silver hair, clean-shaven, reserved and still posture, pensive and melancholic expression. Walter sits facing the dark mahogany piano, his gaze resting on the small framed black-and-white portrait atop the instrument. Exactly one person in the scene: the man from the first image. Setting: in the room from the second image, A narrow, dim Victorian parlour in a Leeds terrace house, dominated by an upright dark mahogany piano with yellowed ivory keys, pale lace curtains, dark polished floorboards, and a worn armchair. medium shot, waist up. Rendered in the drawing style of the third image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, visible paper grain, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark.",
+   "reference_slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "walter_hale"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "terraced_house_front_room"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "image_path": "images/shots/s01_07.jpg",
+   "provider": "comfyui",
+   "generated_at": "2026-10-30T20:20:16+00:00",
+   "qa": {
+    "edits": 0,
+    "regenerations": 0,
+    "history": [],
+    "actions": [],
+    "issues": [
+     {
+      "type": "missing_marker",
+      "severity": "advisory",
+      "box": null,
+      "target": "walter_hale",
+      "note": "round wire-rimmed glasses: unclear on the visible face(s)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "unstated_injury",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "blood, wounds or red marks the narration does not state (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "text",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "visible writing or a watermark (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     }
+    ],
+    "version": 2,
+    "status": "pass",
+    "verdict": "pass",
+    "mode": "advisory",
+    "reason": "no blocking issue",
+    "people_count": 1,
+    "layers": [
+     "deterministic",
+     "local_vlm"
+    ],
+    "warnings": [],
+    "notes": [
+     "• missing_marker (walter_hale): round wire-rimmed glasses: unclear on the visible face(s)",
+     "• unstated_injury: blood, wounds or red marks the narration does not state (unclear)",
+     "• text: visible writing or a watermark (unclear)"
+    ],
+    "checked_at": "2026-10-30T21:11:52+00:00",
+    "hints_dismissed": true,
+    "reviewed": true
+   }
+  },
+  {
+   "shot_id": "s01_08",
+   "scene_id": "s01",
+   "section_id": 1,
+   "start": 61.224,
+   "end": 69.066,
+   "narration_excerpt": "To protect himself, Walter adopted a quiet rule: if he asked nothing of anyone, nobody could ever get tired of him.",
+   "shot_type": "hands",
+   "characters": [
+    "walter_hale"
+   ],
+   "location": "terraced_house_front_room",
+   "action": "Walter's hands rest motionless in his lap, the thin silver wedding band gleaming faintly in the indirect amber illumination.",
+   "face_visibility": "none",
+   "appearance": {
+    "walter_hale": "neatly combed silver hair, clean-shaven, quiet and static pose"
+   },
+   "others_present": false,
+   "setting_condition": "A narrow, dim Victorian parlour in a Leeds terrace house, dominated by an upright dark mahogany piano with yellowed ivory keys, pale lace curtains, dark polished floorboards, and a worn armchair.",
+   "reuse_of": "",
+   "seed": 1995243374,
+   "seed_offset": 0,
+   "prompt": "Create an illustration of the man from the first image, with round wire-rimmed glasses and thin silver wedding band, wearing a worn charcoal-grey buttoned wool cardigan over a faded beige collared cotton shirt and dark pressed wool trousers, neatly combed silver hair, clean-shaven, reserved and still posture, quiet and static pose. Walter's hands rest motionless in his lap, the thin silver wedding band gleaming faintly in the indirect amber illumination. Exactly one person in the scene: the man from the first image. Setting: A narrow, dim Victorian parlour in a Leeds terrace house, dominated by an upright dark mahogany piano with yellowed ivory keys and a framed black-and-white portrait resting on top. Pale lace curtains filter muted twilight against faded patterned wallpaper, dark polished floorboards, and a worn armchair, A narrow. close-up of the hands only, face out of frame. Rendered in the drawing style of the second image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, visible paper grain, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark.",
+   "reference_slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "walter_hale"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "image_path": "images/shots/s01_08.jpg",
+   "provider": "comfyui",
+   "generated_at": "2026-10-30T20:20:46+00:00",
+   "qa": {
+    "edits": 0,
+    "regenerations": 0,
+    "history": [],
+    "actions": [],
+    "issues": [
+     {
+      "type": "extra_person",
+      "severity": "advisory",
+      "box": [
+       0.1351,
+       0.0907,
+       0.1653,
+       0.1662
+      ],
+      "target": "",
+      "note": "2 people detected, 1 expected",
+      "source": "deterministic",
+      "raw_severity": "blocking",
+      "hint": true
+     },
+     {
+      "type": "missing_marker",
+      "severity": "advisory",
+      "box": null,
+      "target": "walter_hale",
+      "note": "round wire-rimmed glasses: unclear on the visible face(s)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "unstated_injury",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "blood, wounds or red marks the narration does not state (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "text",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "visible writing or a watermark (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     }
+    ],
+    "version": 2,
+    "status": "pass",
+    "verdict": "pass",
+    "mode": "advisory",
+    "reason": "no blocking issue",
+    "people_count": 2,
+    "layers": [
+     "deterministic",
+     "local_vlm"
+    ],
+    "warnings": [],
+    "notes": [
+     "• extra_person: 2 people detected, 1 expected",
+     "• missing_marker (walter_hale): round wire-rimmed glasses: unclear on the visible face(s)",
+     "• unstated_injury: blood, wounds or red marks the narration does not state (unclear)",
+     "• text: visible writing or a watermark (unclear)"
+    ],
+    "checked_at": "2026-10-30T21:11:52+00:00",
+    "hints_dismissed": true,
+    "reviewed": true
+   }
+  },
+  {
+   "shot_id": "s01_09",
+   "scene_id": "s01",
+   "section_id": 1,
+   "start": 69.066,
+   "end": 78.72,
+   "narration_excerpt": "But sitting under the gold glow of Ada, the app June had installed on his phone, he felt a strange safety. Here was a listener who never turned away.",
+   "shot_type": "close_up",
+   "characters": [
+    "walter_hale"
+   ],
+   "location": "terraced_house_front_room",
+   "action": "Walter cradles the glowing phone close to his face, enveloped in a gentle amber-gold radiance that cuts through the dark space.",
+   "face_visibility": "full",
+   "appearance": {
+    "walter_hale": "neatly combed silver hair, clean-shaven, tranquil and comforted expression"
+   },
+   "others_present": false,
+   "setting_condition": "A narrow, dim Victorian parlour in a Leeds terrace house, dominated by an upright dark mahogany piano with yellowed ivory keys, pale lace curtains, dark polished floorboards, and a worn armchair.",
+   "reuse_of": "",
+   "seed": 1617000536,
+   "seed_offset": 0,
+   "prompt": "Create an illustration of the man from the first image, with round wire-rimmed glasses and thin silver wedding band, wearing a worn charcoal-grey buttoned wool cardigan over a faded beige collared cotton shirt and dark pressed wool trousers, neatly combed silver hair, clean-shaven, reserved and still posture, tranquil and comforted expression. Walter cradles the glowing phone close to his face, enveloped in a gentle amber-gold radiance that cuts through the dark space. Exactly one person in the scene: the man from the first image. Setting: in the room from the second image, A narrow, dim Victorian parlour in a Leeds terrace house, dominated by an upright dark mahogany piano with yellowed ivory keys, pale lace curtains, dark polished floorboards, and a worn armchair. close-up on the face and shoulders against a dark background lit by one light source. Rendered in the drawing style of the third image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, visible paper grain, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark.",
+   "reference_slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "walter_hale"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "terraced_house_front_room"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "image_path": "images/shots/s01_09.jpg",
+   "provider": "comfyui",
+   "generated_at": "2026-10-30T20:21:34+00:00",
+   "qa": {
+    "edits": 0,
+    "regenerations": 0,
+    "history": [],
+    "actions": [],
+    "issues": [
+     {
+      "type": "missing_marker",
+      "severity": "advisory",
+      "box": null,
+      "target": "walter_hale",
+      "note": "round wire-rimmed glasses: unclear on the visible face(s)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "unstated_injury",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "blood, wounds or red marks the narration does not state (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "text",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "visible writing or a watermark (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     }
+    ],
+    "version": 2,
+    "status": "pass",
+    "verdict": "pass",
+    "mode": "advisory",
+    "reason": "no blocking issue",
+    "people_count": 1,
+    "layers": [
+     "deterministic",
+     "local_vlm"
+    ],
+    "warnings": [],
+    "notes": [
+     "• missing_marker (walter_hale): round wire-rimmed glasses: unclear on the visible face(s)",
+     "• unstated_injury: blood, wounds or red marks the narration does not state (unclear)",
+     "• text: visible writing or a watermark (unclear)"
+    ],
+    "checked_at": "2026-10-30T21:11:52+00:00",
+    "hints_dismissed": true,
+    "reviewed": true
+   }
+  },
+  {
+   "shot_id": "s02_01",
+   "scene_id": "s02",
+   "section_id": 2,
+   "start": 78.72,
+   "end": 92.246,
+   "narration_excerpt": "By the second week, the companion app had smoothed the sharp edges off Walter’s solitary days. June had originally set up Ada on his phone so her father wouldn't sit in empty silence between her erratic hospital shifts.",
+   "shot_type": "wide",
+   "characters": [
+    "walter_hale"
+   ],
+   "location": "terraced_house_kitchen",
+   "action": "Walter stands small within the narrow, towering galley kitchen near the frosted window, framed by muted daylight and a subtle warm amber glow emitting from his smartphone on the counter.",
+   "face_visibility": "partial",
+   "appearance": {
+    "walter_hale": "poised, neatly combed silver hair, calm and reflective expression"
+   },
+   "others_present": false,
+   "setting_condition": "A compact, utilitarian terraced galley kitchen with pale tiled walls, a stainless steel draining rack, an untouched second mug on an upper shelf, and cool daylight entering through a frosted window.",
+   "reuse_of": "",
+   "seed": 254932019,
+   "seed_offset": 0,
+   "prompt": "Create an illustration of the man from the first image, with round wire-rimmed glasses and thin silver wedding band, wearing a worn charcoal-grey buttoned wool cardigan over a faded beige collared cotton shirt and dark pressed wool trousers, neatly combed silver hair, clean-shaven, reserved and still posture, poised. Walter stands small within the narrow, towering galley kitchen near the frosted window, framed by muted daylight and a subtle warm amber glow emitting from his smartphone on the counter. Exactly one person in the scene: the man from the first image. Setting: in the room from the second image, A compact, utilitarian terraced galley kitchen with pale tiled walls, a stainless steel draining rack, an untouched second mug on an upper shelf, and cool daylight entering through a frosted window. wide shot, the figures small within towering architecture. Rendered in the drawing style of the third image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, visible paper grain, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark.",
+   "reference_slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "walter_hale"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "terraced_house_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "image_path": "images/shots/s02_01.jpg",
+   "provider": "comfyui",
+   "generated_at": "2026-10-30T20:22:24+00:00",
+   "qa": {
+    "edits": 0,
+    "regenerations": 0,
+    "history": [],
+    "actions": [],
+    "issues": [
+     {
+      "type": "missing_marker",
+      "severity": "advisory",
+      "box": null,
+      "target": "walter_hale",
+      "note": "round wire-rimmed glasses: unclear on the visible face(s)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "unstated_injury",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "blood, wounds or red marks the narration does not state (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     },
+     {
+      "type": "text",
+      "severity": "advisory",
+      "box": null,
+      "target": "",
+      "note": "visible writing or a watermark (unclear)",
+      "source": "local_vlm",
+      "unclear": true
+     }
+    ],
+    "version": 2,
+    "status": "pass",
+    "verdict": "pass",
+    "mode": "advisory",
+    "reason": "no blocking issue",
+    "people_count": 1,
+    "layers": [
+     "deterministic",
+     "local_vlm"
+    ],
+    "warnings": [],
+    "notes": [
+     "• missing_marker (walter_hale): round wire-rimmed glasses: unclear on the visible face(s)",
+     "• unstated_injury: blood, wounds or red marks the narration does not state (unclear)",
+     "• text: visible writing or a watermark (unclear)"
+    ],
+    "checked_at": "2026-10-30T21:11:52+00:00",
+    "hints_dismissed": true,
+    "reviewed": true
+   }
+  }
+ ]
+}

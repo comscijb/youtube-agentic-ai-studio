@@ -37,6 +37,10 @@ projects/
 *.jpeg
 *.png
 !docs/screenshots/*.png    # allow docs screenshots
+# test fixtures and audit reports keep their images (Phase 3.9.1-D)
+!tests/fixtures/**/*.jpg
+!tests/fixtures/**/*.png
+!docs/reports/**/*.png
 assets/film/               # film-look dust layers, rendered once from a fixed seed (Phase 3.8-D)
 assets/ambient/            # ambient overlay loops, generated once (Phase 3.9-B)
 

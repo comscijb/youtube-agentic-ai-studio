@@ -2,8 +2,8 @@
 
 QA only gives hints (``policy``); the user decides. Each shot card offers:
 
-* **Remover figura** — a box (drawn, or a suggested detector box) → "remove the
-  figure, continue the background";
+* **Remover figura** — a brush mask, or a box (drawn or a suggested detector box) → real
+  mask inpainting (``removal``), up to 3 results to choose from;
 * **Adicionar marcador** — a character and one of its signature markers (e.g.
   Julian's glasses), optional box → region edit with the approved portrait;
 * **Remover marcas** — blood, wounds or red marks, with or without a box;
@@ -25,9 +25,10 @@ from typing import Callable
 from agents import visual_bible as vbible
 from video.qa import base, edits, fixes
 
-KINDS = ("remove_figure", "add_marker", "remove_marks", "custom", "regenerate")
+KINDS = ("remove_figure", "add_marker", "remove_marks", "custom", "regenerate", "regenerate_without")
 LABELS = {"remove_figure": "Remover figura", "add_marker": "Adicionar marcador", "remove_marks": "Remover marcas",
-          "custom": "Instrução livre", "regenerate": "Gerar de novo"}
+          "custom": "Editar região (instrução)", "regenerate": "Gerar de novo",
+          "regenerate_without": "Gerar o plano de novo sem a figura"}
 
 
 def clean_box(box) -> list[float] | None:
@@ -42,7 +43,8 @@ def clean_box(box) -> list[float] | None:
     return [round(value, 4) for value in box]
 
 
-def make_request(kind: str, vb: dict, *, box=None, character: str = "", marker: str = "", text: str = "") -> dict:
+def make_request(kind: str, vb: dict, *, box=None, character: str = "", marker: str = "", text: str = "",
+                 mask: str = "", replace: str = "", erase_only: bool = False, large: bool = False) -> dict:
     """A validated queue entry; ValueError with a message for the user otherwise."""
     if kind not in KINDS:
         raise ValueError(f"kind must be one of {', '.join(KINDS)}")
@@ -50,8 +52,16 @@ def make_request(kind: str, vb: dict, *, box=None, character: str = "", marker: 
     request = {"kind": kind, "label": LABELS[kind]}
     if box:
         request["box"] = box
-    if kind == "remove_figure" and not box:
-        raise ValueError("Draw a box around the figure (or pick a suggested one)")
+    if kind == "remove_figure" and not box and not mask:
+        raise ValueError("Paint over the figure or draw a box around it (or pick a suggested one)")
+    if kind == "remove_figure" and mask:
+        request["mask"] = mask
+    if kind == "remove_figure" and str(replace or "").strip():
+        request["replace"] = str(replace).strip()[:120]
+    if kind == "remove_figure" and erase_only:
+        request["erase_only"] = True
+    if kind == "remove_figure" and large:
+        request["large"] = True              # over ~15 % of the frame or on a listed character: the batch regenerates
     if kind == "add_marker":
         markers = vbible.signature_markers(vb, character) if vbible.character(vb, character) else []
         if not markers:
@@ -135,11 +145,18 @@ def run_queue(generator, output, vb: dict, shot_list: dict, *, job_factory: Call
             if request["kind"] == "regenerate":
                 action = fixes.apply(generator, output, shot, vb, image_path=image, job_factory=factory,
                                      force="regenerate", progress=progress)
+            elif request["kind"] == "regenerate_without" or (request["kind"] == "remove_figure" and request.get("large")
+                                                              and not request.get("erase_only")):
+                from video.qa import removal
+                action = removal.regenerate_without(generator, output, shot, vb, job_factory, progress=progress)
+            elif request["kind"] == "remove_figure":
+                from video.qa import removal
+                action = removal.run(generator, output, shot, vb, request, job_factory=job_factory, progress=progress)
             else:
                 action = fixes.edit_with_plan(generator, output, shot, plan_for(request, vb, output),
                                               image_path=image, base_job=factory(0), origin="human",
                                               progress=progress, vb=vb)
-            action["request"] = request["label"]
+            action["request"] = action.get("request") if request["kind"] == "remove_figure" and request.get("large") else request["label"]
             dequeue(shot, 0)
             if action["action"] == "edit":
                 summary["edits"] += 1
@@ -147,6 +164,8 @@ def run_queue(generator, output, vb: dict, shot_list: dict, *, job_factory: Call
                 summary.setdefault("no_effect", []).append(shot["shot_id"])
             elif action["action"] == "regenerate":
                 summary["regenerations"] += 1
+            elif action["action"] == "removal_candidates":
+                summary["removals"] = summary.get("removals", 0) + 1
             else:
                 summary["failed"].append(shot["shot_id"])
             save()

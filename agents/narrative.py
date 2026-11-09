@@ -15,7 +15,7 @@ NARRATIVE_CONTRACT_VERSION = 4
 CANONICAL_TYPE_CONTRACT = 3
 CONTENT_MODE = "cinematic_fiction"
 SCENE_TYPES = (
-    "opening", "setup", "development", "reversal", "climax", "resolution", "aftermath",
+    "opening", "setup", "development", "reversal", "climax", "resolution", "aftermath", "cold_open",
 )
 LEGACY_EDITORIAL_DIMENSIONS = (
     "structural_coherence", "causal_continuity", "chronological_continuity",
@@ -34,8 +34,9 @@ TYPE_A_ONLY_DIMENSIONS = ("strategy_success_then_cost",)
 TYPE_A = "realistic_psychological_fiction"
 ARC_MOVEMENTS = (
     "hook", "character_wound", "mechanism", "escalation_success",
-    "hidden_cost", "reversal", "philosophical_layer", "ending",
+    "hidden_cost", "reversal", "philosophical_layer", "ending", "cold_open",
 )
+OPTIONAL_MOVEMENTS = ("cold_open",)          # Phase 3.9.7: never required of a Type A outline
 NARRATIVE_TYPES = {
     "realistic_psychological_fiction",
     "philosophical_thought_experiment",
@@ -388,7 +389,8 @@ def infer_scene_type(value, index: int = 0, total: int = 1) -> str:
         ("resolution", ("resolution", "ending", "denouement", "closure")),
         ("climax", ("climax", "final confrontation", "culmination")),
         ("reversal", ("reversal", "turning point", "reveal", "discovery", "twist")),
-        ("opening", ("opening", "hook", "cold open", "introduction")),
+        ("cold_open", ("cold open", "cold_open", "teaser", "flash-forward", "omen")),
+        ("opening", ("opening", "hook", "introduction")),
         ("setup", ("setup", "inciting", "establish")),
         ("development", ("development", "escalation", "confrontation", "complication")),
     )
@@ -467,11 +469,18 @@ def rebalance_scene_word_targets(outline: dict, total_target: int) -> dict:
     scenes = normalized.get("scenes", [])
     if not scenes or total_target < len(scenes) * 20:
         raise NarrativeValidationError("target word count is too small for the scene count")
-    weights = [max(20, int(scene.get("target_words", 20))) for scene in scenes]
-    raw = [total_target * weight / sum(weights) for weight in weights]
-    allocated = [max(20, int(value)) for value in raw]
-    delta = total_target - sum(allocated)
-    order = sorted(range(len(scenes)), key=lambda i: raw[i] - int(raw[i]), reverse=delta > 0)
+    # Phase 3.9.2-D: brief scenes keep 40-110 words; what they give up goes to the others in proportion.
+    brief_low, brief_high = BRIEF_SCENE_WORDS
+    fixed = {index: min(brief_high, max(brief_low, int(scene.get("target_words", brief_high))))
+             for index, scene in enumerate(scenes) if scene.get("pace") == "brief"}
+    flexible = [index for index in range(len(scenes)) if index not in fixed] or list(range(len(scenes)))
+    fixed = {index: words for index, words in fixed.items() if index not in flexible}
+    remaining = total_target - sum(fixed.values())
+    weights = {index: max(20, int(scenes[index].get("target_words", 20))) for index in flexible}
+    raw = {index: remaining * weight / sum(weights.values()) for index, weight in weights.items()}
+    allocated = {index: max(20, int(value)) for index, value in raw.items()}
+    delta = remaining - sum(allocated.values())
+    order = sorted(flexible, key=lambda i: raw[i] - int(raw[i]), reverse=delta > 0)
     cursor = 0
     while delta:
         index = order[cursor % len(order)]
@@ -480,8 +489,9 @@ def rebalance_scene_word_targets(outline: dict, total_target: int) -> dict:
             allocated[index] += change
             delta -= change
         cursor += 1
-    for scene, words in zip(scenes, allocated):
-        scene["target_words"] = words
+    allocated.update(fixed)
+    for index, scene in enumerate(scenes):
+        scene["target_words"] = allocated[index]
     normalized["target_word_count"] = total_target
     return normalized
 
@@ -587,6 +597,10 @@ def validate_outline(outline: dict, bible: dict, require_dramaturgy: bool = Fals
             )
         previous_order = order
     types = [scene["section_type"] for scene in scenes]
+    if types[0] == "cold_open":                         # Phase 3.9.7: the teaser comes before the opening
+        types = types[1:] or types
+    if "cold_open" in types:
+        raise NarrativeValidationError("the cold_open scene must be the first scene")
     if types[0] not in ("opening", "setup"):
         raise NarrativeValidationError("outline is missing an opening narrative function")
     if types[-1] not in ("resolution", "aftermath"):
@@ -770,6 +784,27 @@ def stacked_modifier_lint(sections: list[dict], threshold: int | None = None) ->
 
 # Over-target scenes become a major issue only past this ratio (or when the total is out of range).
 OVER_BUDGET_MAJOR_RATIO = 1.30
+# Phase 3.9.2-D: scenes marked pace "brief" (a coda, or a brief that demands an abrupt ending).
+BRIEF_SCENE_WORDS = (40, 110)
+ABRUPT_ENDING = re.compile(r"\bcut\b|\bcuts\b|\babrupt|\bbefore (?:he|she|they) (?:answers?|speaks?|replies?)\b|"
+                           r"\bone final (?:narrated )?line\b", re.I)
+
+
+def brief_scene_ids(sections: list[dict], outline: dict | None, brief: dict | None) -> set:
+    """Screenplay scenes on pace "brief": marked in the outline, or the last scene when the author's
+    ending demands stopping short (Phase 3.9.2-D; also for outlines written before ``pace``)."""
+    plans = {plan.get("scene_id"): plan for plan in (outline or {}).get("scenes") or [] if isinstance(plan, dict)}
+    found = {scene.get("id") for scene in sections
+             if plans.get(scene.get("outline_scene_id"), {}).get("pace") == "brief"}
+    ending = (((brief or {}).get("author_brief") or {}).get("beats") or {}).get("ending", "")
+    if sections and ABRUPT_ENDING.search(str(ending)):
+        found.add(sections[-1].get("id"))
+    return found
+
+
+def scene_word_bounds(target: int, on_brief_pace: bool) -> tuple[int, int]:
+    """Accepted words of a scene outside the shorts format: 85-115 %, or 40-110 on brief pace."""
+    return BRIEF_SCENE_WORDS if on_brief_pace else (int(target * .85) + 1, int(target * 1.15))
 
 
 def missing_arc_movements(outline: dict | None, narrative_type: str | None) -> list[str]:
@@ -781,7 +816,7 @@ def missing_arc_movements(outline: dict | None, narrative_type: str | None) -> l
         return []
     declared = {item for scene in scenes for item in scene.get("arc_movements") or []
                 if isinstance(item, str)}
-    return [movement for movement in ARC_MOVEMENTS if movement not in declared]
+    return [movement for movement in ARC_MOVEMENTS if movement not in declared and movement not in OPTIONAL_MOVEMENTS]
 
 
 def deterministic_review(script: dict, target_duration_minutes: float,
@@ -791,7 +826,8 @@ def deterministic_review(script: dict, target_duration_minutes: float,
     """Measure objective readiness; editorial opinion can never erase these blockers."""
     script = normalize_script(script, outline)
     sections = script["sections"]
-    words = sum(len(scene["narration"].split()) for scene in sections)
+    # Phase 3.9.7: the cold open has its own budget, outside the story's target
+    words = sum(len(scene["narration"].split()) for scene in sections if scene.get("section_type") != "cold_open")
     expected = max(1, int(round(
         target_duration_minutes * script.get("planned_words_per_minute", 125)
     )))
@@ -818,16 +854,25 @@ def deterministic_review(script: dict, target_duration_minutes: float,
         base, remainder = divmod(expected, len(sections))
         fallback_targets = [base + (1 if i < remainder else 0) for i in range(len(sections))]
     scene_budgets = []
+    brief_scenes = brief_scene_ids(sections, outline if isinstance(outline, dict) else None, brief)
+    attempted = {scene_id for attempt in repair_attempts or [] if "expansion" in str(attempt.get("kind", ""))
+                 for scene_id in attempt.get("scene_ids") or []}
+    in_total_range = total_min <= total_ratio <= total_max
     for index, scene in enumerate(sections):
         plan = plan_by_id.get(scene.get("outline_scene_id")) or plan_by_id.get(scene.get("id")) or {}
         target = plan.get("target_words") or (
             scene.get("target_words") if use_declared else fallback_targets[index]
         )
         actual = len(scene["narration"].split())
+        on_brief_pace = scene.get("id") in brief_scenes and not is_shorts
+        if on_brief_pace:
+            target = min(target, BRIEF_SCENE_WORDS[1])
         ratio = actual / max(target, 1)
         deficit = target - actual
         status = "within_target"
-        if ratio < scene_min:
+        if on_brief_pace:                # no minimum ratio; only its own maximum
+            status = "over_target" if actual > BRIEF_SCENE_WORDS[1] else "within_target"
+        elif ratio < scene_min:
             status = "under_target"
         elif ratio > scene_max:
             status = "over_target"
@@ -842,6 +887,7 @@ def deterministic_review(script: dict, target_duration_minutes: float,
             "deviation_percent": round((ratio - 1) * 100, 1),
             "word_deficit": deficit,
             "status": status,
+            **({"pace": "brief"} if on_brief_pace else {}),
         })
         if status != "within_target":
             direction = "below" if deficit > 0 else "above"
@@ -852,12 +898,23 @@ def deterministic_review(script: dict, target_duration_minutes: float,
             # Under-development always matters. A slightly long scene inside a total
             # that is within range is a pacing note, not a revision trigger.
             proportionate = (deficit < 0 and not is_shorts and ratio <= OVER_BUDGET_MAJOR_RATIO
-                             and total_min <= total_ratio <= total_max)
+                             and in_total_range)
+            # Phase 3.9.2-D: types B and C may run a scene short when the total holds; a scene still short
+            # after its one expansion attempt is reported, not looped on.
+            short_note = ""
+            if deficit > 0 and not is_shorts:
+                if scene.get("narrative_type", script.get("narrative_type")) != TYPE_A and in_total_range:
+                    short_note = "The total is within range, and this narrative type allows a short scene."
+                elif scene.get("id") in attempted:
+                    short_note = "It stayed short after its one expansion attempt."
+            if short_note:
+                proportionate = True
+                message += " " + short_note
             issue = {
                 "severity": "minor" if proportionate else "major", "issue_type": "scene_word_budget",
                 "scene_ids": [scene.get("id")], "claim": message,
                 "evidence": [f"actual={actual}", f"target={target}", f"ratio={ratio:.4f}"],
-                "recommendation": ("Consider tightening this scene if it drags when read aloud."
+                "recommendation": (short_note or "Consider tightening this scene if it drags when read aloud."
                                    if proportionate else
                                    "Revise this scene with substantive dramatic action; do not pad it."),
             }
@@ -920,6 +977,22 @@ def deterministic_review(script: dict, target_duration_minutes: float,
         warnings.append("Possible motif overuse: " + ", ".join(
             f"{term} ({count})" for term, count in repeated_terms.items()
         ))
+    from agents import premise_brief, prose_lint
+    author = (brief or {}).get("author_brief") or {}
+    lint = prose_lint.review(sections, normalize_outline(outline) if isinstance(outline, dict) else None,
+                             script.get("characters") or [],
+                             [item["line"] for item in premise_brief.required_lines(author)
+                              if item["kind"] in ("narrated", "thought", "dialogue")])
+    major_issues += lint["major"]
+    minor_issues += lint["minor"]
+    from agents import cold_open
+    plans = (normalize_outline(outline) if isinstance(outline, dict) else {}).get("scenes") or []
+    ending_text = " ".join([str(author.get("beats", {}).get("ending", "")) if isinstance(author.get("beats"), dict) else ""]
+                           + [str(plans[-1].get(key, "")) for key in ("decision", "consequence")] if plans else [])
+    for finding in cold_open.findings(sections, normalize_outline(outline) if isinstance(outline, dict) else None,
+                                      narrative_type=script.get("narrative_type") or (brief or {}).get("narrative_type"),
+                                      beat=cold_open.brief_beat(brief), ending_text=ending_text):
+        (major_issues if finding["severity"] == "major" else minor_issues).append(finding)
     style_lint = stacked_modifier_lint(sections)
     if style_lint["total"] > style_lint["threshold"]:
         issue = {
@@ -1372,6 +1445,26 @@ def screen_editorial_findings(findings: list[dict], deterministic: dict,
     return kept, discarded
 
 
+# Phase 3.9.2-F: a dimension cannot score above this while a related confirmed major finding exists.
+CLAMP_SCORE = 6
+CLAMPED_DIMENSIONS = {"chronology": ("chronological_continuity",), "lecture": ("dialogue_and_subtext",),
+                      "brief_paste": ("literary_style",), "screen_direction": ("literary_style",)}
+
+
+def clamp_scores(assessment: dict, majors: list[dict]) -> tuple[dict, list[dict]]:
+    """Scores the deterministic findings contradict, brought down to ``CLAMP_SCORE``, and the record."""
+    clamped = deepcopy(assessment)
+    record = []
+    for finding in majors:
+        for name in CLAMPED_DIMENSIONS.get(finding.get("issue_type"), ()):
+            rating = clamped.get("dimensions", {}).get(name)
+            if isinstance(rating, dict) and isinstance(rating.get("score"), (int, float)) and rating["score"] > CLAMP_SCORE:
+                record.append({"dimension": name, "from": rating["score"], "to": CLAMP_SCORE,
+                               "because": finding.get("claim", "")})
+                rating["score"] = CLAMP_SCORE
+    return clamped, record
+
+
 def merge_editorial_review(deterministic: dict, assessment: dict | None,
                            bible: dict | None = None) -> dict:
     merged = deepcopy(deterministic)
@@ -1384,6 +1477,7 @@ def merge_editorial_review(deterministic: dict, assessment: dict | None,
         merged["editorial_validation_complete"] = False
         return merged
     assessment = validate_editorial_assessment(assessment, merged.get("narrative_type"))
+    assessment, merged["score_clamps"] = clamp_scores(assessment, merged.get("major_issues", []))
     merged["editorial_assessment"] = assessment
     merged["editorial_validation_complete"] = True
     findings, discarded = screen_editorial_findings(assessment["findings"], merged, bible)

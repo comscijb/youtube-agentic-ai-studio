@@ -1,0 +1,197 @@
+{
+ "shots": [
+  {
+   "shot_id": "s02_01",
+   "shot_type": "wide",
+   "face_visibility": "none",
+   "characters": [
+    "thomas_wren"
+   ],
+   "action": "A lone figure small inside the towering, dim stone storehouse, walking across polished floorboards toward deep shadow."
+  },
+  {
+   "shot_id": "s06_01",
+   "shot_type": "wide",
+   "face_visibility": "none",
+   "characters": [
+    "thomas_wren"
+   ],
+   "action": "A lone figure walks along the edge of dark stone cottages where the open moorland begins under a vast starlit sky."
+  },
+  {
+   "shot_id": "s06_03",
+   "shot_type": "medium",
+   "face_visibility": "partial",
+   "characters": [
+    "thomas_wren"
+   ],
+   "action": "A figure steps forward past an ancient granite marker into the vast dark heather, halting abruptly in the immense quiet."
+  },
+  {
+   "shot_id": "s06_04",
+   "shot_type": "close_up",
+   "face_visibility": "none",
+   "characters": [
+    "thomas_wren"
+   ],
+   "action": "A figure sits down on a cold mound of dark turf, pulling a heavy dark wool coat tight around his shoulders in the deep shadow."
+  },
+  {
+   "shot_id": "s06_05",
+   "shot_type": "over_the_shoulder",
+   "face_visibility": "none",
+   "characters": [
+    "thomas_wren"
+   ],
+   "action": "Over the shoulder of a dark-coated figure gazing into the massive empty expanse of starlit moorland."
+  },
+  {
+   "shot_id": "s06_07",
+   "shot_type": "silhouette",
+   "face_visibility": "none",
+   "characters": [
+    "thomas_wren"
+   ],
+   "action": "A solitary figure sits motionless in stark silhouette against the enormous, star-speckled night sky and towering boundary stones."
+  },
+  {
+   "shot_id": "s07_01",
+   "shot_type": "medium",
+   "face_visibility": "partial",
+   "characters": [
+    "thomas_wren"
+   ],
+   "action": "A man sits on the cold turf, hands gripping the damp grass in sudden tension, illuminated only by faint starlight under towering granite stones."
+  },
+  {
+   "shot_id": "s07_03",
+   "shot_type": "silhouette",
+   "face_visibility": "none",
+   "characters": [
+    "nell_wren"
+   ],
+   "action": "A lone figure stands in sharp silhouette against the starry horizon, dark green wool coat pulled tight against the wind, silver braid over one shoulder."
+  },
+  {
+   "shot_id": "s07_05",
+   "shot_type": "over_the_shoulder",
+   "face_visibility": "partial",
+   "characters": [
+    "thomas_wren",
+    "nell_wren"
+   ],
+   "action": "Over a seated man's shoulder, a woman stands tall against the starlit sky, looking down with quiet stillness."
+  },
+  {
+   "shot_id": "s07_06",
+   "shot_type": "close_up",
+   "face_visibility": "full",
+   "characters": [
+    "thomas_wren"
+   ],
+   "action": "A man's face in stark relief against the dark background, lips parting to speak in the cold night air under dim starlight."
+  },
+  {
+   "shot_id": "s07_07",
+   "shot_type": "medium",
+   "face_visibility": "partial",
+   "characters": [
+    "nell_wren"
+   ],
+   "action": "A woman stands motionless beside an ancient granite boundary stone, hands resting in her coat pockets under a vast star-dusted sky."
+  },
+  {
+   "shot_id": "s07_08",
+   "shot_type": "medium",
+   "face_visibility": "partial",
+   "characters": [
+    "thomas_wren"
+   ],
+   "action": "A seated man stares straight ahead into the darkness, shoulders slightly slumped, hands resting quietly on the cold ground."
+  }
+ ],
+ "visual_bible": {
+  "characters": [
+   {
+    "character_id": "thomas_wren",
+    "descriptor": "a 56-year-old man, Caucasian, medium build, square jaw, grey-blue eyes, short grey beard and hair, distinguished by quiet hands and flour-dusted forearms",
+    "signature_markers": [
+     "short grey beard",
+     "flour-dusted forearms"
+    ],
+    "wardrobe": [
+     {
+      "scene_ids": [
+       "s01",
+       "s02",
+       "s03"
+      ],
+      "outfit": "Flour-dusted white apron over dark woolens, rolled sleeves",
+      "grooming": "Short grey hair and beard trimmed neatly, poised bearing"
+     },
+     {
+      "scene_ids": [
+       "s04",
+       "s05",
+       "s06",
+       "s07",
+       "s08"
+      ],
+      "outfit": "Heavy dark wool coat over dark trousers",
+      "grooming": "Hair slightly windswept, composed expression"
+     }
+    ],
+    "scene_states": {
+     "s01": "hand faltering on the flour board, eyes fixed in sudden tension",
+     "s02": "hands trembling against his apron",
+     "s05": "shoulders slightly slumped, studying her eyes with quiet realization",
+     "s06": "sitting on a cold mound of turf, pulling his wool coat tight",
+     "s07": "turning his head in the dim light, staring up in surprise",
+     "s08": "parting his lips to speak"
+    },
+    "seed": 1088419286,
+    "presence": "on_screen"
+   },
+   {
+    "character_id": "nell_wren",
+    "descriptor": "a 54-year-old woman, Caucasian, slender build, oval face, hazel eyes, long silver-blonde hair, distinguished by neat silver braid and calloused fingers",
+    "signature_markers": [
+     "long silver braid",
+     "dark green wool coat"
+    ],
+    "wardrobe": [
+     {
+      "scene_ids": [
+       "s05",
+       "s07",
+       "s08"
+      ],
+      "outfit": "Dark green wool coat over a simple high-collared dress",
+      "grooming": "Long silver braid resting over one shoulder, calm expression"
+     }
+    ],
+    "scene_states": {
+     "s05": "fingers trembling slightly against the ceramic rim of the bowl",
+     "s07": "standing silhouetted against the starlight, opening her mouth to speak",
+     "s08": "sitting down beside him on the cold turf"
+    },
+    "seed": 1651430377,
+    "presence": "on_screen"
+   }
+  ],
+  "locations": [
+   {
+    "location_id": "village_bakery",
+    "name": "The Village Bakery",
+    "descriptor": "An immaculate 19th-century village bakery with tall narrow windows, polished pine counter, stacked flour sacks, and immaculate flour-dusted floorboards under crisp morning light",
+    "scene_ids": [
+     "s01",
+     "s02",
+     "s03"
+    ],
+    "seed": 734431330,
+    "interior": true
+   }
+  ]
+ }
+}

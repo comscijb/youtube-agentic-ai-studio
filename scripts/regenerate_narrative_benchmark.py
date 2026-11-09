@@ -32,7 +32,7 @@ def main(argv=None) -> None:
     args = parser.parse_args(argv)
     if not args.confirm_live:
         parser.error("--confirm-live is required; no API call was made")
-    if not 12 <= args.minutes <= 20:
+    if not config.EPISODE_MINUTES[0] <= args.minutes <= config.EPISODE_MINUTES[1]:
         parser.error("--minutes must be between 12 and 20")
 
     if args.resume:

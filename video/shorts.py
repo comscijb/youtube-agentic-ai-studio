@@ -165,8 +165,21 @@ def validate(segments: list[dict], sentence_list: list[dict], *, twist: float, b
 
 # ── Gemini plan ─────────────────────────────────────────────────────────────
 
-def contract(count: int, twist_index: int) -> str:
+def teaser_end(script: dict, sentence_list: list[dict], timeline: dict | None) -> int | None:
+    """Index of the last sentence of the cold open (Phase 3.9.7), or None."""
+    sections = [section for section in script.get("sections", []) if str(section.get("narration", "")).strip()]
+    scenes = (timeline or {}).get("scenes") or []
+    if not sections or sections[0].get("section_type") != "cold_open" or not scenes:
+        return None
+    end = float(scenes[0].get("start", 0)) + float(scenes[0].get("duration", 0))
+    inside = [item["index"] for item in sentence_list if item["start"] < end]
+    return inside[-1] if inside else None
+
+
+def contract(count: int, twist_index: int, teaser: int | None = None) -> str:
     low, high = limits()
+    opener = (f"\nSentences 0-{teaser} are the episode's COLD OPEN, a teaser that stops before the payoff: it makes an "
+              "ideal Short opener, so one segment may start at sentence 0 (the twist rule above still holds).") if teaser is not None else ""
     return f"""You cut YouTube Shorts from one Private Gravity episode (cinematic psychological fiction). The
 narration is given as numbered SENTENCES with their times. Choose {count} segments (or at least 2), each a
 contiguous range of whole sentences lasting {low:.0f}-{high:.0f} seconds, not overlapping, chosen for:
@@ -180,7 +193,7 @@ Return ONLY JSON {{"segments": [{{"start_sentence": int, "end_sentence": int, "t
 max 51 characters (#Shorts is added)", "hook_text": "max 6 words shown on screen for the first 2 s",
 "end_text": "max 6 words, e.g. Full story on the channel", "description": "1-2 lines, no spoilers",
 "why": "one sentence: why this cut works"}}]}}. Titles follow the channel title policy: present a person and
-a situation, never explain the theme."""
+a situation, never explain the theme.""" + opener
 
 
 def build_plan(output_dir, *, script: dict | None = None, brief: dict | None = None, generator=None,
@@ -210,7 +223,8 @@ def build_plan(output_dir, *, script: dict | None = None, brief: dict | None = N
                for item in sentence_list if item["start"] < twist]
     story = {key: brief.get(key, "") for key in ("logline", "psychological_theme", "video_title")}
     value = generate_json(
-        contract(per_episode(), twist_index) + "\n\n" + TITLE_POLICY, "shorts plan",
+        contract(per_episode(), twist_index, teaser_end(script, sentence_list, load_timeline(output / "scene_timeline.json")))
+        + "\n\n" + TITLE_POLICY, "shorts plan",
         lambda value: {"segments": validate(value.get("segments") if isinstance(value, dict) else None,
                                             sentence_list, twist=twist, brief=brief)},
         generator=generator or generate, context=f"STORY: {compact_json(story)}\nSENTENCES: {compact_json(listing)}",

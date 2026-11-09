@@ -1,0 +1,134 @@
+[
+ {
+  "scene": 1,
+  "phonemes": 1050,
+  "batches": 3,
+  "cuts": [
+   {
+    "at": 31.255,
+    "mark": ".",
+    "before": " his woolen trousers, his breathing measured.",
+    "after": " Thirty years of unblemished g",
+    "phonemes": 500
+   },
+   {
+    "at": 57.155,
+    "mark": ",",
+    "before": ". Thomas stands motionless behind the timber,",
+    "after": " clutching the edge of the flo",
+    "phonemes": 415
+   }
+  ]
+ },
+ {
+  "scene": 2,
+  "phonemes": 839,
+  "batches": 2,
+  "cuts": [
+   {
+    "at": 96.995,
+    "mark": ".",
+    "before": "m that an uncurated thought is a moral wound.",
+    "after": " He learned to build an intern",
+    "phonemes": 487
+   }
+  ]
+ },
+ {
+  "scene": 3,
+  "phonemes": 872,
+  "batches": 2,
+  "cuts": [
+   {
+    "at": 151.805,
+    "mark": ".",
+    "before": "n Wickham's Rest they call it clean thinking.",
+    "after": " Children learn it before they",
+    "phonemes": 497
+   }
+  ]
+ },
+ {
+  "scene": 4,
+  "phonemes": 984,
+  "batches": 2,
+  "cuts": [
+   {
+    "at": 207.245,
+    "mark": ".",
+    "before": "he says that one more time, I'll...' A pause.",
+    "after": " 'Good of him to come.'\n\nIt is",
+    "phonemes": 492
+   }
+  ]
+ },
+ {
+  "scene": 5,
+  "phonemes": 999,
+  "batches": 2,
+  "cuts": [
+   {
+    "at": 270.675,
+    "mark": ",",
+    "before": "gainst the ceramic rim. For twenty-six years,",
+    "after": " he has lived inside the music",
+    "phonemes": 501
+   }
+  ]
+ },
+ {
+  "scene": 6,
+  "phonemes": 986,
+  "batches": 2,
+  "cuts": [
+   {
+    "at": 331.05,
+    "mark": ".",
+    "before": "tight, and waits for his true mind to arrive.",
+    "after": " He waits for the unedited voi",
+    "phonemes": 506
+   }
+  ]
+ },
+ {
+  "scene": 7,
+  "phonemes": 1140,
+  "batches": 3,
+  "cuts": [
+   {
+    "at": 390.2,
+    "mark": ",",
+    "before": " can't. In the total absence of mental noise,",
+    "after": " she opens her mouth and speak",
+    "phonemes": 461
+   },
+   {
+    "at": 417.595,
+    "mark": ".",
+    "before": "\n\nTwenty-six years without a single argument.",
+    "after": " He had always believed it mea",
+    "phonemes": 450
+   }
+  ]
+ },
+ {
+  "scene": 8,
+  "phonemes": 822,
+  "batches": 2,
+  "cuts": [
+   {
+    "at": 461.28,
+    "mark": ".",
+    "before": "uestion lands in the silence and stays there.",
+    "after": " Inside him the editor wakes a",
+    "phonemes": 451
+   }
+  ]
+ },
+ {
+  "scene": 9,
+  "phonemes": 409,
+  "batches": 1,
+  "cuts": []
+ }
+]

@@ -1,0 +1,330 @@
+{
+  "scenes": [
+    {
+      "scene_id": "s01",
+      "order": 1,
+      "title": "The Slip at the Counter",
+      "section_type": "opening",
+      "narrative_function": "Establish the speculative rule of broadcast surface thoughts in Wickham's Rest through an opening grounded in an object, culminating in Thomas's sudden, accidental thought leak.",
+      "summary": "At dawn in the village bakery, Thomas hands a warm loaf to a customer while soft internal thoughts murmur around the counter. Exhausted after hours of baking, a rogue thought escapes his mental filter aloud into the room: 'I don't want to be here.' The entire queue freezes in absolute stillness.",
+      "setting": "The village bakery in Wickham's Rest, dawnlight through tall narrow windows, pine counter, flour-dusted floorboards.",
+      "characters_present": [
+        "thomas_wren"
+      ],
+      "initial_dramatic_situation": "Thomas is serving the morning queue, carefully monitoring his internal monologue as neighbors exchange gentle broadcast thoughts.",
+      "character_objective": "To finish serving the morning rush while maintaining his pristine record of clean surface thoughts.",
+      "obstacle": "Physical exhaustion and a moment of unguarded cognitive fatigue.",
+      "dramatic_action": "Thomas places a loaf on the counter and allows his inner vigilance to slip for a single second.",
+      "decision": "He lets his guard down while wiping his hands on his apron.",
+      "consequence": "His raw, uncurated thought broadcasts to everyone within five paces.",
+      "new_information": "Thomas Wren, famous for thirty years of unblemished gentleness, harbored an unkind impulse.",
+      "dramatic_function": "Launches the central conflict by shattering Thomas's reputation for perfect inner purity.",
+      "emotional_turn": "From practiced routine to sharp panic and public exposure.",
+      "causal_link": "The public shock forces Thomas to reflect on why he curates his mind so obsessively.",
+      "chronology_marker": "Dawn, 6:00 AM",
+      "continuity_updates": [
+        "Thomas's 30-year record of unblemished surface thoughts is broken."
+      ],
+      "target_words": 170,
+      "arc_movements": [
+        "hook"
+      ],
+      "visual_direction": "Medium shot of a flour-dusted wooden peel resting on pine, panning up to Thomas's frozen expression as townsfolk turn toward him.",
+      "image_queries": [
+        "baker hands flour on wooden counter morning light",
+        "rustic village bakery interior pine counter mist",
+        "older man baker white apron grey beard quiet posture"
+      ]
+    },
+    {
+      "scene_id": "s02",
+      "order": 2,
+      "title": "The Origin of the Censor",
+      "section_type": "setup",
+      "narrative_function": "Dramatize Thomas's childhood trauma and establish the mechanics of Wickham's Rest's cognitive transparency.",
+      "summary": "Thomas retreats to the back room of the bakery, remembering his boyhood punishment when an involuntary unkind thought was overheard by his elders. He recalls learning to build an internal supervisor to rewrite thoughts before they reach surface awareness.",
+      "setting": "The rear flour store of the bakery, stacked burlap sacks, faint morning light through a high window.",
+      "characters_present": [
+        "thomas_wren"
+      ],
+      "initial_dramatic_situation": "Thomas sits alone among flour sacks, trembling from the public slip in the shop front.",
+      "character_objective": "To regain control over his internal voice and remind himself why safety requires total vigilance.",
+      "obstacle": "The lingering shame of a childhood memory where an unacted cruel thought brought severe public judgment.",
+      "dramatic_action": "He traces flour on his apron while systematically rehearsing gentle sentences in his head.",
+      "decision": "To redouble his internal editing discipline so he never slips again.",
+      "consequence": "He reinforces his belief that raw thoughts are dangerous and must be sanitized.",
+      "new_information": "Townsfolk rely entirely on an internal editor to survive the broadcast phenomenon.",
+      "dramatic_function": "Grounds the speculative rule in character psychological history.",
+      "emotional_turn": "From shame to renewed, hyper-vigilant resolve.",
+      "causal_link": "His resolve leads him to perform an over-corrected display of kindness the following morning.",
+      "chronology_marker": "Dawn, 6:20 AM",
+      "continuity_updates": [],
+      "target_words": 150,
+      "arc_movements": [
+        "character_wound",
+        "mechanism"
+      ],
+      "visual_direction": "Close-up of flour-dusted fingers trembling against wool fabric, soft directional window light highlighting grey hair.",
+      "image_queries": [
+        "older man sitting near burlap sacks flour storehouse",
+        "flour dust on hands rustic storeroom soft light",
+        "thoughtful older man in apron looking down dark interior"
+      ]
+    },
+    {
+      "scene_id": "s03",
+      "order": 3,
+      "title": "The Curated Reassurances",
+      "section_type": "development",
+      "narrative_function": "Demonstrate that the strategy of clean thinking restores social approval, while raising the internal tension.",
+      "summary": "The next morning, Thomas stands behind the counter and consciously broadcasts warm, deliberate thoughts about community and sunlit mornings. The bakery queue listens to his placid surface monologue, relaxes, and warmly accepts his loaves again.",
+      "setting": "The bakery front counter, bright morning sunshine streaming across slate flooring.",
+      "characters_present": [
+        "thomas_wren"
+      ],
+      "initial_dramatic_situation": "Townsfolk enter the bakery cautiously, listening intently to hear if Thomas has recovered his gentle disposition.",
+      "character_objective": "To prove to the community that his previous slipped thought was an anomaly.",
+      "obstacle": "The anxiety that another raw impulse might break through before he can edit it.",
+      "dramatic_action": "Thomas deliberately crafts calm, optimistic surface sentences for his audience to hear.",
+      "decision": "He feeds the broadcast exactly what the town needs to feel safe.",
+      "consequence": "The queue forgives him, restoring his standing as the gentlest man in Wickham's Rest.",
+      "new_information": "Clean thoughts successfully soothe community suspicion, proving the performative strategy works.",
+      "dramatic_function": "Shows the short-term success of his coping mechanism before exposing its hidden cost.",
+      "emotional_turn": "From high anxiety to tense relief.",
+      "causal_link": "The strain of manufacturing pleasant thoughts makes him hypersensitive to the same editing mechanism in others.",
+      "chronology_marker": "Next morning, 7:00 AM",
+      "continuity_updates": [
+        "The community forgives Thomas after hearing his curated pleasant thoughts."
+      ],
+      "target_words": 160,
+      "arc_movements": [
+        "escalation_success"
+      ],
+      "visual_direction": "Wide shot of townspeople in wool coats standing near the wooden counter, relaxed postures, warm morning illumination.",
+      "image_queries": [
+        "rustic bakery counter customers morning sunlight",
+        "baker giving fresh bread loaf to customer",
+        "traditional stone village bakery interior morning"
+      ]
+    },
+    {
+      "scene_id": "s04",
+      "order": 4,
+      "title": "Hearing the Editor",
+      "section_type": "development",
+      "narrative_function": "Expose the hidden cost of constant internal editing in both Thomas and his neighbors.",
+      "summary": "While watching a neighbor buy bread, Thomas begins noticing the slight micro-pauses before every broadcast thought. He realizes every person in town is running a mental censor, constantly rewriting raw frustration into pleasant public sentences.",
+      "setting": "Outside the bakery along the stone lane of Wickham's Rest, overcast afternoon sky.",
+      "characters_present": [
+        "thomas_wren"
+      ],
+      "initial_dramatic_situation": "Thomas observes customers conversing on the street, hearing their quiet surface voices.",
+      "character_objective": "To understand why his own mind feels so exhausted despite doing everything right.",
+      "obstacle": "The realization that no one's surface thought is truly spontaneous.",
+      "dramatic_action": "He listens to a woman broadcast pleasant thoughts while her facial muscles remain tight and strained.",
+      "decision": "He acknowledges the artificial nature of the town's total harmony.",
+      "consequence": "He begins feeling profound alienation from his own curated mind.",
+      "new_information": "The entire town's peaceful atmosphere is maintained through relentless internal censorship.",
+      "dramatic_function": "Deepens the psychological theme by shifting focus from external safety to internal authenticity.",
+      "emotional_turn": "From relief to creeping dread and disillusionment.",
+      "causal_link": "His discovery makes him observe his own home life with new scrutiny.",
+      "chronology_marker": "Same day, 3:00 PM",
+      "continuity_updates": [],
+      "target_words": 160,
+      "arc_movements": [
+        "hidden_cost"
+      ],
+      "visual_direction": "Medium shot of Thomas standing by a stone wall, looking at village passersby with subtle realization.",
+      "image_queries": [
+        "old stone village street overcast sky gray atmosphere",
+        "older man watching passersby on narrow cobble lane",
+        "stone cottage alleyway northern England landscape"
+      ]
+    },
+    {
+      "scene_id": "s05",
+      "order": 5,
+      "title": "Supper in Silence",
+      "section_type": "reversal",
+      "narrative_function": "Confront the central tragedy of Thomas and Nell's marriage: twenty-six years of mutual cognitive performance.",
+      "summary": "At the kitchen table, Nell broadcasts a pleasant surface thought about warm broth. Thomas looks at her face and sees deep physical and emotional exhaustion. He realizes he has never known her authentic mind, only her curated broadcast.",
+      "setting": "The kitchen of the Wren home, wood stove, ceramic bowls on a trestle table, flickering lamp light.",
+      "characters_present": [
+        "thomas_wren",
+        "nell_wren"
+      ],
+      "initial_dramatic_situation": "Thomas and Nell sit opposite each other eating supper under the quiet murmur of broadcast thoughts.",
+      "character_objective": "To find authentic connection with his wife of twenty-six years.",
+      "obstacle": "Nell's surface broadcast continues projecting warmth despite her obvious fatigue.",
+      "dramatic_action": "Thomas stops eating and watches Nell smooth her coat fabric while her mind broadcasts polite contentment.",
+      "decision": "He decides he cannot remain in the town's broadcast zone tonight.",
+      "consequence": "He leaves the house after supper to walk toward the moorland boundary.",
+      "new_information": "Nell is as trapped in performative thought curation as Thomas.",
+      "dramatic_function": "Reverses the value of their peaceful marriage, framing it as a tragedy of mutual isolation.",
+      "emotional_turn": "From domestic calm to heartbreaking loneliness.",
+      "causal_link": "The painful realization drives Thomas to seek the silence beyond the boundary stones.",
+      "chronology_marker": "Evening, 7:30 PM",
+      "continuity_updates": [
+        "Thomas recognizes that Nell's pleasant surface thoughts contradict her real emotional state."
+      ],
+      "target_words": 170,
+      "arc_movements": [
+        "hidden_cost",
+        "philosophical_layer"
+      ],
+      "visual_direction": "Low-key lit interior shot of an old wooden dining table, lamp light casting soft glows on Nell's silver braid and tired expression.",
+      "image_queries": [
+        "woman with silver braid sitting at rustic wooden table",
+        "dimly lit cottage dining room evening mood",
+        "older couple sitting quietly at kitchen table oil lamp"
+      ]
+    },
+    {
+      "scene_id": "s06",
+      "order": 6,
+      "title": "Crossing the Line",
+      "section_type": "reversal",
+      "narrative_function": "Test the speculative rule at the moorland boundary, revealing that the internal censor persists even in complete silence.",
+      "summary": "Thomas walks out to the ancient granite boundary stones on the cold moor. He steps past the Line, and the mental broadcast instantly cuts to zero sound. He waits for his true thoughts to surface, but his mind continues writing polite sentences out of habit.",
+      "setting": "The open moorland at night, cold wind, dark grass, ancient vertical granite boundary stones.",
+      "characters_present": [
+        "thomas_wren"
+      ],
+      "initial_dramatic_situation": "Thomas arrives at the boundary stones seeking an unmonitored space to hear his genuine self.",
+      "character_objective": "To experience uncurated, authentic thought in total cognitive privacy.",
+      "obstacle": "Thirty years of habitual internal editing cannot be turned off simply by changing location.",
+      "dramatic_action": "He steps past the stone marker and sits on a mound of dark heather, waiting in the stillness.",
+      "decision": "He tries to stop editing his thoughts, demanding his real voice appear.",
+      "consequence": "Nothing comes except the same sanitized sentences he uses in town.",
+      "new_information": "The editor is not just a defense against others; it has become the structure of his mind.",
+      "dramatic_function": "Delivers the core psychological reversal: privacy alone does not grant selfhood.",
+      "emotional_turn": "From desperate expectation to quiet horror.",
+      "causal_link": "His stillness beyond the line is interrupted by approaching footsteps.",
+      "chronology_marker": "Night, 9:00 PM",
+      "continuity_updates": [
+        "Thomas crosses the Line into total cognitive silence."
+      ],
+      "target_words": 180,
+      "arc_movements": [
+        "reversal",
+        "philosophical_layer"
+      ],
+      "visual_direction": "Wide shot of a solitary figure standing near tall ancient stone markers on a dark, desolate moor under a cold night sky.",
+      "image_queries": [
+        "ancient standing stone marker on cold moorland night",
+        "lonely man silhouette standing on dark moorland hill",
+        "desolate nighttime moorland overcast twilight landscape"
+      ]
+    },
+    {
+      "scene_id": "s07",
+      "order": 7,
+      "title": "Footsteps in the Dark",
+      "section_type": "climax",
+      "narrative_function": "Reunite Thomas and Nell beyond the Line, breaking their lifetime of mental performance through spoken words.",
+      "summary": "Footsteps rustle through the damp heather behind Thomas. Nell steps past the boundary stones into the dark. In the total absence of mental broadcast, she opens her mouth and speaks out loud, revealing she has been coming to the moor alone for years.",
+      "setting": "Beyond the granite boundary stones on the moor, dim starlight, cold wind through grass.",
+      "characters_present": [
+        "thomas_wren",
+        "nell_wren"
+      ],
+      "initial_dramatic_situation": "Thomas sits in the quiet dark when Nell unexpectedly steps over the boundary line.",
+      "character_objective": "To understand why Nell has followed him into the unmonitored zone.",
+      "obstacle": "The strangeness of hearing her spoken voice without a preceding broadcast thought.",
+      "dramatic_action": "Nell walks up to him, adjusts her dark green wool coat, and speaks directly into the darkness.",
+      "decision": "Nell reveals her private routine of escaping town to be alone.",
+      "consequence": "Thomas realizes both of them have lived double lives behind their curated minds.",
+      "new_information": "Nell has secretly visited the moor for years to escape the public broadcast.",
+      "dramatic_function": "Climactic revelation that transforms their relationship from curated performance to shared vulnerability.",
+      "emotional_turn": "From shock to profound, raw intimacy.",
+      "causal_link": "Her admission forces the final confrontation regarding what lies beneath their mental filters.",
+      "chronology_marker": "Night, 9:20 PM",
+      "continuity_updates": [
+        "Thomas learns Nell has secretly visited the boundary stones for years."
+      ],
+      "target_words": 180,
+      "arc_movements": [
+        "reversal"
+      ],
+      "visual_direction": "Two figures standing near an ancient stone marker on a dark moor, Nell's green wool coat caught in wind, stark starlight glow.",
+      "image_queries": [
+        "man and woman standing on moor at night dark wool coat",
+        "two silhouettes against dark night sky desolate field",
+        "woman with silver braid standing in night wind"
+      ]
+    },
+    {
+      "scene_id": "s08",
+      "order": 8,
+      "title": "The Unspoken Answer",
+      "section_type": "climax",
+      "narrative_function": "Execute the climactic cut before Thomas answers Nell's direct question.",
+      "summary": "Standing in the dark beyond the stones, Nell looks at Thomas and asks out loud: 'What do you actually think, Thomas?' A long stillness falls over the moor. Thomas parts his lips to speak for the first time without an internal censor, and the scene cuts immediately before his voice sounds.",
+      "setting": "The edge of the boundary stones, deep night stillness, dark moorland silhouette.",
+      "characters_present": [
+        "thomas_wren",
+        "nell_wren"
+      ],
+      "initial_dramatic_situation": "Nell directly challenges Thomas to speak his true, unedited mind.",
+      "character_objective": "Thomas must decide whether to speak as his edited persona or attempt authentic speech.",
+      "obstacle": "The terror of exposing an uncurated thought after thirty years of self-censorship.",
+      "dramatic_action": "Nell holds his gaze; Thomas inhales cold air and opens his mouth to answer.",
+      "decision": "He chooses to open his mouth to answer her without pre-editing.",
+      "consequence": "The story cuts before the answer is delivered, shifting the resolution into philosophical reflection.",
+      "new_information": "Thomas is willing to attempt authentic speech, but the answer remains private.",
+      "dramatic_function": "Serves as the narrative climax, leaving the ultimate truth of his identity unspoken.",
+      "emotional_turn": "From tense hesitation to vulnerable surrender.",
+      "causal_link": "The dramatic cut leads into the narrator's final philosophical address.",
+      "chronology_marker": "Night, 9:30 PM",
+      "continuity_updates": [],
+      "target_words": 170,
+      "arc_movements": [
+        "philosophical_layer"
+      ],
+      "visual_direction": "Tight close-up on Thomas's face in deep shadow, mouth slightly parting, eyes reflecting dim moonlight, cutting abruptly to dark.",
+      "image_queries": [
+        "close up older man face night shadow moonlight",
+        "portrait man looking solemn dark night background",
+        "shadowy silhouette profile man parting lips night"
+      ]
+    },
+    {
+      "scene_id": "s09",
+      "order": 9,
+      "title": "The Hidden Mind",
+      "section_type": "aftermath",
+      "narrative_function": "Deliver the final philosophical thought experiment reflection, turning the core question directly to the audience.",
+      "summary": "The dark moorland stretches under the night sky. The narrator reflects on whether human identity consists of raw involuntary thoughts or the choice to manage them, concluding with the prompt's exact concluding address to the viewer.",
+      "setting": "Wide panoramic vista of the dark English moors under a vast night sky, faint distant village lights of Wickham's Rest.",
+      "characters_present": [],
+      "initial_dramatic_situation": "The scene moves past the individual characters to survey the landscape and examine the universal human condition.",
+      "character_objective": "To turn the story's psychological premise inward upon the audience.",
+      "obstacle": "None.",
+      "dramatic_action": "The narration contemplates the boundary between social performance and authentic selfhood.",
+      "decision": "The narrative leaves the central question open for listener examination.",
+      "consequence": "The audience is invited to evaluate their own internal filters and hidden thoughts.",
+      "new_information": "Selfhood may reside neither in raw impulse nor in rigid censorship, but in the private space between them.",
+      "dramatic_function": "Provides philosophical aftermath and lingering psychological resonance.",
+      "emotional_turn": "From dramatic tension to quiet introspection.",
+      "causal_link": "Final scene concluding the narrative thought experiment.",
+      "chronology_marker": "Night, 9:35 PM",
+      "continuity_updates": [],
+      "target_words": 160,
+      "arc_movements": [
+        "ending"
+      ],
+      "visual_direction": "Wide cinematic vista of vast dark moorland under stars, distant warm glow of village windows fading out.",
+      "image_queries": [
+        "vast dark moorland night sky starry horizon",
+        "distant village lights in dark valley night",
+        "panoramic dark moorland twilight English landscape"
+      ]
+    }
+  ],
+  "narrative_contract_version": 4,
+  "schema_version": 2,
+  "content_mode": "cinematic_fiction",
+  "target_word_count": 1500,
+  "source_hash": "5c06f8c767ff93981fdeae1aa5d3ef2a731aba97ebca50b9d16a21ce86cffeb9",
+  "target_duration_minutes": 12.0
+}

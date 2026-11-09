@@ -32,7 +32,9 @@ def voice_key(voice: str | None = None, rate: str | None = None, backend: str | 
     from audio import tts
     backend = tts.backend_name(backend)
     voice = voice if voice is not None else tts.channel_voice(backend)
-    rate = rate if rate is not None else getattr(config, "VOICE_RATE", "+0%")
+    if rate is None:                                    # Kokoro has its own speed; VOICE_RATE does not reach it
+        rate = f"speed{float(getattr(config, 'TTS_LOCAL_SPEED', 1.0)):g}" if backend == "local" \
+            else getattr(config, "VOICE_RATE", "+0%")
     return f"{backend}:{voice}|{rate}"
 
 
@@ -82,8 +84,45 @@ def configured_wpm() -> float:
     return float(getattr(config, "NARRATION_WPM", 125))
 
 
+def audition_wpm(results_file=None) -> float | None:
+    """A new channel voice with no narration yet: its audition sample says how fast it speaks. The sample has
+    no pauses, so it is an upper bound; the first narration replaces it."""
+    from audio import tts
+    from scripts.voice_audition import OUT
+    backend = tts.backend_name()
+    voice = tts.channel_voice(backend)
+    if backend == "local":
+        speed = float(getattr(config, "TTS_LOCAL_SPEED", 1.0))
+        voice = f"{voice}@{speed:g}"
+    try:
+        data = json.loads(Path(results_file or OUT / "results.json").read_text(encoding="utf-8"))
+        row = next(item for item in data["rows"] if item["backend"] == backend and item["voice"] == voice
+                   and float(item.get("audio_seconds") or 0) > 0)
+        wpm = len(str(data.get("text", "")).split()) / float(row["audio_seconds"]) * 60
+    except (OSError, ValueError, KeyError, StopIteration, TypeError):
+        return None
+    return round(wpm, 1) if WPM_RANGE[0] <= wpm <= WPM_RANGE[1] else None
+
+
+def ensure_measured(progress=print) -> float | None:
+    """Before planning a script for a channel voice never measured: render its audition sample."""
+    if not getattr(config, "MEASURE_NEW_VOICE", True) or not getattr(config, "USE_CALIBRATED_WPM", True) \
+            or calibrated_wpm() or audition_wpm():
+        return calibrated_wpm() or audition_wpm()
+    from audio import tts
+    from scripts import voice_audition
+    backend = tts.backend_name()
+    voice = tts.channel_voice(backend)
+    if backend == "local":
+        voice = f"{voice}@{float(getattr(config, 'TTS_LOCAL_SPEED', 1.0)):g}"
+    progress(f"   -> Measuring the channel voice {backend}:{voice} before planning")
+    voice_audition.run([(backend, voice)], voice_audition.DEFAULT_TEXT.read_text(encoding="utf-8").strip(), progress=progress)
+    return audition_wpm()
+
+
 def planning_wpm() -> float:
-    """Words per minute used to plan episodes: calibrated if known, else configured."""
+    """Words per minute used to plan episodes: calibrated if known (pauses included), else the channel voice's
+    audition sample, else configured."""
     if not getattr(config, "USE_CALIBRATED_WPM", True):
         return configured_wpm()
-    return calibrated_wpm() or configured_wpm()
+    return calibrated_wpm() or audition_wpm() or configured_wpm()

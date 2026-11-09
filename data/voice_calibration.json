@@ -1,10 +1,22 @@
 {
   "voices": {
-    "en-US-AndrewNeural|-5%": {
+    "edge:en-US-AndrewNeural|-5%": {
       "words": 1911,
       "seconds": 703.95,
       "wpm": 162.9,
       "date": "2026-10-30"
+    },
+    "local:bm_lewis|-5%": {
+      "words": 1409,
+      "seconds": 472.61,
+      "wpm": 178.9,
+      "date": "2026-11-03"
+    },
+    "local:bm_lewis|speed0.88": {
+      "words": 1602,
+      "seconds": 684.28,
+      "wpm": 140.5,
+      "date": "2026-11-09"
     }
   }
 }

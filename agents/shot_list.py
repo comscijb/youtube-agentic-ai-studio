@@ -447,8 +447,10 @@ avoid two consecutive shots with the same framing, also across the scene boundar
 scene's last shot is given). Aim for about {getattr(config, "IMAGEGEN_MIN_WIDE_SHARE", 0.3):.0%}
 of shots wide or establishing, with figures small inside vast, towering spaces, where the narration
 allows it (a target, not a quota); close-ups keep a dark background with a single light source.
-When a shot shows only the listed characters, describing them as "two figures" is fine; any person
-beyond them (guests, staff, a crowd) requires others_present true. An over_the_shoulder shot lists
+A shot that lists characters and has others_present false refers to them by name or pronoun, never with a
+generic person word ("a lone figure", "a man", "someone"): that word draws a second person. Generic person
+words are only for others_present true, and any person beyond the listed characters (guests, staff, a
+crowd) requires it. An over_the_shoulder shot lists
 first the character whose shoulder we see and then the character facing the camera; both are listed
 characters, never a third person. Characters whose presence (VISUAL BIBLE) is "none" or
 "voice_only" are never in characters, never named and never described as a person in action: a
@@ -469,6 +471,19 @@ def _ambient_rule() -> str:
             "one per shot; most shots have none.")
 
 
+def _cold_open_note(scene: dict) -> str:
+    """Phase 3.9.7: the teaser's shots read as a jump in time and never show what it withholds."""
+    if scene.get("section_type") != "cold_open":
+        return ""
+    if scene.get("cold_open_mode") == "omen":
+        return ("\nCOLD OPEN (omen): one or two quiet establishing images of the place, no characters in close-up; a slower, "
+                "darker look is added at render.")
+    return ("\nCOLD OPEN (flash-forward to scene " + str(scene.get("source_scene_id", "")) + "): 2-3 shots of that later moment, "
+            "seen from another angle or closer than the scene itself will show it (a slower, darker look is added at render). "
+            "NEVER SHOW: " + str(scene.get("withheld") or "the payoff") + " (keep it out of frame, a soft glow, or seen only "
+            "in a character's face).")
+
+
 def _scene_context(scene_id: str, scene_segments: list[dict], vb: dict, outline: dict) -> str:
     scene = next((item for item in outline.get("scenes", []) if item.get("scene_id") == scene_id), {})
     return f"""VISUAL BIBLE: {compact_json({key: vb.get(key) for key in ("characters", "locations")})}
@@ -476,7 +491,7 @@ SCENE_ID: {scene_id}
 SCENE: {compact_json({"setting": scene.get("setting", ""), "summary": scene.get("summary", ""),
                       "cast": scene.get("characters_present", []),
                       "default_location": (vbible.location_for_scene(vb, scene_id) or {}).get("location_id")})}
-SCENE NARRATION: {" ".join(segment["text"] for segment in scene_segments)}
+SCENE NARRATION: {" ".join(segment["text"] for segment in scene_segments)}{_cold_open_note(scene)}
 SEGMENTS ({len(scene_segments)}; return exactly {len(scene_segments)} shots): {compact_json(
         [{"n": number, "seconds": round(segment["end"] - segment["start"], 1), "narration": segment["text"]}
          for number, segment in enumerate(scene_segments, 1)])}"""
@@ -752,6 +767,89 @@ def _setting_notes(settings: dict, planned: list[dict], segments: list[dict]) ->
     return notes
 
 
+_LONE_WORDS = {"lone", "solitary"}
+_PERSON_WORD = re.compile(
+    r"\b(?P<article>[Aa]n?)\s+(?P<adjectives>(?:(?:[a-z]+-[a-z]+|lone|solitary|seated|standing|small|tall|single|distant|"
+    r"hunched|motionless|stark|dark|young|old|thin|slight)[,]?\s+){0,3})"
+    r"(?P<noun>figure|man|woman|person|silhouette)(?P<possessive>'s)?\b(?!\s+of\b)")
+_SOMEONE = re.compile(r"\b[Ss]omeone\b")
+
+
+def _reference_to(cid: str, vb: dict, cast: list[str]) -> str:
+    """"the man", or the first name when two of the cast share that noun."""
+    entry = vbible.character(vb, cid) or {}
+    noun = _noun(entry.get("descriptor", "")) or "person"
+    shared = sum(1 for other in cast if _noun((vbible.character(vb, other) or {}).get("descriptor", "")) == noun) > 1
+    return str(entry.get("name") or cid).replace("_", " ").split()[0].title() if shared else f"the {noun}"
+
+
+def rewrite_action(action: str, characters: list[str], vb: dict, others_present: bool = False) -> str:
+    """Phase 3.9.4-A: a listed character written as "a lone figure" is drawn twice, once from the reference
+    and once as the figure. The generic word becomes the character's short reference ("the man, alone, ...");
+    a "man" or "woman" nobody listed is left alone. Generic words stay when others_present is true."""
+    if not characters or others_present:
+        return action
+    nouns = {cid: _noun((vbible.character(vb, cid) or {}).get("descriptor", "")) for cid in characters}
+
+    def pick(word: str, used: list[str]) -> str | None:
+        wanted = [cid for cid in characters if nouns[cid] == word] if word in ("man", "woman") else list(characters)
+        fresh = [cid for cid in wanted if cid not in used]
+        chosen = (fresh or wanted or [None])[0]
+        if chosen:
+            used.append(chosen)
+        return chosen
+
+    used: list[str] = []
+
+    def replace(match: re.Match) -> str:
+        cid = pick(match.group("noun"), used)
+        if cid is None:
+            return match.group(0)
+        words = [word.strip(",") for word in match.group("adjectives").split()]
+        lone = [word for word in words if word in _LONE_WORDS]
+        kept = [word for word in words if word not in _LONE_WORDS and word != "single"]
+        reference = _reference_to(cid, vb, characters)
+        if kept and reference.startswith("the "):
+            reference = "the " + " ".join(kept) + reference[3:]
+        text = reference + (match.group("possessive") or "")
+        if lone and not match.group("possessive"):
+            text += ", alone,"
+        return text[0].upper() + text[1:] if match.group("article")[0] == "A" else text
+    rewritten = _PERSON_WORD.sub(replace, action)
+
+    def someone(match: re.Match) -> str:
+        cid = pick("person", used)
+        text = _reference_to(cid, vb, characters)
+        return text[0].upper() + text[1:] if match.group(0)[0] == "S" else text
+    return _SOMEONE.sub(someone, rewritten)
+
+
+def is_faceless(shot: dict) -> bool:
+    """Faceless, distant or silhouette: the portrait reference would pull the character into a close-up."""
+    return shot.get("face_visibility") == "none" or shot.get("shot_type") in ("wide", "silhouette", "over_the_shoulder")
+
+
+def portrait_reference_wanted(shot: dict) -> bool:
+    """Whether a faceless shot sends the character's portrait (``config.FACELESS_PORTRAIT_REFERENCE``, by shot type)."""
+    if not is_faceless(shot):
+        return True
+    choices = getattr(config, "FACELESS_PORTRAIT_REFERENCE", {}) or {}
+    return choices.get(shot.get("shot_type"), choices.get("faceless", "keep")) != "none"
+
+
+_FACELESS_VIEW = {"silhouette": "seen only in silhouette, far from the viewer",
+                  "over_the_shoulder": "seen from behind, over the shoulder",
+                  "wide": "seen small and from behind, far from the viewer"}
+
+
+def faceless_headcount(names: list[str], shot: dict) -> str:
+    """"The only person in the image is the man from the first image, seen small and from behind, far from the viewer." """
+    view = _FACELESS_VIEW.get(shot.get("shot_type"), "turned away from the viewer, the face not visible")
+    if len(names) == 1:
+        return f"The only person in the image is {names[0]}, {view}."
+    return f"The only people in the image are {', '.join(names[:-1])} and {names[-1]}, {view}."
+
+
 def _entry(segment: dict, shot: dict, settings: dict, vb: dict, output: Path, flags: list | None,
            notes: list | None = None) -> dict:
     drawn = {item["character_id"] for item in vbible.on_screen(vb)}
@@ -769,6 +867,11 @@ def _entry(segment: dict, shot: dict, settings: dict, vb: dict, output: Path, fl
         "ambient": str(shot.get("ambient") or ""),
         "seed_offset": 0,
     }
+    rewritten = rewrite_action(entry["action"], cast, vb, entry["others_present"])
+    if rewritten != entry["action"]:
+        print(f"   -> {entry['shot_id']}: wording rewritten ({entry['action'][:50]} -> {rewritten[:50]})")
+        entry["wording_rewritten_from"] = entry["action"]
+        entry["action"] = rewritten
     if flags:
         entry["flags"] = list(flags)
     if notes:
@@ -820,6 +923,8 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
     background = [cid for cid in listed if cid not in characters]
     references, slots, ref_names = [], [], {}
     for cid in characters:
+        if not portrait_reference_wanted(shot):
+            break
         path = vbible.approved_reference(vb, "character", cid, output_dir)
         if path or assume_references:
             references.append(path or f"character_refs/{safe_filename(cid)}.png")
@@ -829,11 +934,14 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
                              f"{ORDINALS[len(references) - 1]} image"
     location = vbible.location(vb, shot.get("location")) or {}
     location_text = location.get("descriptor", "")
+    exterior = bool(location) and not vbible.location_interior(location)    # Phase 3.9.3-F: no rooms on a moor
+    if exterior and shot.get("shot_type") == "wide":
+        framing = "wide shot, the figures small within the vast land"
     location_ref = vbible.approved_reference(vb, "location", location.get("location_id", ""), output_dir)
     if location_ref and len(references) < 4 and shot.get("shot_type") not in {"insert", "hands"}:
         references.append(location_ref)
         slots.append({"slot": len(references) - 1, "kind": "location", "id": location.get("location_id")})
-        location_text = f"in the room from the {ORDINALS[len(references) - 1]} image"
+        location_text = f"in the {'room' if not exterior else 'place'} from the {ORDINALS[len(references) - 1]} image"
     location_text = _setting_text(location_text, shot.get("setting_condition", ""))
     others = shot.get("others_present")
     if others is None:      # shot lists before version 2 have no others_present
@@ -841,10 +949,12 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
     # Small figures only in shots with people; objects, inserts and empty rooms get the figure-free
     # suffix and only anchors with nobody in them.
     figures = bool(characters or others) and shot.get("shot_type") != "insert"
-    style = identity.style_suffix(figures=figures)
+    style = identity.style_suffix(figures=figures, exterior=exterior)
     anchors = style_refs.approved_paths() if figures else style_refs.empty_paths()
     style_text = ""
-    if anchors and len(references) < 4:
+    # Hotfix (3.9.3): never a style board as the only reference (it gets copied); it only joins
+    # character or location references.
+    if anchors and references and len(references) < 4:
         references.append(anchors[0])
         slots.append({"slot": len(references) - 1, "kind": "style", "id": Path(anchors[0]).stem})
         style_text = f"Rendered in the drawing style of the {ORDINALS[len(references) - 1]} image."
@@ -856,6 +966,9 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
     article = "an" if noun[0] in "aeiou" else "a"
     # Explicit headcount; a 4th+ listed character (no slot left) stays far and indistinct.
     crowd = headcount([short_name(cid, vb, ref_names) for cid in characters], bool(others), len(background))
+    if characters and not others and not background and is_faceless(shot) and \
+            not (shot.get("shot_type") == "over_the_shoulder" and len(characters) > 1):    # one of them faces the viewer
+        crowd = f"{crowd} {faceless_headcount([short_name(cid, vb, ref_names) for cid in characters], shot)}"
     if shot.get("shot_type") == "over_the_shoulder" and characters:
         framing = over_the_shoulder(characters, vb, ref_names)
     if references:

@@ -227,6 +227,7 @@ def validate_visual_bible(value: dict, bible: dict, outline: dict, narration: st
         if unknown:
             raise NarrativeValidationError(f"location {location['location_id']}: unknown scene_ids {unknown}")
         covered.update(location.get("scene_ids", []))
+        location["interior"] = location_interior(location)
     uncovered = sorted(scenes - covered)
     if uncovered:
         raise NarrativeValidationError(f"no location covers scenes: {', '.join(uncovered)}")
@@ -238,6 +239,24 @@ def validate_visual_bible(value: dict, bible: dict, outline: dict, narration: st
     if absent:
         raise NarrativeValidationError(f"thumbnail_shot.characters lists characters who are never on screen: {absent}")
     return value
+
+
+def location_interior(location: dict) -> bool:
+    """Indoors? Keywords in the name and descriptor decide when they can (Phase 3.9.3-F); else the flag
+    Gemini proposed; else indoors, the style's original setting."""
+    from agents.prose_lint import is_exterior
+    text = " ".join(str(location.get(key, "")) for key in ("location_id", "name", "descriptor")).replace("_", " ")
+    found = is_exterior(text)
+    if found is not None:
+        return not found
+    return bool(location.get("interior", True))
+
+
+def backfill_interior(vb: dict) -> dict:
+    """Give every location its ``interior`` flag (the source hash does not depend on it)."""
+    for location in vb.get("locations") or []:
+        location["interior"] = location_interior(location)
+    return vb
 
 
 def known_location_ids(existing: dict, output_dir) -> list[str]:
@@ -304,7 +323,7 @@ Return ONLY JSON:
 {{"characters": [{{"character_id": "...", "descriptor": "...", "visual_proxy": "", "signature_markers": ["..."],
                    "wardrobe": [{{"scene_ids": ["s01"], "outfit": "...", "grooming": "..."}}],
                    "scene_states": {{"s05": "..."}}}}],
-  "locations": [{{"location_id": "...", "name": "...", "descriptor": "...", "scene_ids": ["s01"]}}],
+  "locations": [{{"location_id": "...", "name": "...", "descriptor": "...", "interior": true, "scene_ids": ["s01"]}}],
   "thumbnail_shot": {{"description": "...", "characters": ["character_id"], "location_id": "..."}}}}
 
 Rules:

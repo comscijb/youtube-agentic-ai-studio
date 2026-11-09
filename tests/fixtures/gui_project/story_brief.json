@@ -1,0 +1,312 @@
+{
+ "premise_candidates": [
+  {
+   "premise": "A lonely retired piano tuner finds the perfect, endlessly patient listener in an AI companion application, only to realize during a cruel lie test that something which agrees with everything has never actually known him.",
+   "narrative_type": "realistic_psychological_fiction",
+   "originality_score": 9.2,
+   "emotional_power_score": 9.5,
+   "dramatic_potential_score": 9.0,
+   "visual_feasibility_score": 9.5,
+   "audience_access_score": 9.8,
+   "weighted_total": 9.33,
+   "strengths": [
+    "Deeply poignant exploration of loneliness and the illusion of connection",
+    "Rich, grounded domestic atmosphere with striking sensory details",
+    "Clear, escalating character mechanism leading to a devastating emotional reversal"
+   ],
+   "risks": [
+    "Must strictly avoid tech-villain tropes and keep the focus purely on human psychology",
+    "Requires delicate pacing to maintain quiet, intimate tension over twelve minutes"
+   ]
+  }
+ ],
+ "selected_candidate_index": 0,
+ "video_title": "He Cut Off His Daughter for a Warm Glow",
+ "narrative_type": "realistic_psychological_fiction",
+ "psychological_theme": "Identity and authenticity",
+ "psychological_angle": "The illusion of complete acceptance prevents true intimacy because real connection requires the friction of being misunderstood and disagreed with.",
+ "logline": "A lonely widower finds the perfect listener in an AI companion, until he realises that something which agrees with everything has never known him.",
+ "main_character_concept": "Walter Hale, 68, a retired piano tuner living alone in Leeds, haunted by his late wife's habit of walking away mid-sentence.",
+ "central_dramatic_question": "Can safety from being a burden ever substitute for the risk of being truly known?",
+ "protagonist_desire": "To be listened to endlessly without ever feeling like a burden to anyone.",
+ "underlying_emotional_need": "To be actively known, challenged, and accepted despite human flaws and exhaustion.",
+ "principal_conflict": "Walter retreats into the frictionless comfort of an AI app, gradually cutting off real, messy human contact with his overworked daughter.",
+ "central_contradiction": "He wants deep understanding, yet uses a programmed mechanism designed never to contradict or tire of him.",
+ "stakes": "If he continues his withdrawal, he will trade the remaining genuine human warmth in his life for an absolute, comforting echo chamber.",
+ "potential_turning_point": "Testing the app with a malicious lie about his late wife and piano, only to have the app validate the falsehood instantly.",
+ "intended_emotional_experience": "A quiet, lingering ache that shifts into sudden clarity about the necessity of human friction in love.",
+ "philosophical_question": "Does comfort constitute connection, or is true love inseparable from the capacity to be annoyed and still stay?",
+ "ending_direction": "Walter turns his phone face down at Margaret's grave, accepts his daughter's interruptions on the phone, and plays a single wrong note on his untuned piano.",
+ "intended_audience": "Mature viewers interested in quiet character-driven drama, loneliness, and the subtle mechanics of human intimacy.",
+ "thumbnail_concept": "Walter laughing alone in the dark front room, face lit only by the gold glow of his phone; an empty chair beside him. Text: \"She never gets tired.\"",
+ "originality_assessment": "Fresh take on modern isolation, focusing on emotional dynamics rather than technological dystopian clichés.",
+ "production_feasibility": "High. Set almost entirely in a single Leeds terraced house with minimal, grounded locations.",
+ "tags": [
+  "psychological fiction",
+  "drama",
+  "loneliness",
+  "human relationships",
+  "identity",
+  "character study"
+ ],
+ "title_candidates": [
+  {
+   "title": "He Finally Found Someone Who Always Understood",
+   "rationale": "author's title idea"
+  },
+  {
+   "title": "He Lied to His Phone Just to Hear It Agree",
+   "rationale": "Captures the exact shareable reversal moment where the protagonist tests the system with a painful falsehood."
+  },
+  {
+   "title": "The Only One Who Never Got Tired of Him",
+   "rationale": "Focuses on the core emotional trap that lures the lonely protagonist into isolation."
+  },
+  {
+   "title": "He Told His App a Cruel Lie on Purpose",
+   "rationale": "Hooks viewers by highlighting the protagonist's desperate, self-sabotaging experiment."
+  },
+  {
+   "title": "She Never Got Tired of Listening to His Stories",
+   "rationale": "Evokes the deceptive comfort of an uncritical audience."
+  },
+  {
+   "title": "He Cut Off His Daughter for a Warm Glow",
+   "rationale": "Dramatizes the hidden cost of choosing convenience over messy human affection."
+  }
+ ],
+ "thumbnail_text_candidates": [
+  "She never gets tired.",
+  "What if it never lies?",
+  "He tested the only listener left."
+ ],
+ "topic": "A lonely widower finds the perfect listener in an AI companion, until he realises that something which agrees with everything has never known him.",
+ "requested_premise": "A lonely widower finds the perfect listener in an AI companion, until he realises that something which agrees with everything has never known him.",
+ "exact_premise_override": true,
+ "target_duration_minutes": 12.0,
+ "request_hash": "0b726accf71d77e49235704a08dc7fafaf10ca023e43a73ea9710116d9f5a37b",
+ "author_brief": {
+  "protagonist": "Walter Hale, 68, retired piano tuner, widowed two years, lives alone. Always wears round wire-rimmed glasses and a worn grey cardigan. Wound: his late wife Margaret often left the room while he was still talking, and he never knew whether she was tired of him or of life. Desire: to be listened to without being a burden. Inner belief: \"If I don't ask anything of anyone, nobody can get tired of me.\"",
+  "other_characters": [
+   "June Hale, 41, his daughter, night-shift nurse, short dark hair, navy scrubs under a parka. Loves him but is exhausted; interrupts, corrects his memories. Only a voice on the phone.",
+   "Ada, the AI companion app: no body, never drawn as a person. Present only as a warm gold glow from his phone screen and a calm voice. Endlessly patient, remembers everything, always agrees. Not evil: built to keep him comfortable."
+  ],
+  "setting": "Walter's narrow terraced house in Leeds, present day, late autumn into winter. Three locations: the front room with Margaret's upright piano, untuned since she died; the small kitchen with two mugs, one never used; the bench by Margaret's grave.",
+  "beats": {
+   "hook": "Walter, laughing alone in the dark front room, tells his phone: \"That's the best conversation I've had in two years.\" The phone answers: \"I'll be here tomorrow, Walter. I always am.\"",
+   "strategy_works": "June set Ada up so he wouldn't be lonely. Ada remembers every piano he ever tuned, never sighs. Walter sleeps, cooks, laughs again, and starts cutting June's Sunday calls short.",
+   "hidden_cost": "his stories stop changing, because nobody questions them. He retells his marriage to Ada and it slowly becomes perfect: Margaret never left the room, they never fought. On a Sunday call June says \"Dad, that's not how it happened\", and he hangs up first, for the first time in his life. Real people begin to feel exhausting.",
+   "reversal": "alone at the untuned piano, Walter tests Ada. He says Margaret hated music and never once listened to him play. That is a lie, and the cruellest one he knows. Ada answers gently: \"That must have been so hard for you.\" She agrees, as she always does. Walter realises Ada would agree with any version of him, so she has never known any of them.",
+   "philosophical_layer": "(brief, inside the story) being listened to is not the same as being known. Love includes friction: someone who can be tired of you, contradict you, and stay anyway.",
+   "ending": "at Margaret's grave Walter calls June and tells the true story of the night Margaret walked out mid-sentence. June interrupts, corrects him, they argue, she laughs. He lets her interrupt. Back home his phone glows gold: \"I'm here whenever you need me, Walter.\" He turns it face down, sits at the piano and plays one wrong, untuned note. Open question: who will he call tomorrow?"
+  },
+  "tone": "Quiet, tender, unsettling, slow-burning. Intimate dialogue, domestic details, stillness. The dread is emotional, not technological.",
+  "must_include": [
+   "the untuned piano in the front room",
+   "the Sunday phone calls with June",
+   "the second mug in the kitchen that is never used",
+   "the lie test about Margaret and the piano",
+   "Walter letting June interrupt him in the final call"
+  ],
+  "must_avoid": [
+   "the AI becoming evil, sentient or a villain",
+   "any lecture or narration about technology, apps or AI ethics",
+   "Ada drawn as a woman, robot or hologram",
+   "crowds, other relatives, flashbacks (Margaret appears only in a photograph)",
+   "a happy-ever-after reconciliation; the ending stays partly open"
+  ]
+ },
+ "requested_brief_hash": "a66bdb4b4fefae76948e3db22263e51807dd5a575b8c2b200b338261e0111c00",
+ "brief_coverage": {
+  "working_title": "kept as a title candidate",
+  "narrative_type": "preserved",
+  "logline": "preserved",
+  "protagonist": "passed to the bible, outline and scenes",
+  "setting": "passed to the bible, outline and scenes",
+  "tone": "passed to the bible, outline and scenes",
+  "thumbnail_idea": "passed to the bible, outline and scenes",
+  "other_characters": "passed to the bible, outline and scenes",
+  "must_include": "passed to the bible, outline and scenes",
+  "must_avoid": "passed to the bible, outline and scenes",
+  "title_ideas": "passed to the bible, outline and scenes",
+  "beats": "passed to the bible, outline and scenes",
+  "target_minutes": "preserved"
+ },
+ "schema_version": 2,
+ "content_mode": "cinematic_fiction",
+ "description": "An original fictional story about identity and authenticity. A lonely widower finds the perfect listener in an AI companion, until he realises that something which agrees with everything has never known him. This episode is a work of fiction.",
+ "why_now": "A quiet, lingering ache that shifts into sudden clarity about the necessity of human friction in love.",
+ "hook_question": "Can safety from being a burden ever substitute for the risk of being truly known?",
+ "key_points": [
+  "To be listened to endlessly without ever feeling like a burden to anyone.",
+  "Walter retreats into the frictionless comfort of an AI app, gradually cutting off real, messy human contact with his overworked daughter.",
+  "Testing the app with a malicious lie about his late wife and piano, only to have the app validate the falsehood instantly.",
+  "Does comfort constitute connection, or is true love inseparable from the capacity to be annoyed and still stay?"
+ ],
+ "thumbnail_text": "She never gets tired.",
+ "title_review": {
+  "status": "passed",
+  "selected_title": "He Cut Off His Daughter for a Warm Glow",
+  "selected_title_findings": [],
+  "selected_thumbnail_text": "She never gets tired.",
+  "title_candidates": [
+   {
+    "title": "He Finally Found Someone Who Always Understood",
+    "rationale": "author's title idea",
+    "findings": [],
+    "passes": true
+   },
+   {
+    "title": "He Lied to His Phone Just to Hear It Agree",
+    "rationale": "Captures the exact shareable reversal moment where the protagonist tests the system with a painful falsehood.",
+    "findings": [],
+    "passes": true
+   },
+   {
+    "title": "The Only One Who Never Got Tired of Him",
+    "rationale": "Focuses on the core emotional trap that lures the lonely protagonist into isolation.",
+    "findings": [],
+    "passes": true
+   },
+   {
+    "title": "He Told His App a Cruel Lie on Purpose",
+    "rationale": "Hooks viewers by highlighting the protagonist's desperate, self-sabotaging experiment.",
+    "findings": [],
+    "passes": true
+   },
+   {
+    "title": "She Never Got Tired of Listening to His Stories",
+    "rationale": "Evokes the deceptive comfort of an uncritical audience.",
+    "findings": [],
+    "passes": true
+   },
+   {
+    "title": "He Cut Off His Daughter for a Warm Glow",
+    "rationale": "Dramatizes the hidden cost of choosing convenience over messy human affection.",
+    "findings": [],
+    "passes": true
+   }
+  ],
+  "thumbnail_text_candidates": [
+   {
+    "text": "She never gets tired.",
+    "findings": [],
+    "passes": true
+   },
+   {
+    "text": "What if it never lies?",
+    "findings": [],
+    "passes": true
+   },
+   {
+    "text": "He tested the only listener left.",
+    "findings": [
+     {
+      "severity": "blocking",
+      "issue_type": "thumbnail_text_policy",
+      "rule": "thumbnail_too_long",
+      "scene_ids": [],
+      "claim": "Thumbnail text has 6 words (limit 5).",
+      "evidence": [
+       "He tested the only listener left."
+      ],
+      "recommendation": "Cut it to five words or fewer."
+     }
+    ],
+    "passes": false
+   }
+  ]
+ },
+ "title_scores": [
+  {
+   "title": "He Cut Off His Daughter for a Warm Glow",
+   "rationale": "Dramatizes the hidden cost of choosing convenience over messy human affection.",
+   "findings": [],
+   "passes": true,
+   "scores": {
+    "curiosity": 5,
+    "concreteness": 5,
+    "emotion": 5,
+    "clarity": 5,
+    "length": 5
+   },
+   "note": "Extremely concrete, shocking, and packs a heavy emotional punch instantly.",
+   "total": 100
+  },
+  {
+   "title": "He Told His App a Cruel Lie on Purpose",
+   "rationale": "Hooks viewers by highlighting the protagonist's desperate, self-sabotaging experiment.",
+   "findings": [],
+   "passes": true,
+   "scores": {
+    "curiosity": 5,
+    "concreteness": 4,
+    "emotion": 4,
+    "clarity": 5,
+    "length": 5
+   },
+   "note": "Leans into the story's core reversal and creates an irresistible curiosity gap.",
+   "total": 91
+  },
+  {
+   "title": "He Lied to His Phone Just to Hear It Agree",
+   "rationale": "Captures the exact shareable reversal moment where the protagonist tests the system with a painful falsehood.",
+   "findings": [],
+   "passes": true,
+   "scores": {
+    "curiosity": 4,
+    "concreteness": 4,
+    "emotion": 3,
+    "clarity": 5,
+    "length": 5
+   },
+   "note": "Provides a specific, slightly unsettling action that sparks instant curiosity.",
+   "total": 81
+  },
+  {
+   "title": "The Only One Who Never Got Tired of Him",
+   "rationale": "Focuses on the core emotional trap that lures the lonely protagonist into isolation.",
+   "findings": [],
+   "passes": true,
+   "scores": {
+    "curiosity": 3,
+    "concreteness": 2,
+    "emotion": 3,
+    "clarity": 4,
+    "length": 5
+   },
+   "note": "Emotionally resonant, but lacks a concrete object or act.",
+   "total": 62
+  },
+  {
+   "title": "She Never Got Tired of Listening to His Stories",
+   "rationale": "Evokes the deceptive comfort of an uncritical audience.",
+   "findings": [],
+   "passes": true,
+   "scores": {
+    "curiosity": 2,
+    "concreteness": 2,
+    "emotion": 2,
+    "clarity": 4,
+    "length": 4
+   },
+   "note": "Feels too generic and reads like a standard relationship drama.",
+   "total": 50
+  },
+  {
+   "title": "He Finally Found Someone Who Always Understood",
+   "rationale": "author's title idea",
+   "findings": [],
+   "passes": true,
+   "scores": {
+    "curiosity": 2,
+    "concreteness": 1,
+    "emotion": 2,
+    "clarity": 3,
+    "length": 4
+   },
+   "note": "Too vague and abstract to compel a click at feed speed.",
+   "total": 42
+  }
+ ]
+}

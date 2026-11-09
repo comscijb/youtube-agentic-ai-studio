@@ -68,6 +68,46 @@ def align_words(text: str, events: list[dict]) -> list[dict]:
     return words
 
 
+def mark_thoughts(text: str, words: list[dict]) -> list[dict]:
+    """Flag the words inside heard thoughts (single quotes). ``words`` come from ``align_words`` (where a
+    punctuation-only token joined the previous word) or ``proportional_words``."""
+    from agents.quotes import thought_token_flags
+    tokens, flags = str(text).split(), thought_token_flags(text)
+    aligned = len(words) == len(tokens)
+    position = 0
+    for token, flag in zip(tokens, flags):
+        if not aligned and not _norm(token):
+            continue
+        if position >= len(words):
+            break
+        if flag:
+            words[position]["thought"] = True
+        position += 1
+    return words
+
+
+def cue_text(group: list[dict]) -> str:
+    """A cue's words; a heard thought is wrapped in <i>…</i> (SRT; ASS turns it into \\i1)."""
+    pieces, inside = [], False
+    for word in group:
+        flagged = bool(word.get("thought"))
+        if flagged and not inside:
+            pieces.append("<i>" + word["text"])
+        elif inside and not flagged:
+            pieces[-1] += "</i>"
+            pieces.append(word["text"])
+        else:
+            pieces.append(word["text"])
+        inside = flagged
+    if inside:
+        pieces[-1] += "</i>"
+    return " ".join(pieces)
+
+
+def strip_tags(text: str) -> str:
+    return re.sub(r"</?i>", "", str(text))
+
+
 def proportional_words(text: str, total_seconds: float) -> list[dict]:
     """Character-weighted word timings when the voice sent no WordBoundary events."""
     tokens = str(text).split()
@@ -124,5 +164,5 @@ def build_cues(words: list[dict], *, max_words: int | None = None, max_chars: in
             end = min(end, end_limit)
         if end <= start:
             continue
-        cues.append((start, end, " ".join(item["text"] for item in group)))
+        cues.append((start, end, cue_text(group)))
     return [(round(start * 1000), round(end * 1000), text) for start, end, text in cues]

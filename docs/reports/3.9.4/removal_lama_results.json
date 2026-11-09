@@ -1,0 +1,284 @@
+{
+ "s02_01": {
+  "seconds": 82.2,
+  "engine": "lama_comfy",
+  "errors": [],
+  "results": [
+   {
+    "profile": "base",
+    "denoise": 0.45,
+    "clean": true,
+    "people_inside": [
+     1,
+     0
+    ],
+    "inside_change": 34.82,
+    "erase_seconds": 3.16,
+    "restore_seconds": 25.39,
+    "seed": 263932068
+   },
+   {
+    "profile": "base",
+    "denoise": 0.45,
+    "clean": true,
+    "people_inside": [
+     1,
+     0
+    ],
+    "inside_change": 35.46,
+    "erase_seconds": 2.13,
+    "restore_seconds": 20.66,
+    "seed": 263932069
+   },
+   {
+    "profile": "base",
+    "denoise": 0.45,
+    "clean": true,
+    "people_inside": [
+     1,
+     0
+    ],
+    "inside_change": 36.32,
+    "erase_seconds": 2.12,
+    "restore_seconds": 20.65,
+    "seed": 263932070
+   }
+  ],
+  "prompt": "An immaculate 19th-century village bakery with tall narrow windows, polished pine counter, stacked flour sacks, and immaculate flour-dusted floorboards under crisp morning light. Continue the surface and the light, ink hatching. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border, dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, fine grain and ink texture across the whole picture, hand-drawn imperfection, painterly smoke and fog, illustrated, not photographic, scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash, deep black negative space dominating most of the frame, a single small source of warm light, heavy shadows swallowing the edges of the room, cosmic dread carried only by space and light: oppressive scale of vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and formless shadows, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation, near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights), a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object, Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection), Clean image without lettering or watermark."
+ },
+ "s07_03": {
+  "seconds": 73.6,
+  "engine": "lama_comfy",
+  "errors": [],
+  "results": [
+   {
+    "profile": "base",
+    "denoise": 0.45,
+    "clean": true,
+    "people_inside": [
+     1,
+     0
+    ],
+    "inside_change": 58.9,
+    "erase_seconds": 2.12,
+    "restore_seconds": 21.49,
+    "seed": 1011414493
+   },
+   {
+    "profile": "base",
+    "denoise": 0.45,
+    "clean": true,
+    "people_inside": [
+     1,
+     0
+    ],
+    "inside_change": 58.99,
+    "erase_seconds": 2.11,
+    "restore_seconds": 20.7,
+    "seed": 1011414494
+   },
+   {
+    "profile": "base",
+    "denoise": 0.45,
+    "clean": true,
+    "people_inside": [
+     1,
+     0
+    ],
+    "inside_change": 54.95,
+    "erase_seconds": 2.11,
+    "restore_seconds": 21.41,
+    "seed": 1011414495
+   }
+  ],
+  "prompt": "A vast, silent expanse of dark heather and cold grass under a starlit night sky, dominated by ancient vertical granite boundary stones. Continue the surface and the light, ink hatching. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border, dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, fine grain and ink texture across the whole picture, hand-drawn imperfection, painterly smoke and fog, illustrated, not photographic, scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash, deep black negative space dominating most of the frame, a single small source of warm light, heavy shadows swallowing the edges of the picture, cosmic dread carried only by space and light: oppressive scale of the land under a vast sky, great distance, cold weather moving across it, deep pooled shadows, a single dominant light source, smoke and fog tendrils and formless shadows, stillness, isolation, near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights), a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object, Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection), Clean image without lettering or watermark."
+ },
+ "s02_03": {
+  "seconds": 73.6,
+  "engine": "lama_comfy",
+  "errors": [],
+  "results": [
+   {
+    "profile": "base",
+    "denoise": 0.45,
+    "clean": true,
+    "people_inside": [
+     1,
+     0
+    ],
+    "inside_change": 84.15,
+    "erase_seconds": 2.12,
+    "restore_seconds": 21.42,
+    "seed": 1236788290
+   },
+   {
+    "profile": "base",
+    "denoise": 0.45,
+    "clean": true,
+    "people_inside": [
+     1,
+     0
+    ],
+    "inside_change": 86.94,
+    "erase_seconds": 2.11,
+    "restore_seconds": 20.67,
+    "seed": 1236788291
+   },
+   {
+    "profile": "base",
+    "denoise": 0.45,
+    "clean": true,
+    "people_inside": [
+     1,
+     0
+    ],
+    "inside_change": 85.85,
+    "erase_seconds": 2.12,
+    "restore_seconds": 20.64,
+    "seed": 1236788292
+   }
+  ],
+  "prompt": "An immaculate 19th-century village bakery with tall narrow windows, polished pine counter, stacked flour sacks, and immaculate flour-dusted floorboards under crisp morning light. Continue the surface and the light, ink hatching. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border, dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, fine grain and ink texture across the whole picture, hand-drawn imperfection, painterly smoke and fog, illustrated, not photographic, scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash, deep black negative space dominating most of the frame, a single small source of warm light, heavy shadows swallowing the edges of the room, cosmic dread carried only by space and light: oppressive scale of vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and formless shadows, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation, near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights), a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object, Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection), Clean image without lettering or watermark."
+ },
+ "s04_03": {
+  "seconds": 79.8,
+  "engine": "lama_comfy",
+  "errors": [],
+  "results": [
+   {
+    "profile": "base",
+    "denoise": 0.45,
+    "clean": true,
+    "people_inside": [
+     3,
+     0
+    ],
+    "inside_change": 36.45,
+    "erase_seconds": 2.11,
+    "restore_seconds": 26.3,
+    "seed": 1967068313
+   },
+   {
+    "profile": "base",
+    "denoise": 0.45,
+    "clean": true,
+    "people_inside": [
+     3,
+     0
+    ],
+    "inside_change": 38.39,
+    "erase_seconds": 2.12,
+    "restore_seconds": 21.4,
+    "seed": 1967068314
+   },
+   {
+    "profile": "base",
+    "denoise": 0.45,
+    "clean": true,
+    "people_inside": [
+     3,
+     0
+    ],
+    "inside_change": 38.44,
+    "erase_seconds": 2.14,
+    "restore_seconds": 21.41,
+    "seed": 1967068315
+   }
+  ],
+  "prompt": "A narrow, pristine English village lane bordered by historic stone cottages under an overcast sky, clean slate paving. Continue the surface and the light, ink hatching. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border, dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, fine grain and ink texture across the whole picture, hand-drawn imperfection, painterly smoke and fog, illustrated, not photographic, scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash, deep black negative space dominating most of the frame, a single small source of warm light, heavy shadows swallowing the edges of the picture, cosmic dread carried only by space and light: oppressive scale of the land under a vast sky, great distance, cold weather moving across it, deep pooled shadows, a single dominant light source, smoke and fog tendrils and formless shadows, stillness, isolation, near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights), a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object, Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection), Clean image without lettering or watermark."
+ },
+ "s06_03": {
+  "seconds": 76.0,
+  "engine": "lama_comfy",
+  "errors": [],
+  "results": [
+   {
+    "profile": "base",
+    "denoise": 0.45,
+    "clean": true,
+    "people_inside": [
+     1,
+     0
+    ],
+    "inside_change": 27.29,
+    "erase_seconds": 2.11,
+    "restore_seconds": 21.42,
+    "seed": 920518885
+   },
+   {
+    "profile": "base",
+    "denoise": 0.45,
+    "clean": true,
+    "people_inside": [
+     1,
+     0
+    ],
+    "inside_change": 29.08,
+    "erase_seconds": 2.12,
+    "restore_seconds": 21.4,
+    "seed": 920518886
+   },
+   {
+    "profile": "base",
+    "denoise": 0.45,
+    "clean": true,
+    "people_inside": [
+     1,
+     0
+    ],
+    "inside_change": 27.22,
+    "erase_seconds": 2.12,
+    "restore_seconds": 21.39,
+    "seed": 920518887
+   }
+  ],
+  "prompt": "A vast, silent expanse of dark heather and cold grass under a starlit night sky, dominated by ancient vertical granite boundary stones. Continue the surface and the light, ink hatching. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border, dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, fine grain and ink texture across the whole picture, hand-drawn imperfection, painterly smoke and fog, illustrated, not photographic, scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash, deep black negative space dominating most of the frame, a single small source of warm light, heavy shadows swallowing the edges of the picture, cosmic dread carried only by space and light: oppressive scale of the land under a vast sky, great distance, cold weather moving across it, deep pooled shadows, a single dominant light source, smoke and fog tendrils and formless shadows, stillness, isolation, near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights), a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object, Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection), Clean image without lettering or watermark."
+ },
+ "s06_05": {
+  "seconds": 84.0,
+  "engine": "lama_comfy",
+  "errors": [],
+  "results": [
+   {
+    "profile": "base",
+    "denoise": 0.45,
+    "clean": true,
+    "people_inside": [
+     1,
+     0
+    ],
+    "inside_change": 38.52,
+    "erase_seconds": 2.12,
+    "restore_seconds": 21.41,
+    "seed": 1559266089
+   },
+   {
+    "profile": "base",
+    "denoise": 0.45,
+    "clean": true,
+    "people_inside": [
+     1,
+     0
+    ],
+    "inside_change": 39.28,
+    "erase_seconds": 2.12,
+    "restore_seconds": 21.36,
+    "seed": 1559266090
+   },
+   {
+    "profile": "base",
+    "denoise": 0.45,
+    "clean": true,
+    "people_inside": [
+     1,
+     0
+    ],
+    "inside_change": 41.59,
+    "erase_seconds": 2.14,
+    "restore_seconds": 21.42,
+    "seed": 1559266091
+   }
+  ],
+  "prompt": "A vast, silent expanse of dark heather and cold grass under a starlit night sky, dominated by ancient vertical granite boundary stones. Continue the surface and the light, ink hatching. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border, dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, fine grain and ink texture across the whole picture, hand-drawn imperfection, painterly smoke and fog, illustrated, not photographic, scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash, deep black negative space dominating most of the frame, a single small source of warm light, heavy shadows swallowing the edges of the picture, cosmic dread carried only by space and light: oppressive scale of the land under a vast sky, great distance, cold weather moving across it, deep pooled shadows, a single dominant light source, smoke and fog tendrils and formless shadows, stillness, isolation, near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights), a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object, Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection), Clean image without lettering or watermark."
+ }
+}

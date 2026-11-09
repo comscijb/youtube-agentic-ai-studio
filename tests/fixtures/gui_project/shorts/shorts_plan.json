@@ -1,0 +1,77 @@
+{
+ "source_hash": "73b42cdd1ff2c4107bd879a4c3bbdaa03b727236d8a4e92fada57fd21f1815ae",
+ "twist_start": 394.97,
+ "twist_sentence": 77,
+ "total_duration": 703.509,
+ "segments": [
+  {
+   "start_sentence": 5,
+   "end_sentence": 12,
+   "start": 30.816,
+   "end": 78.316,
+   "seconds": 47.5,
+   "title": "The Old Man Who Found His Perfect Listener #Shorts",
+   "hook_text": "A lifetime of quiet silence",
+   "end_text": "A listener who never turns away",
+   "description": "A lonely widower discovers solace in an AI companion app after years of living with silent distance.",
+   "approaches_reversal": false,
+   "why": "This segment introduces Walter's poignant background and the immediate relief he finds in the app's unconditional presence.",
+   "include": true,
+   "id": "short_01",
+   "render": {
+    "id": "short_01",
+    "video": "shorts\\short_01.mp4",
+    "srt": "shorts\\short_01.srt",
+    "seconds": 47.5,
+    "loudness": {
+     "input_integrated_lufs": -14.38,
+     "input_true_peak_dbtp": -1.75,
+     "output_integrated_lufs": -14.02,
+     "output_true_peak_dbtp": -1.5,
+     "target_lufs": -14.0,
+     "seconds": 47.5
+    },
+    "shots": [
+     "s01_04",
+     "s01_05",
+     "s01_06",
+     "s01_07",
+     "s01_08",
+     "s01_09"
+    ],
+    "blur_filled": []
+   }
+  },
+  {
+   "start_sentence": 28,
+   "end_sentence": 43,
+   "start": 159.825,
+   "end": 230.009,
+   "seconds": 70.18,
+   "title": "He Hung Up on His Overworked Daughter #Shorts",
+   "hook_text": "The landline phone rang",
+   "end_text": "Abrasive blows against his peace",
+   "description": "An interruption from his exhausted daughter makes real human connection feel burdensome.",
+   "approaches_reversal": false,
+   "why": "It highlights the friction between messy human reality and the frictionless comfort of his new companion.",
+   "include": true,
+   "id": "short_02"
+  },
+  {
+   "start_sentence": 47,
+   "end_sentence": 56,
+   "start": 244.798,
+   "end": 299.496,
+   "seconds": 54.7,
+   "title": "Rewriting Forty Years of Lonely Marriage #Shorts",
+   "hook_text": "We had forty years",
+   "end_text": "Leaving him talking to a kettle",
+   "description": "The companion app helps Walter rewrite painful memories of his late wife into a comforting illusion.",
+   "approaches_reversal": false,
+   "why": "It dramatically illustrates how he uses the app to sanitize his past and avoid painful truths.",
+   "include": true,
+   "id": "short_03"
+  }
+ ],
+ "edited": false
+}

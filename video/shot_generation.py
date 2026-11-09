@@ -113,9 +113,11 @@ def location_prompt(vb: dict, location_id: str, *, anchor: bool = False) -> str:
     entry = vbible.location(vb, location_id) or {}
     noun = identity.image_noun()
     style = "Rendered in the drawing style of the first image. " if anchor else ""
+    exterior = not vbible.location_interior(entry) if entry else False
+    subject = "only the land, the sky and what the description names" if exterior else "only architecture, furniture and objects"
     return (f"{_article(noun).capitalize()} {noun}: establishing wide view of a deserted, unoccupied "
-            f"{entry.get('descriptor', location_id)}; only architecture, furniture and objects; perfectly "
-            f"still. {style}{identity.style_suffix(figures=False)}")
+            f"{entry.get('descriptor', location_id)}; {subject}; perfectly "
+            f"still. {style}{identity.style_suffix(figures=False, exterior=exterior)}")
 
 
 def candidate_is_current(key: str, item: dict) -> bool:
@@ -186,7 +188,10 @@ def _location_job(vb: dict, lid: str, number: int, output: Path) -> ImageJob:
     """Establishing image of a location; style-anchored only by an anchor with nobody in it."""
     from agents import style_refs
     location = vbible.location(vb, lid) or {}
-    anchors = style_refs.empty_paths()
+    # Hotfix (3.9.3): a style board as the ONLY reference is copied and edited by Klein (the moor and
+    # the bakery came out as board_6's empty room with its chair). Locations are text-to-image again;
+    # the style comes from the prompt suffix, as for the character sheets.
+    anchors = []
     return ImageJob(
         job_id=f"loc_{lid}_{number}", prompt=location_prompt(vb, lid, anchor=bool(anchors)),
         seed=location.get("seed", vbible.seed_for("location", lid)) + number,
@@ -201,6 +206,11 @@ def _character_job(vb: dict, cid: str, number: int, output: Path) -> ImageJob:
         seed=base + number,
         output_path=str(output / "character_refs" / "candidates" / f"{safe_filename(cid)}_{number}.jpg"),
         size=PORTRAIT_SIZE, final_size=PORTRAIT_SIZE)
+
+
+def image_labels(checks: dict) -> list[str]:
+    """What the grid shows for a generated image: a copy of a style board, a margin that would not go."""
+    return [item["label"] for item in (checks.get("copy_check") or {}, checks.get("border") or {}) if item.get("label")]
 
 
 def people_in(path) -> int | None:
@@ -291,6 +301,10 @@ def _run_reference_jobs(jobs: list, output: Path, generator: ImageGenerator,
                         "seed": result["seed"], "prompt": job.prompt, "batch": batch,
                         "style_hash": identity.style_hash(),
                         **({"people": people, "attempts": attempts} if kind == "location" else {}),
+                        **({"image_flags": image_labels(result.get("image_checks") or {})}
+                           if image_labels(result.get("image_checks") or {}) else {}),
+                        **({"copy_check": result["image_checks"]["copy_check"]}
+                           if (result.get("image_checks") or {}).get("copy_check") else {}),
                         **({"sheet_version": vbible.CHARACTER_SHEET_VERSION} if kind == "character" else {})})
         atomic_write_json(output / CANDIDATES_FILE, record)
     return record
@@ -584,6 +598,14 @@ def _render_shot(generator: ImageGenerator, output: Path, vb: dict, shot: dict, 
         shot["provider"] = record.get("provider", "comfyui")
         shot["generated_at"] = _now()
         shot.pop("qa", None)                              # a new image starts a new QA budget
+        shot.pop("source", None)
+        checks = record.get("image_checks") or {}
+        labels = image_labels(checks)
+        shot.pop("image_flags", None)
+        if labels:
+            shot["image_flags"] = labels
+        if checks.get("copy_check"):
+            shot["copy_check"] = checks["copy_check"]
         key = "fallback" if record.get("fallback_from") else ("cached" if record.get("cache_hit") else "generated")
         summary[key] += 1
         _record_provenance(output, [record])

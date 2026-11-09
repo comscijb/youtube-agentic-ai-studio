@@ -100,7 +100,7 @@ class QueueRunTests(unittest.TestCase):
         return summary, fake, saves
 
     def test_every_queued_request_runs_in_one_batch_with_history(self):
-        review.enqueue(self.shots[0], review.make_request("remove_figure", VB, box=[0.7, 0.4, 0.8, 0.8]))
+        review.enqueue(self.shots[0], review.make_request("remove_marks", VB, box=[0.7, 0.4, 0.8, 0.8]))
         review.enqueue(self.shots[0], review.make_request("custom", VB, text="darken the window"))
         review.enqueue(self.shots[1], review.make_request("regenerate", VB))
         summary, fake, saves = self.run_queue([(1360, 768), (1360, 768), (1280, 720)])
@@ -111,7 +111,7 @@ class QueueRunTests(unittest.TestCase):
         self.assertEqual(len(saves), 3)
         first = self.shots[0]
         self.assertNotIn("edit_queue", first)
-        self.assertEqual([a["request"] for a in first["qa"]["actions"]], ["Remover figura", "Instrução livre"])
+        self.assertEqual([a["request"] for a in first["qa"]["actions"]], ["Remover marcas", "Editar região (instrução)"])
         self.assertEqual((first["qa"]["human_edits"], first["qa"].get("edits", 0)), (2, 0))   # QA budget untouched
         self.assertEqual(len(first["qa"]["history"]), 2)
         self.assertFalse(first["qa"]["reviewed"])

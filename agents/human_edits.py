@@ -80,8 +80,9 @@ def rereview(script: dict, brief: dict, bible: dict, outline: dict, previous: di
     if live_editorial:
         from agents.scriptwriter import _editorial_review
         print("   -> Running a live editorial review of the edited screenplay...")
-        merged = merge_editorial_review(
-            report, _editorial_review(script, brief, bible, outline, report), bible)
+        assessment = _editorial_review(script, brief, bible, outline, report)
+        merged = premise_brief.resolve_candidates(merge_editorial_review(report, assessment, bible),
+                                                  assessment.get("brief_check"), script)
     else:
         assessment = json.loads(json.dumps(previous.get("editorial_assessment") or {})) or None
         addressed = []
@@ -98,6 +99,7 @@ def rereview(script: dict, brief: dict, bible: dict, outline: dict, previous: di
                     remaining.append(finding)
             # Addressed findings stay visible but no longer drive the status.
             merged = merge_editorial_review(report, dict(assessment, findings=remaining), bible)
+            merged = premise_brief.resolve_candidates(merged, assessment.get("brief_check"), script)
             merged["editorial_assessment"]["findings"] = remaining + addressed
             merged["discarded_editorial_findings"] = discarded
         else:

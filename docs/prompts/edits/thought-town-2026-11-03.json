@@ -1,0 +1,92 @@
+[
+  {
+    "scene_id": 1,
+    "find": "'A fine crust today,' echoes a baker three paces away.",
+    "replace": "'A fine crust today,' a customer thinks, three paces away."
+  },
+  {
+    "scene_id": 1,
+    "find": "spills aloud into the room:",
+    "replace": "spills into the room for everyone to hear:"
+  },
+  {
+    "scene_id": 1,
+    "find": "Every customer stares.",
+    "replace": "Every face turns toward him."
+  },
+  {
+    "scene_id": 2,
+    "find": "Safety requires absolute vigilance.",
+    "replace": "He has not let a single one slip since. Not until this morning."
+  },
+  {
+    "scene_id": 3,
+    "find": "The next morning, sunshine streams across slate flooring as the queue reforms. Townsfolk step inside with cautious eyes, listening intently to the air around Thomas. He stands behind the pine counter, breathing steady, and consciously projects warm thoughts of morning light and wholesome rye. The town lives by \"clean thinking\". Children learn to think gently; there is no lying, no crime, and Thomas and Nell have never argued in 26 years. Next morning he thinks warm, perfect thoughts, and the queue forgives him. Customers catch the rhythm of placid monologue. Tense shoulders drop. They lean forward, accepting loaves with soft nods of forgiveness. His thirty-year record of gentleness is restored. Performative strategy works, even as effort of manufacturing constant sunshine leaves a hollow ache behind ribs. He smiles politely, meeting each gaze with carefully managed serenity, watching tension dissolve from the room while his private exhaustion deepens.",
+    "replace": "The next morning the queue forms again, slower than usual. People step inside and stand a little closer than they need to, listening. Thomas knows what they are waiting for.\n\nHe lifts the first tray from the oven and lets his mind fill with the things it has always held. The smell of rye. The Hollis boy's birthday. How good it is to see them all. 'Lovely to see you, Mrs Pell.' 'Mind the step, it's icy.' Small, warm, perfect thoughts.\n\nIn Wickham's Rest they call it clean thinking. Children learn it before they can read: think gently, and you will never need to lie. There is no crime here. In twenty-six years of marriage, Thomas and Nell have never once argued.\n\nBy the third customer, shoulders loosen. By the tenth, someone laughs. The queue has forgiven him.\n\nOnly Thomas notices how tired he is by noon. Not from the baking. From the thinking."
+  },
+  {
+    "scene_id": 4,
+    "find": "Afternoon light weighs heavy against the stone walls of Wickham's Rest. Thomas stands by the lane, watching neighbors pass. A woman stops to greet a butcher, her lips curved into a warm smile. But beneath her words, her surface thought drifts out: \"I cannot bear another hour on my feet.\" Then a micro-pause ripples through the air. The sentence catches, reverses, and re-forms into a bright broadcast: \"The weather treats us kindly today.\" Now he can hear the effort. An editor in his head rewrites every thought before it forms, and he hears the same editor in everyone. At supper Nell thinks \"what a lovely evening\" while her face looks exhausted. He starts walking to the Line at night. Men and women walking by, husbands greeting wives, children running past—all of them running an internal censor, shearing away every jagged edge of fatigue and frustration before it reaches the air. Wickham's Rest is not peaceful because its people are gentle. It is peaceful because every mind in town works in a quiet panic.",
+    "replace": "In the afternoon he walks the bread round, as he has for thirty years. And now, because he is listening for it, he hears it everywhere.\n\nOutside the butcher's, a woman greets a neighbour with a smile. Her thought drifts across the lane: 'I can't bear another hour on my feet.' Then a catch, the smallest pause, and the sentence turns over and comes back bright: 'The weather is being kind to us today.'\n\nA man waiting by the post office: 'If he says that one more time, I'll...' A pause. 'Good of him to come.'\n\nIt is the same pause Thomas makes. A hand on the door before a thought is let out. An editor, working quietly behind every pair of eyes in town.\n\nHe stops in the middle of the lane, the basket heavy on his arm.\n\nNobody in Wickham's Rest has told a lie in forty years. But perhaps nobody here has been honest either. Perhaps they have only learned to edit.\n\nFor the first time in his life, Thomas wonders whether he would sound any different if no one could hear him."
+  },
+  {
+    "scene_id": 5,
+    "find": "smooths the fabric of her dark green wool coat",
+    "replace": "smooths the tablecloth with one hand"
+  },
+  {
+    "scene_id": 5,
+    "find": "Her surface thought murmurs into the quiet room: \"What a comforting meal after a long day.\"",
+    "replace": "Her thought murmurs into the quiet room: 'What a lovely evening.'"
+  },
+  {
+    "scene_id": 5,
+    "find": "the deep, unyielding exhaustion",
+    "replace": "the exhaustion"
+  },
+  {
+    "scene_id": 5,
+    "find": "He realizes he has never known her real mind at all; he has only known the performance she crafted to keep him safe.",
+    "replace": "He wonders what she would think if no one were listening. In twenty-six years, he has never once wondered that."
+  },
+  {
+    "scene_id": 5,
+    "find": "The domestic warmth turns to ash in his chest, and he knows he cannot stay inside the town's broadcast zone for another hour.",
+    "replace": "He says nothing. Later, when the house is dark, he takes his coat from the hook and walks out toward the moor."
+  },
+  {
+    "scene_id": 6,
+    "find": "The air holds absolute, crushing silence.",
+    "replace": "The silence is so complete it presses on his ears."
+  },
+  {
+    "scene_id": 6,
+    "find": "the raw, unedited voice",
+    "replace": "the unedited voice"
+  },
+  {
+    "scene_id": 6,
+    "find": "out of sheer habit",
+    "replace": "out of habit"
+  },
+  {
+    "scene_id": 7,
+    "find": "She does not broadcast a single welcoming thought.",
+    "replace": "He hears nothing from her. Out here, he can't."
+  },
+  {
+    "scene_id": 7,
+    "find": "He realizes he has known only her curated sentences for twenty-six years while she has carried an entire life away from the village. Both of them have spent decades hiding behind the safety of a broadcast they never authored.",
+    "replace": "\"Years,\" he repeats.\n\n\"Every Thursday. When you think I'm at the chapel.\" She almost smiles. \"Out here I can think whatever I like, and nobody has to forgive me for it.\"\n\nTwenty-six years without a single argument. He had always believed it meant they understood each other. Standing in the silence, he understands what it really meant: he has only ever heard the version of her she was willing to let out. And she has only ever heard his."
+  },
+  {
+    "scene_id": 8,
+    "find": "The wind carries a sharp chill across the heather. Nell holds his gaze, her tired eyes steady in the starlight. A long stillness falls over the moor, unbroken by any hum of thought or murmur of the town. She looks down at him and asks quietly, \"What do you actually think, Thomas?\" Thomas sits motionless on the cold turf. The interior editor in his skull screams for a safe phrase, a gentle sentence, a pleasant deflection to keep the peace. He inhales the biting moorland air, tasting true freedom for the first time in thirty years. He parts his lips to speak, willing an uncurated voice to rise from his throat, and the story cuts immediately to black.",
+    "replace": "The wind moves through the heather. Nell sits down beside him on the cold turf, close enough to touch, and for once he has no idea what she is thinking. It frightens him. It is also the first time in twenty-six years that she has felt like a stranger, and he finds that he wants to know her.\n\n\"Can I ask you something?\" she says.\n\nHe nods.\n\n\"What do you actually think, Thomas?\"\n\nThe question lands in the silence and stays there. Inside him the editor wakes at once and starts offering sentences. I think you're tired. I think we should go home. I think everything is fine. Gentle, true enough, and not one of them his.\n\nHe lets them pass.\n\nHe breathes in the cold air. He opens his mouth.\n\nBehind them, the lights of Wickham's Rest go on burning, waiting for him to come back and be heard."
+  },
+  {
+    "scene_id": 9,
+    "find": "The dark moorland stretches beneath an endless expanse of stars, far from the warm, glowing windows of Wickham's Rest. We are left suspended between the impulse we cannot control and the discipline we choose to maintain, wondering where the boundary truly lies between who we are and who we pretend to be. There is a thought in your head right now that no one will ever hear. Is that one you, or is the one keeping it quiet?",
+    "replace": "We never hear what Thomas said.\n\nMaybe he told her the truth. Maybe he discovered he no longer had one. Or maybe he said something gentle and meant it, and that was the truth all along.\n\nIn Wickham's Rest they still think clean thoughts, and nobody has argued in a very long time.\n\nThere is a thought in your head right now that no one will ever hear. Is that one you, or is the one keeping it quiet?"
+  }
+]

@@ -14,8 +14,12 @@ from moviepy.editor import VideoClip, AudioFileClip, ColorClip, concatenate_vide
 
 import config
 from agents.narrative import assert_no_mojibake
-from video import tape
+from video import render_check, tape
 from video.timeline import load_timeline, proportional_scene_durations, write_timeline
+
+
+class RenderStopped(RuntimeError):
+    """The user pressed Stop during the video stage."""
 
 # ── globals (overwritten per call) ────────────────────────────
 W   = config.VIDEO_WIDTH
@@ -52,6 +56,10 @@ def _load_font(variant: str, size: int) -> ImageFont.FreeTypeFont:
 # ══════════════════════════════════════════════════════════════
 #  SRT CAPTION PARSER
 # ══════════════════════════════════════════════════════════════
+
+def _strip_cue_tags(text: str) -> str:
+    return re.sub(r"</?i>", "", str(text))
+
 
 def _parse_srt(srt_path: str) -> list:
     """
@@ -468,8 +476,9 @@ def adaptive_opacity(luminance: float, base: float | None = None) -> float:
 def load_shot_schedule(output_dir: str, sections: list, durations: list) -> dict | None:
     """Map section id -> shots with section-relative timing and image paths.
 
-    Returns None (keep the stock B-roll behaviour) unless shot_list.json exists
-    and every shot resolves to an existing image.
+    Returns None (the legacy B-roll behaviour) when there is no usable shot_list.json. With one, every
+    shot must resolve to an existing image: otherwise ShotImagesMissing names them all (Phase 3.9.4-F),
+    so a normal episode never falls back to stock or gradients.
     """
     from agents.shot_list import resolve_image
 
@@ -488,14 +497,15 @@ def load_shot_schedule(output_dir: str, sections: list, durations: list) -> dict
         starts[section["id"]] = (cursor, duration)
         cursor += duration
     schedule: dict = {}
+    missing = render_check.missing_images(output_dir, shots)
+    if missing:
+        raise render_check.ShotImagesMissing(missing)
     for index, shot in enumerate(shots):
         image = resolve_image(shots, shot)
-        image = image if image and os.path.isabs(image) else (
-            os.path.join(output_dir, image) if image else None)
-        if not image or not os.path.exists(image) or shot.get("section_id") not in starts:
-            print(f"   ⚠ shot_list.json is incomplete ({shot.get('shot_id')} has no image); "
-                  "using stock B-roll cycling")
-            return None
+        image = image if image and os.path.isabs(image) else os.path.join(output_dir, image)
+        if shot.get("section_id") not in starts:
+            print(f"   ⚠ {shot.get('shot_id')}: its scene is not in this narration; left out")
+            continue
         section_start, section_duration = starts[shot["section_id"]]
         schedule.setdefault(shot["section_id"], []).append({
             "shot_id": shot["shot_id"], "image": image, "shot_type": shot.get("shot_type", "medium"),
@@ -577,6 +587,24 @@ def shot_at(shots: list, t: float) -> int:
     return len(shots) - 1
 
 
+COLD_OPEN_DARKEN = 0.85        # the teaser's subtle treatment (Phase 3.9.7): slightly darker
+COLD_OPEN_SLOWER = 0.5         # and half the camera movement
+
+
+def cold_open_treatment(shots: list) -> list:
+    """Slower motion and a darker frame for the cold open's shots, so the jump in time reads."""
+    treated = []
+    for shot in shots:
+        zoom = shot.get("zoom", (1.0, 1.0))
+        middle = (zoom[0] + zoom[1]) / 2
+        movement = dict(shot.get("motion") or {})
+        if "amount" in movement:
+            movement["amount"] = movement["amount"] * COLD_OPEN_SLOWER
+        treated.append({**shot, "zoom": (middle + (zoom[0] - middle) * COLD_OPEN_SLOWER, middle + (zoom[1] - middle) * COLD_OPEN_SLOWER),
+                        "motion": movement, "darken": COLD_OPEN_DARKEN})
+    return treated
+
+
 def _shot_frame(shot: dict, t: float) -> np.ndarray:
     local = max(0.0, t - shot["start"])
     duration = max(shot["end"] - shot["start"], 0.001)
@@ -592,6 +620,8 @@ def _shot_frame(shot: dict, t: float) -> np.ndarray:
         from video import ambient
         if ambient.enabled():
             frame = ambient.apply(frame, ambient.loop_uint8(shot["ambient"]), local)
+    if shot.get("darken"):
+        frame = (frame.astype(np.float32) * shot["darken"]).astype(np.uint8)
     return _apply_overlay(frame, shot["opacity"])
 
 
@@ -869,7 +899,7 @@ def _get_caption_at(captions: list, t_global: float) -> str:
     """Return the caption text active at global time t_global (seconds)."""
     for cap in captions:
         if cap["start"] <= t_global < cap["end"]:
-            return cap["text"]
+            return _strip_cue_tags(cap["text"])              # frames are drawn plain; ASS keeps the italics
     return ""
 
 
@@ -967,13 +997,44 @@ def _build_shorts_clip(all_images: list, total_duration: float,
 #  MAIN ENTRY POINT
 # ══════════════════════════════════════════════════════════════
 
+def _encoder_watch(should_stop):
+    """A moviepy logger that stops the encode: raising out of the frame loop closes the writer, which ends
+    the ffmpeg process."""
+    import proglog
+
+    class Watch(proglog.ProgressBarLogger):
+        def bars_callback(self, bar, attr, value, old_value=None):
+            if should_stop():
+                raise RenderStopped("Vídeo interrompido")
+    return Watch()
+
+
+def encode_final(final, output_path: str, *, should_stop=None, **settings) -> None:
+    """Encode to a partial file and only then replace the output: Stop leaves no half-written video, and any
+    earlier render stays where it was."""
+    root, extension = os.path.splitext(output_path)
+    partial = f"{root}.partial{extension}"
+    try:
+        final.write_videofile(partial, logger=_encoder_watch(should_stop) if should_stop else None, **settings)
+    except RenderStopped:
+        for leftover in (partial, os.path.basename(root) + ".partialTEMP_MPY_wvf_snd.mp4"):
+            try:
+                os.remove(leftover)
+            except OSError:
+                pass
+        raise
+    if os.path.exists(partial):
+        os.replace(partial, output_path)
+
+
 def create_video(script: dict, audio_path: str, output_dir: str,
-                 image_map: dict = None, video_type: str = "normal") -> str:
+                 image_map: dict = None, video_type: str = "normal", should_stop=None) -> str:
     """
     Assembles the final video.
     image_map for Shorts: {section_id: [path, path, …]}
     image_map for Normal: {section_id: [path, path, ...] | None}
     video_type: "normal" | "shorts"
+    should_stop: a callable checked during the build and the encode (raises RenderStopped).
     """
     global W, H, FPS
     assert_no_mojibake(script, "caption rendering")
@@ -1074,6 +1135,14 @@ def create_video(script: dict, audio_path: str, output_dir: str,
         # the captions on top (ASS, same pill look) so they stay crisp; frames are drawn without them.
         tape_level = tape.look()
         frame_captions = captions if tape_level == "off" else []
+        if os.path.exists(os.path.join(output_dir, "shot_list.json")):
+            check = render_check.preflight(output_dir, audio.duration)
+            for item in check["checks"]:
+                print(f"   {'✓' if item['ok'] else '⚠'} Verificação ({item['name']}): {item['detail']}")
+        if os.path.exists(os.path.join(output_dir, "shot_list.json")):
+            check = render_check.preflight(output_dir, audio.duration)
+            for item in check["checks"]:
+                print(f"   {'✓' if item['ok'] else '⚠'} Verificação ({item['name']}): {item['detail']}")
         schedule = load_shot_schedule(output_dir, sections, durations)
         if schedule:
             print(f"\n   Building {total_sections} section clips from shot_list.json "
@@ -1085,7 +1154,11 @@ def create_video(script: dict, audio_path: str, output_dir: str,
 
         for i, (section, duration) in enumerate(zip(sections, durations)):
             s_type   = section.get("section_type", "content")
-            print(f"     [{section['id']:02d}] {section['title']:<42} {duration:5.1f}s  [{s_type}]")
+            scheduled = len((schedule or {}).get(section["id"], []))
+            print(f"     [{section['id']:02d}] {section['title']:<42} {duration:5.1f}s  [{s_type}]"
+                  + (f"  {scheduled} planos" if scheduled else ""))
+            if should_stop and should_stop():
+                raise RenderStopped("Vídeo interrompido")
 
             # Load all B-roll images for this section (list of np arrays)
             bg_images = []
@@ -1099,10 +1172,12 @@ def create_video(script: dict, audio_path: str, output_dir: str,
                     arr = _load_bg_image(p)
                     if arr is not None:
                         bg_images.append(arr)
-            if not bg_images:
+            if not bg_images and not scheduled:
                 print(f"          ⚠ no images for section {section['id']} — gradient fallback")
 
             section_shots = _prepare_shots(schedule.get(section["id"], [])) if schedule else None
+            if section_shots and section.get("section_type") == "cold_open":
+                section_shots = cold_open_treatment(section_shots)
             clip = _make_clip(section, duration, bg_images, i + 1, total_sections,
                               captions=frame_captions, section_start_t=section_start_t,
                               cinematic=cinematic, shots=section_shots)
@@ -1145,16 +1220,8 @@ def create_video(script: dict, audio_path: str, output_dir: str,
     if not is_shorts and tape_level != "off":
         settings["ffmpeg_params"] = settings["ffmpeg_params"] + extra_params
     started = time.monotonic()
-    final.write_videofile(
-        output_path,
-        fps=FPS,
-        codec="libx264",
-        audio_codec="aac",
-        threads=4,
-        **settings,
-        verbose=False,
-        logger=None,
-    )
+    encode_final(final, output_path, should_stop=should_stop, fps=FPS, codec="libx264", audio_codec="aac", threads=4,
+                 verbose=False, **settings)
     print(f"   → Encode took {time.monotonic() - started:.0f}s")
 
     print(f"\n   ✅ Video rendered: {render_summary(output_path, final.duration)}")

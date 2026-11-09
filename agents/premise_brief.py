@@ -13,9 +13,12 @@ The brief is **authoritative**: the Story Development Agent preserves every
 provided field and only fills what is missing (``brief_coverage`` records how
 each field was used). The Character Bible, outline and scene prompts receive
 only the relevant parts (``author_brief``), not the raw text. ``faithfulness``
-checks the result deterministically: every must_include present, no must_avoid,
-provided beats mapped to outline ``arc_movements``, provided names and ages
-unchanged — violations are ``major`` findings the targeted revision may fix.
+checks what is literal: no must_avoid, the beats' quoted lines by their kind
+(``classify_quote``), provided names and ages unchanged, no text pasted from the
+brief — violations are ``major`` findings the targeted revision may fix. Phase
+3.9.2: everything that is not literal (must_include items, ending details, beat
+coverage) only becomes a ``candidates`` entry on a lexical miss; the editorial
+call confirms it (``resolve_candidates``) with a quote from the screenplay.
 
 A single sentence is not a brief: it keeps working exactly as before (the exact
 premise, ``topic_override``).
@@ -27,15 +30,16 @@ import re
 import unicodedata
 from pathlib import Path
 
-from agents.narrative import atomic_write_json, load_json, stable_hash
+from agents.narrative import ABRUPT_ENDING, atomic_write_json, load_json, stable_hash
+from agents.quotes import thought_lines
 
 MAX_CHARS = 4000
 MARKDOWN_FILE = "premise_brief.md"
 JSON_FILE = "premise_brief.json"
 NARRATIVE_IDS = {"a": "realistic_psychological_fiction", "b": "philosophical_thought_experiment",
                  "c": "dark_human_parable"}
-BEAT_KEYS = ("hook", "strategy_works", "hidden_cost", "reversal", "philosophical_layer", "ending")
-BEAT_MOVEMENTS = {"hook": ("hook",), "strategy_works": ("mechanism", "escalation_success"),
+BEAT_KEYS = ("cold_open", "hook", "strategy_works", "hidden_cost", "reversal", "philosophical_layer", "ending")
+BEAT_MOVEMENTS = {"cold_open": ("cold_open",), "hook": ("hook",), "strategy_works": ("mechanism", "escalation_success"),
                   "hidden_cost": ("hidden_cost",), "reversal": ("reversal",),
                   "philosophical_layer": ("philosophical_layer",), "ending": ("ending",)}
 LIST_FIELDS = ("other_characters", "must_include", "must_avoid", "title_ideas")
@@ -49,7 +53,8 @@ ALIASES = {
     "must avoid": "must_avoid", "target minutes": "target_minutes", "duration": "target_minutes",
     "title ideas": "title_ideas", "thumbnail idea": "thumbnail_idea", "thumbnail": "thumbnail_idea",
 }
-BEAT_ALIASES = {"hook": "hook", "strategy works": "strategy_works", "strategy": "strategy_works",
+BEAT_ALIASES = {"cold open": "cold_open", "coldopen": "cold_open", "teaser": "cold_open", "omen": "cold_open",
+                "hook": "hook", "strategy works": "strategy_works", "strategy": "strategy_works",
                 "hidden cost": "hidden_cost", "cost": "hidden_cost", "reversal": "reversal", "twist": "reversal",
                 "philosophical layer": "philosophical_layer", "meaning": "philosophical_layer", "ending": "ending"}
 
@@ -73,6 +78,7 @@ Walter Hale, 68, retired piano tuner, widowed two years; wound: he was never sur
 Walter's small terraced house in Leeds, present day, autumn into winter.
 
 # Beats
+- Cold open: Walter, alone at the piano, hears Ada agree with something he knows is untrue, and stops playing. Don't say what it was.
 - Hook: Walter thanks the AI for "the best conversation I've had in years".
 - Strategy works: he stops calling June; Ada remembers everything he says.
 - Hidden cost: his stories stop changing; nobody contradicts him any more.
@@ -277,9 +283,11 @@ def load(output_dir) -> dict | None:
 
 
 def target_minutes(brief: dict | None, requested=None) -> float | None:
-    """The brief's target duration wins over the GUI / CLI value (episodes are 12-20 minutes)."""
+    """The brief's target duration wins over the GUI / CLI value (within config.EPISODE_MINUTES)."""
+    import config
+    low, high = config.EPISODE_MINUTES
     value = (brief or {}).get("target_minutes")
-    if value and 12 <= float(value) <= 20:
+    if value and low <= float(value) <= high:
         return float(value)
     return float(requested) if requested else None
 
@@ -328,6 +336,8 @@ def coverage(brief: dict, story: dict) -> dict:
             result[key] = "preserved" if float(story.get("target_duration_minutes") or 0) == brief[key] else "overridden"
         else:
             result[key] = "passed to the bible, outline and scenes"
+    if isinstance(brief.get("beats"), dict) and brief["beats"].get("cold_open"):
+        result["cold_open"] = "the outline's cold_open scene (authoritative)"
     return result
 
 
@@ -340,14 +350,55 @@ def spoken_lines(text: str) -> list[str]:
     return [first or second for first, second in _QUOTE.findall(str(text or ""))]
 
 
+_NARRATED = re.compile(r"\bnarrated line\b|\bnarrator\b|\bfinal line\b|turns the question to the viewer", re.I)
+_THOUGHT = re.compile(r"\bthoughts?\b|\bthinks?\b|\bthinking\b|\bheard\b|\bhears?\b|\bescapes him\b|\binner\b", re.I)
+_ATTRIBUTION = re.compile(r"\b(?:says?|said|asks?|asked|answers?|answered|tells?|told|repl(?:y|ies|ied)|speaks? aloud|"
+                          r"whispers?|whispered|thanks|thanked|mutters?|shouts?|murmurs?|admits?)\b", re.I)
+_SENTENCE_END = re.compile(r"[.!?…][\"”]?\s")
+QUOTE_KINDS = ("dialogue", "thought", "narrated", "term")
+
+
+def classify_quote(beat_text: str, span: str) -> str:
+    """dialogue / thought / narrated / term, from the words around a quoted span in a beat.
+    Unknown is ``term``, the lenient kind."""
+    text = str(beat_text or "")
+    position = text.find(span)
+    if position < 0:
+        return "term"
+    before = text[:position].rstrip(' "“')
+    cut = max((match.end() for match in _SENTENCE_END.finditer(before + " ")), default=0)
+    previous_quote = max(before.rfind('"'), before.rfind("”"))
+    before = before[max(cut, previous_quote + 1):]
+    after = text[position + len(span):].lstrip(' "”')
+    tail = str(span).rstrip()
+    closes = tail.endswith((".", "!", "?", "…")) or text[position + len(span):position + len(span) + 2].strip(' "”')[:1] in (".", "!", "?")
+    after = "" if closes else re.split(r"[.!?…]", after, maxsplit=1)[0]
+    context = before + " " + after
+    if _NARRATED.search(context):
+        return "narrated"
+
+    def last(pattern, text):
+        return max((match.end() for match in pattern.finditer(text)), default=-1)
+    thought, attribution = last(_THOUGHT, before), last(_ATTRIBUTION, before)   # the nearest verb decides
+    if thought >= 0 or attribution >= 0:
+        return "thought" if thought > attribution else "dialogue"
+    return "thought" if _THOUGHT.search(after) else "dialogue" if _ATTRIBUTION.search(after) else "term"
+
+
 def beat_quotes(brief: dict) -> list[tuple[str, str]]:
-    """(beat, line) for every line the brief's beats quote (two or more content words)."""
+    """(beat, line) for every span the brief's beats quote."""
     return [(beat, line.strip()) for beat, text in (brief.get("beats") or {}).items()
-            for line in spoken_lines(text) if len(_words(line)) >= 2]
+            for line in spoken_lines(text) if _words(line)]
+
+
+def required_lines(brief: dict) -> list[dict]:
+    """The quoted lines the author requires, with their kind."""
+    return [{"beat": beat, "line": line, "kind": classify_quote(brief["beats"][beat], line)}
+            for beat, line in beat_quotes(brief)]
 
 
 def ending_items(brief: dict) -> list[str]:
-    """The ending beat's details, one per sentence (quoted lines are checked as dialogue)."""
+    """The ending beat's details, one per sentence (quoted lines are checked by their kind)."""
     text = _QUOTE.sub(". ", str((brief.get("beats") or {}).get("ending", "")))
     items = []
     for sentence in re.split(r"(?<=[.!?])\s+", text):
@@ -356,6 +407,42 @@ def ending_items(brief: dict) -> list[str]:
         if len(_words(sentence)) >= 2:
             items.append(sentence)
     return items
+
+
+_STAGE_DIRECTION = re.compile(r"\bcut\b|\bcuts\b|\ba long silence\b|\bopens? (?:his|her|their) mouth\b|\bthe screen\b|"
+                              r"\bfade\b|\bto black\b|\bbefore (?:he|she|they) (?:answers?|speaks?|replies?)\b", re.I)
+_STYLE_ITEM = re.compile(r"\bas quoted\b|\bquieter than\b|\bin silence\b|\bnever shown\b|\bwritten as\b|"
+                         r"\bspoken as\b|\bvoiced\b|\bin (?:single|double) quotes\b|\bin voice-?over\b|\boff-?screen\b", re.I)
+_THOUGHT_RULE = re.compile(r"\bthoughts?\b|\btelepath|\bhears? (?:your|their|his|her|each other's)\b|\bvoices?\b", re.I)
+
+
+def is_stage_direction(item: str) -> bool:
+    """Intent, not narration: satisfied when the scene ends at that point, never written on the page."""
+    return bool(_STAGE_DIRECTION.search(str(item)))
+
+
+def is_style_constraint(item: str) -> bool:
+    """A must_include item that says how something is written or voiced, not what happens."""
+    return bool(_STYLE_ITEM.search(str(item)))
+
+
+def style_constraints(brief: dict) -> list[str]:
+    return [item for item in brief.get("must_include") or [] if is_style_constraint(item)]
+
+
+def heard_thoughts_on(brief: dict | None, narrative_type: str | None = None) -> bool:
+    """The heard-thought convention (thoughts in single quotes, delivered quieter): a must_include item
+    asks for it, or a Type B brief whose rule involves thoughts, voices or telepathy. Off for Type A."""
+    if not brief:
+        return False
+    if any("thought" in item.lower() for item in style_constraints(brief)):
+        return True
+    return narrative_type == NARRATIVE_IDS["b"] and bool(_THOUGHT_RULE.search(str(brief.get("setting", ""))))
+
+
+def abrupt_ending(brief: dict | None) -> bool:
+    """The author wants the story to stop short ("cut before he answers", "one final line")."""
+    return bool(ABRUPT_ENDING.search(str(((brief or {}).get("beats") or {}).get("ending", ""))))
 
 
 def _stem(word: str) -> str:
@@ -394,19 +481,52 @@ def said(line: str, text: str, ratio: float = 0.8) -> bool:
     return any(mentioned(line, spoken, ratio) for spoken in spoken_lines(text))
 
 
+_COLLECTIVE = re.compile(r"\b(?:townsfolk|townspeople|villagers|customers|crowd|extras|neighbours|neighbors|passers-?by|"
+                         r"never named)\b", re.I)
+
+
 def _people(brief: dict) -> list[dict]:
-    """Names and ages the author gave: "Walter Hale, 68, …" / "June, his daughter, 41, …"."""
+    """Names and ages the author gave: "Walter Hale, 68, …" / "June, his daughter, 41, …". A character
+    bullet starts with one or two capitalised words followed by a comma or an age; collective or
+    background entries ("Townsfolk: never named") are not characters."""
     people = []
     for text in [brief.get("protagonist", "")] + list(brief.get("other_characters") or []):
-        name = re.match(r"\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)", str(text))
+        name = re.match(r"\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s*(?:,|\(?\d)", str(text))
         age = re.search(r"\b(\d{1,2})\b", str(text))
-        if name:
+        if name and not _COLLECTIVE.match(name.group(1)) and not _COLLECTIVE.search(str(text)[:60]):
             people.append({"name": name.group(1), "age": age.group(1) if age else None, "text": text})
     return people
 
 
+def _quote_present(kind: str, line: str, story: str) -> bool:
+    if kind == "dialogue":
+        return said(line, story)
+    if kind == "thought":
+        return said(line, story) or any(mentioned(line, spoken, 0.8) for spoken in thought_lines(story))
+    if kind == "narrated":
+        return mentioned(line, story, 0.8)
+    return mentioned(line, story)
+
+
+_QUOTE_CLAIMS = {"dialogue": "the brief's line is not spoken as direct dialogue: \"{}\"",
+                 "thought": "the brief's heard thought is not on the page in quotes: \"{}\"",
+                 "narrated": "the brief's narrated line is missing: \"{}\"",
+                 "term": "the brief's term does not appear: \"{}\""}
+_QUOTE_FIXES = {"dialogue": "Have the character say it aloud, in double quotes, in the {} scene.",
+                "thought": "Let the character think it, in single quotes, in the {} scene.",
+                "narrated": "Let the narrator say it, word for word, in the {} scene.",
+                "term": "Use the term in the {} scene."}
+
+
+def _beat_scenes(beat: str, outline: dict | None, sections: list[dict]) -> list[int]:
+    """Screenplay scene ids that deliver ``beat`` (via the outline's arc_movements)."""
+    planned = {scene.get("scene_id") for scene in (outline or {}).get("scenes") or []
+               if set(BEAT_MOVEMENTS.get(beat, ())) & set(scene.get("arc_movements") or [])}
+    return [int(scene["id"]) for scene in sections if scene.get("outline_scene_id") in planned]
+
+
 def faithfulness(brief: dict, *, bible: dict | None, outline: dict | None, script: dict | None) -> list[dict]:
-    """Deterministic findings (major, confirmed) for the editorial review."""
+    """Deterministic findings (major, confirmed) for what is literal: must_avoid, quoted lines, names."""
     findings = []
 
     def finding(claim, evidence, recommendation, scene_ids=()):
@@ -416,39 +536,19 @@ def faithfulness(brief: dict, *, bible: dict | None, outline: dict | None, scrip
                          "certainty": "confirmed"})
     sections = (script or {}).get("sections") or []
     story_text = " ".join(str(scene.get("narration", "")) for scene in sections)
-    outline_text = " ".join(" ".join(str(scene.get(key, "")) for key in ("summary", "dramatic_action", "setting"))
-                            for scene in (outline or {}).get("scenes") or [])
-    for item in brief.get("must_include") or []:
-        if not mentioned(item, story_text + " " + outline_text):
-            finding(f"must_include item missing: {item!r}", [item], f"Add {item!r} to a fitting scene.")
     for item in brief.get("must_avoid") or []:
         scenes = [int(scene["id"]) for scene in sections if mentioned(item, scene.get("narration", ""), 0.8)]
         if scenes:
             finding(f"must_avoid item present: {item!r}", [item], f"Remove {item!r}.", scenes)
-    movements = {movement for scene in (outline or {}).get("scenes") or [] for movement in scene.get("arc_movements") or []}
-
-    def beat_scenes(beat):
-        """Screenplay scene ids that deliver ``beat`` (via the outline's arc_movements)."""
-        planned = {scene.get("scene_id") for scene in (outline or {}).get("scenes") or []
-                   if set(BEAT_MOVEMENTS.get(beat, ())) & set(scene.get("arc_movements") or [])}
-        return [int(scene["id"]) for scene in sections if scene.get("outline_scene_id") in planned]
     if sections:
-        for beat, line in beat_quotes(brief):
-            if not said(line, story_text):
-                finding(f"the brief's line is not spoken as direct dialogue: \"{line}\"", [brief["beats"][beat]],
-                        f"Have the character say it aloud, in double quotes, in the {beat.replace('_', ' ')} "
-                        f"scene: \"{line}\"", beat_scenes(beat))
-        ending = beat_scenes("ending") or [int(scene["id"]) for scene in sections[-2:]]
-        ending_text = " ".join(str(scene.get("narration", "")) for scene in sections if int(scene["id"]) in ending)
-        for item in ending_items(brief):                       # implicit must_include of the final scenes
-            if not mentioned(item, ending_text, 0.6):
-                finding(f"ending detail missing: {item!r}", [brief["beats"]["ending"]],
-                        f"Put {item!r} on the page in the final scene(s).", ending)
-    if (outline or {}).get("scenes"):
-        for beat in brief.get("beats") or {}:
-            if not set(BEAT_MOVEMENTS.get(beat, ())) & movements:
-                finding(f"beat {beat!r} has no outline scene (arc_movements)", [brief["beats"][beat]],
-                        f"Map the {beat.replace('_', ' ')} beat to a scene.")
+        for item in required_lines(brief):
+            if not _quote_present(item["kind"], item["line"], story_text):
+                beat = item["beat"].replace("_", " ")
+                finding(_QUOTE_CLAIMS[item["kind"]].format(item["line"]), [brief["beats"][item["beat"]]],
+                        _QUOTE_FIXES[item["kind"]].format(beat), _beat_scenes(item["beat"], outline, sections))
+        if any("thought" in item.lower() for item in style_constraints(brief)) and not thought_lines(story_text):
+            finding("the brief asks for heard thoughts in quotes, but no thought is in single quotes",
+                    style_constraints(brief), "Write each heard thought in single quotes, 'like this'.")
     characters = (bible or {}).get("characters") or []
     for person in _people(brief):
         match = next((item for item in characters if person["name"].split()[0].lower()
@@ -463,15 +563,165 @@ def faithfulness(brief: dict, *, bible: dict | None, outline: dict | None, scrip
     return findings
 
 
+def candidates(brief: dict, *, outline: dict | None, script: dict | None) -> list[dict]:
+    """Lexical misses: not findings yet. The editorial call confirms each one (``resolve_candidates``)."""
+    found = []
+
+    def candidate(kind, item, claim, recommendation, scene_ids=(), question=""):
+        found.append({"kind": kind, "item": item, "claim": claim, "recommendation": recommendation,
+                      "scene_ids": list(scene_ids), "question": question or f"Is this in the story: {item}"})
+    sections = (script or {}).get("sections") or []
+    story_text = " ".join(str(scene.get("narration", "")) for scene in sections)
+    outline_text = " ".join(" ".join(str(scene.get(key, "")) for key in ("summary", "dramatic_action", "setting"))
+                            for scene in (outline or {}).get("scenes") or [])
+    for item in brief.get("must_include") or []:
+        if not is_style_constraint(item) and not mentioned(item, story_text + " " + outline_text):
+            candidate("must_include", item, f"must_include item missing: {item!r}", f"Add {item!r} to a fitting scene.")
+    if sections:
+        ending = _beat_scenes("ending", outline, sections) or [int(scene["id"]) for scene in sections[-2:]]
+        ending_text = " ".join(str(scene.get("narration", "")) for scene in sections if int(scene["id"]) in ending)
+        for item in ending_items(brief):
+            if is_stage_direction(item):
+                candidate("stage_direction", item, f"the ending does not stop where the brief says: {item!r}",
+                          "End the final scene at that point; never write the direction into the narration.", ending,
+                          f"Does the final scene end at this point (it is an instruction, not text to find): {item}")
+            elif not mentioned(item, ending_text, 0.6):
+                candidate("ending", item, f"ending detail missing: {item!r}",
+                          "Dramatise it in the final scene(s).", ending)
+    if (outline or {}).get("scenes"):
+        movements = {movement for scene in outline["scenes"] for movement in scene.get("arc_movements") or []}
+        for beat, text in (brief.get("beats") or {}).items():
+            if not set(BEAT_MOVEMENTS.get(beat, ())) & movements:
+                candidate("beat", text, f"beat {beat!r} has no outline scene (arc_movements)",
+                          f"Map the {beat.replace('_', ' ')} beat to a scene.")
+    return found
+
+
+def _normal(text: str) -> str:
+    text = str(text or "").replace("’", "'").replace("‘", "'").replace("“", '"').replace("”", '"')
+    return " ".join(text.split()).lower()
+
+
+def _unverified(item: dict) -> dict:
+    return {"severity": "minor", "issue_type": "brief_faithfulness", "scene_ids": item["scene_ids"],
+            "claim": item["claim"] + " (unverified: lexical miss)", "evidence": [item["item"]],
+            "recommendation": item["recommendation"], "candidate": item["item"]}
+
+
+def resolve_candidates(review: dict, answers, script: dict) -> dict:
+    """Apply the editorial call's ``brief_check``: ``present: false`` makes a major finding; ``present:
+    true`` clears it only when ``evidence_quote`` exists verbatim in the screenplay; anything else
+    stays an unverified minor."""
+    pending = review.get("faithfulness_candidates") or []
+    if not pending:
+        return review
+    story = _normal(" ".join(str(scene.get("narration", "")) for scene in (script or {}).get("sections") or []))
+    by_item = {_normal(item.get("item")): item for item in answers or [] if isinstance(item, dict)}
+    verified, kept = [], []
+    review["minor_issues"] = [item for item in review.get("minor_issues", []) if "candidate" not in item]
+    for item in pending:
+        answer = by_item.get(_normal(item["item"]))
+        if answer is not None and answer.get("present") is False:
+            major = {"severity": "major", "issue_type": "brief_faithfulness", "scene_ids": item["scene_ids"],
+                     "claim": item["claim"], "evidence": [str(answer.get("evidence_quote") or item["item"])],
+                     "why_it_matters": "The author's brief is authoritative.",
+                     "recommendation": item["recommendation"], "certainty": "confirmed"}
+            review.setdefault("major_issues", []).append(major)
+            review.setdefault("brief_faithfulness", []).append(major)
+            if review.get("status") != "structurally_invalid":
+                review["status"] = "revision_required"
+            continue
+        quote = _normal((answer or {}).get("evidence_quote"))
+        if answer is not None and answer.get("present") is True and quote and quote in story:
+            verified.append({"item": item["item"], "scene_id": answer.get("scene_id"),
+                             "evidence_quote": answer.get("evidence_quote")})
+        else:
+            kept.append(item)
+            review["minor_issues"].append(_unverified(item))
+    review["faithfulness_candidates"] = kept
+    review["faithfulness_verified"] = list(review.get("faithfulness_verified") or []) + verified
+    return review
+
+
+PASTE_MIN_WORDS = 9
+_TOKEN = re.compile(r"[a-z0-9]+(?:'[a-z]+)?")
+
+
+def _tokens(text: str) -> list[str]:
+    return _TOKEN.findall(str(text).lower().replace("’", "'"))
+
+
+def paste_sources(brief: dict) -> list[str]:
+    """The brief's prose (beats, logline, setting, tone) without its quoted lines, which are authorised."""
+    texts = list((brief.get("beats") or {}).values()) + [brief.get(key, "") for key in ("logline", "setting", "tone")]
+    return [part for text in texts for part in _QUOTE.sub("\0", str(text or "")).split("\0") if part.strip()]
+
+
+def paste_spans(text: str, brief: dict, minimum: int = PASTE_MIN_WORDS) -> list[str]:
+    """Runs of ``minimum`` or more words of ``text`` copied from the brief's prose."""
+    grams = set()
+    for source in paste_sources(brief):
+        words = _tokens(source)
+        grams.update(tuple(words[i:i + minimum]) for i in range(len(words) - minimum + 1))
+    words = _tokens(text)
+    spans, index = [], 0
+    while index <= len(words) - minimum:
+        if tuple(words[index:index + minimum]) in grams:
+            end = index + minimum
+            while end < len(words) and tuple(words[end - minimum + 1:end + 1]) in grams:
+                end += 1
+            spans.append(" ".join(words[index:end]))
+            index = end
+        else:
+            index += 1
+    return spans
+
+
+def paste_findings(brief: dict, script: dict | None) -> list[dict]:
+    """``brief_paste`` (major): a scene copied sentences of the brief instead of dramatising them."""
+    findings = []
+    for scene in (script or {}).get("sections") or []:
+        for span in paste_spans(scene.get("narration", ""), brief):
+            findings.append({"severity": "major", "issue_type": "brief_paste", "scene_ids": [int(scene["id"])],
+                             "claim": f"Scene {scene['id']} copies the brief instead of dramatising it.",
+                             "evidence": [span], "why_it_matters": "The brief's sentences are instructions, not prose.",
+                             "recommendation": "Dramatise what must happen in your own words.", "certainty": "confirmed"})
+    return findings
+
+
+def intent_block(brief: dict) -> str:
+    """The brief for a revision: what must happen, as intent; authorised lines passed separately."""
+    beats = "".join(f"\n<intent beat=\"{beat}\">{_QUOTE.sub('(…)', str(text))}</intent>"
+                    for beat, text in (brief.get("beats") or {}).items())
+    lines = "".join(f"\n<required_line kind=\"{item['kind']}\">{item['line']}</required_line>"
+                    for item in required_lines(brief))
+    return ("Each <intent> says what must happen. It is an instruction, not text: dramatise it, never copy its "
+            "sentences. Only a <required_line> may appear word for word." + beats + lines)
+
+
+def without_beats(story_brief: dict) -> dict:
+    """The story brief for a revision or expansion prompt: the author's beats go in ``intent_block``."""
+    author = story_brief.get("author_brief")
+    if not author:
+        return story_brief
+    return {**story_brief, "author_brief": {key: value for key, value in author.items() if key != "beats"}}
+
+
 def add_findings(review: dict, story_brief: dict, *, bible, outline, script) -> dict:
     """Merge the faithfulness findings into a deterministic review (before the editorial merge)."""
     author = story_brief.get("author_brief") or {}
     if not author:
         return review
     found = faithfulness(author, bible=bible, outline=outline, script=script)
+    pasted = paste_findings({**author, "logline": story_brief.get("logline", "")}, script)
+    pending = candidates(author, outline=outline, script=script)
     review["brief_faithfulness"] = found
-    if found:
-        review.setdefault("major_issues", []).extend(found)
+    review["brief_paste"] = pasted
+    review["faithfulness_candidates"] = pending
+    review["style_constraints"] = style_constraints(author)
+    review.setdefault("minor_issues", []).extend(_unverified(item) for item in pending)
+    if found or pasted:
+        review.setdefault("major_issues", []).extend(found + pasted)
         if review.get("status") not in ("structurally_invalid",):
             review["status"] = "revision_required"
     return review

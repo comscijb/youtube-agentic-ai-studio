@@ -36,6 +36,7 @@ import config
 from agents import identity
 from video import image_checks
 from video import imagegen_templates as templates
+from video.qa import borders, copy_check
 
 RETRY_SEED_OFFSET = 1_000_003
 CHECK_SEED_OFFSET = 2_000_029
@@ -173,6 +174,9 @@ class ImageJob:
     # kind "region_edit": prompt is the edit instruction, references[0] the shot to edit,
     # edit_boxes [(normalized box, description)] become <obj_1>, <obj_2>…
     edit_boxes: list = field(default_factory=list)
+    # kind "masked_restore": references[0] the erased crop, references[1] its mask, the rest references.
+    denoise: float = 1.0
+    differential: bool = False
 
 
 def aspect_tolerance() -> float:
@@ -220,6 +224,12 @@ class ImageGenerator:
         self._validated: set[str] = set()
 
     def _graph(self, job: ImageJob, seed: int, uploaded: list[str]) -> dict:
+        if job.kind == "masked_restore":
+            return templates.build_masked_restore(
+                prompt=job.prompt, seed=seed, image=uploaded[0], mask=uploaded[1], references=uploaded[2:], denoise=job.denoise,
+                differential=job.differential,
+                width=job.size[0], height=job.size[1], steps=getattr(config, "IMAGEGEN_STEPS", None),
+                filename_prefix=f"private_gravity/{job.job_id}")
         if job.kind == "region_edit":
             return templates.build_region_edit(
                 instruction=job.prompt, seed=seed, shot=uploaded[0], references=uploaded[1:],
@@ -265,6 +275,7 @@ class ImageGenerator:
 
     def generate(self, job: ImageJob, seed: int | None = None) -> dict:
         """Generate (or reuse from cache) one image; returns a provenance record."""
+        job = replace(job, prompt=identity.lead_with_full_bleed(job.prompt))
         seed = job.seed if seed is None else seed
         key = self.cache_key(job, seed)
         cached = self.cache_dir / f"{key}.png"
@@ -280,9 +291,16 @@ class ImageGenerator:
                 checks, used_seed = saved.get("image_checks", {}), saved.get("seed", seed)
             except (OSError, ValueError):
                 pass
-        if not hit:
+        if not hit and job.kind == "masked_restore":     # a crop on its way to the composite: no frame checks apply
             uploaded = [self.client.upload_image(path) for path in job.references]
+            image, graph = self._render(job, seed, uploaded)
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
+            image.save(cached, "PNG")
+            sidecar.write_text(json.dumps({"seed": used_seed, "image_checks": checks}), encoding="utf-8")
+        elif not hit:
+            uploaded = [self.client.upload_image(self._clean_reference(path)) for path in job.references]
             image, used_seed, graph, checks = self._render_checked(job, seed, uploaded)
+            image, used_seed, graph, checks = self._quality_pass(job, image, used_seed, graph, checks, uploaded)
             self.cache_dir.mkdir(parents=True, exist_ok=True)
             image.save(cached, "PNG")
             sidecar.write_text(json.dumps({"seed": used_seed, "image_checks": checks}), encoding="utf-8")
@@ -384,6 +402,66 @@ class ImageGenerator:
             action = "cropped" if not report["panels"] else "cropped_panels_remain"
             attempts[-1]["crop_box"] = list(box)
         return image, current, graph, {"attempts": attempts, "action": action, **aspect}
+
+    def _clean_reference(self, path) -> str:
+        """A reference with a paper margin is cropped before it is sent: the margin never propagates."""
+        try:
+            with Image.open(path) as image:
+                source = image.convert("RGB")
+            report = borders.detect(source)
+            if not report["margin"]:
+                return str(path)
+            folder = self.cache_dir / "clean_refs"
+            folder.mkdir(parents=True, exist_ok=True)
+            cleaned = folder / f"{file_hash(path)[:16]}_{Path(path).stem}.png"
+            if not cleaned.is_file():
+                borders.crop(source, report)[0].save(cleaned, "PNG")
+            return str(cleaned)
+        except OSError:
+            return str(path)
+
+    def _without_margin(self, job: ImageJob, image: Image.Image, seed: int, graph: dict, uploaded: list[str]) -> tuple:
+        """Thin margin: crop it. Deeper than 5 % a side: one new seed, then crop or mark "moldura"."""
+        notes = {}
+        report = borders.detect(image)
+        if borders.verdict(report) == "regenerate":
+            print(f"   WARNING {job.job_id}: paper margin too deep to crop; regenerating with a new seed")
+            seed += CHECK_SEED_OFFSET * 7
+            image, graph, _ = self._render_framed(job, seed, uploaded)
+            report = borders.detect(image)
+            notes["border_regenerated"] = True
+        verdict = borders.verdict(report)
+        if verdict == "crop":
+            image, notes["border_cropped"] = borders.crop(image, report)
+        elif verdict == "regenerate":
+            notes["border"] = {"label": borders.LABEL, "max_share": report["max_share"], "sides": report["marked"]}
+        return image, seed, graph, notes
+
+    def _quality_pass(self, job: ImageJob, image: Image.Image, seed: int, graph: dict, checks: dict,
+                      uploaded: list[str]) -> tuple:
+        """Phase 3.9.3: margins and copies, on every generated image. A copy of a style board is generated
+        once more with a new seed and without the anchor; if it still copies, it stays, labelled."""
+        if not getattr(config, "IMAGEGEN_IMAGE_CHECKS", True):
+            return image, seed, graph, checks
+        image, seed, graph, notes = self._without_margin(job, image, seed, graph, uploaded)
+        checks = {**checks, **notes}
+        if job.kind == "region_edit":                  # an edit of the shot itself: its source is not a copy
+            return image, seed, graph, checks
+        report = copy_check.check(image, job.references)
+        if report["flagged"]:
+            print(f"   WARNING {job.job_id}: looks like a copy of {report['of']}; regenerating without the style anchor")
+            kept = [(path, name) for path, name in zip(job.references, uploaded) if not copy_check.is_anchor(path)]
+            bare = replace(job, references=[path for path, _ in kept],
+                           prompt=copy_check.without_style_sentence(job.prompt), kind=job.kind if kept else "t2i")
+            seed += CHECK_SEED_OFFSET * 11
+            image, graph, _ = self._render_framed(bare, seed, [name for _, name in kept])
+            image, seed, graph, notes = self._without_margin(bare, image, seed, graph, [name for _, name in kept])
+            checks = {**checks, **notes, "copy_regenerated": True}
+            report = copy_check.check(image, bare.references)
+            if report["flagged"]:
+                report["label"] = copy_check.LABEL
+        checks["copy_check"] = report
+        return image, seed, graph, checks
 
     def generate_with_retry(self, job: ImageJob, fallback: Callable[[ImageJob], dict | None] | None = None,
                             new_seeds: int = 1) -> dict:

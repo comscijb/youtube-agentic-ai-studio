@@ -134,7 +134,8 @@ Return ONLY JSON {{"concepts": [exactly {CONCEPT_COUNT} objects]}}. Each object:
 - "text_side": "left" or "right" — the clean dark side where the text goes (never over a face)
 - "curiosity": one sentence on why it makes a viewer click without explaining the thesis
 - "other_character": for "two_person" only, one of {characters}
-Favour the story's most shareable moment (the reversal) over the premise."""
+Favour the story's most shareable moment (the reversal) over the premise. When the STORY has a cold_open_moment,
+make the first concept that moment: the video opens with it, and the thumbnail shows the reaction, never what is withheld."""
 
 
 def generate_thumbnail_concepts(output_dir, *, brief: dict, script: dict, vb: dict, title: str = "",
@@ -154,6 +155,11 @@ def generate_thumbnail_concepts(output_dir, *, brief: dict, script: dict, vb: di
         "philosophical_question", "thumbnail_concept", "psychological_theme")}
     story["characters"] = [{"id": item["character_id"], "descriptor": item.get("descriptor", "")}
                            for item in vbible.on_screen(vb)]
+    from agents import cold_open
+    teaser = cold_open.teaser_text(script)
+    if teaser:                                            # Phase 3.9.7: in the video already, so always coherent
+        story["cold_open_moment"] = teaser
+        story["default_concept"] = "the cold-open moment (it stays unrevealed: show the reaction, never what is withheld)"
     value = generate_json(
         concepts_contract(title, characters[1:]), "thumbnail concepts",
         lambda value: validate_concepts(value, brief, title, characters[1:]),
@@ -301,7 +307,8 @@ def description_parts_contract(scene_count: int) -> str:
     return f"""You write the YouTube description parts for one Private Gravity episode (cinematic
 psychological fiction). Never spoil the ending or the reversal; never explain the thesis.
 Return ONLY JSON with:
-- "hook": 1-2 short lines (max 220 characters) from the logline that make a viewer press play
+- "hook": 1-2 short lines (max 220 characters) from the logline that make a viewer press play; never repeat a
+  line of the episode's cold open (the video already opens with it)
 - "chapter_titles": exactly {scene_count} short evocative scene titles (max {CHAPTER_TITLE_MAX} characters
   each, 2-5 words, no spoilers, no numbering), in scene order
 - "comment_question": one open question from the story's philosophical question that invites viewers

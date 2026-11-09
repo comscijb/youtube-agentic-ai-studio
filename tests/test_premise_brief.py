@@ -124,6 +124,9 @@ class FaithfulnessTests(unittest.TestCase):
         found = premise_brief.faithfulness(self.BRIEF, bible=bible, outline=self.outline(["hook", "reversal"]),
                                            script=script)
         claims = [item["claim"] for item in found]
+        self.assertTrue(all(item["severity"] == "major" and item["certainty"] == "confirmed" for item in found))
+        claims += [item["claim"] for item in premise_brief.candidates(   # lexical misses wait for the editor
+            self.BRIEF, outline=self.outline(["hook", "reversal"]), script=script)]
         self.assertIn("must_include item missing: 'Sunday phone calls'", claims)
         self.assertNotIn("must_include item missing: 'the untuned piano in the front room'", claims)
         avoid = next(item for item in found if item["claim"].startswith("must_avoid"))
@@ -132,7 +135,6 @@ class FaithfulnessTests(unittest.TestCase):
         self.assertNotIn("beat 'hook' has no outline scene (arc_movements)", claims)
         self.assertIn("Walter Hale's age changed (68 → 71)", claims)
         self.assertIn("character 'Ada' from the brief is not in the Character Bible", claims)
-        self.assertTrue(all(item["severity"] == "major" and item["certainty"] == "confirmed" for item in found))
         self.assertEqual(scriptwriter.semantic_issue_type("brief_faithfulness"), "brief_faithfulness")
 
     def test_findings_join_the_review(self):

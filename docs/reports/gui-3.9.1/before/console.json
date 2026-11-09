@@ -1,0 +1,12 @@
+[
+  {
+    "where": "1440x900",
+    "kind": "console.error",
+    "text": "Failed to load resource: the server responded with a status of 404 (NOT FOUND)"
+  },
+  {
+    "where": "1280x720",
+    "kind": "console.error",
+    "text": "Failed to load resource: the server responded with a status of 404 (NOT FOUND)"
+  }
+]
