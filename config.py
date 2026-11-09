@@ -98,6 +98,9 @@ COLD_OPEN = {"A": os.getenv("COLD_OPEN_A", "flash_forward"), "B": os.getenv("COL
 COLD_OPEN_CHAPTER_TITLE = os.getenv("COLD_OPEN_CHAPTER_TITLE", "Prologue")   # chapter 0:00 over a cold open: never a spoiler
 PSYCHOLOGICAL_THEME = os.getenv("PSYCHOLOGICAL_THEME", "")
 TARGET_DURATION_MINUTES = float(os.getenv("TARGET_DURATION_MINUTES", "15"))
+# Allowed length of a regular episode (was 12-20). Parables run ~8 min and some A/B episodes ~11; 8 keeps
+# mid-roll ad eligibility. One place for the CLI, the GUI, the brief and the scriptwriter.
+EPISODE_MINUTES = (8.0, 20.0)
 NARRATION_WPM = int(os.getenv("NARRATION_WPM", "125"))
 # Planning uses the measured delivery of the configured voice + rate from
 # data/voice_calibration.json (updated after every narration) when available;

@@ -565,8 +565,9 @@ def run_pipeline():
         return jsonify({"ok": False, "error": "Invalid narrative type"}), 400
     if video_type not in ("normal", "shorts"):
         return jsonify({"ok": False, "error": "Invalid video format"}), 400
-    if video_type == "normal" and not 12 <= target_duration <= 20:
-        return jsonify({"ok": False, "error": "Regular episodes must target 12-20 minutes"}), 400
+    low, high = config.EPISODE_MINUTES
+    if video_type == "normal" and not low <= target_duration <= high:
+        return jsonify({"ok": False, "error": f"Regular episodes must target {low:g}-{high:g} minutes"}), 400
     guard = _regeneration_guard(steps, body)
     if guard:
         return guard
@@ -821,8 +822,9 @@ def new_project():
         except premise_brief.BriefError as exc:
             return jsonify({"ok": False, "error": str(exc)}), 400
         target = premise_brief.target_minutes(brief, target) or target
-    if video_type == "normal" and not 12 <= target <= 20:
-        return jsonify({"ok": False, "error": "Regular episodes must target 12-20 minutes"}), 400
+    low, high = config.EPISODE_MINUTES
+    if video_type == "normal" and not low <= target <= high:
+        return jsonify({"ok": False, "error": f"Regular episodes must target {low:g}-{high:g} minutes"}), 400
     path = projects.create(str(body.get("title", "") or (brief or {}).get("working_title", "")),
                            video_type=video_type, target_duration=target)
     # "Novo projeto" (Phase 3.8-C): the wizard's choices; the Story Brief stage uses them.

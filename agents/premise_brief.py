@@ -283,9 +283,11 @@ def load(output_dir) -> dict | None:
 
 
 def target_minutes(brief: dict | None, requested=None) -> float | None:
-    """The brief's target duration wins over the GUI / CLI value (episodes are 12-20 minutes)."""
+    """The brief's target duration wins over the GUI / CLI value (within config.EPISODE_MINUTES)."""
+    import config
+    low, high = config.EPISODE_MINUTES
     value = (brief or {}).get("target_minutes")
-    if value and 12 <= float(value) <= 20:
+    if value and low <= float(value) <= high:
         return float(value)
     return float(requested) if requested else None
 

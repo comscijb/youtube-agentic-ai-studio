@@ -296,9 +296,9 @@
         "script": "9eda25be74c190116fa8bd5960b5ebaedbf8997a05b0f98cd5a8983b05f92b07",
         "video": "9ffddfab9e8e076f210dc67749e02b8462201362781e9b4d0521e0b9c3d4632e"
       },
-      "state": "uploaded_pending_publication",
-      "state_checked_at": "2026-11-08T01:04:04+00:00",
-      "published_at": null,
+      "state": "published",
+      "state_checked_at": "2026-11-09T18:13:09+00:00",
+      "published_at": "2026-11-09T18:13:09+00:00",
       "kind": "short",
       "parent_video_id": "Fsy9Md4a4yw",
       "short_id": "short_02",
@@ -330,7 +330,7 @@
         "video": "0a6d58988ac4c2fd1cf02803cd32dd7e5ff44a451614ea93b6736304e65aefd3"
       },
       "state": "uploaded_pending_publication",
-      "state_checked_at": "2026-11-08T01:04:04+00:00",
+      "state_checked_at": "2026-11-09T19:06:42+00:00",
       "published_at": null,
       "kind": "short",
       "parent_video_id": "Fsy9Md4a4yw",

@@ -621,7 +621,7 @@ class NarrativeGuiTests(unittest.TestCase):
     def test_run_route_rejects_out_of_range_duration_and_bad_type(self):
         import gui
         client = gui.app.test_client()
-        response = client.post("/api/run", json={"video_type": "normal", "target_duration": 8})
+        response = client.post("/api/run", json={"video_type": "normal", "target_duration": 7})   # below EPISODE_MINUTES (8-20)
         self.assertEqual(response.status_code, 400)
         response = client.post("/api/run", json={
             "video_type": "normal", "target_duration": 15,

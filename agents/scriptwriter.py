@@ -801,8 +801,9 @@ def write_script(
         target_duration_minutes or brief.get("target_duration_minutes")
         or getattr(config, "TARGET_DURATION_MINUTES", 15)
     )
-    if video_type == "normal" and not 12 <= target <= 20:
-        raise ValueError("Regular Private Gravity videos must target 12-20 minutes")
+    low, high = config.EPISODE_MINUTES
+    if video_type == "normal" and not low <= target <= high:
+        raise ValueError(f"Regular Private Gravity videos must target {low:g}-{high:g} minutes")
     token = structured.debug_dir.set(str(output))
     checkpoints = output / CHECKPOINT_FOLDER
     if force:
