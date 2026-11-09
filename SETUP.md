@@ -1,240 +1,246 @@
-# 🛠️ Private Gravity Setup Guide
+# Private Gravity Studio: Setup Guide
 
-Complete step-by-step instructions to get YouTube AI Agent Studio running from scratch.
+This guide takes you from a fresh clone to a rendered episode. The core needs only Python, ffmpeg and a Gemini key; the local media stack (ComfyUI for images, Kokoro for narration, local visual QA) is what the channel uses in production, and each piece can be added later.
 
-> **Time required:** ~10 minutes
+| Level | What you get | What you need |
+|---|---|---|
+| **1. Core** | Story brief, character bible, outline, screenplay and editorial review | Python, ffmpeg, Gemini API key |
+| **2. Images** | Generated shots, references, thumbnails | ComfyUI + FLUX 3 Image Klein models (a GPU with 8 GB VRAM works) |
+| **3. Narration** | Local channel voice with alignment and stutter QA | Kokoro in its own venv, faster-whisper |
+| **4. Visual QA** | Automatic checks on every shot | OpenCV models (CPU) + a local VLM |
+| **5. Publishing** | Upload, scheduling, publication sync | Your own Google OAuth client |
+
+Edge TTS (free, no key) and stock images (Pixabay/Openverse) remain available as fallbacks, so you can render a full video before setting up levels 2 and 3.
 
 ---
 
-## Prerequisites
+## 1. Core
 
-- Python **3.10 or newer** — [python.org/downloads](https://www.python.org/downloads/)
-- `ffmpeg` installed and on your PATH (see [Step 1b](#1b-install-ffmpeg))
-- A Google account (for Gemini + YouTube)
-- A Pixabay account (recommended primary image API; Openverse works without credentials)
+### 1.1 Prerequisites
 
----
+- Python **3.10+**
+- **ffmpeg** on your PATH (used for rendering and the final film-look pass)
 
-## Step 1 — Clone and install
-
-### 1a. Clone the repository
-
-```bash
-git clone https://github.com/yourusername/youtube-ai-agent.git
-cd youtube-ai-agent
-```
-
-### 1b. Install ffmpeg
-
-ffmpeg is required by MoviePy for video rendering.
-
-| OS | Command |
+| OS | Install ffmpeg |
 |---|---|
-| **Windows** | Download from [ffmpeg.org](https://ffmpeg.org/download.html) → extract → add `bin/` folder to PATH |
-| **Mac** | `brew install ffmpeg` |
-| **Ubuntu/Debian** | `sudo apt install ffmpeg` |
+| Windows | `winget install Gyan.FFmpeg` (or download from ffmpeg.org and add `bin/` to PATH) |
+| macOS | `brew install ffmpeg` |
+| Ubuntu/Debian | `sudo apt install ffmpeg` |
 
-Verify: `ffmpeg -version` should print version info.
+Check with `ffmpeg -version`.
 
-### 1c. Install Python dependencies
+### 1.2 Clone and install
 
 ```bash
+git clone https://github.com/comscijb/youtube-agentic-ai-studio.git
+cd youtube-agentic-ai-studio
+python -m venv .venv
+# Windows: .venv\Scripts\activate    macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-> ⚠️ **Do not upgrade** `moviepy` or `numpy` — they are pinned intentionally. See [FAQ in README](README.md#-faq).
+> `moviepy==1.0.3` and `numpy<2` are pinned on purpose. Don't upgrade them in this environment; Kokoro, which needs numpy 2, gets its own venv in step 3.
 
----
+### 1.3 Gemini API key
 
-## Step 2 — Get your API keys
-
-### 2a. Google Gemini API Key (required)
-
-1. Go to [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
-2. Sign in with your Google account
-3. Click **Create API Key**
-4. Copy the key
-
-### 2b. Pixabay API Key (recommended — free)
-
-1. Go to [pixabay.com/api/docs](https://pixabay.com/api/docs/)
-2. Create a free account and copy the API key shown in the documentation page
-3. Copy the key
-
-If the key is omitted, `STOCK_PROVIDER=auto` skips Pixabay and uses Openverse.
-
----
-
-## Step 3 — Configure your keys
-
-### Option A — Environment variables (recommended)
+1. Create a key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
+2. Copy the example settings file and add the key:
 
 ```bash
-# Mac / Linux
-export GEMINI_API_KEY="your_key_here"
-export PIXABAY_API_KEY="your_key_here"
-
-# Windows (Command Prompt)
-set GEMINI_API_KEY=your_key_here
-set PIXABAY_API_KEY=your_key_here
-
-# Windows (PowerShell)
-$env:GEMINI_API_KEY="your_key_here"
-$env:PIXABAY_API_KEY="your_key_here"
+cp .env.example .env      # Windows PowerShell: Copy-Item .env.example .env
 ```
-
-To make these permanent, add them to your shell profile (`~/.bashrc`, `~/.zshrc`) or use a `.env` file:
-
-```bash
-cp .env.example .env
-# Now edit .env and fill in your keys
-```
-
-### Option B — Local `.env` file (recommended for persistent settings)
-
-Copy `.env.example` to `.env`, then set:
 
 ```dotenv
-GEMINI_API_KEY=your_gemini_key
-GEMINI_MODEL=gemini-3.8-flash
-PIXABAY_API_KEY=your_pixabay_key
-STOCK_PROVIDER=auto
-STOCK_FALLBACK_PROVIDER=openverse
+GEMINI_API_KEY=your_key
+GEMINI_MODEL=gemini-3.6-flash
+GEMINI_TIMEOUT_SECONDS=300
 ```
 
-The GUI also saves new credentials to this gitignored file. It never writes
-API secrets into `config.py` or returns their values from `/api/settings`.
+`.env` is gitignored. The GUI can also save keys there; it never writes secrets into `config.py` or returns them from its API. Process-level environment variables win over `.env` on a fresh start.
 
-Process-level environment variables take precedence over `.env` during a fresh
-start. A key entered in the GUI takes effect immediately for the running process
-and invalidates the cached Gemini client. If a system-level `GEMINI_API_KEY`
-exists, update or remove it as well when you want the `.env` value to win after
-a restart.
-
-Model availability and quotas vary by project. Verify the current key with one
-small, explicit diagnostic run:
+Check which models your key can use (one small request, the key is never printed):
 
 ```bash
 python diagnose_gemini.py
 ```
 
-This lists accessible `generateContent` models and performs one minimal text
-request. It never prints the API key.
+The client discovers accessible models at runtime and falls back automatically; see [docs/OPERATIONS.md](docs/OPERATIONS.md) for timeouts, overload handling and `--resume`.
 
-### Stock provider behavior
-
-For each requested visual, the app checks `assets/stock_approved/`, then uses
-Pixabay when configured, then Openverse. Openverse results are accepted only
-when the API explicitly reports CC0 or Public Domain Mark. Validated downloads
-and searches are cached under `output/.stock_cache/`; provenance and manual
-review flags are recorded in `output/asset_manifest.json`.
-
----
-
-## Step 4 — Set up YouTube upload (optional)
-
-Skip this step if you just want to generate videos locally without uploading.
-
-### 4a. Create a Google Cloud project
-
-1. Go to [console.cloud.google.com](https://console.cloud.google.com)
-2. Click **Select a project → New Project**
-3. Name it (e.g. "YouTube AI Agent") and click **Create**
-
-### 4b. Enable the YouTube Data API
-
-1. In your new project, go to **APIs & Services → Library**
-2. Search for **YouTube Data API v3**
-3. Click **Enable**
-
-### 4c. Create OAuth credentials
-
-1. Go to **APIs & Services → Credentials**
-2. Click **Create Credentials → OAuth client ID**
-3. If prompted, configure the consent screen first:
-   - User Type: **External**
-   - Fill in app name, support email, and developer email
-   - Scopes: click **Add or remove scopes** → search "youtube" → select `youtube.upload`
-     and `youtube.readonly` (needed to detect when an upload becomes public)
-   - Test users: add your own Gmail address
-4. Back in Credentials → **Create Credentials → OAuth client ID**
-   - Application type: **Desktop app**
-   - Name: anything (e.g. "YT Agent Desktop")
-5. Click **Download JSON**
-6. Rename the downloaded file to `client_secret.json`
-7. Place it in the root of the project (replacing the placeholder)
-
-### 4d. First-time authentication
-
-On your first run, a browser window will open asking you to sign in with Google and grant permission. This only happens once — the token is saved locally as `youtube_token.pickle`.
-
-Tokens created before `youtube.readonly` was added lack that scope. Run
-`python -m scripts.sync_publications` once: it detects the missing scope and asks for consent
-again. Background sync never opens a browser; it logs a warning and continues.
-
-> If you see a "Google hasn't verified this app" warning, click **Advanced → Go to (app name) (unsafe)**. This is expected for personal OAuth apps in testing mode.
-
----
-
-## Step 5 — Configure the narrative workflow
-
-Open `config.py` and edit:
-
-```python
-CHANNEL_DESCRIPTION = """
-A cinematic storytelling channel exploring psychology and philosophy through original fiction.
-"""
-CHANNEL_NAME = "Private Gravity"
-NARRATIVE_TYPE = "auto"            # or one of the three explicit narrative types
-PSYCHOLOGICAL_THEME = ""            # blank lets the Story Development Agent choose
-TARGET_DURATION_MINUTES = 15         # regular episodes accept 12–20
-NARRATIVE_REVIEW_ENABLED = True      # adds one Gemini editorial-review call
-```
-
-Generation reliability and cost settings live in `.env` (see `.env.example`):
-`GEMINI_TIMEOUT_SECONDS` (300), `GEMINI_THINKING_LEVEL` (empty = model default),
-`GEMINI_REPAIR_MAX_CHARS`, `NARRATIVE_SEMANTIC_REVISION_ENABLED` (true; worst case +2 Gemini
-calls per episode) and `PUBLICATION_SYNC_INTERVAL_MINUTES` (30).
-
-The GUI exposes the same controls per run. Exact-premise mode preserves the
-entered premise; automatic mode compares weighted candidates. Disable the
-editorial review to save one model call—the deterministic schema checks still run.
-
----
-
-## Step 6 — Launch
-
-### GUI mode (recommended)
+### 1.4 First run
 
 ```bash
-python gui.py
+python gui.py          # studio at http://localhost:7070
 ```
 
-Opens at **http://localhost:7070** — configure everything visually and click Generate.
-
-### CLI mode
+Create a project from **Novo projeto** (new project), or from the command line with a premise brief:
 
 ```bash
-python pipeline.py
+python -m scripts.project new --brief-file briefs/<brief>.md --minutes 11
+python -m scripts.project list
 ```
 
-Runs the full pipeline in the terminal. The review dashboard opens automatically in your browser when the video is ready.
+Each project lives in its own folder under `projects/`, and every stage can be re-run from the project view. Before the first render, check the toolchain offline:
 
-### Before uploading
+```bash
+python -m scripts.render_preflight
+```
 
-Upload is refused until the review checklist is completed in the GUI review panel (or the
-pipeline dashboard). Uploads are public by default; a narrative status of `revision_required`
-or `structurally_invalid` additionally needs a typed override reason. Before the first render,
-run `python -m scripts.render_preflight` to check the toolchain offline.
+> The studio UI is in Portuguese. Stage names: Premissa (premise), Roteiro (script), Narração (narration), Música (music), Referências (references), Planos (shots), Vídeo, Publicação (publish).
 
 ---
 
-## Step 7 — Add background music (optional)
+## 2. Images: ComfyUI + FLUX 3 Image Klein
 
-Drop any `.mp3` or `.wav` files into the `music library/` folder.  
-The pipeline will automatically shuffle and loop them to match the video duration.
+Shots, character references and thumbnails are generated locally through ComfyUI's HTTP API.
 
-The repo includes a few dark cinematic tracks to get you started. Replace or add to them freely.
+1. Install [ComfyUI](https://github.com/comfyanonymous/ComfyUI) and start it (default `http://127.0.0.1:8188`).
+2. Put the models the graphs in `workflows/` expect in ComfyUI's model folders:
+
+| File | ComfyUI folder |
+|---|---|
+| `flux3-image-klein-int8-convrot.safetensors` | `models/diffusion_models/` |
+| `qwen3vl_4b_int8_convrot.safetensors` | `models/text_encoders/` |
+| `flux2-vae.safetensors` | `models/vae/` |
+
+3. Point the studio at ComfyUI if it is not on the default address:
+
+```dotenv
+IMAGEGEN_ENABLED=true
+IMAGEGEN_COMFYUI_URL=http://127.0.0.1:8188
+```
+
+4. Measure speed and VRAM on your machine, and pick the drawing style:
+
+```bash
+python -m scripts.calibrate_imagegen     # seconds per image, VRAM, contact sheet
+python -m scripts.calibrate_style        # style variants
+python -m scripts.generate_style_refs    # channel style anchors
+```
+
+**Without ComfyUI:** set `IMAGEGEN_ENABLED=false` and `STOCK_ENABLED=true`. Stock uses approved local assets first (`assets/stock_approved/`), then Pixabay (free key at [pixabay.com/api/docs](https://pixabay.com/api/docs/), `PIXABAY_API_KEY`), then Openverse, accepting only CC0 or Public Domain Mark results. Provenance is logged per asset.
+
+**Optional parallax:** 2.5D motion estimates depth with Depth Anything V2 on the CPU. Install `transformers` (and PyTorch) to enable it; without it, shots fall back to Ken Burns motion.
+
+---
+
+## 3. Narration: Kokoro (local)
+
+The project pins numpy below 2, while Kokoro needs numpy 2, so Kokoro runs out of process in its own venv, `.venv-tts`.
+
+1. Create the venv and install Kokoro:
+
+```bash
+python -m venv .venv-tts
+# Windows: .venv-tts\Scripts\pip install kokoro-onnx soundfile
+# macOS/Linux: .venv-tts/bin/pip install kokoro-onnx soundfile
+```
+
+2. Download `kokoro-v1.0.onnx` and `voices-v1.0.bin` from the [kokoro-onnx releases](https://github.com/thewh1teagle/kokoro-onnx/releases) into `models/tts/` (not tracked by git).
+
+3. In the main environment, install faster-whisper, used for word alignment and the stutter check:
+
+```bash
+pip install faster-whisper
+```
+
+4. Select the backend and voice in `.env`:
+
+```dotenv
+TTS_BACKEND=local
+TTS_LOCAL_ENGINE=kokoro
+TTS_VOICE=bm_lewis
+TTS_LOCAL_DEVICE=auto        # auto | cpu | cuda
+# TTS_LOCAL_PYTHON=          # only if the venv is somewhere other than .venv-tts
+```
+
+5. Audition voices side by side (render time, timing drift, loudness, stutter hits), then pick the channel voice in **Configurações → Vozes**:
+
+```bash
+python -m scripts.voice_audition --catalogue
+```
+
+   The measured speaking rate per voice is kept in `data/voice_calibration.json`; the script stage uses it to plan word counts.
+
+Other backends behind the same interface: `edge` (default, free, no key), `elevenlabs` (`ELEVENLABS_API_KEY`), and Chatterbox as a local engine (`TTS_LOCAL_ENGINE=chatterbox`, `pip install chatterbox-tts`).
+
+---
+
+## 4. Visual QA
+
+Generated shots go through layered checks before you review them: deterministic checks, then OpenCV detectors, then a vision-language model.
+
+1. Download the CPU detectors (YuNet, YOLOX-s, SFace; about 75 MB) into `models/qa/`:
+
+```bash
+python -m scripts.setup_qa_models
+python -m scripts.setup_qa_models --check
+```
+
+2. Choose the VLM layer:
+
+```dotenv
+IMAGEGEN_VISUAL_QA=true
+IMAGEGEN_QA_LAYERS=deterministic,local_vlm
+IMAGEGEN_QA_VLM_BACKEND=comfy_textgenerate     # reuses ComfyUI and the Qwen3-VL encoder above
+# IMAGEGEN_QA_VLM_BACKEND=ollama                # alternative: a local Ollama server
+# IMAGEGEN_QA_OLLAMA_MODEL=qwen2.5vl:3b         # never pulled automatically: ollama pull it yourself
+IMAGEGEN_QA_GEMINI=false                        # true adds Gemini vision as a layer
+```
+
+Check that the local VLM answers with `python -m scripts.probe_local_vlm`. Failed shots are repaired with region edits where possible (`IMAGEGEN_QA_MAX_EDITS`) before being regenerated.
+
+---
+
+## 5. Publishing to YouTube
+
+Skip this section to produce videos locally only.
+
+### 5.1 Create an OAuth client
+
+1. In [Google Cloud Console](https://console.cloud.google.com), create a project.
+2. **APIs & Services → Library**: enable **YouTube Data API v3**.
+3. **OAuth consent screen**: User type **External**; add the scopes `youtube.upload` and `youtube.readonly` (the second lets the studio detect when an upload becomes public); add your Google account as a test user.
+4. **Credentials → Create credentials → OAuth client ID → Desktop app**, then download the JSON.
+5. Save it as `client_secret.json` in the project root. It is gitignored; never commit it.
+
+The first upload opens a browser for consent and stores `youtube_token.pickle` locally (also gitignored). If you see "Google hasn't verified this app", that is expected for an app in testing mode: **Advanced → Go to (app name)**.
+
+### 5.2 Approval gate
+
+Uploads are refused until the review checklist in **Revisão e edição** (review and edit) is complete. The approval is bound to hashes of the script, video, title, description and thumbnail, so any change after approval requires a new one. Uploads are public by default; scheduling uploads as private with a publish time. A narrative status of `revision_required` or `structurally_invalid` additionally needs a typed override reason.
+
+### 5.3 Publication ledger
+
+Every upload is recorded in `data/publications.json`. A video's topic is added to `banned_topics.txt` only after YouTube reports it public. Sync runs when the GUI starts, every 30 minutes while it runs (`PUBLICATION_SYNC_INTERVAL_MINUTES`), at the start of `pipeline.py`, and on demand:
+
+```bash
+python -m scripts.sync_publications
+python -m scripts.register_publication --video-id <id> --run-dir <dir>   # register a manual upload
+```
+
+A token created before `youtube.readonly` was added lacks that scope; `sync_publications` detects this and asks for consent again.
+
+---
+
+## 6. Music
+
+Put `.mp3` or `.wav` files in `music library/`. Tracks are looped to the episode length, ducked under the narration and loudness-normalised. Use only music you have the rights to publish.
+
+---
+
+## 7. Tests
+
+The suite runs offline; every external service is mocked.
+
+```bash
+python -m unittest discover -s tests -p "test_*.py"
+```
+
+Live checks are opt-in, for example:
+
+```bash
+python -m scripts.regenerate_narrative_benchmark --confirm-live --minutes 12
+```
 
 ---
 
@@ -242,33 +248,16 @@ The repo includes a few dark cinematic tracks to get you started. Replace or add
 
 | Problem | Fix |
 |---|---|
-| `No module named 'moviepy'` | Run `pip install -r requirements.txt` again |
-| `ffmpeg not found` | Install ffmpeg and ensure it's on your PATH |
-| `RESOURCE_EXHAUSTED` / 429 | Run `python diagnose_gemini.py`, then review the project's current rate limits/billing or retry after the reported reset |
-| Gemini 401/403 | Replace the key or verify that its project has Gemini API/model access |
-| No available Gemini models | Use **Check Available Models** in Settings and verify `generateContent` access in Google AI Studio |
-| `youtube_token.pickle` auth error | Delete the file and re-run to re-authenticate |
-| Tiny/ugly video text | Install DejaVu fonts: `sudo apt install fonts-dejavu` (Linux) |
-| Flask port already in use | Change `REVIEW_PORT` in `config.py` |
-| `client_secret.json` error | Ensure you replaced the placeholder with your real Google credentials |
-| Captions out of sync | Switch to a different `VOICE_ID` in `config.py` (see voice list in file) |
+| `ffmpeg not found` | Install ffmpeg and make sure it is on your PATH, then reopen the terminal |
+| Gemini `504` / deadline exceeded | Raise `GEMINI_TIMEOUT_SECONDS`; the client already retries once with a longer deadline before falling back |
+| Gemini `429` / `RESOURCE_EXHAUSTED` or overloaded | Run `python diagnose_gemini.py`; resume the run later with `--resume` instead of starting over |
+| Gemini `401` / `403` | Replace the key or check that its project has Gemini API access |
+| ComfyUI model name mismatch | Compare the files in ComfyUI's model folders with the table in section 2 |
+| ComfyUI out of memory | Lower `IMAGEGEN_SIZE` in `config.py` or close other GPU apps; the studio frees ComfyUI memory every `IMAGEGEN_FREE_MEMORY_EVERY` shots |
+| "Kokoro is not installed" | Create `.venv-tts` with `kokoro-onnx` and put both weight files in `models/tts/` |
+| "forced alignment needs faster-whisper" | `pip install faster-whisper` in the main environment |
+| `youtube_token.pickle` auth error | Delete the file and upload again to re-authenticate |
+| Upload button disabled | Complete the review checklist; an edit after approval invalidates it |
+| Port 7070 in use | Stop the other process, or change the port at the bottom of `gui.py` |
 
----
-
-## Optional: Run as a background service
-
-To keep the studio running continuously (e.g. on a home server):
-
-```bash
-# Using nohup (Linux/Mac)
-nohup python gui.py > studio.log 2>&1 &
-
-# Using screen
-screen -S yt-studio
-python gui.py
-# Detach: Ctrl+A then D
-```
-
----
-
-If you get stuck, [open an issue](https://github.com/yourusername/youtube-ai-agent/issues) with your error message and OS.
+More detail on every subsystem is in [docs/OPERATIONS.md](docs/OPERATIONS.md). Problems or questions: [open an issue](https://github.com/comscijb/youtube-agentic-ai-studio/issues).
