@@ -91,6 +91,11 @@ END_CREDIT_SECONDS = 4.0
 # Narrative development defaults. Regular episodes can be set from 12 to 20
 # minutes in the GUI; Shorts use their own fixed pacing contract.
 NARRATIVE_TYPE = os.getenv("NARRATIVE_TYPE", "auto")
+# Phase 3.9.7: open each episode on its most dramatic moment. Per narrative type: flash_forward (a 50-100 word teaser
+# from the reversal/climax), omen (one or two lines that foretell the ending, no jump in time) or off. Settings edits it.
+COLD_OPEN = {"A": os.getenv("COLD_OPEN_A", "flash_forward"), "B": os.getenv("COLD_OPEN_B", "flash_forward"),
+             "C": os.getenv("COLD_OPEN_C", "omen")}
+COLD_OPEN_CHAPTER_TITLE = os.getenv("COLD_OPEN_CHAPTER_TITLE", "Prologue")   # chapter 0:00 over a cold open: never a spoiler
 PSYCHOLOGICAL_THEME = os.getenv("PSYCHOLOGICAL_THEME", "")
 TARGET_DURATION_MINUTES = float(os.getenv("TARGET_DURATION_MINUTES", "15"))
 NARRATION_WPM = int(os.getenv("NARRATION_WPM", "125"))

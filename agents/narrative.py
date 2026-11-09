@@ -15,7 +15,7 @@ NARRATIVE_CONTRACT_VERSION = 4
 CANONICAL_TYPE_CONTRACT = 3
 CONTENT_MODE = "cinematic_fiction"
 SCENE_TYPES = (
-    "opening", "setup", "development", "reversal", "climax", "resolution", "aftermath",
+    "opening", "setup", "development", "reversal", "climax", "resolution", "aftermath", "cold_open",
 )
 LEGACY_EDITORIAL_DIMENSIONS = (
     "structural_coherence", "causal_continuity", "chronological_continuity",
@@ -34,8 +34,9 @@ TYPE_A_ONLY_DIMENSIONS = ("strategy_success_then_cost",)
 TYPE_A = "realistic_psychological_fiction"
 ARC_MOVEMENTS = (
     "hook", "character_wound", "mechanism", "escalation_success",
-    "hidden_cost", "reversal", "philosophical_layer", "ending",
+    "hidden_cost", "reversal", "philosophical_layer", "ending", "cold_open",
 )
+OPTIONAL_MOVEMENTS = ("cold_open",)          # Phase 3.9.7: never required of a Type A outline
 NARRATIVE_TYPES = {
     "realistic_psychological_fiction",
     "philosophical_thought_experiment",
@@ -388,7 +389,8 @@ def infer_scene_type(value, index: int = 0, total: int = 1) -> str:
         ("resolution", ("resolution", "ending", "denouement", "closure")),
         ("climax", ("climax", "final confrontation", "culmination")),
         ("reversal", ("reversal", "turning point", "reveal", "discovery", "twist")),
-        ("opening", ("opening", "hook", "cold open", "introduction")),
+        ("cold_open", ("cold open", "cold_open", "teaser", "flash-forward", "omen")),
+        ("opening", ("opening", "hook", "introduction")),
         ("setup", ("setup", "inciting", "establish")),
         ("development", ("development", "escalation", "confrontation", "complication")),
     )
@@ -595,6 +597,10 @@ def validate_outline(outline: dict, bible: dict, require_dramaturgy: bool = Fals
             )
         previous_order = order
     types = [scene["section_type"] for scene in scenes]
+    if types[0] == "cold_open":                         # Phase 3.9.7: the teaser comes before the opening
+        types = types[1:] or types
+    if "cold_open" in types:
+        raise NarrativeValidationError("the cold_open scene must be the first scene")
     if types[0] not in ("opening", "setup"):
         raise NarrativeValidationError("outline is missing an opening narrative function")
     if types[-1] not in ("resolution", "aftermath"):
@@ -810,7 +816,7 @@ def missing_arc_movements(outline: dict | None, narrative_type: str | None) -> l
         return []
     declared = {item for scene in scenes for item in scene.get("arc_movements") or []
                 if isinstance(item, str)}
-    return [movement for movement in ARC_MOVEMENTS if movement not in declared]
+    return [movement for movement in ARC_MOVEMENTS if movement not in declared and movement not in OPTIONAL_MOVEMENTS]
 
 
 def deterministic_review(script: dict, target_duration_minutes: float,
@@ -820,7 +826,8 @@ def deterministic_review(script: dict, target_duration_minutes: float,
     """Measure objective readiness; editorial opinion can never erase these blockers."""
     script = normalize_script(script, outline)
     sections = script["sections"]
-    words = sum(len(scene["narration"].split()) for scene in sections)
+    # Phase 3.9.7: the cold open has its own budget, outside the story's target
+    words = sum(len(scene["narration"].split()) for scene in sections if scene.get("section_type") != "cold_open")
     expected = max(1, int(round(
         target_duration_minutes * script.get("planned_words_per_minute", 125)
     )))
@@ -978,6 +985,14 @@ def deterministic_review(script: dict, target_duration_minutes: float,
                               if item["kind"] in ("narrated", "thought", "dialogue")])
     major_issues += lint["major"]
     minor_issues += lint["minor"]
+    from agents import cold_open
+    plans = (normalize_outline(outline) if isinstance(outline, dict) else {}).get("scenes") or []
+    ending_text = " ".join([str(author.get("beats", {}).get("ending", "")) if isinstance(author.get("beats"), dict) else ""]
+                           + [str(plans[-1].get(key, "")) for key in ("decision", "consequence")] if plans else [])
+    for finding in cold_open.findings(sections, normalize_outline(outline) if isinstance(outline, dict) else None,
+                                      narrative_type=script.get("narrative_type") or (brief or {}).get("narrative_type"),
+                                      beat=cold_open.brief_beat(brief), ending_text=ending_text):
+        (major_issues if finding["severity"] == "major" else minor_issues).append(finding)
     style_lint = stacked_modifier_lint(sections)
     if style_lint["total"] > style_lint["threshold"]:
         issue = {

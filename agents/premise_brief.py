@@ -38,8 +38,8 @@ MARKDOWN_FILE = "premise_brief.md"
 JSON_FILE = "premise_brief.json"
 NARRATIVE_IDS = {"a": "realistic_psychological_fiction", "b": "philosophical_thought_experiment",
                  "c": "dark_human_parable"}
-BEAT_KEYS = ("hook", "strategy_works", "hidden_cost", "reversal", "philosophical_layer", "ending")
-BEAT_MOVEMENTS = {"hook": ("hook",), "strategy_works": ("mechanism", "escalation_success"),
+BEAT_KEYS = ("cold_open", "hook", "strategy_works", "hidden_cost", "reversal", "philosophical_layer", "ending")
+BEAT_MOVEMENTS = {"cold_open": ("cold_open",), "hook": ("hook",), "strategy_works": ("mechanism", "escalation_success"),
                   "hidden_cost": ("hidden_cost",), "reversal": ("reversal",),
                   "philosophical_layer": ("philosophical_layer",), "ending": ("ending",)}
 LIST_FIELDS = ("other_characters", "must_include", "must_avoid", "title_ideas")
@@ -53,7 +53,8 @@ ALIASES = {
     "must avoid": "must_avoid", "target minutes": "target_minutes", "duration": "target_minutes",
     "title ideas": "title_ideas", "thumbnail idea": "thumbnail_idea", "thumbnail": "thumbnail_idea",
 }
-BEAT_ALIASES = {"hook": "hook", "strategy works": "strategy_works", "strategy": "strategy_works",
+BEAT_ALIASES = {"cold open": "cold_open", "coldopen": "cold_open", "teaser": "cold_open", "omen": "cold_open",
+                "hook": "hook", "strategy works": "strategy_works", "strategy": "strategy_works",
                 "hidden cost": "hidden_cost", "cost": "hidden_cost", "reversal": "reversal", "twist": "reversal",
                 "philosophical layer": "philosophical_layer", "meaning": "philosophical_layer", "ending": "ending"}
 
@@ -77,6 +78,7 @@ Walter Hale, 68, retired piano tuner, widowed two years; wound: he was never sur
 Walter's small terraced house in Leeds, present day, autumn into winter.
 
 # Beats
+- Cold open: Walter, alone at the piano, hears Ada agree with something he knows is untrue, and stops playing. Don't say what it was.
 - Hook: Walter thanks the AI for "the best conversation I've had in years".
 - Strategy works: he stops calling June; Ada remembers everything he says.
 - Hidden cost: his stories stop changing; nobody contradicts him any more.
@@ -332,6 +334,8 @@ def coverage(brief: dict, story: dict) -> dict:
             result[key] = "preserved" if float(story.get("target_duration_minutes") or 0) == brief[key] else "overridden"
         else:
             result[key] = "passed to the bible, outline and scenes"
+    if isinstance(brief.get("beats"), dict) and brief["beats"].get("cold_open"):
+        result["cold_open"] = "the outline's cold_open scene (authoritative)"
     return result
 
 
