@@ -84,10 +84,14 @@ def time_markers(text: str) -> list[str]:
 
 
 def chronology_findings(sections: list[dict], outline: dict | None) -> list[dict]:
+    """Time-order checks. The cold open (Phase 3.9.7) previews a later scene by design: it is not checked, and its
+    content does not count as "planned earlier" for the scenes after it, so its echo stays legal."""
     findings = []
-    plans = (outline or {}).get("scenes") or []
+    plans = [plan for plan in (outline or {}).get("scenes") or [] if plan.get("section_type") != "cold_open"]
     by_id = {plan.get("scene_id"): position for position, plan in enumerate(plans)}
     for section in sections:
+        if section.get("section_type") == "cold_open":
+            continue
         text = without_speech(section.get("narration", ""))
         seen: dict[str, str] = {}
         for match in OPENER.finditer(text):

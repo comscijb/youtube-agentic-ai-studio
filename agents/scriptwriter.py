@@ -6,7 +6,7 @@ import shutil
 from pathlib import Path
 
 import config
-from agents import premise_brief, structured
+from agents import cold_open, premise_brief, structured
 from agents.gemini_client import generate
 from agents.voice_calibration import planning_wpm
 from agents.identity import STACKED_MODIFIER_RULE, TITLE_POLICY, identity_block
@@ -127,6 +127,8 @@ def _outline(brief: dict, bible: dict, video_type: str, target_minutes: float,
     target_words = 110 if video_type == "shorts" else round(target_minutes * wpm)
     scene_count = 4 if video_type == "shorts" else max(8, min(14, round(target_minutes * .75)))
     narrative_type = brief.get("narrative_type")
+    beat = cold_open.brief_beat(brief)
+    teaser_mode = "off" if video_type == "shorts" else cold_open.mode_for(narrative_type, beat)
     movement_rule = (
         "arc_movements is REQUIRED for this Type A story: tag every scene with the movement(s) it "
         "expresses so that, across the outline, all of the movements appear unless the story "
@@ -156,7 +158,7 @@ the final scene as resolution/aftermath, with a climax before it. Every scene mu
 situation through a decision, discovery, confrontation or consequence. Assign varied word budgets
 that sum approximately to the target; do not divide them mechanically. Escalate through decisions and consequences. No lecture,
 chapter summary, bullet lesson, generic CTA, or unsupported twist.""" + _author_rule(brief, "outline") + \
-        _variation_rule()
+        _variation_rule() + cold_open.outline_rule(teaser_mode, beat)
     outline = _generate_json(
         contract, "story outline", lambda value: validate_outline(
             {**value, "narrative_contract_version": NARRATIVE_CONTRACT_VERSION}, bible, True
@@ -167,7 +169,12 @@ chapter summary, bullet lesson, generic CTA, or unsupported twist.""" + _author_
     )
     if premise_brief.abrupt_ending(brief.get("author_brief")) and outline.get("scenes"):
         outline["scenes"][-1]["pace"] = "brief"        # the author's ending stops short: no padding
-    outline = rebalance_scene_word_targets(outline, target_words)
+    outline = cold_open.ensure(outline, teaser_mode, beat)
+    teaser = cold_open.plan(outline)
+    teaser_words = int(teaser["target_words"]) if teaser else 0
+    outline = rebalance_scene_word_targets(outline, target_words + teaser_words)   # the teaser's words come on top
+    if teaser:
+        outline["scenes"][0]["target_words"] = teaser_words
     outline["source_hash"] = source_hash
     outline["target_word_count"] = target_words
     outline["target_duration_minutes"] = target_minutes
@@ -259,7 +266,7 @@ Search queries must depict story-world environments/objects/actions and not educ
 Use on_screen_text only for diegetic or dramatically necessary text; otherwise empty string.
 No placeholders, headings inside narration, moral summary, subscribe request or bullet points. The
 narrator never describes the edit or the camera. A character's wardrobe belongs to the shots: mention it
-only when it matters to the action.""" + _author_rule(brief, "scenes") + extra_rule
+only when it matters to the action.""" + _author_rule(brief, "scenes") + cold_open.screenplay_rule(outline) + extra_rule
     context = f"""STORY BRIEF: {compact_json(brief)}
 CHARACTER BIBLE: {compact_json(bible)}
 FULL OUTLINE: {compact_json(outline)}
@@ -396,9 +403,11 @@ literary_style for brief_paste and screen_direction.
 
 Also return checklist: an array answering each of these with {{"item", "answer", "evidence"}}: (1) the
 time order of the scenes; (2) any sentence that reads as an instruction rather than story; (3) the
-reversal's realisation spent before the reversal scene (a minor finding, issue_type "spent_reversal");
+reversal's realisation spent before the reversal scene (a minor finding, issue_type "spent_reversal"; a cold_open
+scene previews it by design and is exempt);
 (4) the narrator explaining the theme. A character called by a role that contradicts the bible is a
-minor finding with issue_type "role_slip".""" + _author_rule(brief, "review") + _brief_check_rule(deterministic)
+minor finding with issue_type "role_slip".""" + _author_rule(brief, "review") + _brief_check_rule(deterministic) + \
+        cold_open.review_rule(outline)
     context = f"""DETERMINISTIC MEASUREMENTS: {compact_json(_measurements(deterministic))}
 STORY BRIEF: {compact_json(brief)}
 CHARACTER BIBLE: {compact_json(bible)}

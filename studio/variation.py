@@ -83,8 +83,9 @@ def opening_device(script: dict) -> str:
     return "cold-open line"
 
 
-def profile(story_brief: dict, script: dict | None = None, thumbnails: dict | None = None) -> dict:
-    """The episode's variation profile."""
+def profile(story_brief: dict, script: dict | None = None, thumbnails: dict | None = None, outline: dict | None = None) -> dict:
+    """The episode's variation profile; ``cold_open`` is its mode and the kind of moment it shows (Phase 3.9.7)."""
+    from agents import cold_open
     brief = story_brief or {}
     text = " ".join(str(brief.get(key, "")) for key in ("psychological_theme", "psychological_angle", "logline", "topic"))
     tags = normalise_tags(brief.get("theme_tags"), text)
@@ -93,7 +94,8 @@ def profile(story_brief: dict, script: dict | None = None, thumbnails: dict | No
     return {"theme_tags": tags, "primary": tags[0] if tags else "", "narrative_type": brief.get("narrative_type", ""),
             "opening_device": opening_device(script) if script else brief.get("opening_device", ""),
             "title": (script or {}).get("title") or brief.get("video_title", ""),
-            "thumbnail_composition": (selected or {}).get("concept", {}).get("composition", "")}
+            "thumbnail_composition": (selected or {}).get("concept", {}).get("composition", ""),
+            "cold_open": cold_open.moment(outline) if outline else brief.get("cold_open", {"mode": "off", "moment": ""})}
 
 
 def load_profiles(path=None) -> dict:
@@ -239,6 +241,14 @@ def checks(current: dict, past: list[dict]) -> list[dict]:
             current["opening_device"] for item in structure):
         warnings.append({"kind": "structure", "message": f"Os últimos 3 episódios têm o mesmo tipo e a mesma "
                                                          f"abertura ({current['opening_device']})."})
+    moments = [(item.get("cold_open") or {}).get("moment") for item in past[-2:]] + [(current.get("cold_open") or {}).get("moment")]
+    if len(moments) == 3 and moments[0] and all(moment == moments[0] for moment in moments):
+        warnings.append({"kind": "cold_open", "message": f"Os últimos 3 episódios abrem com o mesmo tipo de momento no "
+                                                         f"cold open ({moments[0]})."})
+    moments = [(item.get("cold_open") or {}).get("moment") for item in past[-2:]] + [(current.get("cold_open") or {}).get("moment")]
+    if len(moments) == 3 and moments[0] and all(moment == moments[0] for moment in moments):
+        warnings.append({"kind": "cold_open", "message": f"Os últimos 3 episódios abrem com o mesmo tipo de momento no "
+                                                         f"cold open ({moments[0]})."})
     for similar in title_similarity(current.get("title", ""), [item.get("title", "") for item in past]):
         warnings.append({"kind": "title", "message": f"Título parecido com: {similar['title']} "
                                                      f"({', '.join(similar['reasons'])})."})
@@ -298,7 +308,8 @@ def report(output_dir, ledger: list[dict], path=None) -> dict:
     """Profile and warnings of the episode in ``output_dir`` (story brief, script, thumbnails)."""
     output = Path(output_dir)
     current = profile(load_json(output / "story_brief.json") or load_json(output / "research.json") or {},
-                      load_json(output / "script.json"), load_json(output / "thumbnails" / "thumbnails.json"))
+                      load_json(output / "script.json"), load_json(output / "thumbnails" / "thumbnails.json"),
+                      load_json(output / "story_outline.json"))
     past = [item for item in history(ledger, path) if item.get("title") != current.get("title")]
     return {"profile": current, "history": past, "warnings": checks(current, past)}
 
