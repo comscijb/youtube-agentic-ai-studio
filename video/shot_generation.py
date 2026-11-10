@@ -47,6 +47,8 @@ CANDIDATES_FILE = "reference_candidates.json"
 CALIBRATION_FILE = Path(__file__).resolve().parent.parent / "data" / "imagegen_calibration.json"
 PORTRAIT_VIEWS = ("facing the viewer", "in a three-quarter view", "facing the viewer",
                   "in a three-quarter view")
+BODY_SIZE = (832, 1216)       # a standing figure, head to feet
+BODY_COUNT = 3
 
 
 class ApprovalRequired(RuntimeError):
@@ -104,6 +106,27 @@ def portrait_prompt(vb: dict, character_id: str, view: str) -> str:
             f"{entry.get('descriptor', character_id)}, {view}, wearing a simple plain dark top. "
             "Neutral relaxed expression, standing still, centred. Plain flat dark-grey backdrop, "
             "uniform and empty; even soft key light on the face. "
+            f"{identity.sheet_style_suffix()}")
+
+
+def default_outfit(vb: dict, character_id: str) -> str:
+    """The outfit the character wears in the most scenes (the full-body sheet's wardrobe)."""
+    entry = vbible.character(vb, character_id) or {}
+    looks = [item for item in entry.get("wardrobe") or entry.get("default_wardrobe") or [] if isinstance(item, dict) and item.get("outfit")]
+    if not looks:
+        return str(entry.get("default_outfit") or "simple everyday clothes")
+    return max(looks, key=lambda item: len(item.get("scene_ids") or []))["outfit"]
+
+
+def body_prompt(vb: dict, character_id: str) -> str:
+    """Phase 3.9.8-A: the full figure carries identity when the face is small: hair length and colour, build, height,
+    silhouette and the default wardrobe, drawn like the scenes."""
+    entry = vbible.character(vb, character_id) or {}
+    noun = identity.image_noun()
+    return (f"{_article(noun).capitalize()} {noun} full-body character reference sheet: "
+            f"{entry.get('descriptor', character_id)}, standing, the whole figure visible from head to feet, neutral "
+            f"relaxed pose, in a three-quarter view, wearing {default_outfit(vb, character_id)}. The only person in the "
+            "image. Plain flat light-grey backdrop, uniform and empty, a soft shadow on the floor; even light. "
             f"{identity.sheet_style_suffix()}")
 
 
@@ -181,7 +204,7 @@ def recurring_locations(vb: dict, shot_list: dict | None = None, output_dir=None
 
 
 LOCATION_PEOPLE_RETRIES = 3        # new seeds for a location candidate with someone in it
-BATCH_SIZES = {"character": len(PORTRAIT_VIEWS), "location": 2}
+BATCH_SIZES = {"character": len(PORTRAIT_VIEWS), "location": 2, "body": BODY_COUNT}
 
 
 def _location_job(vb: dict, lid: str, number: int, output: Path) -> ImageJob:
@@ -206,6 +229,24 @@ def _character_job(vb: dict, cid: str, number: int, output: Path) -> ImageJob:
         seed=base + number,
         output_path=str(output / "character_refs" / "candidates" / f"{safe_filename(cid)}_{number}.jpg"),
         size=PORTRAIT_SIZE, final_size=PORTRAIT_SIZE)
+
+
+def _body_job(vb: dict, cid: str, number: int, output: Path) -> ImageJob:
+    base = (vbible.character(vb, cid) or {}).get("seed", vbible.seed_for("character", cid))
+    return ImageJob(
+        job_id=f"body_{cid}_{number}", prompt=body_prompt(vb, cid), seed=base + 104729 + number,
+        output_path=str(output / "character_refs" / "candidates" / f"{safe_filename(cid)}_body_{number}.jpg"),
+        size=BODY_SIZE, final_size=BODY_SIZE)
+
+
+def generate_body_candidates(vb: dict, output_dir, generator: ImageGenerator, characters: list[str] | None = None, *,
+                             progress: Callable[[str], None] = print) -> dict:
+    """"Folha de corpo inteiro": BODY_COUNT candidates per on-screen character (or the given ones)."""
+    output = Path(output_dir)
+    drawn = [item["character_id"] for item in vbible.on_screen(vb)]
+    wanted = [cid for cid in characters or drawn if cid in drawn]
+    jobs = [("body", cid, number, _body_job(vb, cid, number, output)) for cid in wanted for number in range(1, BODY_COUNT + 1)]
+    return _run_reference_jobs(jobs, output, generator, progress)
 
 
 def image_labels(checks: dict) -> list[str]:
@@ -262,16 +303,16 @@ def generate_new_batch(vb: dict, output_dir, generator: ImageGenerator, kind: st
                        progress: Callable[[str], None] = print) -> dict:
     """"Gerar novos candidatos": a new batch with new seeds (new numbers); earlier ones stay in the history."""
     output = Path(output_dir)
-    if kind == "character" and ident not in [item["character_id"] for item in vbible.on_screen(vb)]:
+    if kind in ("character", "body") and ident not in [item["character_id"] for item in vbible.on_screen(vb)]:
         raise ValueError(f"no reference for {ident!r} (unknown, voice only or no body)")
     if kind == "location" and not vbible.location(vb, ident):
         raise ValueError(f"unknown location {ident!r}")
     if kind not in BATCH_SIZES:
-        raise ValueError("kind must be character or location")
+        raise ValueError("kind must be character, body or location")
     existing = (load_json(output / CANDIDATES_FILE) or {}).get(vbible.reference_key(kind, ident), [])
     start = max([int(item["number"]) for item in existing] or [0]) + 1
     batch = max([int(item.get("batch", 1)) for item in existing] or [0]) + 1
-    make = _character_job if kind == "character" else _location_job
+    make = {"character": _character_job, "body": _body_job, "location": _location_job}[kind]
     jobs = [(kind, ident, number, make(vb, ident, number, output))
             for number in range(start, start + BATCH_SIZES[kind])]
     return _run_reference_jobs(jobs, output, generator, progress, batch=batch)
@@ -317,8 +358,8 @@ def approve_reference(vb: dict, kind: str, ident: str, number: int, output_dir) 
                    and candidate_is_current(vbible.reference_key(kind, ident), item)), None)
     if not chosen or not (output / chosen["path"]).is_file():
         raise FileNotFoundError(f"no candidate #{number} for {kind} {ident}; generate candidates first")
-    folder = "character_refs" if kind == "character" else "location_refs"
-    target = output / folder / f"{safe_filename(ident)}.png"
+    folder = "character_refs" if kind in ("character", "body") else "location_refs"
+    target = output / folder / f"{safe_filename(ident)}{'_body' if kind == 'body' else ''}.png"
     target.parent.mkdir(parents=True, exist_ok=True)
     with Image.open(output / chosen["path"]) as image:
         image.convert("RGB").save(target, "PNG")

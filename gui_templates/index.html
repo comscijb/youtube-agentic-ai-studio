@@ -2945,8 +2945,28 @@ function loadImagegen() {
       block.style.cssText = 'margin-bottom:8px';
       const label = document.createElement('div');
       label.style.cssText = 'font-size:11px;margin-bottom:4px;color:' + (ref.approved ? 'var(--green)' : 'var(--dim)');
-      label.textContent = `${ref.kind} · ${ref.id} ${ref.approved ? '✓ approved'
+      const kindName = ref.kind === 'body' ? 'corpo inteiro' : ref.kind;
+      label.textContent = `${kindName} · ${ref.id} ${ref.approved ? '✓ approved'
+        : ref.kind === 'body' ? '— recomendada para planos abertos e silhuetas'
         : ref.optional ? '— opcional (1 cena, menos de 3 planos)' : '— choose one'}`;
+      if (ref.kind === 'body' && !ref.candidates.length) {
+        const gen = document.createElement('button');
+        gen.className = 'btn btn-ghost';
+        gen.style.cssText = 'font-size:10px;padding:1px 6px;margin-left:6px';
+        gen.textContent = 'Folha de corpo inteiro';
+        gen.title = 'Três candidatas: de pé, corpo inteiro, roupa padrão, no estilo das cenas (ComfyUI)';
+        gen.onclick = () => igPost('/api/imagegen/references/new_batch', {kind: 'body', id: ref.id});
+        label.appendChild(gen);
+      }
+      if (ref.kind === 'character' && ref.approved) {
+        const fresh = document.createElement('button');
+        fresh.className = 'btn btn-ghost';
+        fresh.style.cssText = 'font-size:10px;padding:1px 6px;margin-left:6px';
+        fresh.textContent = 'Gerar folha nova (estilo das cenas)';
+        fresh.title = 'Para uma folha mais velha ou dura que os planos: candidatas novas no traço das cenas; a aprovada continua valendo';
+        fresh.onclick = () => igPost('/api/imagegen/references/new_batch', {kind: 'character', id: ref.id});
+        label.appendChild(fresh);
+      }
       if (ref.kind === 'location') {           // optional for any location; recurring ones get it automatically
         const gen = document.createElement('button');
         gen.className = 'btn btn-ghost';

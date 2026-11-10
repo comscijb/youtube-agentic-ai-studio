@@ -283,7 +283,9 @@ def sheet_style_suffix(style: str | None = None, variant: str | None = None) -> 
     variant = variant or style_variant()
     medium = DARK_ILLUSTRATION["medium"].replace(", painterly smoke and fog", "")
     technique = STYLE_VARIANTS[variant].split(";")[0]
-    return (f"{FULL_BLEED}. {medium}; {technique}. Stylised but consistent face with gaunt planes. "
+    # Phase 3.9.8-B: no "gaunt planes" any more. The sheet aged and hardened the face, the shots drew it younger and
+    # smoother, and identity was lost between the two registers; sheets now share the scenes' drawing.
+    return (f"{FULL_BLEED}. {medium}; {technique}. Stylised but consistent face, drawn exactly as in the scenes. "
             f"{palette_text()}. Clean image without lettering or watermark.")
 
 

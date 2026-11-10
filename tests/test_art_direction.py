@@ -122,8 +122,10 @@ class ComposeTests(unittest.TestCase):
         vb = json.loads(json.dumps(VISUAL_BIBLE))
         vb["characters"][1]["wardrobe"][0]["grooming"] = "light make-up"
         prompt = shots_module.compose_shot(self.shot(), vb, "unused", assume_references=True)["prompt"]
-        self.assertIn("the woman from the first image, with dark bob, wearing an ivory silk shirt, light make-up, "
-                      "poised, hair neatly pinned, composed expression", prompt)
+        # Phase 3.9.8-B: with a reference, the sheet carries the hair and the face ("dark bob", make-up are not repeated)
+        self.assertIn("the woman from the first image, wearing an ivory silk shirt, poised, hair neatly pinned, "
+                      "composed expression", prompt)
+        self.assertNotIn("dark bob", prompt.split("Setting:")[0])
         self.assertIn("vaulted concrete loft, blackened oak table, smoked decanters, immaculate", prompt)
         self.assertIn("Exactly one person in the scene: the woman from the first image.", prompt)
         self.assertNotIn("guests", prompt)

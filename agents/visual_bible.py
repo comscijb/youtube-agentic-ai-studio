@@ -489,7 +489,7 @@ def approved_reference(vb: dict, kind: str, identifier: str, output_dir) -> str 
     entry = (vb.get("references") or {}).get(reference_key(kind, identifier))
     if not entry:
         return None
-    if kind == "character" and presence(vb, identifier) == "none":
+    if kind in ("character", "body") and presence(vb, identifier) == "none":
         return None          # a character with no body never has a portrait
     if entry.get("style_hash", identity.style_hash("cinematic_photo")) != identity.style_hash():
         return None

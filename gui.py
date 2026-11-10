@@ -1507,11 +1507,12 @@ def imagegen_status():
     recurring = {item["location_id"] for item in shotgen.recurring_locations(vb, shot_list)}
     # Every location is listed: recurring ones need a reference, the others may get one ("Gerar referência").
     for kind, items in (("character", vbible.on_screen(vb)),          # no portrait for voice-only / bodiless
+                        ("body", vbible.on_screen(vb)),               # Phase 3.9.8-A: identity at a distance
                         ("location", vb.get("locations", []))):
         for item in items:
-            ident = item[f"{kind}_id"]
+            ident = item["location_id" if kind == "location" else "character_id"]
             references.append({
-                "kind": kind, "id": ident, "optional": kind == "location" and ident not in recurring,
+                "kind": kind, "id": ident, "optional": (kind == "location" and ident not in recurring) or kind == "body",
                 "approved": bool(vbible.approved_reference(vb, kind, ident, output)),
                 "approved_path": (vb.get("references") or {}).get(vbible.reference_key(kind, ident), {}).get("path"),
                 "candidates": [item for item in candidates.get(vbible.reference_key(kind, ident), [])
@@ -1626,7 +1627,7 @@ def imagegen_new_batch():
     body = request.get_json(force=True) or {}
     kind, ident = str(body.get("kind", "")), str(body.get("id", ""))
     vb = load_json(Path(config.OUTPUT_DIR, vbible.FILE_NAME)) or {}
-    known = ([item["character_id"] for item in vbible.on_screen(vb)] if kind == "character"
+    known = ([item["character_id"] for item in vbible.on_screen(vb)] if kind in ("character", "body")
              else [item["location_id"] for item in vb.get("locations", [])] if kind == "location" else [])
     if ident not in known:
         return jsonify({"ok": False, "error": f"No reference for {kind} {ident!r}"}), 400

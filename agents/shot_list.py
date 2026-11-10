@@ -829,12 +829,22 @@ def is_faceless(shot: dict) -> bool:
     return shot.get("face_visibility") == "none" or shot.get("shot_type") in ("wide", "silhouette", "over_the_shoulder")
 
 
+def reference_kinds(shot: dict) -> list[str]:
+    """Phase 3.9.8-A: which sheets a character sends, primary first. A face sheet for close-ups and mediums with a face;
+    for faceless and distant shots ``config.FACELESS_PORTRAIT_REFERENCE`` by shot type ("body" the full-body sheet,
+    "keep"/"face" the face sheet, "both", "none"); a medium with a partial face sends both when slots allow."""
+    if is_faceless(shot):
+        choices = getattr(config, "FACELESS_PORTRAIT_REFERENCE", {}) or {}
+        choice = choices.get(shot.get("shot_type"), choices.get("faceless", "keep"))
+        return {"none": [], "body": ["body"], "both": ["body", "character"]}.get(choice, ["character"])
+    if shot.get("face_visibility") == "partial" and shot.get("shot_type") == "medium":
+        return ["character", "body"]
+    return ["character"]
+
+
 def portrait_reference_wanted(shot: dict) -> bool:
-    """Whether a faceless shot sends the character's portrait (``config.FACELESS_PORTRAIT_REFERENCE``, by shot type)."""
-    if not is_faceless(shot):
-        return True
-    choices = getattr(config, "FACELESS_PORTRAIT_REFERENCE", {}) or {}
-    return choices.get(shot.get("shot_type"), choices.get("faceless", "keep")) != "none"
+    """Whether a shot sends any character sheet (``reference_kinds``)."""
+    return bool(reference_kinds(shot))
 
 
 _FACELESS_VIEW = {"silhouette": "seen only in silhouette, far from the viewer",
@@ -921,17 +931,29 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
     by_importance = sorted(listed, key=lambda cid: order.index(cid) if cid in order else len(order))
     characters = [cid for cid in listed if cid in by_importance[:MAX_CHARACTER_REFS]]
     background = [cid for cid in listed if cid not in characters]
-    references, slots, ref_names = [], [], {}
+    references, slots, ref_names, ref_kinds, secondary = [], [], {}, {}, []
+    kinds = reference_kinds(shot)
+
+    def sheet(kind: str, cid: str) -> str | None:
+        path = vbible.approved_reference(vb, kind, cid, output_dir)
+        if path or (assume_references and kind == "character"):
+            return path or f"character_refs/{safe_filename(cid)}.png"
+        return None
+
     for cid in characters:
-        if not portrait_reference_wanted(shot):
-            break
-        path = vbible.approved_reference(vb, "character", cid, output_dir)
-        if path or assume_references:
-            references.append(path or f"character_refs/{safe_filename(cid)}.png")
-            slots.append({"slot": len(references) - 1, "kind": "character", "id": cid})
+        for position, kind in enumerate(kinds):
+            path = sheet(kind, cid)
+            if not path:
+                continue                                  # no full-body sheet yet: the next kind, if any
+            if cid in ref_names:
+                secondary.append((kind, cid, path))       # placed after the location, before the style anchor
+                continue
+            references.append(path)
+            slots.append({"slot": len(references) - 1, "kind": kind, "id": cid})
             entry = vbible.character(vb, cid) or {}
             ref_names[cid] = f"the {_noun(entry.get('descriptor', ''))} from the " \
                              f"{ORDINALS[len(references) - 1]} image"
+            ref_kinds[cid] = kind
     location = vbible.location(vb, shot.get("location")) or {}
     location_text = location.get("descriptor", "")
     exterior = bool(location) and not vbible.location_interior(location)    # Phase 3.9.3-F: no rooms on a moor
@@ -943,6 +965,15 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
         slots.append({"slot": len(references) - 1, "kind": "location", "id": location.get("location_id")})
         location_text = f"in the {'room' if not exterior else 'place'} from the {ORDINALS[len(references) - 1]} image"
     location_text = _setting_text(location_text, shot.get("setting_condition", ""))
+    figure_text = ""
+    for kind, cid, path in secondary:
+        if len(references) >= 4:
+            break
+        references.append(path)
+        slots.append({"slot": len(references) - 1, "kind": kind, "id": cid})
+        pronoun = {"woman": "Her", "man": "His"}.get(_noun((vbible.character(vb, cid) or {}).get("descriptor", "")), "Their")
+        figure_text += f" {pronoun} full figure, hair and build as in the {ORDINALS[len(references) - 1]} image." \
+            if kind == "body" else f" {pronoun} face as in the {ORDINALS[len(references) - 1]} image."
     others = shot.get("others_present")
     if others is None:      # shot lists before version 2 have no others_present
         others = bool(unnamed_people(shot.get("action", ""), len(characters)))
@@ -961,7 +992,7 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
 
     appearance = shot.get("appearance") or {}
     subjects = [character_sentence(cid, vb, shot.get("scene_id", ""), str(appearance.get(cid) or ""),
-                                   ref_names.get(cid, "")) for cid in characters]
+                                   ref_names.get(cid, ""), now=ref_kinds.get(cid) == "body") for cid in characters]
     action = _cap(str(shot.get("action", "")).rstrip("."), ACTION_TEXT_MAX)
     article = "an" if noun[0] in "aeiou" else "a"
     # Explicit headcount; a 4th+ listed character (no slot left) stays far and indistinct.
@@ -973,7 +1004,7 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
         framing = over_the_shoulder(characters, vb, ref_names)
     if references:
         lead = f"Create {article} {noun} of " + "; and ".join(subjects) if subjects else f"Create {article} {noun}"
-        prompt = f"{lead}. {action}. {crowd} Setting: {location_text}. {framing}. {style_text} {style}"
+        prompt = f"{lead}.{figure_text} {action}. {crowd} Setting: {location_text}. {framing}. {style_text} {style}"
         kind = "ref"
     else:
         people = f" Featuring {'; and '.join(subjects)}." if subjects else ""
@@ -1069,21 +1100,36 @@ def _cap(text: str, limit: int) -> str:
     return cut.rstrip(",;. ")
 
 
-def character_sentence(cid: str, vb: dict, scene_id: str, moment: str = "", ref_name: str = "") -> str:
+_HAIR_OR_FACE = re.compile(r"\b(?:hair|bob|braid|ponytail|bun|fringe|bangs|curls?|eyes?|face|jaw|skin|freckles?|"
+                           r"wrinkles?|beard|moustache|mustache|makeup|make-up|lips?)\b", re.I)
+
+
+def character_sentence(cid: str, vb: dict, scene_id: str, moment: str = "", ref_name: str = "", *, now: bool = False) -> str:
     """One clause list per character: reference name (or descriptor when there is no reference)
     + signature markers + this scene's outfit + this scene's state + this moment, without
-    repeats or phrases from other scenes."""
+    repeats or phrases from other scenes.
+
+    Phase 3.9.8-B: with a reference the text never re-describes the face or the hair (the sheet carries them; the text
+    only pulled the model back to its default face): only the scene's wardrobe, expression, pose and the signature
+    markers that agree with the sheet. ``now``: the reference is the full-body sheet in its default outfit."""
     entry = vbible.character(vb, cid) or {}
     pieces = [ref_name] if ref_name else [part.strip() for part in
                                           str(entry.get("descriptor") or cid).rstrip(". ").split(",")]
     markers = vbible.signature_markers(vb, cid)
+    if ref_name:
+        conflicts = set(entry.get("marker_conflicts") or [])
+        markers = [marker for marker in markers if marker not in conflicts and not _HAIR_OR_FACE.search(marker)]
     if markers:
         pieces.append("with " + " and ".join(markers))
     outfit = scene_scoped(vbible.wardrobe(vb, cid, scene_id), scene_id)
     if outfit:
-        pieces.append("wearing " + outfit[0].lower() + outfit[1:])
-    for extra in (vbible.grooming(vb, cid, scene_id), vbible.scene_state(vb, cid, scene_id), moment):
-        pieces += [part for part in scene_scoped(extra, scene_id).split(", ") if part]
+        pieces.append(("now wearing " if now else "wearing ") + outfit[0].lower() + outfit[1:])
+    grooming = vbible.grooming(vb, cid, scene_id)
+    for extra in (grooming, vbible.scene_state(vb, cid, scene_id), moment):
+        parts = [part for part in scene_scoped(extra, scene_id).split(", ") if part]
+        if ref_name and extra is grooming:
+            parts = [part for part in parts if not _HAIR_OR_FACE.search(part)]
+        pieces += parts
     kept, seen = [], []
     for piece in pieces:
         norm = _norm(piece)
