@@ -1,0 +1,51 @@
+{
+ "hannah_price": {
+  "reading": {
+   "hair_length": "shoulder",
+   "hair_colour": "auburn",
+   "hair_style": "centre-parted straight",
+   "eye_colour": "brown",
+   "age_range": "40-50",
+   "build": "slender",
+   "distinctive": [
+    "detailed cross-hatching shading",
+    "prominent facial line-work",
+    "slight smile with defined lip lines"
+   ],
+   "provenance": {
+    "source": "gemini-vision",
+    "image": "hannah_price.png",
+    "at": "2026-11-10T18:18:19+00:00"
+   }
+  },
+  "differences": [
+   {
+    "field": "eye_colour",
+    "descriptor": "hazel",
+    "sheet": "brown",
+    "message": "olhos — descritor: avelã / folha: brown"
+   }
+  ]
+ },
+ "leo_price": {
+  "reading": {
+   "hair_length": "short",
+   "hair_colour": "brown",
+   "hair_style": "side-parted short hair",
+   "eye_colour": "brown",
+   "age_range": "8-12",
+   "build": "slender",
+   "distinctive": [
+    "small mark on chin",
+    "subtle freckles on cheeks",
+    "cross-hatched shading details"
+   ],
+   "provenance": {
+    "source": "gemini-vision",
+    "image": "leo_price.png",
+    "at": "2026-11-10T18:19:19+00:00"
+   }
+  },
+  "differences": []
+ }
+}

@@ -1,0 +1,590 @@
+{
+"s00_01": {
+"hannah_price": {
+"status": "generic",
+"similarity": 0.228,
+"face_px": 75,
+"anchors": 3
+}
+},
+"s00_02": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.514,
+"face_px": 270,
+"anchors": 3
+}
+},
+"s00_03": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.875,
+"face_px": 308,
+"anchors": 3
+}
+},
+"s00_04": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.844,
+"face_px": 463,
+"anchors": 3
+}
+},
+"s00_05": {
+"hannah_price": {
+"status": "generic",
+"similarity": 0.263,
+"face_px": 67,
+"anchors": 3
+}
+},
+"s01_01": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.596,
+"face_px": 133,
+"anchors": 3
+},
+"leo_price": {
+"status": "match",
+"similarity": 0.505,
+"face_px": 124,
+"anchors": 3
+}
+},
+"s01_02": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.762,
+"face_px": 194,
+"anchors": 3
+}
+},
+"s01_03": {
+"leo_price": {
+"status": "match",
+"similarity": 0.862,
+"face_px": 287,
+"anchors": 3
+}
+},
+"s01_05": {
+"hannah_price": {
+"status": "generic",
+"similarity": 0.429,
+"face_px": 240,
+"anchors": 3
+},
+"leo_price": {
+"status": "match",
+"similarity": 0.714,
+"face_px": 154,
+"anchors": 3
+}
+},
+"s01_06": {
+"leo_price": {
+"status": "match",
+"similarity": 0.83,
+"face_px": 477,
+"anchors": 2
+}
+},
+"s01_07": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.658,
+"face_px": 226,
+"anchors": 3
+}
+},
+"s01_08": {
+"hannah_price": {
+"status": "generic",
+"similarity": 0.18,
+"face_px": 98,
+"anchors": 3
+},
+"leo_price": {
+"status": "generic",
+"similarity": 0.4,
+"face_px": 115,
+"anchors": 3
+}
+},
+"s01_09": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.94,
+"face_px": 423,
+"anchors": 2
+}
+},
+"s02_02": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.595,
+"face_px": 189,
+"anchors": 3
+}
+},
+"s02_03": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.721,
+"face_px": 272,
+"anchors": 3
+}
+},
+"s02_04": {
+"hannah_price": {
+"status": "generic",
+"similarity": 0.285,
+"face_px": 101,
+"anchors": 3
+}
+},
+"s02_05": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.653,
+"face_px": 478,
+"anchors": 3
+}
+},
+"s02_06": {
+"hannah_price": {
+"status": "small",
+"face_px": 28,
+"hair": {
+"checked": true,
+"hair": "brown",
+"expected_hair": "red",
+"clothes": "blond",
+"expected_clothes": "cream",
+"notes": [
+"cabelo red esperado, brown encontrado",
+"roupa cream esperada, blond encontrada"
+]
+}
+}
+},
+"s02_08": {
+"hannah_price": {
+"status": "generic",
+"similarity": 0.488,
+"face_px": 191,
+"anchors": 3
+}
+},
+"s02_09": {
+"hannah_price": {
+"status": "generic",
+"similarity": 0.391,
+"face_px": 80,
+"anchors": 3
+}
+},
+"s02_10": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.94,
+"face_px": 444,
+"anchors": 2
+}
+},
+"s03_02": {
+"hannah_price": {
+"status": "generic",
+"similarity": 0.276,
+"face_px": 94,
+"anchors": 3
+}
+},
+"s03_03": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.866,
+"face_px": 231,
+"anchors": 3
+}
+},
+"s03_04": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.937,
+"face_px": 363,
+"anchors": 3
+}
+},
+"s03_05": {
+"hannah_price": {
+"status": "generic",
+"similarity": 0.234,
+"face_px": 67,
+"anchors": 3
+}
+},
+"s03_06": {
+"hannah_price": {
+"status": "generic",
+"similarity": 0.296,
+"face_px": 128,
+"anchors": 3
+}
+},
+"s03_07": {
+"hannah_price": {
+"status": "no_face",
+"face_px": 0,
+"hair": {
+"checked": true,
+"hair": "blond",
+"expected_hair": "red",
+"clothes": "blond",
+"expected_clothes": "cream",
+"notes": [
+"cabelo red esperado, blond encontrado",
+"roupa cream esperada, blond encontrada"
+]
+}
+}
+},
+"s03_08": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.807,
+"face_px": 254,
+"anchors": 3
+}
+},
+"s03_09": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.917,
+"face_px": 472,
+"anchors": 2
+}
+},
+"s03_10": {
+"hannah_price": {
+"status": "generic",
+"similarity": 0.147,
+"face_px": 60,
+"anchors": 3
+}
+},
+"s03_11": {
+"hannah_price": {
+"status": "generic",
+"similarity": 0.251,
+"face_px": 102,
+"anchors": 3
+}
+},
+"s04_01": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.505,
+"face_px": 158,
+"anchors": 3
+},
+"leo_price": {
+"status": "generic",
+"similarity": 0.483,
+"face_px": 135,
+"anchors": 3
+}
+},
+"s04_02": {
+"leo_price": {
+"status": "match",
+"similarity": 0.825,
+"face_px": 218,
+"anchors": 2
+}
+},
+"s04_03": {
+"leo_price": {
+"status": "match",
+"similarity": 0.92,
+"face_px": 424,
+"anchors": 2
+}
+},
+"s04_04": {
+"leo_price": {
+"status": "generic",
+"similarity": 0.435,
+"face_px": 171,
+"anchors": 3
+}
+},
+"s04_05": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.902,
+"face_px": 223,
+"anchors": 3
+},
+"leo_price": {
+"status": "match",
+"similarity": 0.871,
+"face_px": 213,
+"anchors": 3
+}
+},
+"s04_06": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.72,
+"face_px": 205,
+"anchors": 3
+},
+"leo_price": {
+"status": "match",
+"similarity": 0.7,
+"face_px": 237,
+"anchors": 3
+}
+},
+"s04_07": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.93,
+"face_px": 431,
+"anchors": 3
+}
+},
+"s04_09": {
+"leo_price": {
+"status": "generic",
+"similarity": 0.425,
+"face_px": 281,
+"anchors": 3
+},
+"hannah_price": {
+"status": "generic",
+"similarity": 0.405,
+"face_px": 251,
+"anchors": 3
+}
+},
+"s04_10": {
+"leo_price": {
+"status": "match",
+"similarity": 0.819,
+"face_px": 520,
+"anchors": 3
+}
+},
+"s04_11": {
+"hannah_price": {
+"status": "no_face",
+"face_px": 0,
+"hair": {
+"checked": true,
+"hair": "red",
+"expected_hair": "red",
+"clothes": "brown",
+"expected_clothes": "cream",
+"notes": [
+"roupa cream esperada, brown encontrada"
+]
+}
+}
+},
+"s04_12": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.659,
+"face_px": 263,
+"anchors": 3
+},
+"leo_price": {
+"status": "match",
+"similarity": 0.617,
+"face_px": 282,
+"anchors": 3
+}
+},
+"s04_13": {
+"leo_price": {
+"status": "match",
+"similarity": 0.648,
+"face_px": 352,
+"anchors": 3
+},
+"hannah_price": {
+"status": "generic",
+"similarity": 0.478,
+"face_px": 258,
+"anchors": 3
+}
+},
+"s05_01": {
+"hannah_price": {
+"status": "generic",
+"similarity": 0.297,
+"face_px": 88,
+"anchors": 3
+}
+},
+"s05_02": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.81,
+"face_px": 304,
+"anchors": 3
+}
+},
+"s05_03": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.528,
+"face_px": 312,
+"anchors": 3
+}
+},
+"s05_04": {
+"hannah_price": {
+"status": "generic",
+"similarity": 0.359,
+"face_px": 221,
+"anchors": 3
+}
+},
+"s05_06": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.898,
+"face_px": 327,
+"anchors": 3
+}
+},
+"s05_07": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.575,
+"face_px": 251,
+"anchors": 3
+}
+},
+"s05_08": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.825,
+"face_px": 268,
+"anchors": 3
+}
+},
+"s05_09": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.876,
+"face_px": 452,
+"anchors": 3
+}
+},
+"s05_10": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.888,
+"face_px": 321,
+"anchors": 3
+}
+},
+"s06_02": {
+"hannah_price": {
+"status": "generic",
+"similarity": 0.385,
+"face_px": 204,
+"anchors": 3
+}
+},
+"s06_03": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.923,
+"face_px": 339,
+"anchors": 3
+}
+},
+"s06_04": {
+"hannah_price": {
+"status": "generic",
+"similarity": 0.233,
+"face_px": 70,
+"anchors": 3
+}
+},
+"s06_06": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.865,
+"face_px": 232,
+"anchors": 3
+}
+},
+"s06_07": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.743,
+"face_px": 298,
+"anchors": 3
+}
+},
+"s06_08": {
+"hannah_price": {
+"status": "generic",
+"similarity": 0.296,
+"face_px": 81,
+"anchors": 3
+}
+},
+"s07_01": {
+"hannah_price": {
+"status": "generic",
+"similarity": 0.231,
+"face_px": 63,
+"anchors": 3
+}
+},
+"s07_02": {
+"hannah_price": {
+"status": "generic",
+"similarity": 0.496,
+"face_px": 210,
+"anchors": 3
+}
+},
+"s07_03": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.629,
+"face_px": 195,
+"anchors": 3
+},
+"leo_price": {
+"status": "generic",
+"similarity": 0.49,
+"face_px": 203,
+"anchors": 3
+}
+},
+"s07_05": {
+"hannah_price": {
+"status": "match",
+"similarity": 0.537,
+"face_px": 237,
+"anchors": 3
+},
+"leo_price": {
+"status": "match",
+"similarity": 0.757,
+"face_px": 193,
+"anchors": 3
+}
+}
+}

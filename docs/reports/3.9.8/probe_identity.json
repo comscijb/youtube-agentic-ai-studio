@@ -1,0 +1,4713 @@
+{
+ "rows": [
+  {
+   "project": "sfem",
+   "shot": "s02_04",
+   "type": "silhouette",
+   "variant": "A",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 2,
+   "expected": 1,
+   "extra": 1,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.224,
+     "face_px": 83,
+     "anchors": 0
+    }
+   },
+   "seconds": 37.0,
+   "path": "sfem\\probe\\s02_04_A_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s02_04",
+   "type": "silhouette",
+   "variant": "A",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.265,
+     "face_px": 124,
+     "anchors": 0
+    }
+   },
+   "seconds": 29.9,
+   "path": "sfem\\probe\\s02_04_A_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s02_04",
+   "type": "silhouette",
+   "variant": "A",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.367,
+     "face_px": 155,
+     "anchors": 0
+    }
+   },
+   "seconds": 29.9,
+   "path": "sfem\\probe\\s02_04_A_2.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s02_04",
+   "type": "silhouette",
+   "variant": "B",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 2,
+   "expected": 1,
+   "extra": 1,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.344,
+     "face_px": 80,
+     "anchors": 0
+    }
+   },
+   "seconds": 51.1,
+   "path": "sfem\\probe\\s02_04_B_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s02_04",
+   "type": "silhouette",
+   "variant": "B",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.383,
+     "face_px": 90,
+     "anchors": 0
+    }
+   },
+   "seconds": 43.1,
+   "path": "sfem\\probe\\s02_04_B_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s02_04",
+   "type": "silhouette",
+   "variant": "B",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "match",
+     "similarity": 0.544,
+     "face_px": 132,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.2,
+   "path": "sfem\\probe\\s02_04_B_2.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s02_08",
+   "type": "medium",
+   "variant": "A",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.26,
+     "face_px": 152,
+     "anchors": 0
+    }
+   },
+   "seconds": 33.9,
+   "path": "sfem\\probe\\s02_08_A_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s02_08",
+   "type": "medium",
+   "variant": "A",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.386,
+     "face_px": 187,
+     "anchors": 0
+    }
+   },
+   "seconds": 29.9,
+   "path": "sfem\\probe\\s02_08_A_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s02_08",
+   "type": "medium",
+   "variant": "A",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.278,
+     "face_px": 159,
+     "anchors": 0
+    }
+   },
+   "seconds": 29.9,
+   "path": "sfem\\probe\\s02_08_A_2.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s02_08",
+   "type": "medium",
+   "variant": "B",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.31,
+     "face_px": 187,
+     "anchors": 0
+    }
+   },
+   "seconds": 50.2,
+   "path": "sfem\\probe\\s02_08_B_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s02_08",
+   "type": "medium",
+   "variant": "B",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "match",
+     "similarity": 0.741,
+     "face_px": 195,
+     "anchors": 0
+    }
+   },
+   "seconds": 48.3,
+   "path": "sfem\\probe\\s02_08_B_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s02_08",
+   "type": "medium",
+   "variant": "B",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 2,
+   "expected": 1,
+   "extra": 1,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "match",
+     "similarity": 0.514,
+     "face_px": 166,
+     "anchors": 0
+    }
+   },
+   "seconds": 44.3,
+   "path": "sfem\\probe\\s02_08_B_2.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_02",
+   "type": "wide",
+   "variant": "A",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.17,
+     "face_px": 75,
+     "anchors": 0
+    }
+   },
+   "seconds": 31.0,
+   "path": "sfem\\probe\\s03_02_A_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_02",
+   "type": "wide",
+   "variant": "A",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.284,
+     "face_px": 98,
+     "anchors": 0
+    }
+   },
+   "seconds": 29.8,
+   "path": "sfem\\probe\\s03_02_A_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_02",
+   "type": "wide",
+   "variant": "A",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.228,
+     "face_px": 93,
+     "anchors": 0
+    }
+   },
+   "seconds": 30.9,
+   "path": "sfem\\probe\\s03_02_A_2.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_02",
+   "type": "wide",
+   "variant": "B",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.245,
+     "face_px": 85,
+     "anchors": 0
+    }
+   },
+   "seconds": 46.1,
+   "path": "sfem\\probe\\s03_02_B_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_02",
+   "type": "wide",
+   "variant": "B",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "match",
+     "similarity": 0.501,
+     "face_px": 100,
+     "anchors": 0
+    }
+   },
+   "seconds": 48.3,
+   "path": "sfem\\probe\\s03_02_B_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_02",
+   "type": "wide",
+   "variant": "B",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.202,
+     "face_px": 92,
+     "anchors": 0
+    }
+   },
+   "seconds": 45.1,
+   "path": "sfem\\probe\\s03_02_B_2.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_10",
+   "type": "wide",
+   "variant": "A",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.128,
+     "face_px": 73,
+     "anchors": 0
+    }
+   },
+   "seconds": 30.9,
+   "path": "sfem\\probe\\s03_10_A_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_10",
+   "type": "wide",
+   "variant": "A",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.096,
+     "face_px": 72,
+     "anchors": 0
+    }
+   },
+   "seconds": 29.9,
+   "path": "sfem\\probe\\s03_10_A_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_10",
+   "type": "wide",
+   "variant": "A",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.31,
+     "face_px": 76,
+     "anchors": 0
+    }
+   },
+   "seconds": 30.9,
+   "path": "sfem\\probe\\s03_10_A_2.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_10",
+   "type": "wide",
+   "variant": "B",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.245,
+     "face_px": 87,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.0,
+   "path": "sfem\\probe\\s03_10_B_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_10",
+   "type": "wide",
+   "variant": "B",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.197,
+     "face_px": 73,
+     "anchors": 0
+    }
+   },
+   "seconds": 49.1,
+   "path": "sfem\\probe\\s03_10_B_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_10",
+   "type": "wide",
+   "variant": "B",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.408,
+     "face_px": 74,
+     "anchors": 0
+    }
+   },
+   "seconds": 45.1,
+   "path": "sfem\\probe\\s03_10_B_2.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s06_04",
+   "type": "wide",
+   "variant": "A",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "home_office"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 2,
+   "expected": 1,
+   "extra": 1,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.2,
+     "face_px": 102,
+     "anchors": 0
+    }
+   },
+   "seconds": 30.9,
+   "path": "sfem\\probe\\s06_04_A_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s06_04",
+   "type": "wide",
+   "variant": "A",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "home_office"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.243,
+     "face_px": 110,
+     "anchors": 0
+    }
+   },
+   "seconds": 29.8,
+   "path": "sfem\\probe\\s06_04_A_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s06_04",
+   "type": "wide",
+   "variant": "A",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "home_office"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.169,
+     "face_px": 72,
+     "anchors": 0
+    }
+   },
+   "seconds": 29.8,
+   "path": "sfem\\probe\\s06_04_A_2.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s06_04",
+   "type": "wide",
+   "variant": "B",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "home_office"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 3,
+   "expected": 1,
+   "extra": 2,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.212,
+     "face_px": 121,
+     "anchors": 0
+    }
+   },
+   "seconds": 45.1,
+   "path": "sfem\\probe\\s06_04_B_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s06_04",
+   "type": "wide",
+   "variant": "B",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "home_office"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "match",
+     "similarity": 0.651,
+     "face_px": 130,
+     "anchors": 0
+    }
+   },
+   "seconds": 48.3,
+   "path": "sfem\\probe\\s06_04_B_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s06_04",
+   "type": "wide",
+   "variant": "B",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "home_office"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.394,
+     "face_px": 77,
+     "anchors": 0
+    }
+   },
+   "seconds": 48.0,
+   "path": "sfem\\probe\\s06_04_B_2.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s07_01",
+   "type": "wide",
+   "variant": "A",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.368,
+     "face_px": 73,
+     "anchors": 0
+    }
+   },
+   "seconds": 30.8,
+   "path": "sfem\\probe\\s07_01_A_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s07_01",
+   "type": "wide",
+   "variant": "A",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.181,
+     "face_px": 56,
+     "anchors": 0
+    }
+   },
+   "seconds": 30.0,
+   "path": "sfem\\probe\\s07_01_A_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s07_01",
+   "type": "wide",
+   "variant": "A",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.259,
+     "face_px": 128,
+     "anchors": 0
+    }
+   },
+   "seconds": 28.0,
+   "path": "sfem\\probe\\s07_01_A_2.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s07_01",
+   "type": "wide",
+   "variant": "B",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.384,
+     "face_px": 77,
+     "anchors": 0
+    }
+   },
+   "seconds": 45.3,
+   "path": "sfem\\probe\\s07_01_B_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s07_01",
+   "type": "wide",
+   "variant": "B",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.46,
+     "face_px": 82,
+     "anchors": 0
+    }
+   },
+   "seconds": 49.1,
+   "path": "sfem\\probe\\s07_01_B_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s07_01",
+   "type": "wide",
+   "variant": "B",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.365,
+     "face_px": 117,
+     "anchors": 0
+    }
+   },
+   "seconds": 49.1,
+   "path": "sfem\\probe\\s07_01_B_2.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s02_04",
+   "type": "silhouette",
+   "variant": "C",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "match",
+     "similarity": 0.65,
+     "face_px": 94,
+     "anchors": 0
+    }
+   },
+   "seconds": 45.1,
+   "path": "sfem\\probe\\s02_04_C_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s02_04",
+   "type": "silhouette",
+   "variant": "C",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "match",
+     "similarity": 0.623,
+     "face_px": 91,
+     "anchors": 0
+    }
+   },
+   "seconds": 48.1,
+   "path": "sfem\\probe\\s02_04_C_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s02_04",
+   "type": "silhouette",
+   "variant": "C",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "match",
+     "similarity": 0.661,
+     "face_px": 121,
+     "anchors": 0
+    }
+   },
+   "seconds": 48.2,
+   "path": "sfem\\probe\\s02_04_C_2.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s02_08",
+   "type": "medium",
+   "variant": "C",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.342,
+     "face_px": 192,
+     "anchors": 0
+    }
+   },
+   "seconds": 46.0,
+   "path": "sfem\\probe\\s02_08_C_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s02_08",
+   "type": "medium",
+   "variant": "C",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "match",
+     "similarity": 0.738,
+     "face_px": 180,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.1,
+   "path": "sfem\\probe\\s02_08_C_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s02_08",
+   "type": "medium",
+   "variant": "C",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "match",
+     "similarity": 0.767,
+     "face_px": 182,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.1,
+   "path": "sfem\\probe\\s02_08_C_2.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_02",
+   "type": "wide",
+   "variant": "C",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "match",
+     "similarity": 0.683,
+     "face_px": 96,
+     "anchors": 0
+    }
+   },
+   "seconds": 45.3,
+   "path": "sfem\\probe\\s03_02_C_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_02",
+   "type": "wide",
+   "variant": "C",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.385,
+     "face_px": 71,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.1,
+   "path": "sfem\\probe\\s03_02_C_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_02",
+   "type": "wide",
+   "variant": "C",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "match",
+     "similarity": 0.716,
+     "face_px": 89,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.0,
+   "path": "sfem\\probe\\s03_02_C_2.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_10",
+   "type": "wide",
+   "variant": "C",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.444,
+     "face_px": 87,
+     "anchors": 0
+    }
+   },
+   "seconds": 45.2,
+   "path": "sfem\\probe\\s03_10_C_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_10",
+   "type": "wide",
+   "variant": "C",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.361,
+     "face_px": 61,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.0,
+   "path": "sfem\\probe\\s03_10_C_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_10",
+   "type": "wide",
+   "variant": "C",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "match",
+     "similarity": 0.589,
+     "face_px": 75,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.0,
+   "path": "sfem\\probe\\s03_10_C_2.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s06_04",
+   "type": "wide",
+   "variant": "C",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "home_office"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "match",
+     "similarity": 0.524,
+     "face_px": 61,
+     "anchors": 0
+    }
+   },
+   "seconds": 45.1,
+   "path": "sfem\\probe\\s06_04_C_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s06_04",
+   "type": "wide",
+   "variant": "C",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "home_office"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "match",
+     "similarity": 0.514,
+     "face_px": 76,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.1,
+   "path": "sfem\\probe\\s06_04_C_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s06_04",
+   "type": "wide",
+   "variant": "C",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "home_office"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.403,
+     "face_px": 60,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.1,
+   "path": "sfem\\probe\\s06_04_C_2.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s07_01",
+   "type": "wide",
+   "variant": "C",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "match",
+     "similarity": 0.561,
+     "face_px": 75,
+     "anchors": 0
+    }
+   },
+   "seconds": 45.1,
+   "path": "sfem\\probe\\s07_01_C_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s07_01",
+   "type": "wide",
+   "variant": "C",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "match",
+     "similarity": 0.585,
+     "face_px": 62,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.3,
+   "path": "sfem\\probe\\s07_01_C_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s07_01",
+   "type": "wide",
+   "variant": "C",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "match",
+     "similarity": 0.596,
+     "face_px": 79,
+     "anchors": 0
+    }
+   },
+   "seconds": 48.2,
+   "path": "sfem\\probe\\s07_01_C_2.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s01_07",
+   "type": "wide",
+   "variant": "A",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "loc_ferry_boat"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 2,
+   "expected": 1,
+   "extra": 1,
+   "framing": false,
+   "identity": {
+    "the_ferryman": {
+     "status": "generic",
+     "similarity": 0.39,
+     "face_px": 179,
+     "anchors": 0
+    }
+   },
+   "seconds": 30.9,
+   "path": "fer\\probe\\s01_07_A_0.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s01_07",
+   "type": "wide",
+   "variant": "A",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "loc_ferry_boat"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 5,
+   "expected": 1,
+   "extra": 4,
+   "framing": false,
+   "identity": {
+    "the_ferryman": {
+     "status": "generic",
+     "similarity": 0.487,
+     "face_px": 145,
+     "anchors": 0
+    }
+   },
+   "seconds": 30.0,
+   "path": "fer\\probe\\s01_07_A_1.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s01_07",
+   "type": "wide",
+   "variant": "A",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "loc_ferry_boat"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 7,
+   "expected": 1,
+   "extra": 6,
+   "framing": false,
+   "identity": {
+    "the_ferryman": {
+     "status": "match",
+     "similarity": 0.552,
+     "face_px": 191,
+     "anchors": 0
+    }
+   },
+   "seconds": 29.9,
+   "path": "fer\\probe\\s01_07_A_2.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s01_07",
+   "type": "wide",
+   "variant": "B",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "the_ferryman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_ferry_boat"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 4,
+   "expected": 1,
+   "extra": 3,
+   "framing": false,
+   "identity": {
+    "the_ferryman": {
+     "status": "match",
+     "similarity": 0.769,
+     "face_px": 118,
+     "anchors": 0
+    }
+   },
+   "seconds": 45.3,
+   "path": "fer\\probe\\s01_07_B_0.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s01_07",
+   "type": "wide",
+   "variant": "B",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "the_ferryman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_ferry_boat"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 6,
+   "expected": 1,
+   "extra": 5,
+   "framing": false,
+   "identity": {
+    "the_ferryman": {
+     "status": "match",
+     "similarity": 0.666,
+     "face_px": 109,
+     "anchors": 0
+    }
+   },
+   "seconds": 49.3,
+   "path": "fer\\probe\\s01_07_B_1.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s01_07",
+   "type": "wide",
+   "variant": "B",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "the_ferryman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_ferry_boat"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 3,
+   "expected": 1,
+   "extra": 2,
+   "framing": false,
+   "identity": {
+    "the_ferryman": {
+     "status": "match",
+     "similarity": 0.71,
+     "face_px": 135,
+     "anchors": 0
+    }
+   },
+   "seconds": 48.1,
+   "path": "fer\\probe\\s01_07_B_2.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s01_07",
+   "type": "wide",
+   "variant": "C",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "the_ferryman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_ferry_boat"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 3,
+   "expected": 1,
+   "extra": 2,
+   "framing": false,
+   "identity": {
+    "the_ferryman": {
+     "status": "match",
+     "similarity": 0.706,
+     "face_px": 112,
+     "anchors": 0
+    }
+   },
+   "seconds": 45.5,
+   "path": "fer\\probe\\s01_07_C_0.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s01_07",
+   "type": "wide",
+   "variant": "C",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "the_ferryman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_ferry_boat"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 6,
+   "expected": 1,
+   "extra": 5,
+   "framing": false,
+   "identity": {
+    "the_ferryman": {
+     "status": "match",
+     "similarity": 0.816,
+     "face_px": 111,
+     "anchors": 0
+    }
+   },
+   "seconds": 49.1,
+   "path": "fer\\probe\\s01_07_C_1.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s01_07",
+   "type": "wide",
+   "variant": "C",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "the_ferryman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_ferry_boat"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 9,
+   "expected": 1,
+   "extra": 8,
+   "framing": false,
+   "identity": {
+    "the_ferryman": {
+     "status": "match",
+     "similarity": 0.794,
+     "face_px": 116,
+     "anchors": 0
+    }
+   },
+   "seconds": 49.1,
+   "path": "fer\\probe\\s01_07_C_2.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s03_02",
+   "type": "wide",
+   "variant": "A",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "loc_muddy_bank"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 8,
+   "expected": 1,
+   "extra": 7,
+   "framing": true,
+   "identity": {
+    "the_ferryman": {
+     "status": "generic",
+     "similarity": 0.396,
+     "face_px": 139,
+     "anchors": 0
+    }
+   },
+   "seconds": 31.1,
+   "path": "fer\\probe\\s03_02_A_0.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s03_02",
+   "type": "wide",
+   "variant": "A",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "loc_muddy_bank"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 8,
+   "expected": 1,
+   "extra": 7,
+   "framing": false,
+   "identity": {
+    "the_ferryman": {
+     "status": "generic",
+     "similarity": 0.356,
+     "face_px": 138,
+     "anchors": 0
+    }
+   },
+   "seconds": 30.1,
+   "path": "fer\\probe\\s03_02_A_1.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s03_02",
+   "type": "wide",
+   "variant": "A",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "loc_muddy_bank"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 5,
+   "expected": 1,
+   "extra": 4,
+   "framing": true,
+   "identity": {
+    "the_ferryman": {
+     "status": "generic",
+     "similarity": 0.239,
+     "face_px": 116,
+     "anchors": 0
+    }
+   },
+   "seconds": 33.1,
+   "path": "fer\\probe\\s03_02_A_2.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s03_02",
+   "type": "wide",
+   "variant": "B",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "the_ferryman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_muddy_bank"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 7,
+   "expected": 1,
+   "extra": 6,
+   "framing": false,
+   "identity": {
+    "the_ferryman": {
+     "status": "match",
+     "similarity": 0.773,
+     "face_px": 125,
+     "anchors": 0
+    }
+   },
+   "seconds": 45.3,
+   "path": "fer\\probe\\s03_02_B_0.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s03_02",
+   "type": "wide",
+   "variant": "B",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "the_ferryman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_muddy_bank"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 7,
+   "expected": 1,
+   "extra": 6,
+   "framing": false,
+   "identity": {
+    "the_ferryman": {
+     "status": "generic",
+     "similarity": 0.468,
+     "face_px": 97,
+     "anchors": 0
+    }
+   },
+   "seconds": 48.1,
+   "path": "fer\\probe\\s03_02_B_1.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s03_02",
+   "type": "wide",
+   "variant": "B",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "the_ferryman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_muddy_bank"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 11,
+   "expected": 1,
+   "extra": 10,
+   "framing": true,
+   "identity": {
+    "the_ferryman": {
+     "status": "generic",
+     "similarity": 0.488,
+     "face_px": 75,
+     "anchors": 0
+    }
+   },
+   "seconds": 48.1,
+   "path": "fer\\probe\\s03_02_B_2.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s03_02",
+   "type": "wide",
+   "variant": "C",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "the_ferryman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_muddy_bank"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 9,
+   "expected": 1,
+   "extra": 8,
+   "framing": true,
+   "identity": {
+    "the_ferryman": {
+     "status": "generic",
+     "similarity": 0.4,
+     "face_px": 86,
+     "anchors": 0
+    }
+   },
+   "seconds": 45.1,
+   "path": "fer\\probe\\s03_02_C_0.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s03_02",
+   "type": "wide",
+   "variant": "C",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "the_ferryman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_muddy_bank"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 7,
+   "expected": 1,
+   "extra": 6,
+   "framing": false,
+   "identity": {
+    "the_ferryman": {
+     "status": "match",
+     "similarity": 0.803,
+     "face_px": 117,
+     "anchors": 0
+    }
+   },
+   "seconds": 48.1,
+   "path": "fer\\probe\\s03_02_C_1.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s03_02",
+   "type": "wide",
+   "variant": "C",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "the_ferryman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_muddy_bank"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 9,
+   "expected": 1,
+   "extra": 8,
+   "framing": true,
+   "identity": {
+    "the_ferryman": {
+     "status": "match",
+     "similarity": 0.772,
+     "face_px": 93,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.1,
+   "path": "fer\\probe\\s03_02_C_2.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s04_04",
+   "type": "silhouette",
+   "variant": "A",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "loc_muddy_bank"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 2,
+   "expected": 1,
+   "extra": 1,
+   "framing": false,
+   "identity": {
+    "the_ferryman": {
+     "status": "generic",
+     "similarity": 0.367,
+     "face_px": 141,
+     "anchors": 0
+    }
+   },
+   "seconds": 30.8,
+   "path": "fer\\probe\\s04_04_A_0.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s04_04",
+   "type": "silhouette",
+   "variant": "A",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "loc_muddy_bank"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 2,
+   "expected": 1,
+   "extra": 1,
+   "framing": false,
+   "identity": {
+    "the_ferryman": {
+     "status": "generic",
+     "similarity": 0.361,
+     "face_px": 165,
+     "anchors": 0
+    }
+   },
+   "seconds": 29.9,
+   "path": "fer\\probe\\s04_04_A_1.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s04_04",
+   "type": "silhouette",
+   "variant": "A",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "loc_muddy_bank"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "the_ferryman": {
+     "status": "generic",
+     "similarity": 0.368,
+     "face_px": 97,
+     "anchors": 0
+    }
+   },
+   "seconds": 29.9,
+   "path": "fer\\probe\\s04_04_A_2.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s04_04",
+   "type": "silhouette",
+   "variant": "B",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "the_ferryman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_muddy_bank"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "the_ferryman": {
+     "status": "generic",
+     "similarity": 0.453,
+     "face_px": 98,
+     "anchors": 0
+    }
+   },
+   "seconds": 45.2,
+   "path": "fer\\probe\\s04_04_B_0.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s04_04",
+   "type": "silhouette",
+   "variant": "B",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "the_ferryman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_muddy_bank"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "the_ferryman": {
+     "status": "generic",
+     "similarity": 0.402,
+     "face_px": 81,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.3,
+   "path": "fer\\probe\\s04_04_B_1.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s04_04",
+   "type": "silhouette",
+   "variant": "B",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "the_ferryman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_muddy_bank"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "the_ferryman": {
+     "status": "generic",
+     "similarity": 0.411,
+     "face_px": 88,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.2,
+   "path": "fer\\probe\\s04_04_B_2.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s04_04",
+   "type": "silhouette",
+   "variant": "C",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "the_ferryman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_muddy_bank"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "the_ferryman": {
+     "status": "match",
+     "similarity": 0.813,
+     "face_px": 116,
+     "anchors": 0
+    }
+   },
+   "seconds": 45.1,
+   "path": "fer\\probe\\s04_04_C_0.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s04_04",
+   "type": "silhouette",
+   "variant": "C",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "the_ferryman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_muddy_bank"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "the_ferryman": {
+     "status": "match",
+     "similarity": 0.78,
+     "face_px": 104,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.3,
+   "path": "fer\\probe\\s04_04_C_1.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s04_04",
+   "type": "silhouette",
+   "variant": "C",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "the_ferryman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_muddy_bank"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "the_ferryman": {
+     "status": "match",
+     "similarity": 0.552,
+     "face_px": 89,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.2,
+   "path": "fer\\probe\\s04_04_C_2.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s05_03",
+   "type": "wide",
+   "variant": "A",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "loc_stone_piers"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "the_mayor": {
+     "status": "generic",
+     "similarity": 0.165,
+     "face_px": 60,
+     "anchors": 0
+    }
+   },
+   "seconds": 32.0,
+   "path": "fer\\probe\\s05_03_A_0.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s05_03",
+   "type": "wide",
+   "variant": "A",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "loc_stone_piers"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "the_mayor": {
+     "status": "generic",
+     "similarity": 0.191,
+     "face_px": 82,
+     "anchors": 0
+    }
+   },
+   "seconds": 29.1,
+   "path": "fer\\probe\\s05_03_A_1.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s05_03",
+   "type": "wide",
+   "variant": "A",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "loc_stone_piers"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "the_mayor": {
+     "status": "generic",
+     "similarity": 0.204,
+     "face_px": 68,
+     "anchors": 0
+    }
+   },
+   "seconds": 29.9,
+   "path": "fer\\probe\\s05_03_A_2.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s05_03",
+   "type": "wide",
+   "variant": "B",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "the_mayor"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_stone_piers"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 2,
+   "expected": 1,
+   "extra": 1,
+   "framing": false,
+   "identity": {
+    "the_mayor": {
+     "status": "match",
+     "similarity": 0.635,
+     "face_px": 112,
+     "anchors": 0
+    }
+   },
+   "seconds": 45.1,
+   "path": "fer\\probe\\s05_03_B_0.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s05_03",
+   "type": "wide",
+   "variant": "B",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "the_mayor"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_stone_piers"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "the_mayor": {
+     "status": "generic",
+     "similarity": 0.423,
+     "face_px": 69,
+     "anchors": 0
+    }
+   },
+   "seconds": 48.3,
+   "path": "fer\\probe\\s05_03_B_1.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s05_03",
+   "type": "wide",
+   "variant": "B",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "the_mayor"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_stone_piers"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "the_mayor": {
+     "status": "match",
+     "similarity": 0.583,
+     "face_px": 83,
+     "anchors": 0
+    }
+   },
+   "seconds": 49.1,
+   "path": "fer\\probe\\s05_03_B_2.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s05_03",
+   "type": "wide",
+   "variant": "C",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "the_mayor"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_stone_piers"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "the_mayor": {
+     "status": "match",
+     "similarity": 0.575,
+     "face_px": 105,
+     "anchors": 0
+    }
+   },
+   "seconds": 45.1,
+   "path": "fer\\probe\\s05_03_C_0.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s05_03",
+   "type": "wide",
+   "variant": "C",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "the_mayor"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_stone_piers"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "the_mayor": {
+     "status": "match",
+     "similarity": 0.596,
+     "face_px": 89,
+     "anchors": 0
+    }
+   },
+   "seconds": 48.1,
+   "path": "fer\\probe\\s05_03_C_1.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s05_03",
+   "type": "wide",
+   "variant": "C",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "the_mayor"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_stone_piers"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "the_mayor": {
+     "status": "match",
+     "similarity": 0.676,
+     "face_px": 83,
+     "anchors": 0
+    }
+   },
+   "seconds": 48.1,
+   "path": "fer\\probe\\s05_03_C_2.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s05_08",
+   "type": "silhouette",
+   "variant": "A",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "loc_stone_piers"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "the_mayor": {
+     "status": "generic",
+     "similarity": 0.375,
+     "face_px": 159,
+     "anchors": 0
+    }
+   },
+   "seconds": 30.9,
+   "path": "fer\\probe\\s05_08_A_0.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s05_08",
+   "type": "silhouette",
+   "variant": "A",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "loc_stone_piers"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 2,
+   "expected": 1,
+   "extra": 1,
+   "framing": false,
+   "identity": {
+    "the_mayor": {
+     "status": "generic",
+     "similarity": 0.356,
+     "face_px": 207,
+     "anchors": 0
+    }
+   },
+   "seconds": 32.9,
+   "path": "fer\\probe\\s05_08_A_1.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s05_08",
+   "type": "silhouette",
+   "variant": "A",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "loc_stone_piers"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "the_mayor": {
+     "status": "generic",
+     "similarity": 0.398,
+     "face_px": 189,
+     "anchors": 0
+    }
+   },
+   "seconds": 30.9,
+   "path": "fer\\probe\\s05_08_A_2.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s05_08",
+   "type": "silhouette",
+   "variant": "B",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "the_mayor"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_stone_piers"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "the_mayor": {
+     "status": "match",
+     "similarity": 0.647,
+     "face_px": 113,
+     "anchors": 0
+    }
+   },
+   "seconds": 45.1,
+   "path": "fer\\probe\\s05_08_B_0.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s05_08",
+   "type": "silhouette",
+   "variant": "B",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "the_mayor"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_stone_piers"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "the_mayor": {
+     "status": "match",
+     "similarity": 0.697,
+     "face_px": 126,
+     "anchors": 0
+    }
+   },
+   "seconds": 48.1,
+   "path": "fer\\probe\\s05_08_B_1.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s05_08",
+   "type": "silhouette",
+   "variant": "B",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "the_mayor"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_stone_piers"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "the_mayor": {
+     "status": "match",
+     "similarity": 0.599,
+     "face_px": 96,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.2,
+   "path": "fer\\probe\\s05_08_B_2.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s05_08",
+   "type": "silhouette",
+   "variant": "C",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "the_mayor"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_stone_piers"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "the_mayor": {
+     "status": "match",
+     "similarity": 0.684,
+     "face_px": 123,
+     "anchors": 0
+    }
+   },
+   "seconds": 44.4,
+   "path": "fer\\probe\\s05_08_C_0.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s05_08",
+   "type": "silhouette",
+   "variant": "C",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "the_mayor"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_stone_piers"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "the_mayor": {
+     "status": "match",
+     "similarity": 0.707,
+     "face_px": 139,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.1,
+   "path": "fer\\probe\\s05_08_C_1.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s05_08",
+   "type": "silhouette",
+   "variant": "C",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "the_mayor"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_stone_piers"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "the_mayor": {
+     "status": "match",
+     "similarity": 0.648,
+     "face_px": 115,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.1,
+   "path": "fer\\probe\\s05_08_C_2.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s02_08",
+   "type": "wide",
+   "variant": "A",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "loc_ferry_boat"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "the_fisherman": {
+     "status": "generic",
+     "similarity": 0.168,
+     "face_px": 78,
+     "anchors": 0
+    }
+   },
+   "seconds": 30.9,
+   "path": "fer\\probe\\s02_08_A_0.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s02_08",
+   "type": "wide",
+   "variant": "A",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "loc_ferry_boat"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "the_fisherman": {
+     "status": "generic",
+     "similarity": 0.197,
+     "face_px": 107,
+     "anchors": 0
+    }
+   },
+   "seconds": 30.0,
+   "path": "fer\\probe\\s02_08_A_1.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s02_08",
+   "type": "wide",
+   "variant": "A",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "location",
+     "id": "loc_ferry_boat"
+    },
+    {
+     "slot": 1,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 2,
+   "expected": 1,
+   "extra": 1,
+   "framing": false,
+   "identity": {
+    "the_fisherman": {
+     "status": "generic",
+     "similarity": 0.153,
+     "face_px": 96,
+     "anchors": 0
+    }
+   },
+   "seconds": 30.0,
+   "path": "fer\\probe\\s02_08_A_2.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s02_08",
+   "type": "wide",
+   "variant": "B",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "the_fisherman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_ferry_boat"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "the_fisherman": {
+     "status": "match",
+     "similarity": 0.659,
+     "face_px": 106,
+     "anchors": 0
+    }
+   },
+   "seconds": 45.1,
+   "path": "fer\\probe\\s02_08_B_0.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s02_08",
+   "type": "wide",
+   "variant": "B",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "the_fisherman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_ferry_boat"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "the_fisherman": {
+     "status": "generic",
+     "similarity": 0.43,
+     "face_px": 107,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.3,
+   "path": "fer\\probe\\s02_08_B_1.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s02_08",
+   "type": "wide",
+   "variant": "B",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "character",
+     "id": "the_fisherman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_ferry_boat"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "the_fisherman": {
+     "status": "generic",
+     "similarity": 0.266,
+     "face_px": 108,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.1,
+   "path": "fer\\probe\\s02_08_B_2.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s02_08",
+   "type": "wide",
+   "variant": "C",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "the_fisherman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_ferry_boat"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "the_fisherman": {
+     "status": "match",
+     "similarity": 0.757,
+     "face_px": 102,
+     "anchors": 0
+    }
+   },
+   "seconds": 44.5,
+   "path": "fer\\probe\\s02_08_C_0.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s02_08",
+   "type": "wide",
+   "variant": "C",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "the_fisherman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_ferry_boat"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "the_fisherman": {
+     "status": "match",
+     "similarity": 0.705,
+     "face_px": 100,
+     "anchors": 0
+    }
+   },
+   "seconds": 48.2,
+   "path": "fer\\probe\\s02_08_C_1.jpg"
+  },
+  {
+   "project": "fer",
+   "shot": "s02_08",
+   "type": "wide",
+   "variant": "C",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "the_fisherman"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "loc_ferry_boat"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "the_fisherman": {
+     "status": "match",
+     "similarity": 0.722,
+     "face_px": 93,
+     "anchors": 0
+    }
+   },
+   "seconds": 52.2,
+   "path": "fer\\probe\\s02_08_C_2.jpg"
+  }
+ ],
+ "rows_text_only_body": [
+  {
+   "project": "sfem",
+   "shot": "s02_04",
+   "type": "silhouette",
+   "variant": "C",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.358,
+     "face_px": 77,
+     "anchors": 0
+    }
+   },
+   "seconds": 52.2,
+   "path": "sfem\\probe\\s02_04_C_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s02_04",
+   "type": "silhouette",
+   "variant": "C",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.329,
+     "face_px": 84,
+     "anchors": 0
+    }
+   },
+   "seconds": 44.2,
+   "path": "sfem\\probe\\s02_04_C_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s02_04",
+   "type": "silhouette",
+   "variant": "C",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.318,
+     "face_px": 101,
+     "anchors": 0
+    }
+   },
+   "seconds": 49.1,
+   "path": "sfem\\probe\\s02_04_C_2.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s02_08",
+   "type": "medium",
+   "variant": "C",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.376,
+     "face_px": 190,
+     "anchors": 0
+    }
+   },
+   "seconds": 46.4,
+   "path": "sfem\\probe\\s02_08_C_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s02_08",
+   "type": "medium",
+   "variant": "C",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.306,
+     "face_px": 172,
+     "anchors": 0
+    }
+   },
+   "seconds": 49.1,
+   "path": "sfem\\probe\\s02_08_C_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s02_08",
+   "type": "medium",
+   "variant": "C",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "ground_floor_hallway"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": false,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.357,
+     "face_px": 155,
+     "anchors": 0
+    }
+   },
+   "seconds": 49.1,
+   "path": "sfem\\probe\\s02_08_C_2.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_02",
+   "type": "wide",
+   "variant": "C",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.326,
+     "face_px": 87,
+     "anchors": 0
+    }
+   },
+   "seconds": 45.1,
+   "path": "sfem\\probe\\s03_02_C_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_02",
+   "type": "wide",
+   "variant": "C",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.156,
+     "face_px": 78,
+     "anchors": 0
+    }
+   },
+   "seconds": 49.1,
+   "path": "sfem\\probe\\s03_02_C_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_02",
+   "type": "wide",
+   "variant": "C",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.378,
+     "face_px": 84,
+     "anchors": 0
+    }
+   },
+   "seconds": 48.1,
+   "path": "sfem\\probe\\s03_02_C_2.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_10",
+   "type": "wide",
+   "variant": "C",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.305,
+     "face_px": 76,
+     "anchors": 0
+    }
+   },
+   "seconds": 45.1,
+   "path": "sfem\\probe\\s03_10_C_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_10",
+   "type": "wide",
+   "variant": "C",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.185,
+     "face_px": 63,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.1,
+   "path": "sfem\\probe\\s03_10_C_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s03_10",
+   "type": "wide",
+   "variant": "C",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.434,
+     "face_px": 67,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.1,
+   "path": "sfem\\probe\\s03_10_C_2.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s06_04",
+   "type": "wide",
+   "variant": "C",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "home_office"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.183,
+     "face_px": 57,
+     "anchors": 0
+    }
+   },
+   "seconds": 45.3,
+   "path": "sfem\\probe\\s06_04_C_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s06_04",
+   "type": "wide",
+   "variant": "C",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "home_office"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.324,
+     "face_px": 70,
+     "anchors": 0
+    }
+   },
+   "seconds": 47.1,
+   "path": "sfem\\probe\\s06_04_C_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s06_04",
+   "type": "wide",
+   "variant": "C",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "home_office"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.278,
+     "face_px": 66,
+     "anchors": 0
+    }
+   },
+   "seconds": 48.1,
+   "path": "sfem\\probe\\s06_04_C_2.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s07_01",
+   "type": "wide",
+   "variant": "C",
+   "seed": 0,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.184,
+     "face_px": 71,
+     "anchors": 0
+    }
+   },
+   "seconds": 46.4,
+   "path": "sfem\\probe\\s07_01_C_0.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s07_01",
+   "type": "wide",
+   "variant": "C",
+   "seed": 1,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 1,
+   "expected": 1,
+   "extra": 0,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.31,
+     "face_px": 62,
+     "anchors": 0
+    }
+   },
+   "seconds": 49.2,
+   "path": "sfem\\probe\\s07_01_C_1.jpg"
+  },
+  {
+   "project": "sfem",
+   "shot": "s07_01",
+   "type": "wide",
+   "variant": "C",
+   "seed": 2,
+   "slots": [
+    {
+     "slot": 0,
+     "kind": "body",
+     "id": "hannah_price"
+    },
+    {
+     "slot": 1,
+     "kind": "location",
+     "id": "suburban_kitchen"
+    },
+    {
+     "slot": 2,
+     "kind": "style",
+     "id": "board_4"
+    }
+   ],
+   "people": 2,
+   "expected": 1,
+   "extra": 1,
+   "framing": true,
+   "identity": {
+    "hannah_price": {
+     "status": "generic",
+     "similarity": 0.335,
+     "face_px": 73,
+     "anchors": 0
+    }
+   },
+   "seconds": 49.1,
+   "path": "sfem\\probe\\s07_01_C_2.jpg"
+  }
+ ],
+ "bodies_text_only": {
+  "sfem:hannah_price": {
+   "chosen": 3,
+   "candidates": [
+    {
+     "number": 1,
+     "similarity": 0.264,
+     "people": 1
+    },
+    {
+     "number": 2,
+     "similarity": 0.358,
+     "people": 1
+    },
+    {
+     "number": 3,
+     "similarity": 0.379,
+     "people": 1
+    }
+   ],
+   "seconds": 90.6
+  }
+ },
+ "bodies": {
+  "sfem:hannah_price": {
+   "chosen": 3,
+   "candidates": [
+    {
+     "number": 1,
+     "similarity": 0.803,
+     "people": 1
+    },
+    {
+     "number": 2,
+     "similarity": 0.799,
+     "people": 1
+    },
+    {
+     "number": 3,
+     "similarity": 0.843,
+     "people": 1
+    }
+   ],
+   "seconds": 151.0
+  },
+  "fer:the_ferryman": {
+   "chosen": 1,
+   "candidates": [
+    {
+     "number": 1,
+     "similarity": 0.86,
+     "people": 1
+    }
+   ],
+   "seconds": 252.4
+  },
+  "fer:the_fisherman": {
+   "chosen": 2,
+   "candidates": [
+    {
+     "number": 1,
+     "similarity": 0.813,
+     "people": 1
+    },
+    {
+     "number": 2,
+     "similarity": 0.817,
+     "people": 1
+    },
+    {
+     "number": 3,
+     "similarity": 0.769,
+     "people": 1
+    }
+   ],
+   "seconds": 53.8
+  },
+  "fer:the_mayor": {
+   "chosen": 2,
+   "candidates": [
+    {
+     "number": 1,
+     "similarity": 0.747,
+     "people": 1
+    },
+    {
+     "number": 2,
+     "similarity": 0.749,
+     "people": 1
+    },
+    {
+     "number": 3,
+     "similarity": 0.741,
+     "people": 1
+    }
+   ],
+   "seconds": 54.4
+  }
+ }
+}
