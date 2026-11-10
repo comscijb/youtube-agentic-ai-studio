@@ -265,7 +265,10 @@ SHOT_TRANSITIONS = "smart"
 # Phase 3.9.4-A: send the character's portrait for faceless and distant shots? A portrait pulls the character
 # into a close-up the shot did not ask for. "keep" | "none" (text identity, wardrobe and the location reference).
 # Probe (docs/reports/3.9.4): wide with portrait 3/3 extra people and a close-up, without 0/3 and the shot asked for.
-FACELESS_PORTRAIT_REFERENCE = {"wide": "none", "silhouette": "none", "over_the_shoulder": "keep", "faceless": "keep"}
+# Phase 3.9.8-A probe (12 shots x 3 seeds, docs/reports/3.9.8): the full-body sheet drawn from the face sheet matches
+# the character in 19/24 wide and 9/9 silhouette shots (face sheet 9/24 and 4/9, none 1/24 and 0/9). Without an approved
+# body sheet the face sheet is used (it beats no reference).
+FACELESS_PORTRAIT_REFERENCE = {"wide": "body", "silhouette": "body", "over_the_shoulder": "body", "faceless": "body"}
 KEY_MOMENT_CLIPS = 0
 # "reference": approved character portraits drive identity, faces may be visible.
 # "limited_faces": mostly none/partial faces, at most IMAGEGEN_MAX_FULL_FACE_SHOTS hero shots.

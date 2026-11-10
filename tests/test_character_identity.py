@@ -72,9 +72,15 @@ class ReferenceChoiceTests(unittest.TestCase):
         two = self.compose(shot(characters=["hannah_price", "leo_price"], face_visibility="partial"))
         self.assertEqual([kind for kind, _ in self.kinds(two)], ["character", "character", "location", "body"])
 
-    def test_no_body_sheet_yet_keeps_the_old_faceless_behaviour(self):
+    def test_no_body_sheet_yet_falls_back_to_the_face_sheet(self):
         composed = self.compose(shot(shot_type="wide", face_visibility="partial"), kinds=("character", "location"))
-        self.assertNotIn("character", [kind for kind, _ in self.kinds(composed)])
+        self.assertEqual(self.kinds(composed)[0], ("character", "hannah_price"))
+        with patch.object(config, "FACELESS_PORTRAIT_REFERENCE", {"wide": "none"}),                 patch.object(vbible, "approved_reference", side_effect=refs(("character", "location"))),                 patch("agents.style_refs.approved_paths", return_value=[]):
+            plain = shots_module.compose_shot(shot(shot_type="wide", face_visibility="partial"), deepcopy(VB), "out")
+        self.assertNotIn("character", [slot["kind"] for slot in plain["slots"]])
+
+    def test_the_probe_decided_the_full_body_sheet_for_distant_shots(self):
+        self.assertEqual({key: config.FACELESS_PORTRAIT_REFERENCE[key] for key in ("wide", "silhouette")}, {"wide": "body", "silhouette": "body"})
 
     def test_with_a_reference_the_text_never_redescribes_face_or_hair(self):
         with_ref = self.compose(shot())["prompt"]

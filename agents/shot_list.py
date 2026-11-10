@@ -975,6 +975,14 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
             ref_names[cid] = f"the {_noun(entry.get('descriptor', ''))} from the " \
                              f"{ORDINALS[len(references) - 1]} image"
             ref_kinds[cid] = kind
+        if cid not in ref_names and kinds == ["body"]:   # no full-body sheet yet: the face sheet beats none (3.9.8 probe)
+            path = sheet("character", cid)
+            if path:
+                references.append(path)
+                slots.append({"slot": len(references) - 1, "kind": "character", "id": cid})
+                entry = vbible.character(vb, cid) or {}
+                ref_names[cid] = f"the {_noun(entry.get('descriptor', ''))} from the {ORDINALS[len(references) - 1]} image"
+                ref_kinds[cid] = "character"
     location = vbible.location(vb, shot.get("location")) or {}
     location_text = location.get("descriptor", "")
     exterior = bool(location) and not vbible.location_interior(location)    # Phase 3.9.3-F: no rooms on a moor

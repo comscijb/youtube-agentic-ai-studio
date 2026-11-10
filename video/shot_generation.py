@@ -126,7 +126,8 @@ def body_prompt(vb: dict, character_id: str) -> str:
     return (f"{_article(noun).capitalize()} {noun} full-body character reference sheet: "
             f"{entry.get('descriptor', character_id)}, standing, the whole figure visible from head to feet, neutral "
             f"relaxed pose, in a three-quarter view, wearing {default_outfit(vb, character_id)}. The only person in the "
-            "image. Plain flat light-grey backdrop, uniform and empty, a soft shadow on the floor; even light. "
+            "image. Plain flat dark-grey backdrop filling the whole frame edge to edge, uniform and empty, a soft shadow on the "
+            "floor; even light on the figure. "
             f"{identity.sheet_style_suffix()}")
 
 
@@ -232,11 +233,19 @@ def _character_job(vb: dict, cid: str, number: int, output: Path) -> ImageJob:
 
 
 def _body_job(vb: dict, cid: str, number: int, output: Path) -> ImageJob:
+    """With an approved face sheet the full figure is drawn FROM it: drawn from text alone it came out a generic person
+    (SFace 0.26-0.38 against Hannah's sheet in the 3.9.8 probe) and could not carry identity to the wide shots."""
     base = (vbible.character(vb, cid) or {}).get("seed", vbible.seed_for("character", cid))
+    face = vbible.approved_reference(vb, "character", cid, output)
+    prompt = body_prompt(vb, cid)
+    if face:
+        noun = shots_module._noun((vbible.character(vb, cid) or {}).get("descriptor", "")) or "person"
+        prompt = prompt.replace(f"{(vbible.character(vb, cid) or {}).get('descriptor', cid)}, standing",
+                                f"the {noun} from the first image (the same face, hair and age), standing", 1)
     return ImageJob(
-        job_id=f"body_{cid}_{number}", prompt=body_prompt(vb, cid), seed=base + 104729 + number,
+        job_id=f"body_{cid}_{number}", prompt=prompt, seed=base + 104729 + number,
         output_path=str(output / "character_refs" / "candidates" / f"{safe_filename(cid)}_body_{number}.jpg"),
-        size=BODY_SIZE, final_size=BODY_SIZE)
+        size=BODY_SIZE, final_size=BODY_SIZE, **({"kind": "ref", "references": [face]} if face else {}))
 
 
 def generate_body_candidates(vb: dict, output_dir, generator: ImageGenerator, characters: list[str] | None = None, *,
@@ -326,7 +335,11 @@ def _run_reference_jobs(jobs: list, output: Path, generator: ImageGenerator,
     record = load_json(output / CANDIDATES_FILE) or {}
     for index, (kind, ident, number, job) in enumerate(jobs, 1):
         progress(f"   → Reference candidate {index}/{len(jobs)}: {kind} {ident} #{number}")
-        result = generator.generate_with_retry(job)
+        try:
+            result = generator.generate_with_retry(job)
+        except GenerationFailed as exc:                   # one bad candidate never stops the batch
+            progress(f"     ⚠ {kind} {ident} #{number} failed: {str(exc)[:160]}")
+            continue
         people, attempts = None, 1
         if kind == "location":
             people = people_in(job.output_path)
