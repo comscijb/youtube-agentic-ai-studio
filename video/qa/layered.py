@@ -53,6 +53,7 @@ class LayeredQA:
         self.accuracy = accuracy if accuracy is not None else (
             policy.measured_accuracy() if self.mode == "auto" else {})
         self.detector = detector or det.Detector()
+        self.identity = None          # an IdentityCheck for the project (Phase 3.9.8-C), set by the shot pipeline
         self.comfy = comfy
         self._vlm = vlm
         self._gemini = gemini
@@ -111,6 +112,17 @@ class LayeredQA:
             detection = self.detector.detect(path)
             pending.update(detection=detection, issues=det.layer1(detection, expected, image))
             pending["layers"].append("deterministic")
+            ids = [item.get("id") for item in expected.get("characters") or [] if item.get("id")]
+            if self.identity is not None and ids:
+                from video.qa import identity_check
+                shot = self.identity.shot(expected.get("shot_id", "")) or {}
+                try:
+                    pending["identity"] = self.identity.score(path, ids, shot_id=expected.get("shot_id", ""),
+                                                              scene_id=expected.get("scene_id", ""), shot_type=expected.get("shot_type", ""))
+                    pending["issues"] += identity_check.issues(pending["identity"], self.identity.vb,
+                                                               regenerated=bool((shot.get("qa") or {}).get("regenerations")))
+                except Exception as exc:                 # noqa: BLE001 — an identity problem never stops the QA
+                    pending["warnings"].append(f"identity check skipped: {str(exc)[:120]}")
             layer1 = decision.verdict({"issues": self.policy(pending["issues"])}, edits_done)[0]
             if layer1 != "regenerate" and ({"local_vlm", "gemini"} & set(self.layers)):
                 pending["questions"] = focused.questions(image, detection, expected, ocr=self.ocr)
@@ -171,6 +183,8 @@ class LayeredQA:
                   "issues": self.policy(issues), "mode": self.mode,
                   "layers": pending["layers"], "warnings": pending["warnings"],
                   "questions": len(pending["questions"]), "seconds": pending["seconds"]}
+        if pending.get("identity"):
+            result["identity"] = pending["identity"]
         return decision.finalize(result, pending["edits_done"])
 
     def review_batch(self, items: list[tuple]) -> list[dict]:

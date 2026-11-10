@@ -53,6 +53,7 @@ def expected_for(shot: dict, vb: dict, scene_narration: str = "") -> dict:
         })
     return {"people": len(foreground), "background": len(listed) - len(foreground),
             "others_present": bool(shot.get("others_present")), "characters": characters,
+            "shot_id": shot.get("shot_id", ""), "scene_id": shot.get("scene_id", ""), "shot_type": shot.get("shot_type", ""),
             "narration": str(scene_narration or shot.get("narration_excerpt", ""))[:1200]}
 
 

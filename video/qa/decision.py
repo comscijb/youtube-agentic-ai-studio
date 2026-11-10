@@ -23,7 +23,7 @@ from video.qa import base
 
 EDIT_MAX_AREA = 0.35
 EDIT_MAX_ISSUES = 2
-REGENERATE_TYPES = {"style_break", "border", "blank", "corrupt", "wrong_subject"}
+REGENERATE_TYPES = {"style_break", "border", "blank", "corrupt", "wrong_subject", "identity"}   # a generic face: a new seed
 INSTRUCTION_EDITABLE = {"unstated_injury", "text"}
 
 

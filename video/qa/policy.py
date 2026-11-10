@@ -29,7 +29,7 @@ from video.qa import base
 MODES = ("advisory", "auto", "off")
 AUTO_MIN_ACCURACY = 0.85
 REPORT = Path(__file__).resolve().parent.parent.parent / "data" / "qa_probe_report.json"
-RELIABLE = {"border", "blank", "corrupt"}
+RELIABLE = {"border", "blank", "corrupt", "identity"}     # identity: SFace against the sheet, calibrated (3.9.8-C)
 NEVER_AUTO = {"duplicate_person"}
 METRIC = {"missing_marker": "missing_glasses", "unstated_injury": "unstated_mark", "extra_person": "extra_person",
           "text": "text"}

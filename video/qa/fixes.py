@@ -53,6 +53,8 @@ def record_result(item: dict, result: dict) -> dict:
               reason=result.get("verdict_reason", ""), issues=result.get("issues", []),
               people_count=result.get("people_count"), layers=result.get("layers", []),
               warnings=result.get("warnings", []), notes=base.notes(result), checked_at=_now())
+    if result.get("identity"):
+        qa["identity"] = result["identity"]
     return qa
 
 

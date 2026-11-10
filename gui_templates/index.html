@@ -573,6 +573,7 @@ a:hover{color:var(--text)}
               <label style="display:flex;gap:4px;align-items:center;color:var(--muted)"><input type="checkbox" id="ig-show-unclear" onchange="igToggleUnclear(this.checked)"> mostrar incertos</label>
               <span id="ig-progress" style="font-weight:600"></span>
               <button id="ig-run-queue" class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="igPost('/api/imagegen/queue/run', {})">Executar fila (0)</button>
+              <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" title="Enfileira uma nova seed para cada plano com &quot;personagem genérico&quot; (rosto que não confere com a folha); depois, Executar fila" onclick="igPost('/api/imagegen/regenerate_generic', {})">Gerar de novo os genéricos</button>
               <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" title="Gemini responde às perguntas de todos os planos com avisos; fica só como aviso" onclick="igPost('/api/imagegen/second_opinion', {hinted: true})">Segunda opinião (Gemini) nos avisos</button>
               <span style="color:var(--muted)">Clique num plano para revisar · ← → e Enter na grade</span>
             </div>

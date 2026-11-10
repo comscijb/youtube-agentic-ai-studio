@@ -1899,6 +1899,26 @@ def imagegen_import(shot_id):
     return jsonify({"ok": True, "action": action, "warnings": shot.get("image_flags", [])})
 
 
+@app.route("/api/imagegen/regenerate_generic", methods=["POST"])
+def imagegen_regenerate_generic():
+    """"Gerar de novo os genéricos" (Phase 3.9.8-C): a new seed queued for every shot flagged as a generic character."""
+    from agents import shot_list as shots_module
+    from agents import visual_bible as vbible
+    from video import shot_generation as shotgen
+    from video.qa import review
+    path = Path(config.OUTPUT_DIR, shots_module.FILE_NAME)
+    shot_list = load_json(path) or {}
+    vb = load_json(Path(config.OUTPUT_DIR, vbible.FILE_NAME)) or {}
+    wanted = shotgen.generic_shots(shot_list)
+    queued = []
+    for shot in shot_list.get("shots", []):
+        if shot["shot_id"] in wanted and not any(item.get("kind") == "regenerate" for item in shot.get("edit_queue", [])):
+            review.enqueue(shot, review.make_request("regenerate", vb))
+            queued.append(shot["shot_id"])
+    atomic_write_json(path, shot_list)
+    return jsonify({"ok": True, "queued": queued, "message": f"{len(queued)} plano(s) na fila: clique em Executar fila"})
+
+
 @app.route("/api/imagegen/shot/<shot_id>/queue", methods=["POST"])
 def imagegen_queue_edit(shot_id):
     """"Remover figura", "Adicionar marcador", "Remover marcas", "Instrução livre", "Gerar de novo":

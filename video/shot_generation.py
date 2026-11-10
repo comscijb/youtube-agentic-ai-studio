@@ -795,6 +795,7 @@ def qa_rounds(generator: ImageGenerator, output: Path, vb: dict, items: list[dic
     alternate, never loaded together. Returns the QA part of the summary."""
     rounds = int(rounds if rounds is not None else getattr(config, "IMAGEGEN_QA_ROUNDS", 2))
     pendings = dict(pendings or {})
+    attach_identity(qa, vb, output)
     outcome = {"qa_failed": [], "qa_flagged": [], "qa_edits": 0, "qa_regenerations": 0, "qa_checked": 0}
     check = [entry for entry in items if fixes.needs_qa(entry["item"])]
     fix = [entry for entry in items if not fixes.needs_qa(entry["item"]) and fixes.needs_fix(entry["item"])]
@@ -848,6 +849,28 @@ def qa_rounds(generator: ImageGenerator, output: Path, vb: dict, items: list[dic
 
 
 QA_SEED_OFFSET = fixes.QA_SEED_OFFSET
+
+
+def attach_identity(qa, vb: dict, output) -> None:
+    """Phase 3.9.8-C: face identity against the approved sheets, with the project's own best close-ups as anchors."""
+    if qa is None or getattr(qa, "identity", None) is not None or not getattr(config, "IMAGEGEN_IDENTITY_CHECK", True):
+        return
+    from video.qa import deterministic
+    try:
+        if not isinstance(qa.detector, deterministic.Detector) or not qa.detector.available():
+            return
+    except Exception:                                    # noqa: BLE001 — a missing detector never blocks generation
+        return
+    from video.qa.identity_check import IdentityCheck
+    shot_list = load_json(Path(output) / shots_module.FILE_NAME) or {}
+    qa.identity = IdentityCheck(qa.detector, vb, output, shot_list.get("shots", []))
+
+
+def generic_shots(shot_list: dict) -> list[str]:
+    """Shots whose QA says a listed character is a generic stand-in ("Gerar de novo os genéricos")."""
+    return [shot["shot_id"] for shot in shot_list.get("shots", [])
+            if any(issue.get("type") == "identity" and "genérico" in str(issue.get("note", ""))
+                   for issue in (shot.get("qa") or {}).get("issues", []))]
 
 
 # The figure must dominate the thumbnail (the evidence one left the whole left half empty).
