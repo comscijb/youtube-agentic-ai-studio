@@ -1517,6 +1517,7 @@ def imagegen_status():
                 "approved_path": (vb.get("references") or {}).get(vbible.reference_key(kind, ident), {}).get("path"),
                 "candidates": [item for item in candidates.get(vbible.reference_key(kind, ident), [])
                                if shotgen.candidate_is_current(vbible.reference_key(kind, ident), item)],
+                **(_reconcile_state(vb, ident) if kind == "character" else {}),
             })
     shots = shot_list.get("shots", [])
     rules = policy.Rules()
@@ -1649,6 +1650,58 @@ def imagegen_regenerate_shots():
         return jsonify({"ok": False, "error": f"Unknown shots: {unknown}"}), 404
     return _imagegen_run(lambda: shotgen.generate_shots(
         config.OUTPUT_DIR, ImageGenerator(config.OUTPUT_DIR), only=ids, progress=_imagegen_progress))
+
+
+def _reconcile_state(vb: dict, ident: str) -> dict:
+    """The stored sheet reading and what still differs from the descriptor (no call)."""
+    from agents import sheet_reading
+    from agents import visual_bible as vbible
+    entry = vbible.character(vb, ident) or {}
+    reading = ((vb.get("references") or {}).get(vbible.reference_key("character", ident)) or {}).get("sheet_reading")
+    if not reading:
+        return {}
+    pending = [item for item in sheet_reading.differences(entry.get("descriptor", ""), vbible.signature_markers(vb, ident), reading)
+               if not (item["field"] == "marker" and item["descriptor"] in (entry.get("marker_conflicts") or []))]
+    return {"sheet_reading": reading, "differences": pending, "descriptor": entry.get("descriptor", "")}
+
+
+@app.route("/api/imagegen/reconcile", methods=["POST"])
+def imagegen_reconcile():
+    """"Conferir descritor" (Phase 3.9.8-B): one vision call reads the approved face sheet; the differences come back."""
+    from agents import sheet_reading
+    from agents import visual_bible as vbible
+    ident = str((request.get_json(force=True) or {}).get("id", ""))
+    path = Path(config.OUTPUT_DIR, vbible.FILE_NAME)
+    vb = load_json(path) or {}
+    sheet = vbible.approved_reference(vb, "character", ident, config.OUTPUT_DIR)
+    if not sheet:
+        return jsonify({"ok": False, "error": "Approve a face sheet first"}), 400
+    try:
+        reading = sheet_reading.read_sheet(sheet)
+    except Exception as exc:                             # noqa: BLE001 — quota, network, parse
+        return jsonify({"ok": False, "error": f"Leitura da folha falhou: {str(exc)[:200]}"}), 502
+    vb["references"][vbible.reference_key("character", ident)]["sheet_reading"] = reading
+    atomic_write_json(path, vb)
+    return jsonify({"ok": True, **_reconcile_state(vb, ident)})
+
+
+@app.route("/api/imagegen/reconcile/apply", methods=["POST"])
+def imagegen_reconcile_apply():
+    """Accept differences (or a hand-edited descriptor); the old descriptor stays in descriptor_history."""
+    from agents import sheet_reading
+    from agents import visual_bible as vbible
+    body = request.get_json(force=True) or {}
+    ident = str(body.get("id", ""))
+    path = Path(config.OUTPUT_DIR, vbible.FILE_NAME)
+    vb = load_json(path) or {}
+    reading = ((vb.get("references") or {}).get(vbible.reference_key("character", ident)) or {}).get("sheet_reading")
+    if not reading or not vbible.character(vb, ident):
+        return jsonify({"ok": False, "error": "Run Conferir descritor first"}), 400
+    accepted = [str(item) for item in body.get("accepted") or []]
+    descriptor = str(body["descriptor"]).strip() if str(body.get("descriptor") or "").strip() else None
+    entry = sheet_reading.apply(vb, ident, reading, accepted, descriptor=descriptor)
+    atomic_write_json(path, vb)
+    return jsonify({"ok": True, "descriptor": entry["descriptor"], **_reconcile_state(vb, ident)})
 
 
 @app.route("/api/imagegen/approve", methods=["POST"])

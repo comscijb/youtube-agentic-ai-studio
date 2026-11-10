@@ -2959,6 +2959,13 @@ function loadImagegen() {
         label.appendChild(gen);
       }
       if (ref.kind === 'character' && ref.approved) {
+        const check = document.createElement('button');
+        check.className = 'btn btn-ghost';
+        check.style.cssText = 'font-size:10px;padding:1px 6px;margin-left:6px';
+        check.textContent = 'Conferir descritor';
+        check.title = 'Lê a folha aprovada (uma chamada ao Gemini) e mostra o que o descritor diz diferente';
+        check.onclick = () => igPost('/api/imagegen/reconcile', {id: ref.id});
+        label.appendChild(check);
         const fresh = document.createElement('button');
         fresh.className = 'btn btn-ghost';
         fresh.style.cssText = 'font-size:10px;padding:1px 6px;margin-left:6px';
@@ -2986,6 +2993,29 @@ function loadImagegen() {
         label.appendChild(more);
       }
       block.appendChild(label);
+      if ((ref.differences || []).length) {      // descriptor vs the approved sheet (Phase 3.9.8-B)
+        const box = document.createElement('div');
+        box.style.cssText = 'font-size:11px;margin:2px 0 6px;padding:6px;border:1px solid var(--amber);border-radius:4px';
+        box.innerHTML = '<div style="color:var(--amber)">O descritor não confere com a folha aprovada:</div>';
+        ref.differences.forEach(item => {
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;gap:6px;align-items:center;margin-top:2px';
+          row.appendChild(Object.assign(document.createElement('span'), {textContent: item.message + ' — atualizar?', style: 'flex:1'}));
+          igButton(row, 'Atualizar', 'Reescreve com o que a folha mostra; o valor antigo fica no histórico',
+                   () => igPost('/api/imagegen/reconcile/apply', {id: ref.id, accepted: [item.field]}), ';font-size:10px;padding:1px 6px');
+          box.appendChild(row);
+        });
+        const all = document.createElement('div');
+        all.style.cssText = 'display:flex;gap:6px;margin-top:4px';
+        igButton(all, 'Atualizar tudo', '', () => igPost('/api/imagegen/reconcile/apply', {id: ref.id, accepted: ref.differences.map(item => item.field)}),
+                 ';font-size:10px;padding:1px 6px');
+        igButton(all, 'Editar descritor', 'Escreva o descritor à mão', () => {
+          const text = prompt('Descritor', ref.descriptor || '');
+          if (text) igPost('/api/imagegen/reconcile/apply', {id: ref.id, accepted: ['marker'], descriptor: text});
+        }, ';font-size:10px;padding:1px 6px');
+        box.appendChild(all);
+        block.appendChild(box);
+      }
       const latest = Math.max(1, ...ref.candidates.map(c => c.batch || 1));
       const cells = list => {
         const row = document.createElement('div');
