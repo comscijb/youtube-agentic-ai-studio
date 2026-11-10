@@ -47,7 +47,7 @@ FRAMING = {
     "close_up": "close-up on the face and shoulders against a dark background lit by one light source",
     "insert": "insert close-up of the object",
     "over_the_shoulder": "over-the-shoulder shot",
-    "silhouette": "silhouette against the light, face not visible",
+    "silhouette": "backlit silhouette: the figure's shape dark against the bright background, face and clothes in shadow",
     "hands": "close-up of the hands only, face out of frame",
 }
 
@@ -847,14 +847,30 @@ def portrait_reference_wanted(shot: dict) -> bool:
     return bool(reference_kinds(shot))
 
 
-_FACELESS_VIEW = {"silhouette": "seen only in silhouette, far from the viewer",
+_FACELESS_VIEW = {"silhouette": "backlit, a dark shape against the bright background, face and clothes in shadow",
                   "over_the_shoulder": "seen from behind, over the shoulder",
                   "wide": "seen small and from behind, far from the viewer"}
+NEUTRAL_DISTANCE = "seen at full length, at a distance"
+# Phase 3.9.8-D: actions that show the face (or need it toward the camera). "Seen from behind" against them made the
+# model ignore the framing and fall back to its defaults.
+FACE_ACTIONS = re.compile(r"\b(?:turn(?:s|ing)? (?:her|his|their) head|look(?:s|ing)? (?:at|toward|towards|up|back|across)|"
+                          r"gaz(?:e|es|ing)|glanc(?:e|es|ing)|smil(?:e|es|ing)|frown(?:s|ing)?|laugh(?:s|ing)?|cr(?:y|ies|ying)|"
+                          r"plac(?:e|es|ing)|faces? (?:the|us|forward)|watch(?:es|ing)?|stares?|staring|meets? (?:her|his) eyes)\b", re.I)
+
+
+def framing_conflict(shot: dict) -> str | None:
+    """The phrase of the action that contradicts a faceless framing, or None."""
+    found = FACE_ACTIONS.search(str(shot.get("action", "")))
+    return found.group(0) if found and shot.get("shot_type") != "silhouette" else None
 
 
 def faceless_headcount(names: list[str], shot: dict) -> str:
-    """"The only person in the image is the man from the first image, seen small and from behind, far from the viewer." """
+    """"The only person in the image is the man from the first image, seen small and from behind, far from the viewer."
+    The from-behind wording only when the face is really hidden (face_visibility none) and the action agrees; otherwise
+    a neutral distance phrase."""
     view = _FACELESS_VIEW.get(shot.get("shot_type"), "turned away from the viewer, the face not visible")
+    if shot.get("shot_type") not in ("silhouette", "over_the_shoulder") and (shot.get("face_visibility") != "none" or framing_conflict(shot)):
+        view = NEUTRAL_DISTANCE
     if len(names) == 1:
         return f"The only person in the image is {names[0]}, {view}."
     return f"The only people in the image are {', '.join(names[:-1])} and {names[-1]}, {view}."
@@ -877,6 +893,11 @@ def _entry(segment: dict, shot: dict, settings: dict, vb: dict, output: Path, fl
         "ambient": str(shot.get("ambient") or ""),
         "seed_offset": 0,
     }
+    conflict = framing_conflict(entry) if entry["face_visibility"] == "none" else None
+    if conflict:                                          # the action wins: its face is not hidden after all
+        print(f"   -> {entry['shot_id']}: face_visibility none contradicts \"{conflict}\"; framed at a distance instead")
+        entry["face_visibility"] = "partial"
+        entry["framing_resolved"] = conflict
     rewritten = rewrite_action(entry["action"], cast, vb, entry["others_present"])
     if rewritten != entry["action"]:
         print(f"   -> {entry['shot_id']}: wording rewritten ({entry['action'][:50]} -> {rewritten[:50]})")

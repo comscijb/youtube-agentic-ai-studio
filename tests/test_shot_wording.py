@@ -87,7 +87,7 @@ class HeadcountTests(unittest.TestCase):
     def test_faceless_shots_state_the_headcount_and_the_framing(self):
         prompt = self.compose(shot_type="wide", face_visibility="none")["prompt"]
         self.assertIn("The only person in the image is the man from the first image, seen small and from behind, far from the viewer.", prompt)
-        self.assertIn("only in silhouette", self.compose(shot_type="silhouette", face_visibility="none")["prompt"])
+        self.assertIn("backlit, a dark shape against the bright background", self.compose(shot_type="silhouette", face_visibility="none")["prompt"])
         self.assertIn("seen from behind, over the shoulder", self.compose(shot_type="over_the_shoulder")["prompt"])
         self.assertIn("the face not visible", self.compose(shot_type="close_up", face_visibility="none")["prompt"])
 

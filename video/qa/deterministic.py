@@ -220,6 +220,29 @@ def layer1(detection: dict, expected: dict, image: Image.Image | None = None) ->
     return issues
 
 
+SILHOUETTE_RATIO = 0.6        # the figure's mean luminance under 60 % of the background's
+
+
+def silhouette_issue(image: Image.Image, persons: list[dict]) -> list[dict]:
+    """Advisory (Phase 3.9.8-D): a silhouette shot whose figure is not clearly darker than what is behind it."""
+    if not persons:
+        return []
+    gray = np.asarray(image.convert("L"), dtype=np.float32)
+    height, width = gray.shape
+    x0, y0, x1, y1 = persons[0]["box"]
+    inside = np.zeros_like(gray, dtype=bool)
+    inside[int(y0 * height):int(y1 * height), int(x0 * width):int(x1 * width)] = True
+    pad_x, pad_y = (x1 - x0) * 0.6, (y1 - y0) * 0.25            # the light right behind the figure, not the whole frame
+    ring = np.zeros_like(gray, dtype=bool)
+    ring[int(max(0, y0 - pad_y) * height):int(min(1, y1 + pad_y) * height), int(max(0, x0 - pad_x) * width):int(min(1, x1 + pad_x) * width)] = True
+    ring &= ~inside
+    figure, around = float(gray[inside].mean()), float(gray[ring].mean()) if ring.any() else 255.0
+    if around <= 0 or figure < SILHOUETTE_RATIO * around:
+        return []
+    return [base.issue("style_break", severity="advisory", box=persons[0]["box"], source="deterministic",
+                       note=f"silhueta clara demais: figura {figure:.0f} contra fundo {around:.0f} (esperado bem mais escura)")]
+
+
 # Calibrated on episodes 2-3: Thomas's shoulder patches (s03_01, s02_06, s01_09) are 0.7-1 % of his box; a wine
 # glass taken for a small "person" is not a figure. Dusty Crimson is muted, hence the low saturation floor.
 RED_PATCH_SHARE = 0.006    # of the person's box

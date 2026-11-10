@@ -38,6 +38,8 @@ def colour_name(rgb) -> str:
         return "black"
     if sat < 0.16:
         return "grey" if light < 0.75 else "cream"
+    if light >= 0.75:                                    # very light and warm: cream, ivory, beige
+        return "cream"
     if hue < 28 or hue >= 340:
         return "red" if sat >= 0.35 and light >= 0.2 else "brown"
     if hue < 50:

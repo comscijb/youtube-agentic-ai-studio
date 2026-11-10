@@ -112,6 +112,8 @@ class LayeredQA:
             detection = self.detector.detect(path)
             pending.update(detection=detection, issues=det.layer1(detection, expected, image))
             pending["layers"].append("deterministic")
+            if expected.get("shot_type") == "silhouette":
+                pending["issues"] += det.silhouette_issue(image, detection.get("persons", []))
             ids = [item.get("id") for item in expected.get("characters") or [] if item.get("id")]
             if self.identity is not None and ids:
                 from video.qa import identity_check
