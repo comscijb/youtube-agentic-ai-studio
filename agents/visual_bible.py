@@ -335,6 +335,10 @@ Rules:
   Never contradict the bible. NO emotions, moods or states (weary, tired, sad, tearful, anxious),
   no grooming disorder (dishevelled, messy, escaping wisps), no injuries, dirt or story details;
   a scar only when the screenplay establishes a permanent one. Those belong to single shots.
+- locations follow the narration beat by beat, not scene by scene: when a scene moves ("in the car on the drive
+  home", "back in the kitchen"), that place is a location of its own (e.g. car_interior) listed with every scene that
+  goes there. A vehicle or other enclosed space adds "enclosed": true and "seating": who sits where ("the driver in
+  the front left seat, the passenger beside her").
 - wardrobe[].outfit: clothing and accessories only, exactly consistent with the screenplay for
   each scene (if the screenplay names a garment, use it; never invent garments the text
   contradicts, e.g. no cardigan when the screenplay says she wears an ivory silk shirt). Cover

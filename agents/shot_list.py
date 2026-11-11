@@ -432,7 +432,8 @@ pristine walls"); never decay, grime, stains, rust or ruin unless the narration 
 shots has exactly one object per segment, in segment order (the code assigns shot ids and
 timings by position; never return ids or times), keys: shot_type
 ({", ".join(SHOT_TYPES)}), characters (character_ids visible in the frame, from the scene cast),
-location_id (from the visual bible), action (what is visible: pose, gesture, objects, light and
+location_id (from the visual bible, chosen from THIS segment's own narration: when the narration moves — "in the
+car on the drive home", "back in the kitchen" — the shot moves with it, whatever the scene's first location), action (what is visible: pose, gesture, objects, light and
 composition in one concrete sentence; no camera jargon beyond the framing; never describe faces
 or clothes, the visual bible supplies them), appearance (an object mapping every character in
 the shot to their grooming and expression at this exact moment, following the narration: a
@@ -702,6 +703,7 @@ def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bo
             entries = [_entry(segment, shot, settings, vb, output, flags.get(segment["shot_id"]),
                               advice.get(segment["shot_id"]))
                        for segment, shot in zip(scene_segments, result["shots"])]
+            relocate_entries(entries, vb, output)
             by_scene[index] = entries
         if on_scene is not None:
             on_scene(index, scene_id, entries)
@@ -736,6 +738,22 @@ def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bo
         atomic_write_json(path, result)
     write_report(output, result)
     return result
+
+
+def relocate_entries(entries: list[dict], vb: dict, output) -> list[dict]:
+    """Phase 3.9.9-A: every shot's location from its own narration excerpt; moved shots are composed again and a new
+    beat-level location (a car interior) is saved to the visual bible."""
+    from agents import adherence
+    before = len(vb.get("locations", []))
+    changes = adherence.relocate(entries, vb)
+    moved = {change["shot_id"] for change in changes}
+    for entry in entries:
+        if entry["shot_id"] in moved:
+            composed = compose_shot(entry, vb, output, assume_references=True)
+            entry["prompt"], entry["reference_slots"] = composed["prompt"], composed["slots"]
+    if len(vb.get("locations", [])) != before or changes:
+        atomic_write_json(Path(output) / vbible.FILE_NAME, vb)
+    return changes
 
 
 REPORT_FILE = "shot_list_report.json"
