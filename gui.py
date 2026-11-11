@@ -1552,7 +1552,7 @@ def imagegen_status():
                                                    "flags", "warnings", "qa", "edit_queue",
                                                    "image_flags", "copy_check", "removal", "source",
                                                    "adherence", "location_review", "location_relocated_from", "staging",
-                                                   "image_adherence", "prompt_patch",
+                                                   "image_adherence", "prompt_patch", "external_provider",
                                                    "narration_excerpt", "location", "generated_at")}
                   for shot in shots],
     })
@@ -2018,6 +2018,55 @@ def imagegen_adherence_regenerate():
             queued.append(shot["shot_id"])
     atomic_write_json(path, shot_list)
     return jsonify({"ok": True, "queued": queued, "message": f"{len(queued)} plano(s) na fila com o prompt corrigido: clique em Executar fila"})
+
+
+@app.route("/api/imagegen/external", methods=["GET", "POST"])
+def imagegen_external():
+    """Phase 3.9.9-F: the provider's state, the budget and the estimate for ``count`` shots; POST {cap} sets the cap."""
+    from video import external_provider
+    if request.method == "POST" and "cap" in (request.get_json(force=True) or {}):
+        external_provider.set_cap(config.OUTPUT_DIR, float((request.get_json(force=True) or {})["cap"]))
+    try:
+        external_provider.provider()
+        enabled, reason = True, ""
+    except external_provider.ProviderDisabled as exc:
+        enabled, reason = False, str(exc)
+    count = int(request.args.get("count", 1) or 1)
+    return jsonify({"ok": True, "enabled": enabled, "reason": reason, **external_provider.estimate(config.OUTPUT_DIR, count)})
+
+
+@app.route("/api/imagegen/external/redo", methods=["POST"])
+def imagegen_external_redo():
+    """"Refazer com provedor externo": never automatic; the GUI confirms the cost first ({shot_ids, confirmed})."""
+    from agents import visual_bible as vbible
+    from video import external_provider
+    body = request.get_json(force=True) or {}
+    ids = [str(item) for item in body.get("shot_ids") or []]
+    if not ids:
+        return jsonify({"ok": False, "error": "Escolha ao menos um plano"}), 400
+    try:
+        external_provider.provider()
+        external_provider.check(config.OUTPUT_DIR, len(ids))
+    except (external_provider.ProviderDisabled, external_provider.BudgetExceeded) as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    if not body.get("confirmed"):
+        return jsonify({"ok": False, "error": "Confirme o custo antes de enviar"}), 400
+    path = Path(config.OUTPUT_DIR, "shot_list.json")
+
+    def work():
+        shot_list = load_json(path) or {}
+        vb = load_json(Path(config.OUTPUT_DIR, vbible.FILE_NAME)) or {}
+        for shot in shot_list.get("shots", []):
+            if shot["shot_id"] not in ids:
+                continue
+            try:
+                external_provider.redo_shot(config.OUTPUT_DIR, shot, vb, confirmed=True, edit=bool(body.get("edit")))
+                _imagegen_progress(f"{shot['shot_id']}: refeito pelo provedor externo")
+            except Exception as exc:                     # noqa: BLE001 — one failure never stops the batch
+                _imagegen_progress(f"{shot['shot_id']}: provedor externo falhou ({str(exc)[:160]})")
+            atomic_write_json(path, shot_list)
+        Path(config.OUTPUT_DIR, "final_video.mp4").unlink(missing_ok=True)
+    return _imagegen_run(work)
 
 
 @app.route("/api/imagegen/regenerate_generic", methods=["POST"])

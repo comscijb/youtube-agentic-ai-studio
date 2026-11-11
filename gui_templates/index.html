@@ -2220,6 +2220,8 @@ function igSideActions(side, shot) {
   igButton(row, 'Remover figura (F)', 'Pinte a figura ou use uma caixa; apaga de verdade e dá até 3 resultados', () => IG_ACTIONS.figure(shot));
   igButton(row, 'Remover marcas', 'Sangue, ferimentos ou marcas vermelhas; caixa opcional', () => IG_ACTIONS.marks(shot));
   igButton(row, 'Gerar de novo (G)', 'Nova seed; a versão atual fica no histórico', () => IG_ACTIONS.regenerate(shot));
+  igButton(row, 'Refazer com provedor externo', 'Planos difíceis: envia prompt, folhas e referência ao provedor externo (com custo, sempre confirmado)',
+           () => igExternalRedo(shot));
   igButton(row, 'Segunda opinião (Gemini)', 'Gemini responde às mesmas perguntas; fica só como aviso',
            () => igPost('/api/imagegen/second_opinion', {shot_id: shot.shot_id}));
   block.appendChild(row);
@@ -2418,6 +2420,22 @@ function igImportChoice(shot, file, info) {
   igButton(bar, 'Cancelar', '', close);
   shade.appendChild(bar);
   document.body.appendChild(shade);
+}
+
+function igExternalRedo(shot) {
+  fetch('/api/imagegen/external?count=1').then(r => r.json()).then(d => {
+    if (!d.enabled) { alert('Provedor externo desligado: ' + d.reason); return; }
+    if (d.price <= 0) { alert('Configure EXTERNAL_IMAGE_PRICE (preço por imagem) antes de usar o provedor externo.'); return; }
+    if (d.cap <= 0 || !d.allowed) {
+      const cap = prompt(`Teto deste projeto para o provedor externo (US$). Gasto até agora: US$ ${d.spent}.`, String(Math.max(d.cap, d.spent + d.cost)));
+      if (!cap) return;
+      fetch('/api/imagegen/external', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({cap: parseFloat(cap)})})
+        .then(() => igExternalRedo(shot));
+      return;
+    }
+    if (confirm(`Refazer ${shot.shot_id} com o provedor externo? Custo estimado US$ ${d.cost} (gasto US$ ${d.spent} de US$ ${d.cap}).`))
+      igPost('/api/imagegen/external/redo', {shot_ids: [shot.shot_id], confirmed: true});
+  });
 }
 
 function igAdherenceToggle(enabled) {
