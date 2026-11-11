@@ -1,0 +1,464 @@
+{
+ "sheet": {
+  "key": "6406bf4efa6369645b4146ce0cec2edb706317333d38477307f51fe33ebebb80",
+  "version": 1,
+  "moments": [
+   {
+    "sentences": [
+     0,
+     6
+    ],
+    "location_id": "supermarket_aisle",
+    "evidence": "Two days later at the suburban supermarket, an unfamiliar woman stopped them in the cereal aisle.",
+    "characters": [
+     {
+      "id": "hannah_price",
+      "position": "in the cereal aisle",
+      "posture": "standing",
+      "holding": "",
+      "evidence": "Hannah gently stepped between them, offering a polite smile until the shopper drifted away."
+     },
+     {
+      "id": "leo_price",
+      "position": "in the cereal aisle",
+      "posture": "standing",
+      "holding": "",
+      "evidence": "He pulled his grey hoodie tight over his head and stared at the linoleum floor without saying a word."
+     },
+     {
+      "id": "priya",
+      "position": "in the cereal aisle",
+      "posture": "standing",
+      "holding": "",
+      "evidence": "the stranger gasped, leaning down toward Leo."
+     }
+    ],
+    "absent": [],
+    "relations": [
+     {
+      "character": "hannah_price",
+      "object": "cereal aisle",
+      "side": "in",
+      "evidence": "stopped them in the cereal aisle."
+     }
+    ]
+   },
+   {
+    "sentences": [
+     7,
+     23
+    ],
+    "location_id": "car_interior",
+    "evidence": "In the car on the drive home, the quiet was heavy.",
+    "characters": [
+     {
+      "id": "hannah_price",
+      "position": "driver's seat",
+      "posture": "seated",
+      "holding": "",
+      "evidence": "her fingers tightening on the steering wheel."
+     },
+     {
+      "id": "leo_price",
+      "position": "back seat",
+      "posture": "seated",
+      "holding": "",
+      "evidence": "Hannah looked at her son in the rearview mirror."
+     }
+    ],
+    "absent": [
+     "priya"
+    ],
+    "relations": [
+     {
+      "character": "hannah_price",
+      "object": "steering wheel",
+      "side": "at",
+      "evidence": "her fingers tightening on the steering wheel."
+     }
+    ]
+   }
+  ]
+ },
+ "shots": {
+  "s04_01": {
+   "staging": {
+    "moment": [
+     0,
+     6
+    ],
+    "location_id": "supermarket_aisle",
+    "characters": [
+     {
+      "id": "hannah_price",
+      "position": "in the cereal aisle",
+      "posture": "standing",
+      "holding": "",
+      "evidence": "Hannah gently stepped between them, offering a polite smile until the shopper drifted away."
+     },
+     {
+      "id": "leo_price",
+      "position": "in the cereal aisle",
+      "posture": "standing",
+      "holding": "",
+      "evidence": "He pulled his grey hoodie tight over his head and stared at the linoleum floor without saying a word."
+     }
+    ],
+    "relations": [
+     {
+      "character": "hannah_price",
+      "object": "cereal aisle",
+      "side": "in",
+      "evidence": "stopped them in the cereal aisle."
+     }
+    ],
+    "absent": []
+   },
+   "prompt": "Create an illustration of the woman from the first image, with thin silver wristwatch, wearing cream collared shirt beneath a dark tailored wool coat and dark trousers, controlled posture, hair resting over shoulders, poised and watchful expression; and the man from the second image, with slight chin dimple, wearing heather grey pullover hoodie with hood pulled over head and dark trousers, tense still posture, short dark hair visible under his hood, looking down. Beneath towering, symmetrical supermarket shelves bathed in stark fluorescent light, Hannah and Leo walk down the vast aisle as an unfamiliar female shopper steps directly into their path. The woman from the first image, standing in the cereal aisle; the man from the second image, standing in the cereal aisle. Specify three people in the scene: Hannah, Leo, and the unfamiliar woman shopper standing in the aisle. Exactly two people in the scene: the woman from the first image and the man from the second image, plus a few distant, indistinct guests in shadow, each clearly different in age, build, posture and clothing. Setting: A spacious, quiet retail aisle lined with tall symmetrical shelving, pristine reflective flooring beneath overhead fluorescent lighting panels, and long shadows stretching down the empty corridor, A spacious. wide shot, the figures small within towering architecture. Rendered in the drawing style of the third image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, fine grain and ink texture across the whole picture, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark."
+  },
+  "s04_02": {
+   "staging": {
+    "moment": [
+     0,
+     6
+    ],
+    "location_id": "supermarket_aisle",
+    "characters": [
+     {
+      "id": "leo_price",
+      "position": "in the cereal aisle",
+      "posture": "standing",
+      "holding": "",
+      "evidence": "He pulled his grey hoodie tight over his head and stared at the linoleum floor without saying a word."
+     }
+    ],
+    "relations": [],
+    "absent": []
+   },
+   "prompt": "Create an illustration of the man from the first image, with slight chin dimple, wearing heather grey pullover hoodie with hood pulled over head and dark trousers, tense still posture, dark eyes wide with sudden dread, short dark hair partly covered by his grey hood. Leo stands completely rigid under the harsh overhead glow as the looming silhouette of an older woman shopper leans down toward him with an intrusive gesture. The man from the first image, standing in the cereal aisle. Specify two people in the scene: Leo standing rigid and the older woman stranger leaning down toward him. Exactly one person in the scene: the man from the first image, plus a few distant, indistinct guests in shadow, each clearly different in age, build, posture and clothing. Setting: A spacious, quiet retail aisle lined with tall symmetrical shelving, pristine reflective flooring beneath overhead fluorescent lighting panels, and long shadows stretching down the empty corridor, A spacious. medium shot, waist up. Rendered in the drawing style of the second image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, fine grain and ink texture across the whole picture, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark."
+  },
+  "s04_03": {
+   "staging": {
+    "moment": [
+     0,
+     6
+    ],
+    "location_id": "supermarket_aisle",
+    "characters": [
+     {
+      "id": "leo_price",
+      "position": "in the cereal aisle",
+      "posture": "standing",
+      "holding": "",
+      "evidence": "He pulled his grey hoodie tight over his head and stared at the linoleum floor without saying a word."
+     }
+    ],
+    "relations": [],
+    "absent": []
+   },
+   "prompt": "Create an illustration of the man from the first image, with slight chin dimple, wearing heather grey pullover hoodie with hood pulled over head and dark trousers, tense still posture, wide fearful eyes, chin slightly tucked in silent alarm. A stark beam of cool fluorescent light cuts across Leo's face as he recoils against the towering dark shelves behind him. The man from the first image, standing in the cereal aisle. Exactly one person in the scene: the man from the first image, plus a few distant, indistinct guests in shadow, each clearly different in age, build, posture and clothing. Setting: A spacious, quiet retail aisle lined with tall symmetrical shelving, pristine reflective flooring beneath overhead fluorescent lighting panels, and long shadows stretching down the empty corridor, A spacious. close-up on the face and shoulders against a dark background lit by one light source. Rendered in the drawing style of the second image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, fine grain and ink texture across the whole picture, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark."
+  },
+  "s04_04": {
+   "staging": {
+    "moment": [
+     0,
+     6
+    ],
+    "location_id": "supermarket_aisle",
+    "characters": [
+     {
+      "id": "leo_price",
+      "position": "in the cereal aisle",
+      "posture": "standing",
+      "holding": "",
+      "evidence": "He pulled his grey hoodie tight over his head and stared at the linoleum floor without saying a word."
+     }
+    ],
+    "relations": [],
+    "absent": []
+   },
+   "prompt": "Create an illustration of the man from the first image, with slight chin dimple, wearing heather grey pullover hoodie with hood pulled over head and dark trousers, tense still posture, head bowed low, grey hood pulled forward concealing his features. Dwarfed by towering rows of packaged cereal boxes, Leo draws his hood tightly over his head and stares down at the gleaming linoleum floor. The man from the first image, standing in the cereal aisle. Exactly one person in the scene: the man from the first image, plus a few distant, indistinct guests in shadow, each clearly different in age, build, posture and clothing. Setting: A spacious, quiet retail aisle lined with tall symmetrical shelving, pristine reflective flooring beneath overhead fluorescent lighting panels, and long shadows stretching down the empty corridor, A spacious. wide shot, the figures small within towering architecture. Rendered in the drawing style of the second image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, fine grain and ink texture across the whole picture, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark."
+  },
+  "s04_05": {
+   "staging": {
+    "moment": [
+     0,
+     6
+    ],
+    "location_id": "supermarket_aisle",
+    "characters": [
+     {
+      "id": "hannah_price",
+      "position": "in the cereal aisle",
+      "posture": "standing",
+      "holding": "",
+      "evidence": "Hannah gently stepped between them, offering a polite smile until the shopper drifted away."
+     },
+     {
+      "id": "leo_price",
+      "position": "in the cereal aisle",
+      "posture": "standing",
+      "holding": "",
+      "evidence": "He pulled his grey hoodie tight over his head and stared at the linoleum floor without saying a word."
+     }
+    ],
+    "relations": [
+     {
+      "character": "hannah_price",
+      "object": "cereal aisle",
+      "side": "in",
+      "evidence": "stopped them in the cereal aisle."
+     }
+    ],
+    "absent": []
+   },
+   "prompt": "Create an illustration of the woman from the first image, with thin silver wristwatch, wearing cream collared shirt beneath a dark tailored wool coat and dark trousers, controlled posture, hair resting over shoulders, polite defensive smile masking deep tension; and the man from the second image, with slight chin dimple, wearing heather grey pullover hoodie with hood pulled over head and dark trousers, tense still posture, standing completely hidden behind her shoulder. Hannah steps smoothly in front of Leo, shielding him with an arm behind her back while offering a fixed, razor-thin smile toward the departing shopper. The woman from the first image, standing in the cereal aisle; the man from the second image, standing in the cereal aisle. Exactly two people in the scene: the woman from the first image and the man from the second image, plus a few distant, indistinct guests in shadow, each clearly different in age, build, posture and clothing. Setting: A spacious, quiet retail aisle lined with tall symmetrical shelving, pristine reflective flooring beneath overhead fluorescent lighting panels, and long shadows stretching down the empty corridor, A spacious. medium shot, waist up. Rendered in the drawing style of the third image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, fine grain and ink texture across the whole picture, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark."
+  },
+  "s04_06": {
+   "staging": {
+    "moment": [
+     7,
+     23
+    ],
+    "location_id": "car_interior",
+    "characters": [
+     {
+      "id": "hannah_price",
+      "position": "driver's seat",
+      "posture": "seated",
+      "holding": "",
+      "evidence": "her fingers tightening on the steering wheel."
+     },
+     {
+      "id": "leo_price",
+      "position": "back seat",
+      "posture": "seated",
+      "holding": "",
+      "evidence": "Hannah looked at her son in the rearview mirror."
+     }
+    ],
+    "relations": [
+     {
+      "character": "hannah_price",
+      "object": "steering wheel",
+      "side": "at",
+      "evidence": "her fingers tightening on the steering wheel."
+     }
+    ],
+    "absent": [
+     "priya"
+    ]
+   },
+   "prompt": "Create an illustration of the woman from the first image, with thin silver wristwatch, wearing cream collared shirt beneath a dark tailored wool coat and dark trousers, controlled posture, hair resting over shoulders, watchful and unsettled expression in the mirror reflection; and the man from the second image, with slight chin dimple, wearing heather grey pullover hoodie with hood pulled over head and dark trousers, tense still posture, hood pulled up, staring blankly ahead at the dark dash. From over Hannah's shoulder, her eyes catch Leo's reflection in the rearview mirror while he sits beside her staring straight ahead at the dark dashboard. The woman from the first image, seated in the driver's seat, her hands on the wheel; the man from the second image, seated in the back seat, both inside the car. Ensure Leo is described as sitting in the back seat, visible in the rearview mirror. Exactly two people in the scene: the woman from the first image and the man from the second image; nobody else is present. Setting: the interior of a family car seen from inside: two front seats, the steering wheel and dashboard, side windows and the windshield. seen over the shoulder of the woman from the first image; the man from the second image faces the viewer. Rendered in the drawing style of the third image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, fine grain and ink texture across the whole picture, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark."
+  },
+  "s04_07": {
+   "staging": {
+    "moment": [
+     7,
+     23
+    ],
+    "location_id": "car_interior",
+    "characters": [
+     {
+      "id": "hannah_price",
+      "position": "driver's seat",
+      "posture": "seated",
+      "holding": "",
+      "evidence": "her fingers tightening on the steering wheel."
+     }
+    ],
+    "relations": [
+     {
+      "character": "hannah_price",
+      "object": "steering wheel",
+      "side": "at",
+      "evidence": "her fingers tightening on the steering wheel."
+     }
+    ],
+    "absent": [
+     "priya"
+    ]
+   },
+   "prompt": "Create an illustration of the woman from the first image, with thin silver wristwatch, wearing cream collared shirt beneath a dark tailored wool coat and dark trousers, controlled posture, hair resting over shoulders, eyes hollow with painful reminiscence. Hannah stares straight ahead through the windshield into the shadows, her jaw set as cold ambient light illuminates her sharp features and distant gaze. The woman from the first image, seated in the driver's seat, her hands on the wheel, inside the car. Exactly one person in the scene: the woman from the first image. Setting: the interior of a family car seen from inside: two front seats, the steering wheel and dashboard, side windows and the windshield. close-up on the face and shoulders against a dark background lit by one light source. Rendered in the drawing style of the second image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, fine grain and ink texture across the whole picture, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark."
+  },
+  "s04_08": {
+   "staging": {
+    "moment": [
+     7,
+     23
+    ],
+    "location_id": "car_interior",
+    "characters": [],
+    "relations": [],
+    "absent": [
+     "priya"
+    ]
+   },
+   "prompt": "An illustration: A clean white paper tissue rests upon a dark surface in sharp window light, cradling a tiny white baby tooth amid cold geometric shadows. Set the scene in a dark dining room by a window with a child's hand holding the tiny tooth on a tissue. The room is empty and still. Setting: the interior of a family car seen from inside: two front seats, the steering wheel and dashboard, side windows and the windshield. insert close-up of the object. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, fine grain and ink texture across the whole picture, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale of vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and formless shadows, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark."
+  },
+  "s04_09": {
+   "staging": {
+    "moment": [
+     7,
+     23
+    ],
+    "location_id": "car_interior",
+    "characters": [
+     {
+      "id": "hannah_price",
+      "position": "driver's seat",
+      "posture": "seated",
+      "holding": "",
+      "evidence": "her fingers tightening on the steering wheel."
+     },
+     {
+      "id": "leo_price",
+      "position": "back seat",
+      "posture": "seated",
+      "holding": "",
+      "evidence": "Hannah looked at her son in the rearview mirror."
+     }
+    ],
+    "relations": [
+     {
+      "character": "hannah_price",
+      "object": "steering wheel",
+      "side": "at",
+      "evidence": "her fingers tightening on the steering wheel."
+     }
+    ],
+    "absent": [
+     "priya"
+    ]
+   },
+   "prompt": "Create an illustration of the man from the first image, with slight chin dimple, wearing heather grey pullover hoodie with hood pulled over head and dark trousers, tense still posture, hood pulled forward, head turned downward; and the woman from the second image, with thin silver wristwatch, wearing cream collared shirt beneath a dark tailored wool coat and dark trousers, controlled posture, hair resting over shoulders, sitting motionless. Outlined sharply against the cool exterior light, Leo turns his head in dark profile to examine Hannah's motionless hands. The woman from the second image, seated in the driver's seat, her hands on the wheel; the man from the first image, seated in the back seat, both inside the car. Exactly two people in the scene: the man from the first image and the woman from the second image; nobody else is present. The only people in the image are the man from the first image and the woman from the second image, backlit, a dark shape against the bright background, face and clothes in shadow. Setting: the interior of a family car seen from inside: two front seats, the steering wheel and dashboard, side windows and the windshield. backlit silhouette: the figure's shape dark against the bright background, face and clothes in shadow. Rendered in the drawing style of the third image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, fine grain and ink texture across the whole picture, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark."
+  },
+  "s04_10": {
+   "staging": {
+    "moment": [
+     7,
+     23
+    ],
+    "location_id": "car_interior",
+    "characters": [
+     {
+      "id": "leo_price",
+      "position": "back seat",
+      "posture": "seated",
+      "holding": "",
+      "evidence": "Hannah looked at her son in the rearview mirror."
+     }
+    ],
+    "relations": [],
+    "absent": [
+     "priya"
+    ]
+   },
+   "prompt": "Create an illustration of the man from the first image, with slight chin dimple, wearing heather grey pullover hoodie with hood pulled over head and dark trousers, tense still posture, lips barely parted, vacant and exhausted expression under his grey hood. Turned toward the dark passenger window, Leo speaks softly, his pale profile catching dim reflections from the glass. The man from the first image, seated in the back seat, inside the car. Exactly one person in the scene: the man from the first image. Setting: the interior of a family car seen from inside: two front seats, the steering wheel and dashboard, side windows and the windshield. close-up on the face and shoulders against a dark background lit by one light source. Rendered in the drawing style of the second image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, fine grain and ink texture across the whole picture, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark."
+  },
+  "s04_11": {
+   "staging": {
+    "moment": [
+     7,
+     23
+    ],
+    "location_id": "car_interior",
+    "characters": [
+     {
+      "id": "hannah_price",
+      "position": "driver's seat",
+      "posture": "seated",
+      "holding": "",
+      "evidence": "her fingers tightening on the steering wheel."
+     }
+    ],
+    "relations": [
+     {
+      "character": "hannah_price",
+      "object": "steering wheel",
+      "side": "at",
+      "evidence": "her fingers tightening on the steering wheel."
+     }
+    ],
+    "absent": [
+     "priya"
+    ]
+   },
+   "prompt": "Create an illustration of the woman from the first image, with thin silver wristwatch, wearing cream collared shirt beneath a dark tailored wool coat and dark trousers, controlled posture, fingers clenched tightly, knuckles pale. Hannah's slender pale hands grip the leather steering wheel with white-knuckle intensity, her thin silver wristwatch catching a faint gleam of light. The woman from the first image, seated in the driver's seat, her hands on the wheel, inside the car. Exactly one person in the scene: the woman from the first image. The only person in the image is the woman from the first image, turned away from the viewer, the face not visible. Setting: the interior of a family car seen from inside: two front seats, the steering wheel and dashboard, side windows and the windshield. close-up of the hands only, face out of frame. Rendered in the drawing style of the second image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, fine grain and ink texture across the whole picture, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark."
+  },
+  "s04_12": {
+   "staging": {
+    "moment": [
+     7,
+     23
+    ],
+    "location_id": "car_interior",
+    "characters": [
+     {
+      "id": "hannah_price",
+      "position": "driver's seat",
+      "posture": "seated",
+      "holding": "",
+      "evidence": "her fingers tightening on the steering wheel."
+     },
+     {
+      "id": "leo_price",
+      "position": "back seat",
+      "posture": "seated",
+      "holding": "",
+      "evidence": "Hannah looked at her son in the rearview mirror."
+     }
+    ],
+    "relations": [
+     {
+      "character": "hannah_price",
+      "object": "steering wheel",
+      "side": "at",
+      "evidence": "her fingers tightening on the steering wheel."
+     }
+    ],
+    "absent": [
+     "priya"
+    ]
+   },
+   "prompt": "Create an illustration of the woman from the first image, with thin silver wristwatch, wearing cream collared shirt beneath a dark tailored wool coat and dark trousers, controlled posture, hair resting over shoulders, strained pleading expression with tightly held composure; and the man from the second image, with slight chin dimple, wearing heather grey pullover hoodie with hood pulled over head and dark trousers, tense still posture, hooded head unmoved, completely unresponsive. Hannah turns toward the passenger seat with desperate earnestness as she whispers her promise, while Leo remains unresponsive beside her. The woman from the first image, seated in the driver's seat, her hands on the wheel; the man from the second image, seated in the back seat, both inside the car. Exactly two people in the scene: the woman from the first image and the man from the second image; nobody else is present. Setting: the interior of a family car seen from inside: two front seats, the steering wheel and dashboard, side windows and the windshield. medium shot, waist up. Rendered in the drawing style of the third image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, fine grain and ink texture across the whole picture, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark."
+  },
+  "s04_13": {
+   "staging": {
+    "moment": [
+     7,
+     23
+    ],
+    "location_id": "car_interior",
+    "characters": [
+     {
+      "id": "hannah_price",
+      "position": "driver's seat",
+      "posture": "seated",
+      "holding": "",
+      "evidence": "her fingers tightening on the steering wheel."
+     },
+     {
+      "id": "leo_price",
+      "position": "back seat",
+      "posture": "seated",
+      "holding": "",
+      "evidence": "Hannah looked at her son in the rearview mirror."
+     }
+    ],
+    "relations": [
+     {
+      "character": "hannah_price",
+      "object": "steering wheel",
+      "side": "at",
+      "evidence": "her fingers tightening on the steering wheel."
+     }
+    ],
+    "absent": [
+     "priya"
+    ]
+   },
+   "prompt": "Create an illustration of the man from the first image, with slight chin dimple, wearing heather grey pullover hoodie with hood pulled over head and dark trousers, tense still posture, face turned away toward the dark glass; and the woman from the second image, with thin silver wristwatch, wearing cream collared shirt beneath a dark tailored wool coat and dark trousers, controlled posture, seated upright and still behind the wheel. seen inside the car amidst towering, oppressive vertical tree trunks and deep night shadows, Hannah and Leo sit motionless inside the vehicle. The woman from the second image, seated in the driver's seat, her hands on the wheel; the man from the first image, seated in the back seat, both inside the car. Exactly two people in the scene: the man from the first image and the woman from the second image; nobody else is present. The only people in the image are the man from the first image and the woman from the second image, seen inside the car through its windows. Setting: the interior of a family car seen from inside: two front seats, the steering wheel and dashboard, side windows and the windshield. wide shot of the whole interior, everyone inside it. Rendered in the drawing style of the third image. single full-bleed illustration filling the entire frame edge to edge, ink and hatching reaching every border. dark hand-drawn illustration: ink drawing with scratchboard and engraving-like hatching and cross-hatching, charcoal and dry-brush gouache washes, fine grain and ink texture across the whole picture, hand-drawn imperfection, painterly smoke and fog; illustrated, not photographic; scratchboard and engraved line work dominant, dense hatching and cross-hatching, minimal tonal wash; deep black negative space dominating most of the frame, a single small source of warm light, figures small within towering architecture unless the shot is a close-up, heavy shadows swallowing the edges of the room. cosmic dread carried only by space and light: oppressive scale with small figures against vast rooms, towering doorways and endless staircases, deep pooled shadows, a single dominant light source, smoke and fog tendrils and shadows that suggest an unseen presence and stay formless, subtly wrong geometry (corridors too long, ceilings lost in darkness), stillness, isolation. stylised but consistent faces with gaunt planes, long shadows and expressive hands. near-monochrome duotone palette: Midnight Ink #0C1218 (dominant), Fog Blue #91A8B8 (midtones), Warm Ivory #F4F0E8 (highlights); a single warm accent per image, Antique Gold #E0BA79 or Muted Copper #C18A70, only on the light source or the story's focal object; Dusty Crimson #C56670 only for rare emotional punctuation (wine, a ring, a scarf, a candle reflection). Clean image without lettering or watermark."
+  }
+ }
+}

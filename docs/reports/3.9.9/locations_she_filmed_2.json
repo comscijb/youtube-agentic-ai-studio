@@ -1,0 +1,106 @@
+{
+ "relocations": [
+  {
+   "shot_id": "s04_06",
+   "from": "supermarket_aisle",
+   "to": "car_interior",
+   "evidence": [
+    "in the car",
+    "drive home",
+    "car",
+    "rearview",
+    "dashboard"
+   ],
+   "created": true
+  },
+  {
+   "shot_id": "s04_07",
+   "from": "supermarket_aisle",
+   "to": "car_interior",
+   "evidence": [
+    "continuity"
+   ],
+   "created": false
+  },
+  {
+   "shot_id": "s04_08",
+   "from": "supermarket_aisle",
+   "to": "car_interior",
+   "evidence": [
+    "continuity"
+   ],
+   "created": false
+  },
+  {
+   "shot_id": "s04_09",
+   "from": "supermarket_aisle",
+   "to": "car_interior",
+   "evidence": [
+    "continuity"
+   ],
+   "created": false
+  },
+  {
+   "shot_id": "s04_10",
+   "from": "supermarket_aisle",
+   "to": "car_interior",
+   "evidence": [
+    "passenger window"
+   ],
+   "created": false
+  },
+  {
+   "shot_id": "s04_11",
+   "from": "supermarket_aisle",
+   "to": "car_interior",
+   "evidence": [
+    "steering wheel"
+   ],
+   "created": false
+  },
+  {
+   "shot_id": "s04_12",
+   "from": "supermarket_aisle",
+   "to": "car_interior",
+   "evidence": [
+    "continuity"
+   ],
+   "created": false
+  },
+  {
+   "shot_id": "s04_13",
+   "from": "supermarket_aisle",
+   "to": "car_interior",
+   "evidence": [
+    "continuity"
+   ],
+   "created": false
+  }
+ ],
+ "review": [
+  {
+   "shot_id": "s02_03",
+   "note": "a narração fala de bedroom (bedroom); local ground_floor_hallway"
+  },
+  {
+   "shot_id": "s03_06",
+   "note": "a narração fala de hallway (hallway); local suburban_kitchen"
+  },
+  {
+   "shot_id": "s05_05",
+   "note": "a narração fala de kitchen (kitchen, kitchen counter); local home_office"
+  }
+ ],
+ "contradictions": [
+  {
+   "shot_id": "s04_13",
+   "problems": [
+    "inside/outside: the narration is inside the car, the action says \"Framed from outside\""
+   ]
+  }
+ ],
+ "new_locations": [
+  "car_interior"
+ ],
+ "shots": 71
+}

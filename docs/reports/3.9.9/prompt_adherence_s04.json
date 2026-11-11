@@ -1,0 +1,147 @@
+{
+ "s04_01": {
+  "adherence": {
+   "status": "fixed",
+   "problems": [
+    {
+     "kind": "presence",
+     "evidence_quote": "an unfamiliar woman stopped them in the cereal aisle.",
+     "fix": "Include all three people in the character description and count: Hannah, Leo, and the unfamiliar female shopper."
+    }
+   ],
+   "fixes": [
+    "prompt patch"
+   ]
+  },
+  "prompt_patch": "Specify three people in the scene: Hannah, Leo, and the unfamiliar woman shopper standing in the aisle.",
+  "action": "Beneath towering, symmetrical supermarket shelves bathed in stark fluorescent light, Hannah and Leo walk down the vast aisle as an unfamiliar female shopper steps directly into their path.",
+  "location": "supermarket_aisle",
+  "others_present": true
+ },
+ "s04_02": {
+  "adherence": {
+   "status": "fixed",
+   "problems": [
+    {
+     "kind": "presence",
+     "evidence_quote": "the stranger gasped, leaning down toward Leo.",
+     "fix": "Change 'Exactly one person in the scene' to include the stranger leaning down toward Leo as a second character."
+    }
+   ],
+   "fixes": [
+    "prompt patch"
+   ]
+  },
+  "prompt_patch": "Specify two people in the scene: Leo standing rigid and the older woman stranger leaning down toward him.",
+  "action": "Leo stands completely rigid under the harsh overhead glow as the looming silhouette of an older woman shopper leans down toward him with an intrusive gesture.",
+  "location": "supermarket_aisle",
+  "others_present": true
+ },
+ "s04_03": {
+  "adherence": null,
+  "prompt_patch": null,
+  "action": "A stark beam of cool fluorescent light cuts across Leo's face as he recoils against the towering dark shelves behind him.",
+  "location": "supermarket_aisle",
+  "others_present": true
+ },
+ "s04_04": {
+  "adherence": null,
+  "prompt_patch": null,
+  "action": "Dwarfed by towering rows of packaged cereal boxes, Leo draws his hood tightly over his head and stares down at the gleaming linoleum floor.",
+  "location": "supermarket_aisle",
+  "others_present": true
+ },
+ "s04_05": {
+  "adherence": null,
+  "prompt_patch": null,
+  "action": "Hannah steps smoothly in front of Leo, shielding him with an arm behind her back while offering a fixed, razor-thin smile toward the departing shopper.",
+  "location": "supermarket_aisle",
+  "others_present": true
+ },
+ "s04_06": {
+  "adherence": {
+   "status": "fixed",
+   "problems": [
+    {
+     "kind": "position",
+     "evidence_quote": "Hannah looked at her son in the rearview mirror.",
+     "fix": "Correct the text description from 'sits beside her' to 'sits in the back seat' to match the rearview mirror narration and structural description."
+    }
+   ],
+   "fixes": [
+    "prompt patch"
+   ]
+  },
+  "prompt_patch": "Ensure Leo is described as sitting in the back seat, visible in the rearview mirror.",
+  "action": "From over Hannah's shoulder, her eyes catch Leo's reflection in the rearview mirror while he sits beside her staring straight ahead at the dark dashboard.",
+  "location": "car_interior",
+  "others_present": false
+ },
+ "s04_07": {
+  "adherence": null,
+  "prompt_patch": null,
+  "action": "Hannah stares straight ahead through the windshield into the shadows, her jaw set as cold ambient light illuminates her sharp features and distant gaze.",
+  "location": "car_interior",
+  "others_present": false
+ },
+ "s04_08": {
+  "adherence": {
+   "status": "fixed",
+   "problems": [
+    {
+     "kind": "action",
+     "evidence_quote": "holding the tiny tooth in his palm",
+     "fix": "Show a young child's hand holding the baby tooth in a tissue near a window, rather than an empty room."
+    }
+   ],
+   "fixes": [
+    "prompt patch"
+   ]
+  },
+  "prompt_patch": "Set the scene in a dark dining room by a window with a child's hand holding the tiny tooth on a tissue.",
+  "action": "A clean white paper tissue rests upon a dark surface in sharp window light, cradling a tiny white baby tooth amid cold geometric shadows.",
+  "location": "car_interior",
+  "others_present": false
+ },
+ "s04_09": {
+  "adherence": null,
+  "prompt_patch": null,
+  "action": "Outlined sharply against the cool exterior light, Leo turns his head in dark profile to examine Hannah's motionless hands.",
+  "location": "car_interior",
+  "others_present": false
+ },
+ "s04_10": {
+  "adherence": null,
+  "prompt_patch": null,
+  "action": "Turned toward the dark passenger window, Leo speaks softly, his pale profile catching dim reflections from the glass.",
+  "location": "car_interior",
+  "others_present": false
+ },
+ "s04_11": {
+  "adherence": null,
+  "prompt_patch": null,
+  "action": "Hannah's slender pale hands grip the leather steering wheel with white-knuckle intensity, her thin silver wristwatch catching a faint gleam of light.",
+  "location": "car_interior",
+  "others_present": false
+ },
+ "s04_12": {
+  "adherence": null,
+  "prompt_patch": null,
+  "action": "Hannah turns toward the passenger seat with desperate earnestness as she whispers her promise, while Leo remains unresponsive beside her.",
+  "location": "car_interior",
+  "others_present": false
+ },
+ "s04_13": {
+  "adherence": {
+   "status": "fixed",
+   "fixes": [
+    "action: \"Framed from outside\" -> inside the car"
+   ],
+   "problems": []
+  },
+  "prompt_patch": null,
+  "action": "seen inside the car amidst towering, oppressive vertical tree trunks and deep night shadows, Hannah and Leo sit motionless inside the vehicle.",
+  "location": "car_interior",
+  "others_present": false
+ }
+}

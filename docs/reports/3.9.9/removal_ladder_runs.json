@@ -1,0 +1,228 @@
+{
+ "s01_04": {
+  "seconds": 111.7,
+  "replace": "",
+  "action": {
+   "results": 3,
+   "clean": 1,
+   "ghosts": 1
+  },
+  "candidates": [
+   {
+    "profile": "grande (0,85)",
+    "denoise": 0.85,
+    "engine": "blur",
+    "differential": true,
+    "people_inside": [
+     0,
+     0
+    ],
+    "clean": true,
+    "erase_seconds": 0.44,
+    "restore_seconds": 42.51,
+    "ghost": {
+     "texture": 1.353,
+     "contour": 1.077,
+     "blocks": 1.19,
+     "tone": 0.208,
+     "ghost": false,
+     "failed": []
+    }
+   },
+   {
+    "profile": "maior (0,92)",
+    "denoise": 0.92,
+    "engine": "blur",
+    "differential": true,
+    "people_inside": [
+     0,
+     1
+    ],
+    "clean": false,
+    "erase_seconds": 0.35,
+    "restore_seconds": 28.65,
+    "ghost": {
+     "texture": 1.689,
+     "contour": 1.092,
+     "blocks": 1.07,
+     "tone": 0.087,
+     "ghost": false,
+     "failed": []
+    }
+   },
+   {
+    "profile": "grande (0,85)",
+    "denoise": 0.85,
+    "engine": "blur",
+    "differential": true,
+    "people_inside": [
+     0,
+     0
+    ],
+    "clean": false,
+    "erase_seconds": 0.35,
+    "restore_seconds": 28.55,
+    "ghost": {
+     "texture": 0.905,
+     "contour": 0.943,
+     "blocks": 1.09,
+     "tone": 0.603,
+     "ghost": true,
+     "failed": [
+      "tone"
+     ]
+    }
+   }
+  ]
+ },
+ "s01_04 +replace": {
+  "seconds": 103.8,
+  "replace": "dark river water, low mist",
+  "action": {
+   "results": 3,
+   "clean": 2,
+   "ghosts": 0
+  },
+  "candidates": [
+   {
+    "profile": "grande (0,85)",
+    "denoise": 0.85,
+    "engine": "blur",
+    "differential": true,
+    "people_inside": [
+     0,
+     0
+    ],
+    "clean": true,
+    "erase_seconds": 0.35,
+    "restore_seconds": 31.55,
+    "ghost": {
+     "texture": 1.35,
+     "contour": 1.057,
+     "blocks": 1.16,
+     "tone": 0.217,
+     "ghost": false,
+     "failed": []
+    }
+   },
+   {
+    "profile": "grande (0,85)",
+    "denoise": 0.85,
+    "engine": "blur",
+    "differential": true,
+    "people_inside": [
+     0,
+     0
+    ],
+    "clean": true,
+    "erase_seconds": 0.34,
+    "restore_seconds": 30.47,
+    "ghost": {
+     "texture": 0.94,
+     "contour": 0.985,
+     "blocks": 1.09,
+     "tone": 0.584,
+     "ghost": false,
+     "failed": []
+    }
+   },
+   {
+    "profile": "grande (0,85)",
+    "denoise": 0.85,
+    "engine": "blur",
+    "differential": true,
+    "people_inside": [
+     0,
+     1
+    ],
+    "clean": false,
+    "erase_seconds": 0.34,
+    "restore_seconds": 30.58,
+    "ghost": {
+     "texture": 1.317,
+     "contour": 1.107,
+     "blocks": 1.14,
+     "tone": 0.222,
+     "ghost": false,
+     "failed": []
+    }
+   }
+  ]
+ },
+ "s07_07": {
+  "seconds": 117.4,
+  "replace": "",
+  "action": {
+   "results": 3,
+   "clean": 0,
+   "ghosts": 1
+  },
+  "candidates": [
+   {
+    "profile": "maior (0,92)",
+    "denoise": 0.92,
+    "engine": "blur",
+    "differential": true,
+    "people_inside": [
+     1,
+     1
+    ],
+    "clean": false,
+    "erase_seconds": 0.34,
+    "restore_seconds": 30.53,
+    "ghost": {
+     "texture": 1.459,
+     "contour": 1.043,
+     "blocks": 1.03,
+     "tone": 0.271,
+     "ghost": false,
+     "failed": []
+    }
+   },
+   {
+    "profile": "maior (0,92)",
+    "denoise": 0.92,
+    "engine": "blur",
+    "differential": true,
+    "people_inside": [
+     1,
+     1
+    ],
+    "clean": false,
+    "erase_seconds": 0.44,
+    "restore_seconds": 29.54,
+    "ghost": {
+     "texture": 1.157,
+     "contour": 0.975,
+     "blocks": 1.04,
+     "tone": 0.188,
+     "ghost": false,
+     "failed": []
+    }
+   },
+   {
+    "profile": "grande (0,85)",
+    "denoise": 0.85,
+    "engine": "blur",
+    "differential": true,
+    "people_inside": [
+     1,
+     2
+    ],
+    "clean": false,
+    "erase_seconds": 0.34,
+    "restore_seconds": 36.53,
+    "ghost": {
+     "texture": 0.338,
+     "contour": 1.099,
+     "blocks": 1.06,
+     "tone": 0.399,
+     "ghost": true,
+     "failed": [
+      "texture"
+     ]
+    }
+   }
+  ]
+ }
+}

@@ -1,0 +1,1044 @@
+{
+ "s00_01": {
+  "answers": {
+   "pos_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s00_02": {
+  "answers": {
+   "pos_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s00_03": {
+  "answers": {
+   "pos_hannah_price": "no",
+   "fused": "no",
+   "extra": "no",
+   "setting": "no"
+  },
+  "failures": [
+   {
+    "qid": "pos_hannah_price",
+    "label": "hannah_price in front of the monitors",
+    "prompt": "Is the woman seated in front of the monitors?"
+   },
+   {
+    "qid": "setting",
+    "label": "cenário: hannah's home office editing suite",
+    "prompt": "Does the setting look like hannah's home office editing suite?"
+   }
+  ],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s00_04": {
+  "answers": {
+   "pos_hannah_price": "no",
+   "fused": "no",
+   "extra": "no",
+   "setting": "no"
+  },
+  "failures": [
+   {
+    "qid": "pos_hannah_price",
+    "label": "hannah_price in front of the monitors",
+    "prompt": "Is the woman seated in front of the monitors?"
+   },
+   {
+    "qid": "setting",
+    "label": "cenário: hannah's home office editing suite",
+    "prompt": "Does the setting look like hannah's home office editing suite?"
+   }
+  ],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s00_05": {
+  "answers": {
+   "pos_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s01_01": {
+  "answers": {
+   "pos_hannah_price": "no",
+   "pos_leo_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [
+   {
+    "qid": "pos_hannah_price",
+    "label": "hannah_price behind the phone",
+    "prompt": "Is the woman standing behind the phone?"
+   }
+  ],
+  "asked": 5,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s01_02": {
+  "answers": {
+   "pos_hannah_price": "no",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [
+   {
+    "qid": "pos_hannah_price",
+    "label": "hannah_price stepping back to check the composition",
+    "prompt": "Is the woman standing stepping back to check the composition?"
+   }
+  ],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s01_03": {
+  "answers": {
+   "pos_leo_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s01_05": {
+  "answers": {
+   "pos_hannah_price": "no",
+   "pos_leo_price": "no",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [
+   {
+    "qid": "pos_hannah_price",
+    "label": "hannah_price in front of Leo",
+    "prompt": "Is the woman standing in front of Leo?"
+   },
+   {
+    "qid": "pos_leo_price",
+    "label": "leo_price behind twelve lit candles",
+    "prompt": "Is the boy seated behind twelve lit candles?"
+   }
+  ],
+  "asked": 5,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s01_06": {
+  "answers": {
+   "pos_leo_price": "unclear",
+   "fused": "no",
+   "extra": "no",
+   "setting": "no"
+  },
+  "failures": [
+   {
+    "qid": "setting",
+    "label": "cenário: modern suburban kitchen",
+    "prompt": "Does the setting look like modern suburban kitchen?"
+   }
+  ],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s01_08": {
+  "answers": {
+   "pos_hannah_price": "no",
+   "pos_leo_price": "no",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [
+   {
+    "qid": "pos_hannah_price",
+    "label": "hannah_price behind the phone",
+    "prompt": "Is the woman standing behind the phone?"
+   },
+   {
+    "qid": "pos_leo_price",
+    "label": "leo_price at the counter",
+    "prompt": "Is the boy seated at the counter?"
+   }
+  ],
+  "asked": 5,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s01_09": {
+  "answers": {
+   "pos_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "no"
+  },
+  "failures": [
+   {
+    "qid": "setting",
+    "label": "cenário: modern suburban kitchen",
+    "prompt": "Does the setting look like modern suburban kitchen?"
+   }
+  ],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s02_02": {
+  "answers": {
+   "pos_hannah_price": "no",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [
+   {
+    "qid": "pos_hannah_price",
+    "label": "hannah_price beside the wall",
+    "prompt": "Is the woman standing beside the wall?"
+   }
+  ],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s02_03": {
+  "answers": {
+   "pos_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s02_04": {
+  "answers": {
+   "pos_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s02_05": {
+  "answers": {
+   "pos_hannah_price": "unclear",
+   "fused": "no",
+   "extra": "no",
+   "setting": "no"
+  },
+  "failures": [
+   {
+    "qid": "setting",
+    "label": "cenário: ground-floor hallway",
+    "prompt": "Does the setting look like ground-floor hallway?"
+   }
+  ],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s02_06": {
+  "answers": {
+   "pos_hannah_price": "yes",
+   "fused": "no",
+   "extra": "yes",
+   "setting": "yes"
+  },
+  "failures": [
+   {
+    "qid": "extra",
+    "label": "pessoa a mais",
+    "prompt": "Are there more than 1 person in the image?"
+   }
+  ],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s02_08": {
+  "answers": {
+   "pos_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s02_09": {
+  "answers": {
+   "pos_hannah_price": "no",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [
+   {
+    "qid": "pos_hannah_price",
+    "label": "hannah_price beside the wall",
+    "prompt": "Is the woman standing beside the wall?"
+   }
+  ],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s02_10": {
+  "answers": {
+   "pos_hannah_price": "unclear",
+   "fused": "no",
+   "extra": "no",
+   "setting": "no"
+  },
+  "failures": [
+   {
+    "qid": "setting",
+    "label": "cenário: ground-floor hallway",
+    "prompt": "Does the setting look like ground-floor hallway?"
+   }
+  ],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s03_02": {
+  "answers": {
+   "pos_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "no"
+  },
+  "failures": [
+   {
+    "qid": "setting",
+    "label": "cenário: modern suburban kitchen",
+    "prompt": "Does the setting look like modern suburban kitchen?"
+   }
+  ],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s03_03": {
+  "answers": {
+   "pos_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s03_04": {
+  "answers": {
+   "pos_hannah_price": "no",
+   "fused": "no",
+   "extra": "no",
+   "setting": "no"
+  },
+  "failures": [
+   {
+    "qid": "pos_hannah_price",
+    "label": "hannah_price at the counter",
+    "prompt": "Is the woman standing at the counter?"
+   },
+   {
+    "qid": "setting",
+    "label": "cenário: modern suburban kitchen",
+    "prompt": "Does the setting look like modern suburban kitchen?"
+   }
+  ],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s03_05": {
+  "answers": {
+   "pos_hannah_price": "yes",
+   "fused": "yes",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [
+   {
+    "qid": "fused",
+    "label": "personagem fundido com objeto",
+    "prompt": "Is any person merged with, cut by or passing through furniture or an object?"
+   }
+  ],
+  "asked": 4,
+  "fused_candidates": [
+   {
+    "box": [
+     0.4795,
+     0.3884,
+     0.537,
+     0.5828
+    ],
+    "edge": 11.9,
+    "depth_gap": null
+   }
+  ],
+  "source": "history_v1"
+ },
+ "s03_06": {
+  "answers": {
+   "pos_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "no"
+  },
+  "failures": [
+   {
+    "qid": "setting",
+    "label": "cenário: modern suburban kitchen",
+    "prompt": "Does the setting look like modern suburban kitchen?"
+   }
+  ],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s03_07": {
+  "answers": {
+   "pos_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "unclear"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s03_08": {
+  "answers": {
+   "pos_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s03_09": {
+  "answers": {
+   "pos_hannah_price": "no",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [
+   {
+    "qid": "pos_hannah_price",
+    "label": "hannah_price against the island",
+    "prompt": "Is the woman standing against the island?"
+   }
+  ],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s03_10": {
+  "answers": {
+   "pos_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "no"
+  },
+  "failures": [
+   {
+    "qid": "setting",
+    "label": "cenário: modern suburban kitchen",
+    "prompt": "Does the setting look like modern suburban kitchen?"
+   }
+  ],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s03_11": {
+  "answers": {
+   "pos_hannah_price": "no",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [
+   {
+    "qid": "pos_hannah_price",
+    "label": "hannah_price against the island",
+    "prompt": "Is the woman standing against the island?"
+   }
+  ],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s04_01": {
+  "answers": {
+   "pos_hannah_price": "no",
+   "pos_leo_price": "no",
+   "fused": "no",
+   "setting": "no"
+  },
+  "failures": [
+   {
+    "qid": "pos_hannah_price",
+    "label": "hannah_price in the cereal aisle",
+    "prompt": "Is the woman standing in the cereal aisle?"
+   },
+   {
+    "qid": "pos_leo_price",
+    "label": "leo_price in the cereal aisle",
+    "prompt": "Is the boy standing in the cereal aisle?"
+   },
+   {
+    "qid": "setting",
+    "label": "cenário: suburban supermarket aisle",
+    "prompt": "Does the setting look like suburban supermarket aisle?"
+   }
+  ],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s04_02": {
+  "answers": {
+   "pos_leo_price": "no",
+   "fused": "no",
+   "setting": "no"
+  },
+  "failures": [
+   {
+    "qid": "pos_leo_price",
+    "label": "leo_price in the cereal aisle",
+    "prompt": "Is the boy standing in the cereal aisle?"
+   },
+   {
+    "qid": "setting",
+    "label": "cenário: suburban supermarket aisle",
+    "prompt": "Does the setting look like suburban supermarket aisle?"
+   }
+  ],
+  "asked": 3,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s04_03": {
+  "answers": {
+   "pos_leo_price": "no",
+   "fused": "no",
+   "setting": "no"
+  },
+  "failures": [
+   {
+    "qid": "pos_leo_price",
+    "label": "leo_price in the cereal aisle",
+    "prompt": "Is the boy standing in the cereal aisle?"
+   },
+   {
+    "qid": "setting",
+    "label": "cenário: suburban supermarket aisle",
+    "prompt": "Does the setting look like suburban supermarket aisle?"
+   }
+  ],
+  "asked": 3,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s04_04": {
+  "answers": {
+   "pos_leo_price": "yes",
+   "fused": "no",
+   "setting": "yes"
+  },
+  "failures": [],
+  "asked": 3,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s04_05": {
+  "answers": {
+   "pos_hannah_price": "no",
+   "pos_leo_price": "no",
+   "fused": "no",
+   "setting": "no"
+  },
+  "failures": [
+   {
+    "qid": "pos_hannah_price",
+    "label": "hannah_price in the cereal aisle",
+    "prompt": "Is the woman standing in the cereal aisle?"
+   },
+   {
+    "qid": "pos_leo_price",
+    "label": "leo_price in the cereal aisle",
+    "prompt": "Is the boy standing in the cereal aisle?"
+   },
+   {
+    "qid": "setting",
+    "label": "cenário: suburban supermarket aisle",
+    "prompt": "Does the setting look like suburban supermarket aisle?"
+   }
+  ],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s04_06": {
+  "answers": {
+   "pos_hannah_price": "yes",
+   "pos_leo_price": "no",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [
+   {
+    "qid": "pos_leo_price",
+    "label": "leo_price back seat",
+    "prompt": "Is the boy seated inside a car, in the back seat?"
+   }
+  ],
+  "asked": 5,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s04_07": {
+  "answers": {
+   "pos_hannah_price": "no",
+   "fused": "no",
+   "extra": "no",
+   "setting": "no"
+  },
+  "failures": [
+   {
+    "qid": "pos_hannah_price",
+    "label": "hannah_price driver's seat",
+    "prompt": "Is the woman seated inside a car, in the driver's seat?"
+   },
+   {
+    "qid": "setting",
+    "label": "cenário: car interior",
+    "prompt": "Does the setting look like car interior?"
+   }
+  ],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s04_09": {
+  "answers": {
+   "pos_hannah_price": "no",
+   "pos_leo_price": "no",
+   "fused": "no",
+   "extra": "no",
+   "setting": "no"
+  },
+  "failures": [
+   {
+    "qid": "pos_hannah_price",
+    "label": "hannah_price driver's seat",
+    "prompt": "Is the woman seated inside a car, in the driver's seat?"
+   },
+   {
+    "qid": "pos_leo_price",
+    "label": "leo_price back seat",
+    "prompt": "Is the boy seated inside a car, in the back seat?"
+   },
+   {
+    "qid": "setting",
+    "label": "cenário: car interior",
+    "prompt": "Does the setting look like car interior?"
+   }
+  ],
+  "asked": 5,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s04_10": {
+  "answers": {
+   "pos_leo_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s04_11": {
+  "answers": {
+   "pos_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "unclear"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s04_12": {
+  "answers": {
+   "pos_hannah_price": "no",
+   "pos_leo_price": "no",
+   "fused": "no",
+   "extra": "no",
+   "setting": "no"
+  },
+  "failures": [
+   {
+    "qid": "pos_hannah_price",
+    "label": "hannah_price driver's seat",
+    "prompt": "Is the woman seated inside a car, in the driver's seat?"
+   },
+   {
+    "qid": "pos_leo_price",
+    "label": "leo_price back seat",
+    "prompt": "Is the boy seated inside a car, in the back seat?"
+   },
+   {
+    "qid": "setting",
+    "label": "cenário: car interior",
+    "prompt": "Does the setting look like car interior?"
+   }
+  ],
+  "asked": 5,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s04_13": {
+  "answers": {
+   "pos_hannah_price": "no",
+   "pos_leo_price": "no",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [
+   {
+    "qid": "pos_hannah_price",
+    "label": "hannah_price driver's seat",
+    "prompt": "Is the woman seated inside a car, in the driver's seat?"
+   },
+   {
+    "qid": "pos_leo_price",
+    "label": "leo_price back seat",
+    "prompt": "Is the boy seated inside a car, in the back seat?"
+   }
+  ],
+  "asked": 5,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s05_01": {
+  "answers": {
+   "present_hannah_price": "yes",
+   "fused": "no",
+   "extra": "yes",
+   "setting": "yes"
+  },
+  "failures": [
+   {
+    "qid": "extra",
+    "label": "pessoa a mais",
+    "prompt": "Are there more than 1 person in the image?"
+   }
+  ],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s05_02": {
+  "answers": {
+   "present_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s05_03": {
+  "answers": {
+   "present_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s05_04": {
+  "answers": {
+   "present_hannah_price": "yes",
+   "fused": "no",
+   "extra": "yes",
+   "setting": "unclear"
+  },
+  "failures": [
+   {
+    "qid": "extra",
+    "label": "pessoa a mais",
+    "prompt": "Are there more than 1 person in the image?"
+   }
+  ],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s05_06": {
+  "answers": {
+   "present_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "unclear"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s05_07": {
+  "answers": {
+   "present_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s05_08": {
+  "answers": {
+   "present_hannah_price": "yes",
+   "fused": "no",
+   "extra": "yes",
+   "setting": "no"
+  },
+  "failures": [
+   {
+    "qid": "extra",
+    "label": "pessoa a mais",
+    "prompt": "Are there more than 1 person in the image?"
+   },
+   {
+    "qid": "setting",
+    "label": "cenário: hannah's home office editing suite",
+    "prompt": "Does the setting look like hannah's home office editing suite?"
+   }
+  ],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s05_09": {
+  "answers": {
+   "present_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "unclear"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s05_10": {
+  "answers": {
+   "present_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s06_02": {
+  "answers": {
+   "present_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s06_03": {
+  "answers": {
+   "present_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "unclear"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s06_04": {
+  "answers": {
+   "present_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s06_06": {
+  "answers": {
+   "present_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s06_07": {
+  "answers": {
+   "present_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "unclear"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "final"
+ },
+ "s06_08": {
+  "answers": {
+   "present_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s07_01": {
+  "answers": {
+   "present_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [
+   {
+    "box": [
+     0.357,
+     0.2894,
+     0.4687,
+     0.5764
+    ],
+    "edge": 10.2,
+    "depth_gap": null
+   }
+  ],
+  "source": "history_v1"
+ },
+ "s07_02": {
+  "answers": {
+   "present_hannah_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [],
+  "asked": 4,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s07_03": {
+  "answers": {
+   "present_hannah_price": "yes",
+   "present_leo_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [],
+  "asked": 5,
+  "fused_candidates": [],
+  "source": "history_v1"
+ },
+ "s07_05": {
+  "answers": {
+   "present_hannah_price": "yes",
+   "present_leo_price": "yes",
+   "fused": "no",
+   "extra": "no",
+   "setting": "yes"
+  },
+  "failures": [],
+  "asked": 5,
+  "fused_candidates": [],
+  "source": "final"
+ }
+}
