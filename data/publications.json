@@ -329,9 +329,9 @@
         "script": "9eda25be74c190116fa8bd5960b5ebaedbf8997a05b0f98cd5a8983b05f92b07",
         "video": "0a6d58988ac4c2fd1cf02803cd32dd7e5ff44a451614ea93b6736304e65aefd3"
       },
-      "state": "uploaded_pending_publication",
-      "state_checked_at": "2026-11-09T20:26:38+00:00",
-      "published_at": null,
+      "state": "published",
+      "state_checked_at": "2026-11-09T21:26:41+00:00",
+      "published_at": "2026-11-09T21:26:41+00:00",
       "kind": "short",
       "parent_video_id": "Fsy9Md4a4yw",
       "short_id": "short_03",
@@ -383,6 +383,146 @@
       ],
       "contains_synthetic_media": false,
       "synthetic_disclosure_reason": "stylised: all 71 generated image(s) are non-photorealistic illustration; the voice is not a real person"
+    },
+    {
+      "video_id": "vNs9KBfuqTU",
+      "url": "https://www.youtube.com/watch?v=vNs9KBfuqTU",
+      "run_dir": "projects\\2026-11-09-she-filmed-every-moment-of-her-son-s-childhood-2",
+      "project": "2026-11-09-she-filmed-every-moment-of-her-son-s-childhood-2",
+      "uploaded_at": "2026-11-11T01:03:29+00:00",
+      "scheduled_publish_at": null,
+      "title": "She Filmed Her Son Every Single Day #Shorts",
+      "thumbnail_text": "Is this a keeper?",
+      "premise": "A mother who recorded every day of her son's childhood for millions of viewers discovers that the one person who missed it was her.",
+      "logline": "A mother who recorded every day of her son's childhood for millions of viewers discovers that the one person who missed it was her.",
+      "psychological_theme": "self-erasure",
+      "psychological_angle": "Using documentation as a defense mechanism against loss, mistaking the archive of life for the experience of living it.",
+      "narrative_type": "realistic_psychological_fiction",
+      "central_contradiction": "In trying to preserve every second of her son's life so she will never lose it, she absents herself from the actual experience of being his mother.",
+      "source_hashes": {
+        "script": "d4285605bdb2871a2048b1eacc1194a46d7a1434cfd29d39f88ae3e2eaf553ea",
+        "video": "ebe5ab46bc65cc1b8d9325b7d262182964921b27ad3341eb527b9014a06ae18e"
+      },
+      "state": "published",
+      "state_checked_at": "2026-11-11T01:26:33+00:00",
+      "published_at": "2026-11-11T01:26:33+00:00",
+      "kind": "short",
+      "parent_video_id": "7m4-xEecXFI",
+      "short_id": "short_01",
+      "captions": {
+        "action": "inserted",
+        "id": "AUieDaZ4ymrlHKQn21ye6K-iR47F6Iytg66eQEMGUA4cIQfdu7nW1we4"
+      },
+      "language": "en",
+      "contains_synthetic_media": false,
+      "synthetic_disclosure_reason": "stylised: all 72 generated image(s) are non-photorealistic illustration; the voice is not a real person"
+    },
+    {
+      "video_id": "pKLhWr_izXc",
+      "url": "https://www.youtube.com/watch?v=pKLhWr_izXc",
+      "run_dir": "projects\\2026-11-09-she-filmed-every-moment-of-her-son-s-childhood-2",
+      "project": "2026-11-09-she-filmed-every-moment-of-her-son-s-childhood-2",
+      "uploaded_at": "2026-11-11T01:04:06+00:00",
+      "scheduled_publish_at": "2026-11-11T21:00:00Z",
+      "title": "A 12 Year Old Boy Refused to Smile #Shorts",
+      "thumbnail_text": "Is this a keeper?",
+      "premise": "A mother who recorded every day of her son's childhood for millions of viewers discovers that the one person who missed it was her.",
+      "logline": "A mother who recorded every day of her son's childhood for millions of viewers discovers that the one person who missed it was her.",
+      "psychological_theme": "self-erasure",
+      "psychological_angle": "Using documentation as a defense mechanism against loss, mistaking the archive of life for the experience of living it.",
+      "narrative_type": "realistic_psychological_fiction",
+      "central_contradiction": "In trying to preserve every second of her son's life so she will never lose it, she absents herself from the actual experience of being his mother.",
+      "source_hashes": {
+        "script": "d4285605bdb2871a2048b1eacc1194a46d7a1434cfd29d39f88ae3e2eaf553ea",
+        "video": "b5863c4ead89b931ff99b08f6f777dc68da0ccb064268f9f7fe5f51c56ef53d1"
+      },
+      "state": "uploaded_pending_publication",
+      "state_checked_at": "2026-11-11T02:39:55+00:00",
+      "published_at": null,
+      "kind": "short",
+      "parent_video_id": "7m4-xEecXFI",
+      "short_id": "short_02",
+      "captions": {
+        "action": "inserted",
+        "id": "AUieDaY1tiFZAKgMw1j7oQXsU8Xfm3OIDuDoaHqIchIFJdqJMUYaJCPN"
+      },
+      "language": "en",
+      "contains_synthetic_media": false,
+      "synthetic_disclosure_reason": "stylised: all 72 generated image(s) are non-photorealistic illustration; the voice is not a real person"
+    },
+    {
+      "video_id": "PdMHAY0UA20",
+      "url": "https://www.youtube.com/watch?v=PdMHAY0UA20",
+      "run_dir": "projects\\2026-11-09-she-filmed-every-moment-of-her-son-s-childhood-2",
+      "project": "2026-11-09-she-filmed-every-moment-of-her-son-s-childhood-2",
+      "uploaded_at": "2026-11-11T01:04:58+00:00",
+      "scheduled_publish_at": "2026-11-12T21:00:00Z",
+      "title": "A Stranger Recognized Her Son in Public #Shorts",
+      "thumbnail_text": "Is this a keeper?",
+      "premise": "A mother who recorded every day of her son's childhood for millions of viewers discovers that the one person who missed it was her.",
+      "logline": "A mother who recorded every day of her son's childhood for millions of viewers discovers that the one person who missed it was her.",
+      "psychological_theme": "self-erasure",
+      "psychological_angle": "Using documentation as a defense mechanism against loss, mistaking the archive of life for the experience of living it.",
+      "narrative_type": "realistic_psychological_fiction",
+      "central_contradiction": "In trying to preserve every second of her son's life so she will never lose it, she absents herself from the actual experience of being his mother.",
+      "source_hashes": {
+        "script": "d4285605bdb2871a2048b1eacc1194a46d7a1434cfd29d39f88ae3e2eaf553ea",
+        "video": "60e4ee593eeb6f2083d6af4fe08b4a1390f85c4552641ff21bdd28ab8cf35c1a"
+      },
+      "state": "uploaded_pending_publication",
+      "state_checked_at": "2026-11-11T02:39:55+00:00",
+      "published_at": null,
+      "kind": "short",
+      "parent_video_id": "7m4-xEecXFI",
+      "short_id": "short_03",
+      "captions": {
+        "action": "inserted",
+        "id": "AUieDaYnsaV7xGdQt-Onble23QjVyXTnHxEvafYFHIuTpaLT2NkmQebP"
+      },
+      "language": "en",
+      "contains_synthetic_media": false,
+      "synthetic_disclosure_reason": "stylised: all 72 generated image(s) are non-photorealistic illustration; the voice is not a real person"
+    },
+    {
+      "video_id": "7m4-xEecXFI",
+      "url": "https://www.youtube.com/watch?v=7m4-xEecXFI",
+      "run_dir": "projects\\2026-11-09-she-filmed-every-moment-of-her-son-s-childhood-2",
+      "project": "2026-11-09-she-filmed-every-moment-of-her-son-s-childhood-2",
+      "uploaded_at": "2026-11-11T01:04:58+00:00",
+      "scheduled_publish_at": null,
+      "title": "She Watched 9,000 Videos of Her Son and Found Herself Missing",
+      "thumbnail_text": "Is this a keeper?",
+      "premise": "A mother who recorded every day of her son's childhood for millions of viewers discovers that the one person who missed it was her.",
+      "logline": "A mother who recorded every day of her son's childhood for millions of viewers discovers that the one person who missed it was her.",
+      "psychological_theme": "self-erasure",
+      "psychological_angle": "Using documentation as a defense mechanism against loss, mistaking the archive of life for the experience of living it.",
+      "narrative_type": "realistic_psychological_fiction",
+      "central_contradiction": "In trying to preserve every second of her son's life so she will never lose it, she absents herself from the actual experience of being his mother.",
+      "source_hashes": {
+        "script": "d4285605bdb2871a2048b1eacc1194a46d7a1434cfd29d39f88ae3e2eaf553ea",
+        "video": "9d8abe09b54a6165993eaf6782db639368b450734fba1ff0c0b122c440d618c7"
+      },
+      "state": "published",
+      "state_checked_at": "2026-11-11T01:26:33+00:00",
+      "published_at": "2026-11-11T01:26:33+00:00",
+      "review": {
+        "approved_at": "2026-11-11T00:54:33+00:00",
+        "narrative_status": "structurally_invalid",
+        "status_override_reason": "False positive",
+        "title_override_reason": ""
+      },
+      "captions": {
+        "action": "inserted",
+        "id": "AUieDaa-utJ_vTgQv8JCEOV0RzfUJ6K6P4GKY7I3hn5BHBgATAVB7CD7"
+      },
+      "language": "en",
+      "shorts": [
+        "vNs9KBfuqTU",
+        "pKLhWr_izXc",
+        "PdMHAY0UA20"
+      ],
+      "contains_synthetic_media": false,
+      "synthetic_disclosure_reason": "stylised: all 72 generated image(s) are non-photorealistic illustration; the voice is not a real person"
     }
   ]
 }
