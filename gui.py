@@ -1963,14 +1963,56 @@ def imagegen_regenerate_generic():
     path = Path(config.OUTPUT_DIR, shots_module.FILE_NAME)
     shot_list = load_json(path) or {}
     vb = load_json(Path(config.OUTPUT_DIR, vbible.FILE_NAME)) or {}
-    wanted = shotgen.generic_shots(shot_list)
+    shots = shot_list.get("shots", [])
+    # 1. Shots drawn before their character had a usable reference (e.g. wide/silhouette shots made while
+    #    FACELESS_PORTRAIT_REFERENCE was "none", before the full-body sheets): text-only identity by construction.
+    missing_ref = []
+    for shot in shots:
+        kinds_by_id = {(slot.get("kind"), slot.get("id")) for slot in shot.get("reference_slots") or []}
+        for cid in shot.get("characters") or []:
+            approved = any(vbible.approved_reference(vb, kind, cid, config.OUTPUT_DIR) for kind in ("character", "body"))
+            if approved and not ({("character", cid), ("body", cid)} & kinds_by_id) and shot.get("shot_type") not in ("hands", "insert"):
+                missing_ref.append(shot["shot_id"])
+                break
+    # 2. Shots never scored by the identity check (made before 3.9.8): score them now (CPU, SFace).
+    scored = 0
+    try:
+        from video.qa import fixes, identity_check
+        detector = fixes._detector()
+        checker = identity_check.IdentityCheck(detector, vb, config.OUTPUT_DIR, shots) if detector else None
+    except Exception as exc:                              # noqa: BLE001 — scoring is best effort
+        checker = None
+        _log(f"Identity check unavailable: {exc}", "warn")
+    if checker is not None:
+        for shot in shots:
+            qa = shot.setdefault("qa", {})
+            image = Path(config.OUTPUT_DIR, str(shot.get("image_path", "")).replace("\\", "/"))
+            if qa.get("identity") is not None or not shot.get("characters") or not image.is_file():
+                continue
+            try:
+                result = checker.score(image, shot["characters"], shot_id=shot["shot_id"], scene_id=shot.get("scene_id", ""),
+                                       shot_type=shot.get("shot_type", ""))
+            except Exception as exc:                      # noqa: BLE001
+                _log(f"Identity check skipped for {shot['shot_id']}: {str(exc)[:120]}", "warn")
+                continue
+            qa["identity"] = result
+            qa["issues"] = [item for item in qa.get("issues") or [] if item.get("type") != "identity"] + \
+                identity_check.issues(result, vb, regenerated=bool(qa.get("regenerations")))
+            scored += 1
+    generic = shotgen.generic_shots(shot_list)
+    wanted = list(dict.fromkeys(generic + missing_ref))
     queued = []
-    for shot in shot_list.get("shots", []):
+    for shot in shots:
         if shot["shot_id"] in wanted and not any(item.get("kind") == "regenerate" for item in shot.get("edit_queue", [])):
             review.enqueue(shot, review.make_request("regenerate", vb))
             queued.append(shot["shot_id"])
     atomic_write_json(path, shot_list)
-    return jsonify({"ok": True, "queued": queued, "message": f"{len(queued)} plano(s) na fila: clique em Executar fila"})
+    message = (f"{len(queued)} plano(s) na fila ({len(generic)} com rosto genérico, {len(missing_ref)} gerados sem a "
+               f"referência da personagem; {scored} avaliados agora). Clique em Executar fila." if queued
+               else f"Nenhum plano genérico encontrado ({scored} avaliados agora).")
+    _log(message)
+    return jsonify({"ok": True, "queued": queued, "generic": generic, "missing_reference": missing_ref, "scored": scored,
+                    "message": message})
 
 
 @app.route("/api/imagegen/shot/<shot_id>/queue", methods=["POST"])

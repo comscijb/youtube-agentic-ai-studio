@@ -1627,7 +1627,16 @@ let _igTimer = null;
 function igPost(url, body) {
   fetch(url, {method: 'POST', headers: {'Content-Type': 'application/json'},
               body: JSON.stringify(body || {})})
-    .then(r => r.json()).then(d => { if (!d.ok) alert(d.error || 'Error'); loadImagegen(); });
+    .then(r => r.json()).then(d => {
+      if (!d.ok) alert(d.error || 'Error');
+      else if (d.message) {                       // e.g. "Gerar de novo os genéricos": say what was queued
+        const status = document.getElementById('ig-status');
+        if (status) status.textContent = d.message;
+        _log(d.message);
+        if (Array.isArray(d.queued)) alert(d.message);
+      }
+      loadImagegen();
+    });
 }
 
 function igImg(path, title) {
