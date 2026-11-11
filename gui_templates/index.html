@@ -573,6 +573,9 @@ a:hover{color:var(--text)}
               <label style="display:flex;gap:4px;align-items:center;color:var(--muted)"><input type="checkbox" id="ig-show-unclear" onchange="igToggleUnclear(this.checked)"> mostrar incertos</label>
               <span id="ig-progress" style="font-weight:600"></span>
               <button id="ig-run-queue" class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="igPost('/api/imagegen/queue/run', {})">Executar fila (0)</button>
+              <label class="step-check" style="font-size:11px" title="Gemini Vision confere cada plano com a narração (custo por plano em Settings/config)"><input type="checkbox" id="ig-adherence" onchange="igAdherenceToggle(this.checked)"> Checar aderência das imagens</label>
+              <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="igAdherenceRun()">Checar agora</button>
+              <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" title="Enfileira os planos fora da narração com o prompt corrigido" onclick="igPost('/api/imagegen/adherence/regenerate', {})">Gerar de novo com o prompt corrigido</button>
               <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" title="Enfileira uma nova seed para cada plano com &quot;personagem genérico&quot; (rosto que não confere com a folha); depois, Executar fila" onclick="igPost('/api/imagegen/regenerate_generic', {})">Gerar de novo os genéricos</button>
               <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" title="Gemini responde às perguntas de todos os planos com avisos; fica só como aviso" onclick="igPost('/api/imagegen/second_opinion', {hinted: true})">Segunda opinião (Gemini) nos avisos</button>
               <span style="color:var(--muted)">Clique num plano para revisar · ← → e Enter na grade</span>
@@ -2417,10 +2420,28 @@ function igImportChoice(shot, file, info) {
   document.body.appendChild(shade);
 }
 
+function igAdherenceToggle(enabled) {
+  fetch('/api/imagegen/adherence', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({enabled})})
+    .then(r => r.json()).then(d => { _igData.adherence_check = d; });
+}
+
+function igAdherenceRun() {
+  fetch('/api/imagegen/adherence').then(r => r.json()).then(d => {
+    if (!d.enabled) { alert('Ative "Checar aderência das imagens" neste projeto primeiro.'); return; }
+    const cost = d.estimate.known ? `custo estimado US$ ${d.estimate.total}` : 'preço por imagem não configurado (GEMINI_PRICE_PER_IMAGE)';
+    if (confirm(`Checar ${d.estimate.calls} plano(s) com Gemini Vision (${d.estimate.calls} chamadas; ${cost})?`))
+      igPost('/api/imagegen/adherence/run', {});
+  });
+}
+
 function igSideDetails(side, shot) {
   const qa = shot.qa || {};
   const block = igSection(side, 'Detalhes');
   const notes = [];                                   // Phase 3.9.9: does the shot follow its narration?
+  ((shot.image_adherence || {}).failures || []).forEach(item => notes.push(`revisar imagem: ${item.label}`));
+  if ((shot.image_adherence || {}).failures && shot.image_adherence.failures.length)
+    igButton(block, 'Gerar de novo com o prompt corrigido', shot.image_adherence.patch || '',
+             () => igPost('/api/imagegen/adherence/regenerate', {shot_id: shot.shot_id}), ';font-size:10px;margin:2px 0');
   if (shot.location_relocated_from) notes.push(`local seguiu a narração: ${shot.location_relocated_from} → ${shot.location}`);
   if (shot.location_review) notes.push(`revisar local: ${shot.location_review}`);
   const adherence = shot.adherence || {};
@@ -2933,6 +2954,10 @@ function loadImagegen() {
       : '<span style="color:var(--red)">● ComfyUI not running</span>';
     const eta = d.eta_seconds ? ` · pending GPU time ≈ ${Math.round(d.eta_seconds / 60)} min` : '';
     const waiting = d.missing_approvals.length ? ` · approve: ${d.missing_approvals.join(', ')}` : '';
+    fetch('/api/imagegen/adherence').then(r => r.json()).then(state => {
+      const box = document.getElementById('ig-adherence');
+      if (box) box.checked = !!state.enabled;
+    }).catch(() => {});
     document.getElementById('ig-status').textContent =
       `${d.done}/${d.unique_shots} unique shots${eta}${waiting}` +
       ` · QA ${d.qa_mode || 'advisory'}: ${d.hinted || 0} plano(s) com avisos` +

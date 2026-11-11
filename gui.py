@@ -1552,6 +1552,7 @@ def imagegen_status():
                                                    "flags", "warnings", "qa", "edit_queue",
                                                    "image_flags", "copy_check", "removal", "source",
                                                    "adherence", "location_review", "location_relocated_from", "staging",
+                                                   "image_adherence", "prompt_patch",
                                                    "narration_excerpt", "location", "generated_at")}
                   for shot in shots],
     })
@@ -1953,6 +1954,70 @@ def imagegen_import(shot_id):
     atomic_write_json(path, shot_list)
     Path(config.OUTPUT_DIR, "final_video.mp4").unlink(missing_ok=True)
     return jsonify({"ok": True, "action": action, "warnings": shot.get("image_flags", [])})
+
+
+def _project_flag(name: str, value=None):
+    """A per-project setting in project.json (Phase 3.9.9: "image_adherence")."""
+    path = Path(config.OUTPUT_DIR, "project.json")
+    data = load_json(path) or {}
+    if value is not None:
+        data[name] = value
+        atomic_write_json(path, data)
+    return data.get(name)
+
+
+@app.route("/api/imagegen/adherence", methods=["GET", "POST"])
+def imagegen_adherence():
+    """"Checar aderência das imagens" (off by default): GET the toggle and the cost estimate, POST {enabled} to switch it."""
+    from video.qa import image_adherence
+    if request.method == "POST":
+        _project_flag("image_adherence", bool((request.get_json(force=True) or {}).get("enabled")))
+    shot_list = load_json(Path(config.OUTPUT_DIR, "shot_list.json")) or {}
+    count = sum(1 for shot in shot_list.get("shots", []) if shot.get("characters") and not shot.get("reuse_of") and shot.get("image_path"))
+    return jsonify({"ok": True, "enabled": bool(_project_flag("image_adherence")), "estimate": image_adherence.estimate(count)})
+
+
+@app.route("/api/imagegen/adherence/run", methods=["POST"])
+def imagegen_adherence_run():
+    from agents import visual_bible as vbible
+    from video.qa import image_adherence
+    if not _project_flag("image_adherence"):
+        return jsonify({"ok": False, "error": "Ative \"Checar aderência das imagens\" neste projeto primeiro"}), 400
+    path = Path(config.OUTPUT_DIR, "shot_list.json")
+
+    def work():
+        shot_list = load_json(path) or {}
+        vb = load_json(Path(config.OUTPUT_DIR, vbible.FILE_NAME)) or {}
+        outcome = image_adherence.run(shot_list, vb, config.OUTPUT_DIR, progress=_imagegen_progress)
+        atomic_write_json(path, shot_list)
+        _imagegen_progress(f"Aderência das imagens: {outcome['checked']} checados, {len(outcome['failed'])} fora da narração")
+    return _imagegen_run(work)
+
+
+@app.route("/api/imagegen/adherence/regenerate", methods=["POST"])
+def imagegen_adherence_regenerate():
+    """"Gerar de novo com o prompt corrigido": one shot ({shot_id}) or every shot that failed (batch)."""
+    from agents import visual_bible as vbible
+    from video.qa import image_adherence, review
+    body = request.get_json(force=True) or {}
+    path = Path(config.OUTPUT_DIR, "shot_list.json")
+    shot_list = load_json(path) or {}
+    vb = load_json(Path(config.OUTPUT_DIR, vbible.FILE_NAME)) or {}
+    wanted = [str(body["shot_id"])] if body.get("shot_id") else \
+        [shot["shot_id"] for shot in shot_list.get("shots", []) if (shot.get("image_adherence") or {}).get("failures") or
+         (shot.get("adherence") or {}).get("status") in ("fixed", "review")]
+    queued = []
+    for shot in shot_list.get("shots", []):
+        if shot["shot_id"] not in wanted:
+            continue
+        patch_text = image_adherence.regenerate_patch(shot)
+        if patch_text:
+            shot["prompt_patch"] = patch_text
+        if not any(item.get("kind") == "regenerate" for item in shot.get("edit_queue", [])):
+            review.enqueue(shot, review.make_request("regenerate", vb))
+            queued.append(shot["shot_id"])
+    atomic_write_json(path, shot_list)
+    return jsonify({"ok": True, "queued": queued, "message": f"{len(queued)} plano(s) na fila com o prompt corrigido: clique em Executar fila"})
 
 
 @app.route("/api/imagegen/regenerate_generic", methods=["POST"])
