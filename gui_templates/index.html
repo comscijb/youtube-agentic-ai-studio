@@ -2831,6 +2831,7 @@ function igRenderResults(shot) {
     caption.style.cssText = `font-size:10px;color:${item.clean ? '#8c8' : 'var(--red)'}`;
     const ghost = item.ghost && item.ghost.ghost;
     caption.textContent = `${item.clean ? '✓' : '⚠'} pessoas na máscara ${before} → ${after}` + (ghost ? ' · silhueta visível' : '') +
+      ((item.novelty || {}).novel ? ' · objeto novo' : '') +
       ` · ${item.profile} · ${item.engine}`;
     caption.title = item.ghost ? `textura ${item.ghost.texture} · contorno ${item.ghost.contour} · blocos ${item.ghost.blocks} · tom ${item.ghost.tone}` : '';
     cell.appendChild(caption);

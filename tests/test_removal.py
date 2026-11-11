@@ -229,7 +229,7 @@ class PipelineTests(unittest.TestCase):
             source = scene()
             for job in generator.jobs:
                 self.assertEqual(job.kind, "masked_restore")
-                self.assertGreaterEqual(job.denoise, 0.8)
+                self.assertGreaterEqual(job.denoise, 0.6)
                 self.assertNotRegex(job.prompt, removal.PERSON_WORDS)
             hard = removal.build_mask(source.size, BOX, persons=[{"box": [0.62, 0.32, 0.69, 0.68]}])
             crop = region.crop_window(removal.mask_box(hard), source.size)
@@ -240,14 +240,15 @@ class PipelineTests(unittest.TestCase):
             self.assertTrue(np.array_equal(np.asarray(result)[outside], np.asarray(source)[outside]))
 
     def test_ladder_order_with_regeneration_as_the_last_automatic_step(self):
-        self.assertEqual([item["name"] for item in removal.PROFILES], ["base", "denoise 0,92", "máscara maior", "gerar de novo"])
-        self.assertEqual([item.get("denoise") for item in removal.PROFILES[:3]], [.85, .92, .95])
-        self.assertEqual([item["grow"] for item in removal.PROFILES[:3]], [removal.GROW, removal.GROW, .35])
+        self.assertEqual([item["name"] for item in removal.PROFILES],
+                         ["pequena (0,6)", "média (0,75)", "grande (0,85)", "maior (0,92)", "gerar de novo"])     # 3.9.9-E
+        self.assertEqual([item.get("denoise") for item in removal.PROFILES[:4]], [.6, .75, .85, .92])
+        self.assertEqual([item["grow"] for item in removal.PROFILES[:4]], [removal.GROW, removal.GROW, removal.GROW, .35])
         self.assertTrue(removal.PROFILES[-1]["regenerate"])
         with tempfile.TemporaryDirectory() as temp, patch.object(removal, "regenerate_without", return_value={"action": "regenerate"}) as regenerate:
             generator = FakeGenerator()
             _, shot, action = self.run_removal(temp, generator, FakeDetector(dirty=99), job_factory=lambda shot: None)
-        self.assertEqual([job.denoise for job in generator.jobs], [.85, .92, .95])
+        self.assertEqual([job.denoise for job in generator.jobs], [.75, .85, .92])        # a medium mask starts at 0.75
         self.assertEqual(len({job.seed for job in generator.jobs}), 3)
         self.assertEqual(regenerate.call_count, 1)
         self.assertEqual(action["regenerated"], "regenerate")
@@ -257,7 +258,7 @@ class PipelineTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             generator = FakeGenerator(flat=True)
             _, shot, action = self.run_removal(temp, generator, FakeDetector())
-        self.assertEqual([job.denoise for job in generator.jobs], [.85, .92, .95])
+        self.assertEqual([job.denoise for job in generator.jobs], [.75, .85, .92])
         self.assertEqual((action["clean"], action["ghosts"]), (0, 3))
         candidates = shot["removal"]["candidates"]
         self.assertTrue(all(item["ghost"]["ghost"] and item["person_gone"] for item in candidates))
@@ -280,7 +281,7 @@ class PipelineTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             generator = FakeGenerator()
             self.run_removal(temp, generator, FakeDetector())
-        self.assertEqual([job.denoise for job in generator.jobs], [.85, .85, .85])
+        self.assertEqual([job.denoise for job in generator.jobs], [.75, .75, .75])
         self.assertEqual(len({job.seed for job in generator.jobs}), 3)
 
     def test_the_start_is_lama_for_small_masks_and_the_blurred_surroundings_for_large_ones(self):

@@ -45,12 +45,18 @@ SOFT_RING = 0.04              # differential diffusion's gradient ring, share of
 BLUR_INIT_SHARE = 0.12        # over this share of the crop, start from the blurred surroundings instead of LaMa
 LARGE_SHARE = 0.15            # over this share of the frame, regenerating beats repainting
 MAX_RESULTS = 3
-# The 3.9.6 ladder, measured on s01_04 and s07_07 (docs/reports/3.9.6/probe_ladder.json): at 0.75 the blurred start stays a
-# flat grey patch (texture 0.09-0.14, a ghost); from 0.85 the hatching comes back (1.4-2.0). A ghost or a person moves one step up.
-PROFILES = ({"name": "base", "grow": GROW, "denoise": 0.85},
-            {"name": "denoise 0,92", "grow": GROW, "denoise": 0.92},
-            {"name": "máscara maior", "grow": 0.35, "denoise": 0.95},
+# Phase 3.9.9-E: start conservative and climb only when a result is not good. High denoise repaints the hole but also
+# invents things (3.9.6: a lamp post, a riverbank), so small masks start low from a LaMa fill that already has the surface.
+# The 3.9.6 measurement still holds above it: from a blurred start, 0.75 stays a flat patch, which the ghost check fails.
+PROFILES = ({"name": "pequena (0,6)", "grow": GROW, "denoise": 0.6},
+            {"name": "média (0,75)", "grow": GROW, "denoise": 0.75},
+            {"name": "grande (0,85)", "grow": GROW, "denoise": 0.85},
+            {"name": "maior (0,92)", "grow": 0.35, "denoise": 0.92},
             {"name": "gerar de novo", "regenerate": True})
+SMALL_SHARE = 0.06            # of the crop: starts at 0.6 from LaMa
+MEDIUM_SHARE = 0.15           # of the crop: starts at 0.75; above it 0.85 (and regeneration is suggested)
+NOVEL_EDGE_RATIO = 1.5        # edges inside the repair vs the ring around it; the good repaints of 3.9.6 were 1.0-1.2
+PLAIN = "plain, empty, uncluttered"
 ERASE_ONLY = {"name": "só apagar", "grow": GROW, "denoise": 0.0}       # manual only, never automatic
 SEED_OFFSET = 5_000_011
 PERSON_WORDS = re.compile(r"\b(?:person|people|figures?|man|men|woman|women|boy|girl|child|children|someone|anyone|nobody|"
@@ -248,6 +254,41 @@ def _save_mask(hard: Image.Image, path: Path) -> None:
     hard.save(path, "PNG")
 
 
+def start_step(mask_share: float) -> int:
+    """Where the ladder starts for a mask covering ``mask_share`` of the crop."""
+    return 0 if mask_share < SMALL_SHARE else 1 if mask_share < MEDIUM_SHARE else 2
+
+
+def auto_replace(crop: Image.Image, hard_crop: Image.Image, location: dict | None) -> str:
+    """"Substituir por" when the user leaves it empty: what surrounds the hole, in plain words, from the location's own
+    materials (a wall above, the floor below), always "plain, empty, uncluttered" so nothing new gets invented."""
+    mask = np.asarray(hard_crop.convert("L").resize(crop.size, Image.NEAREST)) > 127
+    rows = np.flatnonzero(mask.any(axis=1))
+    low = rows.size and rows[-1] > 0.6 * mask.shape[0]
+    high = rows.size and rows[0] < 0.4 * mask.shape[0]
+    text = " ".join(str((location or {}).get(key, "")) for key in ("descriptor", "name")).lower()
+    floor = next((word for word in ("floorboards", "wooden floor", "deck planks", "planks", "tiles", "tiled floor", "linoleum", "carpet",
+                                    "grass", "gravel", "mud", "sand", "pavement", "stone floor", "floor", "deck", "water") if word in text), "floor")
+    wall = next((word for word in ("sky", "wall", "walls", "shelves", "cabinets", "window", "windows", "trees", "hills", "fog", "mist")
+                 if word in text), "wall")
+    wall = {"walls": "wall"}.get(wall, wall)
+    parts = ([f"bare {wall}"] if high or not low else []) + ([f"{floor}"] if low else [])
+    return f"{' and '.join(parts) or 'the same surface as around it'}, {PLAIN}"
+
+
+def novelty(source: Image.Image, result: Image.Image, crop, hard_crop: Image.Image, people: list[int]) -> dict:
+    """Something new inside the repair that is not in the ring around it: a new person, or far more edges than around."""
+    import cv2
+    pixels = np.asarray(result.crop(crop).convert("L"))
+    mask = np.asarray(hard_crop.convert("L").resize((pixels.shape[1], pixels.shape[0]), Image.NEAREST)) > 127
+    edges = cv2.Canny(pixels, 60, 140) > 0
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (41, 41))
+    ring = (cv2.dilate(mask.astype(np.uint8), kernel) > 0) & ~mask
+    ratio = float(edges[mask].mean() / (edges[ring].mean() + 1e-6)) if mask.any() and ring.any() else 1.0
+    new_people = max(0, people[1] - people[0]) if people else 0
+    return {"edge_ratio": round(ratio, 2), "new_people": new_people, "novel": bool(new_people or ratio > NOVEL_EDGE_RATIO)}
+
+
 def _start(generator, engine: str, crop_image: Image.Image, edit_mask: Image.Image, folder: Path, stem: str, seed: int) -> tuple[Image.Image, str]:
     """The repaint's starting point: LaMa (a low-frequency hint) for small masks when its fill has no blocks, else the
     blurred surroundings. Returns (image, "lama_comfy" | "lama_onnx" | "opencv" | "blur")."""
@@ -296,6 +337,10 @@ def attempt(generator, output: Path, shot: dict, vb: dict, source: Image.Image, 
         location_ref = vbible.approved_reference(vb, "location", shot.get("location") or "", output)
         style_refs = [path for path in copy_check.boards()[:1] if Path(path).is_file()]
         after = folder / f"{stem}_restored.jpg"
+        if not replace.strip():                           # 3.9.9-E: say what is around, plainly, so nothing gets invented
+            replace = auto_replace(crop_image, edit_mask, vbible.location(vb, shot.get("location")) or {})
+        elif PLAIN not in replace:
+            replace = f"{replace.strip().rstrip('.')}, {PLAIN}"
         generator.generate(ImageJob(job_id=f"{shot['shot_id']}_remove{number}", prompt=restore_prompt(vb, shot, replace), seed=seed,
                                     output_path=str(after), kind="masked_restore", size=size, final_size=size, denoise=denoise,
                                     differential=differential,
@@ -313,6 +358,7 @@ def attempt(generator, output: Path, shot: dict, vb: dict, source: Image.Image, 
     contour = figure.crop(crop) if figure is not None else None
     ghost = ghosts.score(result.crop(crop), hard_crop, contour)
     return {"path": (FOLDER / path.name).as_posix(), "profile": profile["name"], "denoise": round(denoise, 2), "engine": used,
+            "replace": replace, "crop_box": list(crop),
             "differential": differential and denoise > 0, "seed": seed, "inside_change": round(change, 2), "box": box,
             "crop": list(crop), "ghost": ghost, "erase_seconds": round(erase_seconds, 2), "restore_seconds": round(restore_seconds, 2)}
 
@@ -373,27 +419,34 @@ def run(generator, output, shot: dict, vb: dict, request: dict, *, detector=None
         inside_before = region.persons_inside(before, boxes)
         inside_after = region.persons_inside(detector.detect(output / item["path"]), boxes) if detector else inside_before
         gone = inside_after == 0 or inside_after < inside_before
-        item.update(people_inside=[inside_before, inside_after], clean=gone and not item["ghost"]["ghost"], person_gone=gone)
+        with Image.open(output / item["path"]) as opened:
+            item["novelty"] = novelty(source, opened.convert("RGB"), item["crop_box"], hard.crop(item["crop_box"]),
+                                      [inside_before, inside_after])
+        item.update(people_inside=[inside_before, inside_after], person_gone=gone,
+                    clean=gone and not item["ghost"]["ghost"] and not item["novelty"]["novel"])
         mask_path = FOLDER / f"{safe_filename(shot['shot_id'])}_{run_id}_{label}_mask.png"
         _save_mask(hard, output / mask_path)
         item["mask"] = mask_path.as_posix()
         results.append(item)
-        verdict = "silhueta visivel" if item["ghost"]["ghost"] else "sem silhueta"
+        verdict = "silhueta visivel" if item["ghost"]["ghost"] else "objeto novo" if item["novelty"]["novel"] else "sem silhueta"
         progress(f"   {shot['shot_id']}: {profile['name']} ({item['engine']}): pessoas na mascara {inside_before} -> {inside_after}, {verdict}")
         return item
 
     if request.get("erase_only"):
         one(ERASE_ONLY, "e")
     else:
-        ladder = 0
+        sized = build_mask(source.size, request.get("box"), persons=before.get("persons", []), painted=painted, grow=GROW)
+        ladder = start_step(share(sized.crop(region.crop_window(mask_box(sized), source.size))))
         for number in range(1, MAX_RESULTS + 1):                  # at most 3 repaints; a good one keeps its profile
             item = one(PROFILES[min(ladder, len(PROFILES) - 2)], number)
             if not item or not item["clean"]:
                 ladder += 1
-    results.sort(key=lambda item: (item["ghost"]["ghost"], not item.get("person_gone", item.get("clean"))))
+    results.sort(key=lambda item: (item["ghost"]["ghost"], (item.get("novelty") or {}).get("novel", False),
+                                   not item.get("person_gone", item.get("clean"))))
     action = {"action": "removal_candidates" if results else "no_effect", "origin": "human", "request": "Remover figura",
               "engine": engine, "results": len(results), "clean": sum(1 for item in results if item.get("clean")),
-              "ghosts": sum(1 for item in results if item["ghost"]["ghost"]), "errors": errors, "at": fixes._now()}
+              "ghosts": sum(1 for item in results if item["ghost"]["ghost"]),
+              "novel": sum(1 for item in results if (item.get("novelty") or {}).get("novel")), "errors": errors, "at": fixes._now()}
     qa["actions"].append(action)
     if results:
         shot["removal"] = {"box": request.get("box"), "engine": engine, "candidates": results, "replace": replace, "at": fixes._now(),
