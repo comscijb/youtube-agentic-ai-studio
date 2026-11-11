@@ -297,6 +297,11 @@ IMAGEGEN_QA_VLM_CLIP_TYPE = os.getenv("IMAGEGEN_QA_VLM_CLIP_TYPE", "flux3")
 IMAGEGEN_QA_OLLAMA_URL    = os.getenv("IMAGEGEN_QA_OLLAMA_URL", "http://127.0.0.1:11434")
 IMAGEGEN_QA_OLLAMA_MODEL  = os.getenv("IMAGEGEN_QA_OLLAMA_MODEL", "qwen2.5vl:3b")         # never pulled automatically
 IMAGEGEN_QA_MODELS_DIR    = os.getenv("IMAGEGEN_QA_MODELS_DIR", "")       # "" = models/qa
+PROMPT_ADHERENCE = os.getenv("PROMPT_ADHERENCE", "1") != "0"  # Gemini compares each prompt with its narration (3.9.9-C)
+# Prices for the cost estimates in the GUI and reports, filled in by the user (USD); 0 means unknown, nothing is hard-coded.
+GEMINI_PRICE_INPUT_PER_MTOK = float(os.getenv("GEMINI_PRICE_INPUT_PER_MTOK", "0"))
+GEMINI_PRICE_OUTPUT_PER_MTOK = float(os.getenv("GEMINI_PRICE_OUTPUT_PER_MTOK", "0"))
+GEMINI_PRICE_PER_IMAGE = float(os.getenv("GEMINI_PRICE_PER_IMAGE", "0"))        # one vision question batch on a 768 px image
 SHOT_STAGING = os.getenv("SHOT_STAGING", "1") != "0"          # a staging sheet per scene before planning (3.9.9-B)
 IMAGEGEN_IDENTITY_CHECK = os.getenv("IMAGEGEN_IDENTITY_CHECK", "1") != "0"   # SFace face vs the approved sheet (3.9.8-C)
 IMAGEGEN_QA_MAX_EDITS     = 2             # region edits per shot before regenerating

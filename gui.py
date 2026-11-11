@@ -1539,6 +1539,7 @@ def imagegen_status():
         "characters": characters, "qa_mode": policy.mode(),
         "current_shot": _state.get("imagegen_current") if _state.get("imagegen_busy") else None,
         "queued": sum(len(shot.get("edit_queue") or []) for shot in shots),
+        "adherence": (shot_list.get("adherence") or {}).get("line", ""),
         "hinted": sum(1 for shot in shots if fixes.hinted(shot)),
         "eta_seconds": estimate,
         "style": {"name": identity.visual_style(), "variant": identity.style_variant(),
@@ -1550,6 +1551,7 @@ def imagegen_status():
                                                    "action", "prompt", "image_path", "provider",
                                                    "flags", "warnings", "qa", "edit_queue",
                                                    "image_flags", "copy_check", "removal", "source",
+                                                   "adherence", "location_review", "location_relocated_from", "staging",
                                                    "narration_excerpt", "location", "generated_at")}
                   for shot in shots],
     })

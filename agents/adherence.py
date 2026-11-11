@@ -163,6 +163,7 @@ def relocate(shots: list[dict], vb: dict, *, log=print) -> list[dict]:
             continue
         shot["location_relocated_from"] = shot.get("location")
         shot["location"] = change["to"]
+        shot["setting_condition"] = ""                     # it described the old place ("a quiet retail aisle...")
         changes.append(change)
         log(f"   -> {shot['shot_id']}: location {change['from']} -> {change['to']} ({', '.join(change['evidence'])})"
             + (" [new location, text-only until a reference is approved]" if change["created"] else ""))
@@ -184,6 +185,8 @@ def report(shots: list[dict], vb: dict) -> dict:
 
 # ── C. Prompt vs narration ──────────────────────────────────────────────────
 
+UNNAMED = re.compile(r"(?:stranger|strangers|shopper|woman|man|people|crowd|guests?|customers?|someone|passers?-?by|"
+                     r"waiter|waitress|clerk|neighbou?r)", re.I)
 PROBLEM_KINDS = ("presence", "location", "position", "prop", "action", "contradiction")
 
 
@@ -242,23 +245,89 @@ def apply_check(shot: dict, verdict: dict, vb: dict, *, log=print) -> str:
     if verdict.get("ok"):
         shot["adherence"] = {"status": "ok"}
         return "ok"
-    fixed = []
+    fixed, unsure = [], False
     for problem in verdict.get("problems") or []:
+        if problem["kind"] == "presence":
+            if UNNAMED.search(problem["evidence_quote"]) and not shot.get("others_present"):
+                shot["others_present"] = True                 # the headcount now allows the stranger the text names
+                fixed.append("headcount: others_present")
+            elif not UNNAMED.search(problem["evidence_quote"]):
+                unsure = True                                  # a named character to add or remove: a person decides
         if problem["kind"] == "location":
             wanted = category(problem["evidence_quote"])
             if wanted:
                 chosen, _ = find_or_create(vb, wanted, shot.get("scene_id", ""))
                 if shot.get("location") != chosen["location_id"]:
                     shot["location_relocated_from"], shot["location"] = shot.get("location"), chosen["location_id"]
+                    shot["setting_condition"] = ""
                     fixed.append(f"location -> {chosen['location_id']}")
     patch_text = verdict.get("suggested_prompt_patch", "").strip()
     if patch_text:
         shot["prompt_patch"] = patch_text
         fixed.append("prompt patch")
-    status = "fixed" if fixed and verdict.get("certain", True) else "review"
+    status = "fixed" if fixed and verdict.get("certain", True) and not unsure else "review"
     shot["adherence"] = {"status": status, "problems": verdict.get("problems", []), "fixes": fixed}
     log(f"   -> {shot['shot_id']}: adherence {status}: " + "; ".join(f"{item['kind']} \"{item['evidence_quote'][:50]}\"" for item in verdict.get("problems", [])))
     return status
+
+
+def deterministic_fix(shot: dict, vb: dict, *, log=print) -> list[str]:
+    """The fixes code can make alone: an action drawn outside a car the narration is inside, a character the staging
+    says is not there. A standing/seated clash is only flagged (rewriting the pose blindly would be a guess)."""
+    fixes, review = [], []
+    location = next((item for item in vb.get("locations", []) if item.get("location_id") == shot.get("location")), {})
+    if location.get("enclosed") and matches(location, "car"):
+        found = INSIDE_CONTRADICTIONS["car"].search(str(shot.get("action", "")))
+        if found:
+            shot["action"] = INSIDE_CONTRADICTIONS["car"].sub("seen inside the car", shot["action"])
+            fixes.append(f"action: \"{found.group(0)}\" -> inside the car")
+    absent = set((shot.get("staging") or {}).get("absent") or [])
+    gone = [cid for cid in shot.get("characters") or [] if cid in absent]
+    if gone:
+        shot["characters"] = [cid for cid in shot["characters"] if cid not in absent]
+        fixes.append(f"headcount: {', '.join(gone)} not in this moment")
+    staging_text = " ".join(f"{item.get('posture', '')} {item.get('position', '')}" for item in (shot.get("staging") or {}).get("characters", []))
+    review += [problem for problem in contradictions(shot, vb, staging_text) if problem.startswith("seated/standing")]
+    if fixes or review:
+        previous = shot.get("adherence") or {}
+        shot["adherence"] = {"status": "review" if review else "fixed", "fixes": previous.get("fixes", []) + fixes,
+                             "problems": previous.get("problems", []) + [{"kind": "contradiction", "evidence_quote": "", "fix": item} for item in review]}
+        log(f"   -> {shot['shot_id']}: " + "; ".join(fixes + review))
+    return fixes
+
+
+def estimate_cost(prompt_chars: int, output_chars: int) -> float:
+    """From config prices (the user fills them in; 0 means unknown): USD per million tokens, ~4 characters a token."""
+    import config
+    return round(prompt_chars / 4 / 1e6 * float(getattr(config, "GEMINI_PRICE_INPUT_PER_MTOK", 0) or 0)
+                 + output_chars / 4 / 1e6 * float(getattr(config, "GEMINI_PRICE_OUTPUT_PER_MTOK", 0) or 0), 5)
+
+
+def check_entries(entries: list[dict], vb: dict, output, *, compose, generator=None, log=print) -> dict:
+    """C for one scene: deterministic fixes, then one Gemini call; changed shots are composed again.
+    Returns {"calls", "prompt_chars", "cost"}."""
+    import config
+    usage = {"calls": 0, "prompt_chars": 0, "cost": 0.0}
+    for entry in entries:
+        deterministic_fix(entry, vb, log=log)
+    if not getattr(config, "PROMPT_ADHERENCE", True) or not entries:
+        return usage
+    prompts = {entry["shot_id"]: compose(entry)["prompt"] for entry in entries}
+    staged = {entry["shot_id"]: json.dumps(entry.get("staging") or {}, ensure_ascii=False)[:400] for entry in entries}
+    try:
+        verdicts = check_scene(entries, prompts, staged, generator=generator, run_dir=str(output))
+    except Exception as exc:                             # noqa: BLE001 — no Gemini: the deterministic checks stand
+        log(f"   ⚠ prompt adherence skipped: {str(exc)[:160]}")
+        return usage
+    chars = sum(len(text) for text in prompts.values()) + sum(len(str(entry.get("narration_excerpt", ""))) for entry in entries)
+    usage.update(calls=1, prompt_chars=chars, cost=estimate_cost(chars, 400 * len(entries)))
+    for entry in entries:
+        verdict = verdicts.get(entry["shot_id"])
+        if verdict and not verdict.get("ok"):
+            apply_check(entry, verdict, vb, log=log)
+        elif verdict and not entry.get("adherence"):
+            entry["adherence"] = {"status": "ok"}
+    return usage
 
 
 def summary_line(shots: list[dict]) -> str:

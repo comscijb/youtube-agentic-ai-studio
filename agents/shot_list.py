@@ -728,7 +728,13 @@ def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bo
     if advice:
         print(f"   ⚠ {len(advice)} shot(s) have advisory notes (shown on the shot cards; they are "
               "generated anyway)")
+    from agents import adherence
+    usage = [entry.pop("adherence_scene_usage") for entry in planned if entry.get("adherence_scene_usage")]
+    if any(entry.get("adherence") for entry in planned):
+        print(f"   -> {adherence.summary_line(planned)}")
     result = {
+        "adherence": {"line": adherence.summary_line(planned), "calls": sum(item["calls"] for item in usage),
+                      "cost_estimate": round(sum(item["cost"] for item in usage), 4)},
         "version": SHOT_LIST_VERSION, "source_hash": source_hash, "policy": policy,
         "budget": int(getattr(config, "IMAGEGEN_MAX_UNIQUE_SHOTS", 50)),
         "unique_shots": sum(1 for shot in planned if not shot["reuse_of"]),
@@ -755,6 +761,11 @@ def relocate_entries(entries: list[dict], vb: dict, output, staging_sheets: dict
         if sheet:
             staging.attach(entry, sheet, (narration or {}).get(entry.get("scene_id"), ""))
             moved.add(entry["shot_id"])
+    if staging_sheets is not None:                         # 3.9.9-C: prompt vs narration, before anything is drawn
+        usage = adherence.check_entries(entries, vb, output, compose=lambda entry: compose_shot(entry, vb, output, assume_references=True))
+        moved.update(entry["shot_id"] for entry in entries if entry.get("adherence"))
+        if entries:
+            entries[0]["adherence_scene_usage"] = usage
     for entry in entries:
         if entry["shot_id"] in moved:
             composed = compose_shot(entry, vb, output, assume_references=True)
