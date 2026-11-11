@@ -151,7 +151,7 @@ def _position(position: str) -> str:
     return position
 
 
-FURNITURE = re.compile(r"(?:table|desk|island|counter|bench|sofa|couch|bed|cabinet|shelf|shelves|bar|workbench|piano|dresser|chair)", re.I)
+FURNITURE = re.compile(r"\b(?:table|desk|island|counter|bench|sofa|couch|bed|cabinet|shelf|shelves|bar|workbench|piano|dresser|chair)\b", re.I)
 
 
 def relation_phrase(relation: dict, pronoun: str, posture: str = "") -> str:
@@ -184,7 +184,7 @@ def phrase(staging: dict | None, names: dict, nouns: dict, location: dict | None
         bits = [names.get(cid, cid)]
         relation = next((rel for rel in staging.get("relations") or [] if rel["character"] == cid
                          and FURNITURE.search(rel.get("object", ""))), None)
-        if re.search(r"seat", str(item.get("position", "")), re.I):
+        if re.search(r"\bseat\b", str(item.get("position", "")), re.I):
             relation = None                               # a seat says it all: "in the driver's seat", never "on a chair"
         if relation:
             bits.append(relation_phrase(relation, pronoun if relation.get("side") != "at" else possessive, item.get("posture", "")))

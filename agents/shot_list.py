@@ -1087,7 +1087,7 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
         framing = over_the_shoulder(characters, vb, ref_names)
     if location.get("enclosed"):                          # inside a car nobody is "far from the viewer" (3.9.9-B)
         crowd = crowd.replace("seen small and from behind, far from the viewer", "seen inside the car through its windows")
-        framing = re.sub(r"(?i)wide shot[^.]*", "wide shot of the whole interior, everyone inside it", framing) if framing else framing
+        framing = re.sub(r"(?i)\bwide shot[^.]*", "wide shot of the whole interior, everyone inside it", framing) if framing else framing
     if references:
         lead = f"Create {article} {noun} of " + "; and ".join(subjects) if subjects else f"Create {article} {noun}"
         prompt = f"{lead}.{figure_text} {action}. {staged} {crowd} Setting: {location_text}. {framing}. {style_text} {style}"

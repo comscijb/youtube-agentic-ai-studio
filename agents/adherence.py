@@ -47,7 +47,7 @@ STANDING = re.compile(r"\b(?:stands?|standing|walks?|walking|strides?)\b", re.I)
 STRONG = {"car": ("in the car", "drive home", "steering wheel", "passenger seat", "driver's seat", "rearview", "rear-view",
                   "passenger window", "windshield", "dashboard", "behind the wheel")}
 PLACE_PREPOSITION = r"(?:in|into|inside|back in|back into|across|through) the"
-MEMORY = re.compile(r"(?:had|remembered|remembers|used to|years ago|when (?:he|she|they) (?:was|were)|back then|once)", re.I)
+MEMORY = re.compile(r"\b(?:had|remembered|remembers|used to|years ago|when (?:he|she|they) (?:was|were)|back then|once|every|the first)\b", re.I)
 
 
 def _sentences(text: str) -> list[str]:
@@ -65,7 +65,7 @@ def strong(text: str, wanted: str) -> list[str]:
             continue
         lowered = sentence.lower()
         found += [phrase for phrase in STRONG.get(wanted, ()) if phrase in lowered]
-        found += [word for word in words if re.search(rf"{PLACE_PREPOSITION} {re.escape(word)}", lowered)]
+        found += [word for word in words if re.search(rf"\b{PLACE_PREPOSITION} {re.escape(word)}\b", lowered)]
     return list(dict.fromkeys(found))
 
 
@@ -185,8 +185,8 @@ def report(shots: list[dict], vb: dict) -> dict:
 
 # ── C. Prompt vs narration ──────────────────────────────────────────────────
 
-UNNAMED = re.compile(r"(?:stranger|strangers|shopper|woman|man|people|crowd|guests?|customers?|someone|passers?-?by|"
-                     r"waiter|waitress|clerk|neighbou?r)", re.I)
+UNNAMED = re.compile(r"\b(?:stranger|strangers|shopper|woman|man|people|crowd|guests?|customers?|someone|passers?-?by|"
+                     r"waiter|waitress|clerk|neighbou?r)\b", re.I)
 PROBLEM_KINDS = ("presence", "location", "position", "prop", "action", "contradiction")
 
 
