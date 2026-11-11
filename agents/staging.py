@@ -89,7 +89,6 @@ def build(script: dict, vb: dict, output_dir, *, generator=None, force: bool = F
     saved = load_json(path) or {}
     cast = [item for item in vb.get("characters", []) if item.get("presence", "on_screen") != "none"]
     cast_ids = [item["character_id"] for item in cast]
-    changed = False
     for index, section in enumerate(script.get("sections", []), 1):
         narration = str(section.get("narration", "")).strip()
         if not narration:
@@ -105,9 +104,7 @@ def build(script: dict, vb: dict, output_dir, *, generator=None, force: bool = F
                               context=f"NARRATION SENTENCES:\n{numbered}", stage=f"staging-{scene_id}",
                               temperature_key="editorial_review", run_dir=str(output))
         saved[scene_id] = {"key": key, **sheet}
-        changed = True
-    if changed:
-        atomic_write_json(path, saved)
+        atomic_write_json(path, saved)                   # each sheet as it comes: a quota failure later keeps it
     return saved
 
 
