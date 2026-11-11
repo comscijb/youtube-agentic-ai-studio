@@ -648,6 +648,7 @@ def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bo
     output = Path(output_dir)
     path = output / FILE_NAME
     segments, source_hash, policy = _segments_and_hash(script, vb, output)
+    staging_sheets, scene_narration = _staging(script, vb, output)
     existing = load_json(path) or {}
     if not force and existing.get("source_hash") == source_hash:
         return existing
@@ -703,7 +704,7 @@ def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bo
             entries = [_entry(segment, shot, settings, vb, output, flags.get(segment["shot_id"]),
                               advice.get(segment["shot_id"]))
                        for segment, shot in zip(scene_segments, result["shots"])]
-            relocate_entries(entries, vb, output)
+            relocate_entries(entries, vb, output, staging_sheets, scene_narration)
             by_scene[index] = entries
         if on_scene is not None:
             on_scene(index, scene_id, entries)
@@ -740,13 +741,20 @@ def build_shot_list(script: dict, outline: dict, vb: dict, output_dir, force: bo
     return result
 
 
-def relocate_entries(entries: list[dict], vb: dict, output) -> list[dict]:
+def relocate_entries(entries: list[dict], vb: dict, output, staging_sheets: dict | None = None,
+                     narration: dict | None = None) -> list[dict]:
     """Phase 3.9.9-A: every shot's location from its own narration excerpt; moved shots are composed again and a new
-    beat-level location (a car interior) is saved to the visual bible."""
-    from agents import adherence
+    beat-level location (a car interior) is saved to the visual bible. 3.9.9-B: each shot gets the staging of the
+    moment it covers, and is composed with it."""
+    from agents import adherence, staging
     before = len(vb.get("locations", []))
     changes = adherence.relocate(entries, vb)
     moved = {change["shot_id"] for change in changes}
+    for entry in entries:
+        sheet = (staging_sheets or {}).get(entry.get("scene_id"))
+        if sheet:
+            staging.attach(entry, sheet, (narration or {}).get(entry.get("scene_id"), ""))
+            moved.add(entry["shot_id"])
     for entry in entries:
         if entry["shot_id"] in moved:
             composed = compose_shot(entry, vb, output, assume_references=True)
@@ -754,6 +762,18 @@ def relocate_entries(entries: list[dict], vb: dict, output) -> list[dict]:
     if len(vb.get("locations", [])) != before or changes:
         atomic_write_json(Path(output) / vbible.FILE_NAME, vb)
     return changes
+
+
+def _staging(script: dict, vb: dict, output) -> tuple[dict, dict]:
+    """Phase 3.9.9-B: the staging sheets (one Gemini call per scene, cached); without them planning goes on as before."""
+    from agents import staging
+    if not getattr(config, "SHOT_STAGING", True):
+        return {}, {}
+    try:
+        return staging.build(script, vb, output), staging.narrations(script)
+    except Exception as exc:                             # noqa: BLE001 — no Gemini: plan without staging
+        print(f"   ⚠ staging sheets skipped: {str(exc)[:160]}")
+        return {}, {}
 
 
 REPORT_FILE = "shot_list_report.json"
@@ -1040,7 +1060,12 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
     appearance = shot.get("appearance") or {}
     subjects = [character_sentence(cid, vb, shot.get("scene_id", ""), str(appearance.get(cid) or ""),
                                    ref_names.get(cid, ""), now=ref_kinds.get(cid) == "body") for cid in characters]
-    action = _cap(str(shot.get("action", "")).rstrip("."), ACTION_TEXT_MAX)
+    from agents import staging as staging_module
+    action = _cap(staging_module.contact_wording(str(shot.get("action", ""))).rstrip("."), ACTION_TEXT_MAX)
+    staged = staging_module.phrase(shot.get("staging"), {cid: short_name(cid, vb, ref_names) for cid in characters},
+                                   {cid: _noun((vbible.character(vb, cid) or {}).get("descriptor", "")) for cid in characters}, location)
+    if shot.get("prompt_patch"):
+        staged = f"{staged} {shot['prompt_patch'].strip().rstrip('.')}.".strip()
     article = "an" if noun[0] in "aeiou" else "a"
     # Explicit headcount; a 4th+ listed character (no slot left) stays far and indistinct.
     crowd = headcount([short_name(cid, vb, ref_names) for cid in characters], bool(others), len(background))
@@ -1049,13 +1074,16 @@ def compose_shot(shot: dict, vb: dict, output_dir, *, assume_references: bool = 
         crowd = f"{crowd} {faceless_headcount([short_name(cid, vb, ref_names) for cid in characters], shot)}"
     if shot.get("shot_type") == "over_the_shoulder" and characters:
         framing = over_the_shoulder(characters, vb, ref_names)
+    if location.get("enclosed"):                          # inside a car nobody is "far from the viewer" (3.9.9-B)
+        crowd = crowd.replace("seen small and from behind, far from the viewer", "seen inside the car through its windows")
+        framing = re.sub(r"(?i)wide shot[^.]*", "wide shot of the whole interior, everyone inside it", framing) if framing else framing
     if references:
         lead = f"Create {article} {noun} of " + "; and ".join(subjects) if subjects else f"Create {article} {noun}"
-        prompt = f"{lead}.{figure_text} {action}. {crowd} Setting: {location_text}. {framing}. {style_text} {style}"
+        prompt = f"{lead}.{figure_text} {action}. {staged} {crowd} Setting: {location_text}. {framing}. {style_text} {style}"
         kind = "ref"
     else:
         people = f" Featuring {'; and '.join(subjects)}." if subjects else ""
-        prompt = f"{article.capitalize()} {noun}: {action}.{people} {crowd} Setting: {location_text}. {framing}. {style}"
+        prompt = f"{article.capitalize()} {noun}: {action}.{people} {staged} {crowd} Setting: {location_text}. {framing}. {style}"
         kind = "t2i"
     prompt = re.sub(r"\s+", " ", re.sub(r"\.\s*\.", ".", prompt)).strip()
     return {"kind": kind, "prompt": prompt, "references": references, "slots": slots,
