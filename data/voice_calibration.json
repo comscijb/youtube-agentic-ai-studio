@@ -17,6 +17,12 @@
       "seconds": 684.28,
       "wpm": 140.5,
       "date": "2026-11-09"
+    },
+    "local:bm_lewis|speed0.92": {
+      "words": 1568,
+      "seconds": 644.99,
+      "wpm": 145.9,
+      "date": "2026-11-11"
     }
   }
 }

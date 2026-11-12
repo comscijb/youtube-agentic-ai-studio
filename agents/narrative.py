@@ -660,7 +660,13 @@ def validate_script(script: dict, character_bible: dict | None = None,
                 raise NarrativeValidationError(
                     f"screenplay scene {sid} does not preserve outline identity/function"
                 )
-        minimum_words = 12 if script.get("video_type") == "shorts" else 40
+        # A cold open is short by design (Phase 3.9.7): the omen of a parable is one or two lines (12-45 words), so
+        # it gets the omen floor here; its own length rules live in agents.cold_open.findings.
+        if scene["section_type"] == "cold_open":
+            from agents.cold_open import WORDS as COLD_OPEN_WORDS
+            minimum_words = min(low for low, _ in COLD_OPEN_WORDS.values())
+        else:
+            minimum_words = 12 if script.get("video_type") == "shorts" else 40
         if len(scene["narration"].split()) < minimum_words:
             raise NarrativeValidationError(
                 f"screenplay scene {sid} narration is incomplete ({len(scene['narration'].split())} words)"

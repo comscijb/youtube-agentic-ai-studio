@@ -291,3 +291,35 @@ class SettingsTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ScreenplayFloorTests(unittest.TestCase):
+    """Regression (2026-11-12): a parable's omen (19-34 words) was refused as an "incomplete" scene by the
+    40-word floor of validate_script; a cold open now has the omen floor, the story scenes keep 40."""
+
+    def build(self, first_words, first_type="cold_open"):
+        from agents.narrative import validate_character_bible, validate_script
+        from tests.test_narrative import bible
+        types = [first_type, "opening", "climax", "resolution"]
+        sections = [{
+            "id": index, "outline_scene_id": f"s{index:02}", "title": f"Scene {index}",
+            "section_type": kind, "narrative_function": f"Function {index}",
+            "narration": " ".join(f"word{n}" for n in range(first_words if index == 1 else 60)),
+            "target_words": 60, "setting": "A specific room", "characters_present": ["eli"],
+            "dramatic_function": "A choice changes the situation", "emotional_tone": "Controlled unease",
+            "visual_direction": "A precise visual action", "image_query": "room dramatic action",
+            "image_query_2": "watch close up", "image_query_3": "character silhouette", "bullet_points": [],
+        } for index, kind in enumerate(types, 1)]
+        return validate_script({
+            "title": "Measured Story", "description": "Original fiction", "video_type": "normal",
+            "narrative_type": "dark_human_parable", "psychological_theme": "Regret",
+            "planned_words_per_minute": 125, "sections": sections,
+        }, validate_character_bible(bible()))
+
+    def test_a_short_omen_is_accepted(self):
+        self.build(19)
+
+    def test_a_short_story_scene_is_still_refused(self):
+        from agents.narrative import NarrativeValidationError
+        with self.assertRaisesRegex(NarrativeValidationError, "incomplete"):
+            self.build(19, first_type="development")

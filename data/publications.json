@@ -436,9 +436,9 @@
         "script": "d4285605bdb2871a2048b1eacc1194a46d7a1434cfd29d39f88ae3e2eaf553ea",
         "video": "b5863c4ead89b931ff99b08f6f777dc68da0ccb064268f9f7fe5f51c56ef53d1"
       },
-      "state": "uploaded_pending_publication",
-      "state_checked_at": "2026-11-11T02:39:55+00:00",
-      "published_at": null,
+      "state": "published",
+      "state_checked_at": "2026-11-11T21:23:51+00:00",
+      "published_at": "2026-11-11T21:23:51+00:00",
       "kind": "short",
       "parent_video_id": "7m4-xEecXFI",
       "short_id": "short_02",
@@ -470,7 +470,7 @@
         "video": "60e4ee593eeb6f2083d6af4fe08b4a1390f85c4552641ff21bdd28ab8cf35c1a"
       },
       "state": "uploaded_pending_publication",
-      "state_checked_at": "2026-11-11T02:39:55+00:00",
+      "state_checked_at": "2026-11-12T19:28:37+00:00",
       "published_at": null,
       "kind": "short",
       "parent_video_id": "7m4-xEecXFI",
@@ -523,6 +523,146 @@
       ],
       "contains_synthetic_media": false,
       "synthetic_disclosure_reason": "stylised: all 72 generated image(s) are non-photorealistic illustration; the voice is not a real person"
+    },
+    {
+      "video_id": "UJzsE0_NHFg",
+      "url": "https://www.youtube.com/watch?v=UJzsE0_NHFg",
+      "run_dir": "projects\\2026-11-11-he-woke-up-and-everyone-in-the-world-was-him",
+      "project": "2026-11-11-he-woke-up-and-everyone-in-the-world-was-him",
+      "uploaded_at": "2026-11-12T19:01:59+00:00",
+      "scheduled_publish_at": "2026-11-12T20:00:00Z",
+      "title": "He Woke Up Next to His Own Face #Shorts",
+      "thumbnail_text": "Everyone is me.",
+      "premise": "A man wakes up in a world where every person has his face, his voice and his habits, and finally learns what it is like to live with him.",
+      "logline": "A man wakes up in a world where every person has his face, his voice and his habits, and finally learns what it is like to live with him.",
+      "psychological_theme": "identity",
+      "psychological_angle": "confronting one's unconscious interpersonal self-centeredness by experiencing it as a recipient",
+      "narrative_type": "philosophical_thought_experiment",
+      "central_contradiction": "Daniel believes he is charismatic and attentive, yet he never allows anyone else to finish a sentence.",
+      "source_hashes": {
+        "script": "3a78fcb7e46b1d97ae83c6d9939d928d85ab3925927225254d8f407d3c7a28d6",
+        "video": "ed7bc8b34253a5f3e8b439d34fada19e3851ce55154f67a402676cc97511bfec"
+      },
+      "state": "uploaded_pending_publication",
+      "state_checked_at": "2026-11-12T19:28:37+00:00",
+      "published_at": null,
+      "kind": "short",
+      "parent_video_id": "Ii1S7bFw94s",
+      "short_id": "short_01",
+      "captions": {
+        "action": "inserted",
+        "id": "AUieDaYxWU9JiltdUl2RzN1C78k3ntY3grA7td7m0Q51c9xxhZ34il1o"
+      },
+      "language": "en",
+      "contains_synthetic_media": false,
+      "synthetic_disclosure_reason": "stylised: all 69 generated image(s) are non-photorealistic illustration; the voice is not a real person"
+    },
+    {
+      "video_id": "Nmjoz8a5Kp8",
+      "url": "https://www.youtube.com/watch?v=Nmjoz8a5Kp8",
+      "run_dir": "projects\\2026-11-11-he-woke-up-and-everyone-in-the-world-was-him",
+      "project": "2026-11-11-he-woke-up-and-everyone-in-the-world-was-him",
+      "uploaded_at": "2026-11-12T19:02:52+00:00",
+      "scheduled_publish_at": "2026-11-13T21:00:00Z",
+      "title": "He Couldn't Get a Word in With Himself #Shorts",
+      "thumbnail_text": "Everyone is me.",
+      "premise": "A man wakes up in a world where every person has his face, his voice and his habits, and finally learns what it is like to live with him.",
+      "logline": "A man wakes up in a world where every person has his face, his voice and his habits, and finally learns what it is like to live with him.",
+      "psychological_theme": "identity",
+      "psychological_angle": "confronting one's unconscious interpersonal self-centeredness by experiencing it as a recipient",
+      "narrative_type": "philosophical_thought_experiment",
+      "central_contradiction": "Daniel believes he is charismatic and attentive, yet he never allows anyone else to finish a sentence.",
+      "source_hashes": {
+        "script": "3a78fcb7e46b1d97ae83c6d9939d928d85ab3925927225254d8f407d3c7a28d6",
+        "video": "dde6309932316e1c4b656b07e5a5345c5a23579734a90000aa9035f290aef12e"
+      },
+      "state": "uploaded_pending_publication",
+      "state_checked_at": "2026-11-12T19:28:37+00:00",
+      "published_at": null,
+      "kind": "short",
+      "parent_video_id": "Ii1S7bFw94s",
+      "short_id": "short_02",
+      "captions": {
+        "action": "inserted",
+        "id": "AUieDaYaKH79cnKWxu3qztV04cKUCjFyGwdVH6HCdPhAdcrBpt2BtqE7"
+      },
+      "language": "en",
+      "contains_synthetic_media": false,
+      "synthetic_disclosure_reason": "stylised: all 69 generated image(s) are non-photorealistic illustration; the voice is not a real person"
+    },
+    {
+      "video_id": "z-9gGTsP4VA",
+      "url": "https://www.youtube.com/watch?v=z-9gGTsP4VA",
+      "run_dir": "projects\\2026-11-11-he-woke-up-and-everyone-in-the-world-was-him",
+      "project": "2026-11-11-he-woke-up-and-everyone-in-the-world-was-him",
+      "uploaded_at": "2026-11-12T19:03:39+00:00",
+      "scheduled_publish_at": "2026-11-14T21:00:00Z",
+      "title": "He Tried Talking to His Own Duplicate #Shorts",
+      "thumbnail_text": "Everyone is me.",
+      "premise": "A man wakes up in a world where every person has his face, his voice and his habits, and finally learns what it is like to live with him.",
+      "logline": "A man wakes up in a world where every person has his face, his voice and his habits, and finally learns what it is like to live with him.",
+      "psychological_theme": "identity",
+      "psychological_angle": "confronting one's unconscious interpersonal self-centeredness by experiencing it as a recipient",
+      "narrative_type": "philosophical_thought_experiment",
+      "central_contradiction": "Daniel believes he is charismatic and attentive, yet he never allows anyone else to finish a sentence.",
+      "source_hashes": {
+        "script": "3a78fcb7e46b1d97ae83c6d9939d928d85ab3925927225254d8f407d3c7a28d6",
+        "video": "a62d81ccffd8f9e946b46a8e7a91712a6ee85efb83f4fe8db7cce4509e0c7011"
+      },
+      "state": "uploaded_pending_publication",
+      "state_checked_at": "2026-11-12T19:28:37+00:00",
+      "published_at": null,
+      "kind": "short",
+      "parent_video_id": "Ii1S7bFw94s",
+      "short_id": "short_03",
+      "captions": {
+        "action": "inserted",
+        "id": "AUieDaY1VziGkpXLsdYw7cLFUyU6F7dzOpZXyIKzmp43qZF9F5BTpoEb"
+      },
+      "language": "en",
+      "contains_synthetic_media": false,
+      "synthetic_disclosure_reason": "stylised: all 69 generated image(s) are non-photorealistic illustration; the voice is not a real person"
+    },
+    {
+      "video_id": "Ii1S7bFw94s",
+      "url": "https://www.youtube.com/watch?v=Ii1S7bFw94s",
+      "run_dir": "projects\\2026-11-11-he-woke-up-and-everyone-in-the-world-was-him",
+      "project": "2026-11-11-he-woke-up-and-everyone-in-the-world-was-him",
+      "uploaded_at": "2026-11-12T19:03:39+00:00",
+      "scheduled_publish_at": "2026-11-12T20:00:00.000Z",
+      "title": "For One Day, Everyone Had His Face",
+      "thumbnail_text": "Everyone is me.",
+      "premise": "A man wakes up in a world where every person has his face, his voice and his habits, and finally learns what it is like to live with him.",
+      "logline": "A man wakes up in a world where every person has his face, his voice and his habits, and finally learns what it is like to live with him.",
+      "psychological_theme": "identity",
+      "psychological_angle": "confronting one's unconscious interpersonal self-centeredness by experiencing it as a recipient",
+      "narrative_type": "philosophical_thought_experiment",
+      "central_contradiction": "Daniel believes he is charismatic and attentive, yet he never allows anyone else to finish a sentence.",
+      "source_hashes": {
+        "script": "3a78fcb7e46b1d97ae83c6d9939d928d85ab3925927225254d8f407d3c7a28d6",
+        "video": "46a3a25d278171b07c30fb0a7b2f9f0b5af38bbee694054b58116b0d7537020e"
+      },
+      "state": "uploaded_pending_publication",
+      "state_checked_at": "2026-11-12T19:28:37+00:00",
+      "published_at": null,
+      "review": {
+        "approved_at": "2026-11-12T18:53:09+00:00",
+        "narrative_status": "structurally_invalid",
+        "status_override_reason": "All good and bright",
+        "title_override_reason": ""
+      },
+      "captions": {
+        "action": "inserted",
+        "id": "AUieDaZsXUekfKPWA39fQVln0G_ZH1rVkLlnPExIICQpW_jZcrwMRCkh"
+      },
+      "language": "en",
+      "shorts": [
+        "UJzsE0_NHFg",
+        "Nmjoz8a5Kp8",
+        "z-9gGTsP4VA"
+      ],
+      "contains_synthetic_media": false,
+      "synthetic_disclosure_reason": "stylised: all 69 generated image(s) are non-photorealistic illustration; the voice is not a real person"
     }
   ]
 }
