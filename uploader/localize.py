@@ -45,10 +45,15 @@ def ordered(codes) -> list[str]:
     return (["pt"] if "pt" in codes else []) + [code for code in codes if code != "pt"]
 
 
+VARIANTS = {"pt": "Brazilian Portuguese (pt-BR spelling and vocabulary: \"inscreva-se\", \"compartilhe\", never European forms)",
+            "es": "neutral Latin American Spanish"}
+
+
 def contract(codes: list[str], is_short: bool) -> str:
-    names = ", ".join(codes)
+    names = ", ".join(f"{code} = {VARIANTS[code]}" if code in VARIANTS else code for code in codes)
     return f"""You translate one YouTube video's title and description from English into: {names}.
 Rules:
+- translate the "Chapters" heading too
 - keep the meaning and the hook; never add a claim, a promise or a detail that is not in the English
 - the title stays within {TITLE_MAX} characters{', and keeps "#Shorts"' if is_short else ''}
 - keep every chapter timestamp exactly as it is (e.g. "1:16"), at the start of its line, in the same order;

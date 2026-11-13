@@ -57,6 +57,7 @@ class ValidationTests(unittest.TestCase):
             found = localize.translate(TITLE, DESCRIPTION, ["pt", "es"], generator=generator)
         self.assertEqual(len(calls), 1)
         self.assertIn("keep every chapter timestamp", calls[0])
+        self.assertIn("pt = Brazilian Portuguese", calls[0])
         self.assertEqual(found["pt"]["title"], PT["title"])
 
 
