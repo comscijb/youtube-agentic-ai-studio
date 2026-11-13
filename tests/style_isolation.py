@@ -33,6 +33,9 @@ def setUpModule():
         patch.object(config, "GEMINI_API_KEY", ""),
         patch.object(config, "EPISODE_PROFILES_FILE", os.path.join(_state["temp"].name, "profiles.json"), create=True),
         patch.object(config, "MEASURE_NEW_VOICE", False, create=True),      # no TTS before a mocked script
+        # Phase 4.0: the GUI-edited discovery settings (languages, slots, playlists) live in data/.
+        patch.object(config, "DISCOVERY_SETTINGS_FILE", os.path.join(_state["temp"].name, "discovery.json"), create=True),
+        patch.object(config, "ANALYTICS_DIR", os.path.join(_state["temp"].name, "analytics"), create=True),
         patch.object(config, "GUI_STATE_FILE", os.path.join(_state["temp"].name, "gui_state.json"), create=True),
         # No real depth model either: with transformers installed it would download and run on the fixtures.
         patch.object(motion, "estimate", side_effect=motion.DepthUnavailable("no depth model in tests")),

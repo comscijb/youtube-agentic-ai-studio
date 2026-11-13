@@ -15,6 +15,7 @@ from agents.narrative import atomic_write_json, validate_story_brief
 from scripts import register_publication
 from tests.test_narrative import story_brief
 from uploader import publications, youtube
+from tests.style_isolation import setUpModule, tearDownModule  # noqa: F401  (no live Gemini at upload)
 
 
 def quiet(function, *args, **kwargs):

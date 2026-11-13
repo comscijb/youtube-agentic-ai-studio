@@ -669,6 +669,15 @@ a:hover{color:var(--text)}
             <textarea id="gate-notes" rows="2" style="font-size:12px;margin-top:6px" placeholder="Notas do revisor (opcional)"></textarea>
             <button class="btn btn-ghost" id="gate-approve-btn" style="margin-top:6px;font-size:12px" onclick="approveUpload()" disabled>✔ Registrar aprovação</button>
             <div id="gate-msg" style="font-size:11px;margin-top:4px"></div>
+            <div id="gate-translations" style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+                <div style="font-size:12px;font-weight:600;color:var(--dim);flex:1">Traduções (título e descrição)</div>
+                <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" onclick="loadTranslations(true)" title="Gemini traduz para os idiomas de Configurações">Gerar traduções</button>
+                <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" onclick="saveTranslations()">Salvar edições</button>
+              </div>
+              <div id="tr-msg" style="font-size:11px;color:var(--muted);margin-bottom:4px"></div>
+              <div id="tr-list" style="display:flex;flex-direction:column;gap:6px"></div>
+            </div>
           </div>
 
           <div class="upload-section">
@@ -3642,12 +3651,69 @@ function switchUploadMode(mode) {
 
 // ── Pre-publication review gate ───────────────────────────
 let _gate = null;
+let _translations = null;
+
+function loadTranslations(generate) {
+  const msg = document.getElementById('tr-msg');
+  if (!msg) return;
+  if (generate) msg.textContent = 'Traduzindo…';
+  const options = generate ? {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({generate: true})} : undefined;
+  projectFetch('/api/localizations', options).then(r => r.json()).then(d => {
+    if (!d.ok) { msg.textContent = 'Erro: ' + d.error; return; }
+    _translations = d;
+    renderTranslations();
+  }).catch(() => { msg.textContent = 'Não foi possível carregar as traduções.'; });
+}
+
+function renderTranslations() {
+  const d = _translations, list = document.getElementById('tr-list'), msg = document.getElementById('tr-msg');
+  list.innerHTML = '';
+  const have = Object.keys(d.translations || {}).length;
+  msg.textContent = have ? `Português primeiro: revise antes de aprovar. Idiomas: ${d.languages.join(', ')}.`
+    : (d.stale ? 'O título ou a descrição mudou desde as últimas traduções: gere de novo.' :
+       'Sem traduções ainda: clique em "Gerar traduções" (ou elas são feitas no envio).');
+  d.languages.forEach(code => {
+    const item = (d.translations || {})[code];
+    if (!item) return;
+    const box = document.createElement('details');
+    if (code === 'pt') box.open = true;
+    box.innerHTML = `<summary style="font-size:12px;cursor:pointer">${_esc(d.names[code] || code)} (${code})</summary>`;
+    const title = document.createElement('input');
+    title.type = 'text'; title.value = item.title; title.dataset.code = code; title.dataset.field = 'title';
+    title.style.cssText = 'width:100%;font-size:12px;margin:4px 0';
+    const text = document.createElement('textarea');
+    text.rows = 6; text.value = item.description; text.dataset.code = code; text.dataset.field = 'description';
+    text.style.cssText = 'width:100%;font-size:11px';
+    box.appendChild(title); box.appendChild(text);
+    list.appendChild(box);
+  });
+}
+
+function saveTranslations() {
+  if (!_translations) return;
+  const edited = {};
+  document.querySelectorAll('#tr-list [data-code]').forEach(el => {
+    edited[el.dataset.code] = edited[el.dataset.code] || {};
+    edited[el.dataset.code][el.dataset.field] = el.value;
+  });
+  projectFetch('/api/localizations', {method: 'POST', headers: {'Content-Type': 'application/json'},
+                                      body: JSON.stringify({translations: edited})})
+    .then(r => r.json()).then(d => {
+      const msg = document.getElementById('tr-msg');
+      if (!d.ok) { msg.textContent = 'Não salvo: ' + d.error; return; }
+      _translations = d; renderTranslations(); msg.textContent = 'Traduções salvas.';
+    });
+}
+
 function loadReviewGate() {
+  loadTranslations(false);
   projectFetch('/api/review-gate').then(r=>r.json()).then(d => {
     if (!d.ok) { _gate = null; updateGateButtons(); return; }
     _gate = d;
     const status = document.getElementById('gate-status');
     const lines = [];
+    (d.description_findings || []).filter(f => ['no_topic', 'keyword_stuffing', 'too_many_tags'].includes(f.rule))
+      .forEach(f => lines.push(`<span style="color:var(--amber,#e0b252)">⚠ Tópico/descrição: ${_esc(f.claim)}</span>`));
     lines.push(`Narrative status: <strong>${d.narrative_status}</strong>` +
                (d.status_override_required ? ' — upload blocked unless you type an override reason' : ''));
     if (!d.title_passes) lines.push('<span style="color:var(--red,#e05252)">Title/thumbnail text break the title policy (see findings under the title).</span>');

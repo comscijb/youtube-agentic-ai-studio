@@ -125,7 +125,7 @@ def build_upload_description(script: dict, output_dir: str | None = None) -> str
 def upload_video(video_path: str, *, title: str, description: str, tags=None,
                  privacy: str | None = None, publish_at: str = "",
                  thumbnail_path: str | None = None, progress=None, service=None,
-                 contains_synthetic_media: bool = False) -> str:
+                 contains_synthetic_media: bool = False, localizations: dict | None = None) -> str:
     """Upload one video and return its YouTube video_id.
 
     ``privacy`` defaults to config.VIDEO_PRIVACY ("public"). A ``publish_at``
@@ -154,6 +154,8 @@ def upload_video(video_path: str, *, title: str, description: str, tags=None,
     }
     if publish_at:
         body["status"]["publishAt"] = publish_at
+    if localizations:                                    # Phase 4.0-B: translated titles and descriptions
+        body["localizations"] = localizations
 
     # Own the file handles so they close after the upload (Windows keeps
     # files opened by MediaFileUpload locked until garbage collection).
@@ -260,11 +262,12 @@ def upload_run(run_dir: str, *, video_path: str, title: str, description: str, t
         thumbnail_path=thumbnail_path,
     )
     disclosure = episode_disclosure(run_dir, approval)  # Phase 3.9-F: one decision for the episode and its Shorts
+    localizations = episode_localizations(run_dir, title, description)
     video_id = upload_video(
         video_path, title=title, description=description, tags=tags, privacy=privacy,
         publish_at=publish_at, thumbnail_path=thumbnail_path, progress=progress,
         service=service,
-        contains_synthetic_media=disclosure["value"],
+        contains_synthetic_media=disclosure["value"], localizations=localizations,
     )
     captions = {"action": "skipped", "reason": "no narration.srt"}
     srt = Path(run_dir) / "narration.srt"
@@ -294,8 +297,24 @@ def upload_run(run_dir: str, *, video_path: str, title: str, description: str, t
             "title_override_reason": approval.get("title_override_reason", ""),
         }, "captions": captions, "language": getattr(config, "VIDEO_LANGUAGE", "en"),
             "shorts": [record["video_id"] for record in shorts],
+            "localizations": sorted(localizations or {}),
             "contains_synthetic_media": disclosure["value"], "synthetic_disclosure_reason": disclosure["reason"]},
     )
+
+
+def episode_localizations(run_dir, title: str, description: str) -> dict:
+    """Phase 4.0-B: the reviewed translations of exactly this title and description, else fresh ones from Gemini;
+    a failure never stops the upload (the backfill can add them later)."""
+    from uploader import localize
+    try:
+        found = localize.current(run_dir, title, description)
+        if found is None:
+            found = localize.ensure(run_dir, title, description)
+        return localize.payload(found)
+    except Exception as exc:                             # noqa: BLE001
+        print(f"   WARNING: translations skipped ({exc.__class__.__name__}: {str(exc)[:160]}); add them later with "
+              "python -m scripts.youtube_backfill --localize")
+        return {}
 
 
 def upload_to_youtube(script: dict, video_path: str) -> str:

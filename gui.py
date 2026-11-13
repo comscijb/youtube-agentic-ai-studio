@@ -2411,6 +2411,39 @@ def approve_upload():
     return jsonify({"ok": True, "approved_at": record["approved_at"]})
 
 
+@app.route("/api/localizations", methods=["GET", "POST"])
+def localizations_panel():
+    """Phase 4.0-B "Traduções": GET the saved translations of the current title and description (POST
+    {generate: true} makes them with Gemini; POST {translations} saves the edits, validated per language)."""
+    from uploader import localize
+    meta = _upload_metadata()
+    body = request.get_json(force=True, silent=True) or {} if request.method == "POST" else {}
+    try:
+        if body.get("translations"):
+            localize.save(config.OUTPUT_DIR, meta["title"], meta["description"], body["translations"])
+        elif body.get("generate"):
+            from agents.gemini_client import generate
+            localize.ensure(config.OUTPUT_DIR, meta["title"], meta["description"], generator=generate)
+    except Exception as exc:                             # noqa: BLE001 — shown in the panel
+        return jsonify({"ok": False, "error": str(exc)[:400]}), 400
+    found = localize.current(config.OUTPUT_DIR, meta["title"], meta["description"])
+    codes = localize.ordered(localize.languages())
+    return jsonify({"ok": True, "languages": codes, "names": localize.NAMES, "translations": found or {},
+                    "stale": found is None and bool(localize.load(config.OUTPUT_DIR))})
+
+
+@app.route("/api/discovery-settings", methods=["GET", "POST"])
+def discovery_settings_api():
+    """Phase 4.0 Settings: languages, publishing slots, playlists, the swap rule."""
+    from uploader import discovery_settings
+    if request.method == "POST":
+        try:
+            return jsonify({"ok": True, **discovery_settings.save(request.get_json(force=True) or {})})
+        except ValueError as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 400
+    return jsonify({"ok": True, **discovery_settings.load()})
+
+
 @app.route("/api/upload/plan")
 def upload_plan():
     """What the confirmation dialog shows: the episode now/scheduled, each Short's planned time and the
@@ -2507,10 +2540,15 @@ def upload():
             _state["yt_url"]     = record["url"]
             _state["upload_pct"] = 100
             _log(f"Uploaded! {_state['yt_url']} (recorded as pending publication)")
+            notes = []
             if record.get("shorts"):
                 from uploader import shorts_upload
-                _state["upload_note"] = shorts_upload.reminder(record["url"], len(record["shorts"]))
-                _log(_state["upload_note"])
+                notes.append(shorts_upload.reminder(record["url"], len(record["shorts"])))
+            from uploader import localize
+            notes.append(localize.DUBBING_REMINDER)          # Phase 4.0-B: no API for auto-dubbing
+            _state["upload_note"] = "\n".join(notes)
+            for note in notes:
+                _log(note)
 
         except Exception as e:
             _log(f"Upload error: {e}", "error")
