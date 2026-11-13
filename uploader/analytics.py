@@ -206,6 +206,13 @@ def refresh_video(record: dict, *, analytics, reporting=None, force: bool = Fals
     stats.update(video_id=video_id, title=record.get("title", ""), project=record.get("project"),
                  published_at=published, fetched_at=_now().replace(microsecond=0).isoformat(), note=LAG_NOTE)
     stats["flags"] = flags(stats)
+    if not record.get("parent_video_id") and record.get("kind", "episode") != "short":
+        from uploader import retention                  # Phase 4.0-D: the retention curve and its lessons
+        try:
+            stats["retention"] = retention.fetch_curve(analytics, video_id, published, end)
+            stats["retention_lessons"] = retention.learn(record, stats)
+        except Exception as exc:                          # noqa: BLE001 — retention is optional; the rest stays
+            stats["retention_error"] = f"{exc.__class__.__name__}: {str(exc)[:200]}"
     atomic_write_json(folder() / f"{video_id}.json", stats)
     return stats
 
@@ -294,12 +301,14 @@ def overview() -> dict:
                        "subscribers_gained": totals.get("subscribersGained"), "impressions": reach.get("impressions"),
                        "ctr": reach.get("ctr"), "us_share": stats.get("us_share"), "flags": stats.get("flags", []),
                        "fetched_at": stats.get("fetched_at"),
+                       "retention_lessons": [item.get("text", "") for item in stats.get("retention_lessons") or []],
                        "shorts": [{"video_id": short["video_id"], "title": short.get("title", ""),
                                    "views": ((cached(short["video_id"]) or {}).get("totals") or {}).get("views")}
                                   for short in shorts_of.get(record["video_id"], [])]})
     total = lambda key: sum(float(item[key] or 0) for item in videos)
+    from uploader import retention
     return {"videos": videos, "views": total("views"), "subscribers_gained": total("subscribers_gained"),
-            "impressions": total("impressions"), "note": LAG_NOTE}
+            "impressions": total("impressions"), "note": LAG_NOTE, "retention_guidance": retention.guidance()}
 
 
 def json_dumps(value) -> str:

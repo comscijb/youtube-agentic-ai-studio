@@ -69,7 +69,7 @@ def project_file(slug: str, relative: str) -> Path | None:
     candidates = [projects.root() / slug / relative]
     try:
         root = archive.root()
-        candidates += [root / slug / "other" / relative, root / slug / "text" / relative]
+        candidates += [root / slug / folder / relative for folder in ("other", "text", "manifests")]
     except Exception:                                    # noqa: BLE001 — no archive configured
         pass
     return next((path for path in candidates if path.is_file()), None)

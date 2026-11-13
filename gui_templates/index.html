@@ -1153,6 +1153,13 @@ function loadPerformance() {
   loadSwaps();
   fetch('/api/analytics').then(r => r.json()).then(d => {
     perfStatus(d.status || {});
+    if ((d.retention_guidance || []).length) {
+      const g = document.createElement('div');
+      g.style.cssText = 'font-size:12px;margin-top:4px;color:var(--muted)';
+      g.innerHTML = '<b>Orientação aos roteiros (das lições mais consistentes)</b>';
+      d.retention_guidance.forEach(t => { const row = document.createElement('div'); row.textContent = '• ' + t; g.appendChild(row); });
+      document.getElementById('perf-status').appendChild(g);
+    }
     document.getElementById('perf-message').textContent = d.busy ? 'Atualizando…' : (d.message || '');
     document.getElementById('perf-note').textContent = d.note || '';
     document.getElementById('perf-overview').textContent = `Canal: ${d.videos.length} vídeo(s) publicado(s) · ` +
@@ -1174,6 +1181,14 @@ function loadPerformance() {
         `assistido em média ${v.average_view_percentage != null ? Number(v.average_view_percentage).toFixed(0) + ' %' : '—'} · ` +
         `+${v.subscribers_gained ?? 0} inscritos · EUA ${perfPct(v.us_share, 0)}` + (v.fetched_at ? ` · dados de ${v.fetched_at.slice(0, 16).replace('T', ' ')}` : '');
       card.appendChild(line);
+      if ((v.retention_lessons || []).length) {
+        // Phase 4.0-D: where viewers left, mapped to the script.
+        const block = document.createElement('div');
+        block.style.cssText = 'font-size:12px;margin-top:4px';
+        block.innerHTML = '<b>Lições de retenção</b>';
+        v.retention_lessons.forEach(t => { const row = document.createElement('div'); row.textContent = '• ' + t; block.appendChild(row); });
+        card.appendChild(block);
+      }
       (v.flags || []).forEach(f => {
         const flag = document.createElement('div');
         flag.style.cssText = 'color:var(--amber);font-size:12px;margin-top:2px';
