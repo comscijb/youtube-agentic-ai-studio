@@ -227,10 +227,50 @@ def refresh_all(*, force: bool = False, interactive: bool = False, analytics=Non
     return [refresh_video(item, analytics=analytics, reporting=reporting, force=force) for item in records]
 
 
-def refresh_due_safely() -> None:
-    """Called by the publication sync: refresh stale caches, never raise, never open a browser."""
+STATUS_FILE = "status.json"
+AUTH_HELP = ("A autorização do YouTube expirou ou falta o escopo de Analytics. Com o app OAuth em modo Testing o Google "
+             "expira o token a cada 7 dias: clique em \"Autorizar de novo\" (abre o navegador) ou rode "
+             "python -m scripts.sync_publications. Para não expirar mais, publique o app OAuth (Google Cloud → "
+             "OAuth consent screen → Publish app).")
+
+
+def status() -> dict:
+    """The last refresh attempt: {last_attempt, last_success, videos, error, auth_required} (Phase 4.0-C)."""
+    return load_json(folder() / STATUS_FILE) or {"last_attempt": None, "last_success": None, "videos": 0, "error": ""}
+
+
+def _record_status(*, ok: bool, videos: int = 0, error: str = "", auth_required: bool = False) -> dict:
+    previous = status()
+    now = _now().replace(microsecond=0).isoformat()
+    value = {"last_attempt": now, "last_success": now if ok else previous.get("last_success"),
+             "videos": videos if ok else previous.get("videos", 0), "error": "" if ok else error,
+             "auth_required": auth_required}
+    folder().mkdir(parents=True, exist_ok=True)
+    atomic_write_json(folder() / STATUS_FILE, value)
+    return value
+
+
+def refresh_with_status(*, force: bool = False, interactive: bool = False, **services_) -> dict:
+    """refresh_all that always leaves a trace in data/analytics/status.json. Before Phase 4.0 a failure only printed a
+    console warning, so a dead token left data/analytics/ missing with nothing on screen."""
+    from uploader.youtube import YouTubeAuthError
     try:
-        refresh_all(interactive=False)
+        done = refresh_all(force=force, interactive=interactive, **services_)
+    except YouTubeAuthError as exc:
+        _record_status(ok=False, error=f"{AUTH_HELP} ({str(exc)[:120]})", auth_required=True)
+        raise
+    except Exception as exc:                             # noqa: BLE001
+        _record_status(ok=False, error=f"{exc.__class__.__name__}: {str(exc)[:300]}")
+        raise
+    _record_status(ok=True, videos=len(done))
+    return {"videos": done, "status": status()}
+
+
+def refresh_due_safely() -> None:
+    """Called by the publication sync: refresh stale caches, never raise, never open a browser; the outcome is
+    written to status.json and shown in Desempenho."""
+    try:
+        refresh_with_status(interactive=False)
     except Exception as exc:                              # noqa: BLE001
         print(f"   WARNING: analytics refresh skipped ({exc.__class__.__name__}: {str(exc)[:160]})")
 

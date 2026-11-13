@@ -1221,6 +1221,7 @@ def analytics_overview():
     data = analytics.overview()
     slug = Path(config.OUTPUT_DIR).name
     data["project_videos"] = [item["video_id"] for item in data["videos"] if item.get("project") == slug]
+    data["status"] = analytics.status()                  # Phase 4.0-C: last refresh and its error
     return jsonify({"ok": True, **data, "busy": _state.get("analytics_busy", False),
                     "message": _state.get("analytics_message", "")})
 
@@ -1234,6 +1235,67 @@ def analytics_video(video_id):
     return jsonify({"ok": True, **record})
 
 
+@app.route("/api/analytics/authorize", methods=["POST"])
+def analytics_authorize():
+    """Phase 4.0-C: ask for the YouTube consent again (opens the browser on this computer; the person signs in),
+    then refresh. The token is never shown."""
+    from uploader import analytics
+    if _state.get("analytics_busy"):
+        return jsonify({"ok": False, "error": "Já atualizando"}), 409
+
+    def work():
+        _state.update(analytics_busy=True, analytics_message="Aguardando a autorização no navegador…")
+        try:
+            done = analytics.refresh_with_status(force=True, interactive=True)["videos"]
+            _state["analytics_message"] = f"Autorizado e atualizado: {len(done)} vídeo(s)"
+        except Exception as exc:                         # noqa: BLE001
+            _state["analytics_message"] = f"Erro: {str(exc)[:200]}"
+        finally:
+            _state["analytics_busy"] = False
+    threading.Thread(target=work, daemon=True).start()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/swap/proposals")
+def swap_proposals():
+    """Phase 4.0-C: packaging swaps the rule proposes (never applied without a click)."""
+    from uploader import packaging_swap
+    return jsonify({"ok": True, **packaging_swap.proposals()})
+
+
+@app.route("/api/swap/apply", methods=["POST"])
+def swap_apply():
+    from uploader import packaging_swap
+    body = request.get_json(force=True) or {}
+    try:
+        entry = packaging_swap.apply(str(body.get("video_id", "")), str(body.get("kind", "")))
+    except (LookupError, ValueError) as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    except Exception as exc:                             # noqa: BLE001 — auth, network
+        return jsonify({"ok": False, "error": f"{exc.__class__.__name__}: {str(exc)[:240]}"}), 500
+    return jsonify({"ok": True, "swap": entry})
+
+
+@app.route("/api/swap/thumbnail")
+def swap_thumbnail():
+    from uploader import packaging_swap
+    path = packaging_swap.variant_path(request.args.get("project", ""), request.args.get("path", ""))
+    if not path:
+        return "", 404
+    return send_file(str(path), mimetype="image/jpeg")
+
+
+@app.route("/api/swap/test-compare", methods=["POST"])
+def swap_test_compare():
+    """Export the 3 thumbnails and titles for YouTube Studio's Test & Compare (no API for it)."""
+    from uploader import packaging_swap
+    try:
+        folder = packaging_swap.export_test_compare(str((request.get_json(force=True) or {}).get("video_id", "")))
+    except LookupError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    return jsonify({"ok": True, "folder": str(folder)})
+
+
 @app.route("/api/analytics/refresh", methods=["POST"])
 def analytics_refresh():
     """Fetch now (Analytics + Reporting APIs). Needs the yt-analytics.readonly consent: when it is missing
@@ -1245,7 +1307,7 @@ def analytics_refresh():
     def work():
         _state.update(analytics_busy=True, analytics_message="Atualizando…")
         try:
-            done = analytics.refresh_all(force=True, interactive=False)
+            done = analytics.refresh_with_status(force=True, interactive=False)["videos"]
             _state["analytics_message"] = f"Atualizado: {len(done)} vídeo(s)"
         except Exception as exc:                      # noqa: BLE001 — shown in the tab
             _state["analytics_message"] = f"Erro: {exc}"

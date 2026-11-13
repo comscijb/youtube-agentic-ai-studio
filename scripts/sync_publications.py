@@ -24,6 +24,12 @@ def main(argv=None) -> int:
     for record in load_ledger()["publications"]:
         states[record.get("state")] = states.get(record.get("state"), 0) + 1
     print("Ledger states: " + (", ".join(f"{k}={v}" for k, v in sorted(states.items())) or "empty"))
+    from uploader import analytics                      # Phase 4.0-C: the sync also refreshes Desempenho
+    try:
+        done = analytics.refresh_with_status(interactive=True)
+        print(f"Analytics: {len(done['videos'])} video(s) refreshed")
+    except Exception as exc:                             # noqa: BLE001
+        print(f"Analytics not refreshed: {exc.__class__.__name__}: {str(exc)[:200]}")
     return 0
 
 

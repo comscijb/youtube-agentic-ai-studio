@@ -352,9 +352,12 @@ a:hover{color:var(--text)}
           <div class="home-title" style="font-size:18px">Desempenho</div>
           <div style="display:flex;gap:8px;align-items:center">
             <span id="perf-message" style="font-size:11px;color:var(--muted)"></span>
+            <button class="btn btn-ghost" id="perf-authorize" style="display:none" onclick="authorizeAnalytics()" title="Abre o navegador para você autorizar o YouTube de novo">🔑 Autorizar de novo</button>
             <button class="btn btn-ghost" onclick="refreshPerformance()">⟳ Atualizar</button>
           </div>
         </div>
+        <div id="perf-status" style="font-size:12px;margin:4px 0"></div>
+        <div id="perf-swaps" style="display:flex;flex-direction:column;gap:8px;margin:6px 0"></div>
         <div id="perf-overview" style="font-size:13px"></div>
         <div id="perf-videos" style="display:flex;flex-direction:column;gap:10px"></div>
         <div class="help-text" id="perf-note"></div>
@@ -1083,8 +1086,73 @@ function perfBar(rows, key, label) {
   return box;
 }
 
+function perfStatus(st) {
+  // Phase 4.0-C: when Desempenho last refreshed and why it failed.
+  const box = document.getElementById('perf-status');
+  const when = v => v ? v.slice(0, 16).replace('T', ' ') + ' UTC' : 'nunca';
+  box.innerHTML = `Última atualização: <b>${when(st.last_success)}</b>` +
+    (st.last_attempt && st.last_attempt !== st.last_success ? ` · última tentativa ${when(st.last_attempt)}` : '');
+  if (st.error) {
+    const err = document.createElement('div');
+    err.style.cssText = 'color:var(--red,#e05252);margin-top:2px';
+    err.textContent = '⚠ ' + st.error;
+    box.appendChild(err);
+  }
+  document.getElementById('perf-authorize').style.display = st.auth_required ? '' : 'none';
+}
+
+function authorizeAnalytics() {
+  if (!confirm('Abrir o navegador para autorizar o YouTube de novo? Entre com a conta do canal.')) return;
+  fetch('/api/analytics/authorize', {method: 'POST'}).then(r => r.json()).then(d => {
+    if (!d.ok) alert(d.error);
+    setTimeout(loadPerformance, 1000);
+  });
+}
+
+function loadSwaps() {
+  fetch('/api/swap/proposals').then(r => r.json()).then(d => {
+    const box = document.getElementById('perf-swaps');
+    box.innerHTML = '';
+    (d.proposals || []).forEach(p => {
+      const card = document.createElement('div');
+      card.style.cssText = 'padding:10px;border:1px solid var(--amber,#e0b252);border-radius:var(--r-sm);font-size:12px';
+      const thumb = p.step.kind === 'thumbnail';
+      card.innerHTML = `<b>${thumb ? 'Trocar miniatura?' : 'Trocar título?'}</b> ${_esc(p.title)}<br>` +
+        `<span style="color:var(--muted)">${_esc(p.reason)}</span>`;
+      const pair = document.createElement('div');
+      pair.style.cssText = 'display:flex;gap:10px;align-items:center;margin:6px 0';
+      const src = path => `/api/swap/thumbnail?project=${encodeURIComponent(p.project)}&path=${encodeURIComponent(path)}`;
+      pair.innerHTML = thumb
+        ? `<div>Antes<br><img src="${src(p.step.from)}" style="width:160px;border-radius:4px"></div><div>→</div>` +
+          `<div>Depois<br><img src="${src(p.step.to)}" style="width:160px;border-radius:4px"></div>`
+        : `<div>Antes: <i>${_esc(p.step.from)}</i></div><div>→</div><div>Depois: <b>${_esc(p.step.to)}</b></div>`;
+      card.appendChild(pair);
+      const apply = document.createElement('button');
+      apply.className = 'btn btn-ghost'; apply.style.fontSize = '11px';
+      apply.textContent = thumb ? 'Aplicar a nova miniatura' : 'Aplicar o novo título';
+      apply.onclick = () => {
+        if (!confirm('Aplicar no YouTube agora? A troca fica registrada com os números de antes.')) return;
+        fetch('/api/swap/apply', {method: 'POST', headers: {'Content-Type': 'application/json'},
+                                  body: JSON.stringify({video_id: p.video_id, kind: p.step.kind})})
+          .then(r => r.json()).then(x => { alert(x.ok ? 'Aplicado.' : 'Não aplicado: ' + x.error); loadSwaps(); });
+      };
+      const tc = document.createElement('button');
+      tc.className = 'btn btn-ghost'; tc.style.cssText = 'font-size:11px;margin-left:6px';
+      tc.textContent = 'Exportar para Test & Compare';
+      tc.title = d.test_compare_hint || '';
+      tc.onclick = () => fetch('/api/swap/test-compare', {method: 'POST', headers: {'Content-Type': 'application/json'},
+                                                         body: JSON.stringify({video_id: p.video_id})})
+        .then(r => r.json()).then(x => alert(x.ok ? 'Exportado em ' + x.folder : x.error));
+      card.appendChild(apply); card.appendChild(tc);
+      box.appendChild(card);
+    });
+  });
+}
+
 function loadPerformance() {
+  loadSwaps();
   fetch('/api/analytics').then(r => r.json()).then(d => {
+    perfStatus(d.status || {});
     document.getElementById('perf-message').textContent = d.busy ? 'Atualizando…' : (d.message || '');
     document.getElementById('perf-note').textContent = d.note || '';
     document.getElementById('perf-overview').textContent = `Canal: ${d.videos.length} vídeo(s) publicado(s) · ` +
