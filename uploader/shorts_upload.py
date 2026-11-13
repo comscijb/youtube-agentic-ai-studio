@@ -75,7 +75,8 @@ def schedule(count: int, *, now: datetime | None = None, episode_publish_at: str
             continue
         day = (base + timedelta(hours=float(settings["spacing_hours"]) * index)).astimezone(now.tzinfo)
         times.append(day.replace(hour=hour, minute=minute, second=0, microsecond=0))
-    return times
+    from uploader import slots                          # Phase 4.0-F: never two Shorts within 3 h
+    return slots.spread(times, now=now)
 
 
 def label(when: datetime | None, now: datetime | None = None) -> str:

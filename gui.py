@@ -2526,6 +2526,19 @@ def discovery_settings_api():
     return jsonify({"ok": True, **discovery_settings.load()})
 
 
+@app.route("/api/upload/next-slot")
+def upload_next_slot():
+    """Phase 4.0-F: "Agendar para o próximo horário do tipo" — the next weekly slot of the episode's type."""
+    from uploader import slots
+    kind = (_state.get("script") or {}).get("narrative_type", "")
+    when = slots.next_slot(kind) if kind else None
+    if when is None:
+        return jsonify({"ok": False, "kind": kind, "error": "Sem horário fixo para este tipo (veja Configurações)"})
+    local = when.astimezone()
+    return jsonify({"ok": True, "kind": kind, "slot": slots.settings()["slots"].get(kind), "publish_at": slots.rfc3339(when),
+                    "local_input": local.strftime("%Y-%m-%dT%H:%M"), "label": slots.label(when)})
+
+
 @app.route("/api/upload/plan")
 def upload_plan():
     """What the confirmation dialog shows: the episode now/scheduled, each Short's planned time and the

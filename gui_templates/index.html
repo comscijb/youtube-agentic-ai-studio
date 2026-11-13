@@ -688,8 +688,8 @@ a:hover{color:var(--text)}
 
             <!-- Tab switcher -->
             <div style="display:flex;gap:4px;margin-bottom:10px">
-              <button class="upload-mode-btn active" id="utab-now" onclick="switchUploadMode('now')">Enviar agora</button>
               <button class="upload-mode-btn" id="utab-schedule" onclick="switchUploadMode('schedule')">📅 Agendar</button>
+              <button class="upload-mode-btn active" id="utab-now" onclick="switchUploadMode('now')">Publicar agora</button>
             </div>
 
             <!-- Upload Now pane -->
@@ -713,6 +713,8 @@ a:hover{color:var(--text)}
                 Exige um <strong style="color:var(--dim)">canal do YouTube verificado</strong>.
               </div>
               <div style="display:flex;flex-direction:column;gap:8px">
+                <button class="btn btn-ghost" id="next-slot-btn" style="font-size:12px" onclick="useNextSlot()" title="Horário fixo por tipo, em Nova York (Configurações)">Agendar para o próximo horário do tipo</button>
+                <div id="next-slot-label" style="font-size:11px;color:var(--muted)"></div>
                 <input type="datetime-local" id="schedule-datetime" style="font-size:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);padding:7px 10px;outline:none;width:100%;color-scheme:dark">
                 <div class="upload-row">
                   <select id="schedule-privacy" style="flex:1">
@@ -741,6 +743,37 @@ a:hover{color:var(--text)}
     <!-- ════ SETTINGS TAB ════ -->
     <div class="tab-content" id="tab-settings">
       <div class="settings-scroll">
+
+        <!-- ── Descoberta (Phase 4.0: translations, slots, playlists, swap rule) ── -->
+        <div class="settings-section" id="discovery-section">
+          <div class="settings-header" onclick="toggleSection(this)">🔎 Descoberta (traduções, horários, playlists) <span class="caret">▾</span></div>
+          <div class="settings-body">
+            <div class="field-label">Idiomas das traduções (códigos, separados por vírgula)</div>
+            <input type="text" id="d-languages" placeholder="es, pt, fr, de, hi">
+            <div class="field-label" style="margin-top:6px">Horário fixo por tipo (dia e hora no fuso abaixo, ex.: TUE 18:00)</div>
+            <div class="settings-cols">
+              <div class="settings-field"><div class="help-text">Ficção psicológica realista</div><input type="text" id="d-slot-realistic_psychological_fiction"></div>
+              <div class="settings-field"><div class="help-text">Experimento mental filosófico</div><input type="text" id="d-slot-philosophical_thought_experiment"></div>
+              <div class="settings-field"><div class="help-text">Parábola sombria</div><input type="text" id="d-slot-dark_human_parable"></div>
+            </div>
+            <div class="field-label" style="margin-top:6px">Fuso dos horários</div>
+            <input type="text" id="d-timezone" placeholder="America/New_York">
+            <div class="field-label" style="margin-top:6px">IDs das playlists por tipo (cada episódio entra na do seu tipo)</div>
+            <div class="settings-cols">
+              <div class="settings-field"><div class="help-text">Realista</div><input type="text" id="d-pl-realistic_psychological_fiction" placeholder="PL…"></div>
+              <div class="settings-field"><div class="help-text">Experimento mental</div><input type="text" id="d-pl-philosophical_thought_experiment" placeholder="PL…"></div>
+              <div class="settings-field"><div class="help-text">Parábola</div><input type="text" id="d-pl-dark_human_parable" placeholder="PL…"></div>
+            </div>
+            <div class="field-label" style="margin-top:6px">Troca de embalagem (proposta, nunca automática)</div>
+            <div class="settings-cols">
+              <div class="settings-field"><div class="help-text">Horas depois da publicação</div><input type="number" id="d-swap-hours"></div>
+              <div class="settings-field"><div class="help-text">Impressões mínimas</div><input type="number" id="d-swap-impressions"></div>
+              <div class="settings-field"><div class="help-text">CTR de referência sem mediana (%)</div><input type="number" step="0.1" id="d-swap-ctr"></div>
+            </div>
+            <button class="btn btn-ghost" style="margin-top:8px;font-size:12px" onclick="saveDiscovery()">Salvar descoberta</button>
+            <span id="d-msg" class="help-text" style="margin-left:6px"></span>
+          </div>
+        </div>
 
         <!-- ── Vozes (Phase 3.9.1-B: listen before choosing the channel voice) ── -->
         <div class="settings-section" id="voices-section">
@@ -3778,6 +3811,18 @@ function regenThumbnail() {
   thumbAction('/api/regenerate-thumbnail', {title: document.getElementById('edit-title').value.trim()});
 }
 
+function useNextSlot(silent) {
+  // Phase 4.0-F: the type's weekly slot (America/New_York by default) becomes the default schedule.
+  return fetch('/api/upload/next-slot').then(r => r.json()).then(d => {
+    const label = document.getElementById('next-slot-label');
+    if (!d.ok) { if (label) label.textContent = d.error; return false; }
+    document.getElementById('schedule-datetime').value = d.local_input;
+    if (label) label.textContent = `Próximo horário do tipo: ${d.label}`;
+    if (silent) switchUploadMode('schedule');
+    return true;
+  }).catch(() => false);
+}
+
 function switchUploadMode(mode) {
   document.querySelectorAll('.upload-mode-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('utab-'+mode).classList.add('active');
@@ -3843,6 +3888,7 @@ function saveTranslations() {
 
 function loadReviewGate() {
   loadTranslations(false);
+  if (!document.getElementById('schedule-datetime').value) useNextSlot(true);
   projectFetch('/api/review-gate').then(r=>r.json()).then(d => {
     if (!d.ok) { _gate = null; updateGateButtons(); return; }
     _gate = d;
@@ -4010,7 +4056,43 @@ function toggleSection(header) {
   header.closest('.settings-section').classList.toggle('collapsed');
 }
 
+const DISCOVERY_TYPES = ['realistic_psychological_fiction', 'philosophical_thought_experiment', 'dark_human_parable'];
+
+function loadDiscovery() {
+  fetch('/api/discovery-settings').then(r => r.json()).then(d => {
+    if (!d.ok) return;
+    document.getElementById('d-languages').value = (d.localize_languages || []).join(', ');
+    document.getElementById('d-timezone').value = d.publish_timezone || '';
+    DISCOVERY_TYPES.forEach(t => {
+      document.getElementById('d-slot-' + t).value = (d.publish_slots || {})[t] || '';
+      document.getElementById('d-pl-' + t).value = (d.playlists || {})[t] || '';
+    });
+    const rule = d.swap_rule || {};
+    document.getElementById('d-swap-hours').value = rule.hours ?? 72;
+    document.getElementById('d-swap-impressions').value = rule.min_impressions ?? 300;
+    document.getElementById('d-swap-ctr').value = ((rule.fallback_ctr ?? 0.03) * 100).toFixed(1);
+  });
+}
+
+function saveDiscovery() {
+  const body = {
+    localize_languages: document.getElementById('d-languages').value.split(',').map(s => s.trim()).filter(Boolean),
+    publish_timezone: document.getElementById('d-timezone').value.trim(),
+    publish_slots: {}, playlists: {},
+    swap_rule: {hours: Number(document.getElementById('d-swap-hours').value),
+                min_impressions: Number(document.getElementById('d-swap-impressions').value),
+                fallback_ctr: Number(document.getElementById('d-swap-ctr').value) / 100},
+  };
+  DISCOVERY_TYPES.forEach(t => {
+    body.publish_slots[t] = document.getElementById('d-slot-' + t).value.trim().toUpperCase();
+    body.playlists[t] = document.getElementById('d-pl-' + t).value.trim();
+  });
+  fetch('/api/discovery-settings', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)})
+    .then(r => r.json()).then(d => { document.getElementById('d-msg').textContent = d.ok ? 'Salvo.' : 'Não salvo: ' + d.error; });
+}
+
 function loadSettings() {
+  loadDiscovery();
   fetch('/api/settings').then(r=>r.json()).then(d => {
     document.getElementById('s-gemini').value       = '';
     document.getElementById('s-pixabay').value      = '';
