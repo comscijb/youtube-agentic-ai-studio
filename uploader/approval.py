@@ -210,6 +210,18 @@ def packaging_findings(run_dir, title: str) -> list[dict]:
     return findings
 
 
+def topic_findings(run_dir, title: str, description: str, tags=None) -> list[dict]:
+    """Phase 4.0-A: the topic in the title or the first line, no keyword stuffing, at most 8 tags."""
+    from agents import packaging, topic
+    from agents.narrative import load_json
+    script = load_json(Path(run_dir) / "script.json") or {}
+    brief = load_json(Path(run_dir) / "story_brief.json") or {}
+    parts = load_json(Path(run_dir) / packaging.DESCRIPTION_PARTS_FILE) or {}
+    kind = script.get("narrative_type") or brief.get("narrative_type") or ""
+    return topic.validate(title, description, kind, parts.get("topic_words") or brief.get("topic_words"),
+                          list(tags) if tags is not None else None)
+
+
 def review_summary(run_dir, *, title: str, generator=None, **artifacts) -> dict:
     """Everything the reviewer must see before approving (for GUI/dashboard). ``generator`` runs the
     cached thumbnail-text check (Phase 3.9-E); without it only a cached answer is used."""
@@ -220,6 +232,7 @@ def review_summary(run_dir, *, title: str, generator=None, **artifacts) -> dict:
     current = check_approval(run_dir, title=title, **artifacts)
     from video import description as upload_description
     description_findings = upload_description.validate(artifacts.get("description", ""))
+    description_findings += topic_findings(run_dir, title, artifacts.get("description", ""), artifacts.get("tags"))
     return {
         "narrative_status": status,
         "status_override_required": status in BLOCKED_STATUSES or status == "missing",

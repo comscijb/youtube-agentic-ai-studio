@@ -21,7 +21,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from agents import identity
+from agents import identity, topic
 from agents.narrative import (NarrativeValidationError, atomic_write_json, load_json,
                               validate_thumbnail_text)
 from agents.structured import compact_json, generate_json
@@ -173,7 +173,9 @@ def generate_thumbnail_concepts(output_dir, *, brief: dict, script: dict, vb: di
 # ── Titles (Phase 3.6-B) ─────────────────────────────────────────────────────
 
 TITLES_FILE = "titles.json"
-TITLE_WEIGHTS = {"curiosity": 0.30, "concreteness": 0.25, "emotion": 0.20, "clarity": 0.15, "length": 0.10}
+# Phase 4.0-A: "topic" (deterministic, agents.topic) — a new channel is found by topic matching, so a searchable
+# concept next to the curiosity hook counts. The weights still sum to 1.
+TITLE_WEIGHTS = {"curiosity": 0.27, "concreteness": 0.22, "emotion": 0.18, "clarity": 0.13, "length": 0.08, "topic": 0.12}
 TITLE_HOOK_CHARS = 45
 TITLE_TARGET_CHARS = 60
 SCORE_KEYS = ("curiosity", "concreteness", "emotion", "clarity")
@@ -225,8 +227,9 @@ def validate_title_scores(value: dict, count: int) -> dict:
 
 
 def total_score(scores: dict) -> int:
-    """0-100: the weighted 1-5 scores (length is deterministic)."""
-    return round(sum(TITLE_WEIGHTS[key] * scores[key] for key in TITLE_WEIGHTS) / 5 * 100)
+    """0-100: the weighted 1-5 scores (length and topic are deterministic; a score without topic counts it as 5,
+    as titles scored before Phase 4.0 were)."""
+    return round(sum(TITLE_WEIGHTS[key] * scores.get(key, 5 if key == "topic" else 0) for key in TITLE_WEIGHTS) / 5 * 100)
 
 
 def score_titles(brief: dict, candidates: list, *, generator) -> list[dict]:
@@ -251,6 +254,7 @@ def score_titles(brief: dict, candidates: list, *, generator) -> list[dict]:
     for row, scores in zip(rows, value["scores"]):
         row["scores"] = {key: scores[key] for key in SCORE_KEYS}
         row["scores"]["length"] = length_score(row["title"])
+        row["scores"]["topic"] = topic.topic_score(row["title"], brief.get("narrative_type", ""), brief.get("topic_words"))
         row["note"] = scores["note"]
         row["total"] = total_score(row["scores"])
     published = _published_titles()
@@ -307,10 +311,15 @@ def description_parts_contract(scene_count: int) -> str:
     return f"""You write the YouTube description parts for one Private Gravity episode (cinematic
 psychological fiction). Never spoil the ending or the reversal; never explain the thesis.
 Return ONLY JSON with:
+- "topic_words": 2-4 searchable concepts a viewer might type to find this story (e.g. "thought experiment",
+  "parable", "AI clone", "family vlogger", "mirror"), lower case, never a person's or channel's name
+- "premise_line": the description's FIRST line: the premise in one sentence (max 150 characters) that uses at
+  least one topic word; no spoiler, no thesis
 - "hook": 1-2 short lines (max 220 characters) from the logline that make a viewer press play; never repeat a
   line of the episode's cold open (the video already opens with it)
 - "chapter_titles": exactly {scene_count} short evocative scene titles (max {CHAPTER_TITLE_MAX} characters
-  each, 2-5 words, no spoilers, no numbering), in scene order
+  each, 2-5 words, no spoilers, no numbering), in scene order; the first stays neutral, and at least one of the
+  others carries a topic word
 - "comment_question": one open question from the story's philosophical question that invites viewers
   to share their own experience (ends with "?"), e.g. "Have you ever performed happiness for someone
   else's eyes?"
@@ -336,9 +345,20 @@ def validate_description_parts(value: dict, scene_count: int) -> dict:
         problems.append("comment_question must be a question ending with '?'")
     if not pinned or len(pinned) > 320:
         problems.append("pinned_comment must be 1-300 characters")
+    topic_words = [str(word).strip().lower() for word in (value or {}).get("topic_words") or [] if str(word).strip()]
+    premise = str((value or {}).get("premise_line", "")).strip()
+    if not 1 <= len(topic_words) <= 4:
+        problems.append("topic_words must have 2-4 searchable concepts")
+    if not premise or len(premise) > 160 or "\n" in premise:
+        problems.append("premise_line must be one sentence, at most 150 characters")
+    elif topic_words and not any(topic.contains(premise, word) for word in topic_words):
+        problems.append("premise_line must use one of the topic_words")
+    if isinstance(titles, list) and len(titles) > 1 and topic_words and \
+            not topic.chapter_has_topic(titles[1:], topic_words=topic_words):
+        problems.append("at least one chapter title after the first must carry a topic word")
     if problems:
         raise NarrativeValidationError("description parts: " + "; ".join(problems))
-    return {"hook": hook, "chapter_titles": [str(title).strip() for title in titles],
+    return {"topic_words": topic_words, "premise_line": premise, "hook": hook, "chapter_titles": [str(title).strip() for title in titles],
             "comment_question": question, "pinned_comment": pinned}
 
 
@@ -348,7 +368,7 @@ def generate_description_parts(output_dir, *, brief: dict, script: dict, timelin
     from agents.gemini_client import generate
     path = Path(output_dir) / DESCRIPTION_PARTS_FILE
     scenes = (timeline or {}).get("scenes") or []
-    key = {"logline": brief.get("logline", ""), "scenes": [scene.get("title", "") for scene in scenes], "version": 1}
+    key = {"logline": brief.get("logline", ""), "scenes": [scene.get("title", "") for scene in scenes], "version": 2}
     saved = load_json(path) or {}
     if saved.get("key") == key and not force:
         return saved

@@ -303,6 +303,8 @@ EXTERNAL_IMAGE_PROVIDER = os.getenv("EXTERNAL_IMAGE_PROVIDER", "")
 EXTERNAL_IMAGE_MODEL = os.getenv("EXTERNAL_IMAGE_MODEL", "gpt-image-1")
 EXTERNAL_IMAGE_PRICE = float(os.getenv("EXTERNAL_IMAGE_PRICE", "0"))           # USD per image
 EXTERNAL_IMAGE_BUDGET = float(os.getenv("EXTERNAL_IMAGE_BUDGET", "0"))         # default per-project cap, USD
+# Phase 4.0-A: names never used as tags (other channels); topic tags come from the description parts.
+TAG_BLOCKED_NAMES = [name.strip() for name in os.getenv("TAG_BLOCKED_NAMES", "").split(",") if name.strip()]
 PROMPT_ADHERENCE = os.getenv("PROMPT_ADHERENCE", "1") != "0"  # Gemini compares each prompt with its narration (3.9.9-C)
 # Prices for the cost estimates in the GUI and reports, filled in by the user (USD); 0 means unknown, nothing is hard-coded.
 GEMINI_PRICE_INPUT_PER_MTOK = float(os.getenv("GEMINI_PRICE_INPUT_PER_MTOK", "0"))

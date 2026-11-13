@@ -2356,6 +2356,17 @@ def yt_status():
     secret_ok = os.path.exists(config.YOUTUBE_CLIENT_SECRET)
     return jsonify({"token": token_ok, "secret": secret_ok})
 
+def _episode_tags(script: dict) -> list:
+    """Phase 4.0-A: at most 8 relevant tags (topic + type), never another channel's name."""
+    if not script:
+        return []
+    try:
+        from agents import topic
+        return topic.episode_tags(config.OUTPUT_DIR, script)
+    except Exception:                                    # noqa: BLE001 — the script's own tags still go
+        return list(script.get("tags", []))[:8]
+
+
 def _upload_metadata() -> dict:
     """Exactly what an upload sends: shared by the upload and its approval."""
     script = _state.get("script") or {}
@@ -2364,7 +2375,7 @@ def _upload_metadata() -> dict:
         "video_path": _state.get("video_path"),
         "title": script.get("title", ""),
         "description": _state.get("description", script.get("description", "")),
-        "tags": script.get("tags", []),
+        "tags": _episode_tags(script),
         "thumbnail_path": thumb if thumb and os.path.exists(thumb) else None,
     }
 

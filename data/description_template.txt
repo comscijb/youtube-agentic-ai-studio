@@ -1,3 +1,6 @@
+{premise}
+{series_line}
+
 {hook}
 
 {chapters}
