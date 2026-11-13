@@ -306,8 +306,12 @@ def overview() -> dict:
                                    "views": ((cached(short["video_id"]) or {}).get("totals") or {}).get("views")}
                                   for short in shorts_of.get(record["video_id"], [])]})
     total = lambda key: sum(float(item[key] or 0) for item in videos)
-    from uploader import retention
-    return {"videos": videos, "views": total("views"), "subscribers_gained": total("subscribers_gained"),
+    from uploader import after_upload, retention
+    try:
+        overdue = after_upload.overdue()
+    except Exception:                                   # noqa: BLE001 — never hides the numbers
+        overdue = []
+    return {"checklist_overdue": overdue, "videos": videos, "views": total("views"), "subscribers_gained": total("subscribers_gained"),
             "impressions": total("impressions"), "note": LAG_NOTE, "retention_guidance": retention.guidance()}
 
 

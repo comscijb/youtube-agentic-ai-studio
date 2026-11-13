@@ -278,6 +278,13 @@ def upload_run(run_dir: str, *, video_path: str, title: str, description: str, t
             captions = {"action": "failed", "error": f"{exc.__class__.__name__}: {str(exc)[:200]}"}
             print(f"   WARNING: caption upload failed ({exc.__class__.__name__}); video kept. Retry with "
                   f"python -m scripts.youtube_backfill --video-id {video_id} --captions")
+    from agents.narrative import load_json as _load
+    from uploader import after_upload
+    kind = (_load(Path(run_dir) / "script.json") or {}).get("narrative_type", "")
+    try:                                                # Phase 4.0-E: the type's playlist; never fails the upload
+        playlist = after_upload.add_episode_to_playlist(service or get_service(interactive=False), video_id, kind)
+    except Exception as exc:                            # noqa: BLE001
+        playlist = {"action": "failed", "error": f"{exc.__class__.__name__}: {str(exc)[:160]}"}
     shorts = []
     from uploader import shorts_upload
     if shorts_upload.included(run_dir):                 # Phase 3.7: after the episode, with its URL
@@ -298,6 +305,7 @@ def upload_run(run_dir: str, *, video_path: str, title: str, description: str, t
         }, "captions": captions, "language": getattr(config, "VIDEO_LANGUAGE", "en"),
             "shorts": [record["video_id"] for record in shorts],
             "localizations": sorted(localizations or {}),
+            "narrative_type": kind, "playlist": playlist,
             "contains_synthetic_media": disclosure["value"], "synthetic_disclosure_reason": disclosure["reason"]},
     )
 

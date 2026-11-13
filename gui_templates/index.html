@@ -1149,6 +1149,51 @@ function loadSwaps() {
   });
 }
 
+function afterUploadBlock(videoId) {
+  // Phase 4.0-E/G: what the API can't do, as a checklist with values to copy.
+  const box = document.createElement('details');
+  box.innerHTML = '<summary style="cursor:pointer;font-size:12px">✅ Depois do envio (tela final, card, Shorts, comentário, dublagem, playlist, Comunidade)</summary>';
+  const render = d => {
+    box.querySelectorAll('.au-body').forEach(el => el.remove());
+    const body = document.createElement('div');
+    body.className = 'au-body';
+    body.style.cssText = 'display:flex;flex-direction:column;gap:6px;margin-top:6px;font-size:12px';
+    if (!d.ok) { body.textContent = d.error; box.appendChild(body); return; }
+    d.items.forEach(item => {
+      const row = document.createElement('div');
+      row.style.cssText = 'border-left:3px solid ' + (item.ticked_at ? 'var(--green,#4caf50)' : 'var(--amber,#e0b252)') + ';padding-left:6px';
+      const head = document.createElement('label');
+      head.style.cssText = 'display:flex;gap:6px;align-items:center;font-weight:600';
+      const check = document.createElement('input');
+      check.type = 'checkbox'; check.checked = !!item.ticked_at;
+      check.onchange = () => fetch('/api/after-upload', {method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({video_id: videoId, item: item.id, ticked: check.checked})}).then(r => r.json()).then(render);
+      head.appendChild(check); head.appendChild(document.createTextNode(item.label));
+      const value = document.createElement('pre');
+      value.style.cssText = 'white-space:pre-wrap;margin:2px 0;font-size:11px;color:var(--muted)';
+      value.textContent = item.value;
+      const copy = document.createElement('button');
+      copy.className = 'btn btn-ghost'; copy.style.cssText = 'font-size:10px;padding:2px 6px';
+      copy.textContent = 'Copiar';
+      copy.onclick = () => navigator.clipboard && navigator.clipboard.writeText(item.value);
+      row.appendChild(head); row.appendChild(value); row.appendChild(copy);
+      body.appendChild(row);
+    });
+    const drafts = document.createElement('button');
+    drafts.className = 'btn btn-ghost'; drafts.style.cssText = 'font-size:11px;align-self:flex-start';
+    drafts.textContent = 'Escrever rascunhos da Comunidade com Gemini';
+    drafts.onclick = () => fetch('/api/after-upload?drafts=gemini&video_id=' + encodeURIComponent(videoId)).then(r => r.json()).then(render);
+    body.appendChild(drafts);
+    box.appendChild(body);
+  };
+  box.ontoggle = () => {
+    if (!box.open || box.dataset.loaded) return;
+    box.dataset.loaded = '1';
+    fetch('/api/after-upload?video_id=' + encodeURIComponent(videoId)).then(r => r.json()).then(render);
+  };
+  return box;
+}
+
 function loadPerformance() {
   loadSwaps();
   fetch('/api/analytics').then(r => r.json()).then(d => {
@@ -1202,6 +1247,14 @@ function loadPerformance() {
         row.textContent = `📱 ${s.title} · views ${s.views ?? '—'}`;
         card.appendChild(row);
       });
+      const overdue = (d.checklist_overdue || []).find(o => o.video_id === v.video_id);
+      if (overdue) {
+        const warn = document.createElement('div');
+        warn.style.cssText = 'color:var(--amber);font-size:12px;margin-top:2px';
+        warn.textContent = '⚠ Depois do envio, falta: ' + overdue.missing.join(', ');
+        card.appendChild(warn);
+      }
+      card.appendChild(afterUploadBlock(v.video_id));
       const more = document.createElement('details');
       more.innerHTML = '<summary style="cursor:pointer;font-size:12px;color:var(--muted)">Países, origens de tráfego, série diária</summary>';
       more.ontoggle = () => {

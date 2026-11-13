@@ -1296,6 +1296,26 @@ def swap_test_compare():
     return jsonify({"ok": True, "folder": str(folder)})
 
 
+@app.route("/api/after-upload", methods=["GET", "POST"])
+def after_upload_checklist():
+    """Phase 4.0-E "Depois do envio": GET ?video_id= the checklist with ready-to-copy values (and the Community
+    drafts, 4.0-G); POST {video_id, item, ticked} ticks an item in the ledger."""
+    from uploader import after_upload
+    try:
+        if request.method == "POST":
+            body = request.get_json(force=True) or {}
+            after_upload.tick(str(body.get("video_id", "")), str(body.get("item", "")), bool(body.get("ticked", True)))
+            video_id = str(body.get("video_id", ""))
+        else:
+            video_id = request.args.get("video_id", "")
+        generator = None
+        if request.args.get("drafts") == "gemini":
+            from agents.gemini_client import generate as generator
+        return jsonify({"ok": True, **after_upload.checklist(video_id, generator=generator)})
+    except (LookupError, ValueError) as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+
+
 @app.route("/api/analytics/refresh", methods=["POST"])
 def analytics_refresh():
     """Fetch now (Analytics + Reporting APIs). Needs the yt-analytics.readonly consent: when it is missing

@@ -87,6 +87,8 @@ DESCRIPTION_CREDIT_LINE = os.getenv("DESCRIPTION_CREDIT_LINE") or (
 END_CREDIT_CARD = os.getenv("END_CREDIT_CARD", "true").lower() in ("1", "true", "yes", "on")
 END_CREDIT_TEXT = "Written & directed by {channel} · Illustrations & narration: AI-assisted"
 END_CREDIT_SECONDS = 4.0
+# Phase 4.0-E: the viewer-driven Hype route for small channels; never asks for likes or subs in exchange for anything.
+END_CREDIT_HYPE = "If this stayed with you, hype it and share it."
 
 # Narrative development defaults. Regular episodes can be set from 12 to 20
 # minutes in the GUI; Shorts use their own fixed pacing contract.
