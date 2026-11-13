@@ -920,6 +920,17 @@ def shorts_render():
     return _imagegen_run(run)
 
 
+@app.route("/api/shorts/export", methods=["POST"])
+def shorts_export():
+    """Phase 4.0-H "Exportar para TikTok / Reels": the 9:16 file and a caption per platform; nothing is posted."""
+    from uploader import social_export
+    try:
+        found = social_export.export(config.OUTPUT_DIR, str((request.get_json(force=True) or {}).get("id", "")))
+    except LookupError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    return jsonify({"ok": True, **found})
+
+
 @app.route("/api/shorts/audio")
 def shorts_audio():
     """The episode audio for play-from/to in the Shorts review."""

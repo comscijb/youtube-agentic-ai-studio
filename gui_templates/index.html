@@ -3597,6 +3597,7 @@ function renderShorts() {
         ${segment.approaches_reversal ? '<span style="color:var(--amber)">perto da virada</span>' : ''}
         <label style="margin-left:auto"><input type="checkbox" data-k="include" ${segment.include === false ? '' : 'checked'}> incluir</label>
         <button class="btn btn-ghost" style="font-size:10px;padding:1px 6px" data-a="play">▶ ouvir</button>
+        ${segment.video ? '<button class="btn btn-ghost" style="font-size:10px;padding:1px 6px" data-a="social" title="Mesmo arquivo 9:16 + legendas por plataforma em exports/social">Exportar para TikTok / Reels</button>' : ''}
         <button class="btn btn-ghost" style="font-size:10px;padding:1px 6px" data-a="drop">✕</button></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">
         <select data-k="start_sentence">${shortsSentenceOptions(segment.start_sentence, 'start')}</select>
@@ -3613,6 +3614,9 @@ function renderShorts() {
       renderShorts();
     });
     card.querySelector('[data-a="play"]').onclick = () => shortsPlay(segment);
+    const social = card.querySelector('[data-a="social"]');
+    if (social) social.onclick = () => fetch('/api/shorts/export', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({id: segment.id})}).then(r => r.json()).then(d => alert(d.ok ? 'Exportado em ' + d.folder : d.error));
     card.querySelector('[data-a="drop"]').onclick = () => { _shorts.plan.segments.splice(index, 1); renderShorts(); };
     list.appendChild(card);
   });
