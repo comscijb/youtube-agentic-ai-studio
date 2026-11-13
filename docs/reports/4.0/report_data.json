@@ -1,0 +1,79 @@
+{
+ "analytics_status": {
+  "last_attempt": "2026-11-13T01:05:59+00:00",
+  "last_success": null,
+  "videos": 0,
+  "error": "A autorização do YouTube expirou ou falta o escopo de Analytics. Com o app OAuth em modo Testing o Google expira o token a cada 7 dias: clique em \"Autorizar de novo\" (abre o navegador) ou rode python -m scripts.sync_publications. Para não expirar mais, publique o app OAuth (Google Cloud → OAuth consent screen → Publish app). (YouTube authorization is missing, expired or lacks a required scope (captions and analytics need new ones since Phase 3.)",
+  "auth_required": true
+ },
+ "next_slots": {
+  "realistic_psychological_fiction": "2026-11-17T23:00:00Z | terça 17/11 18:00 (New York) · 20:00 aqui",
+  "philosophical_thought_experiment": "2026-11-19T23:00:00Z | quinta 19/11 18:00 (New York) · 20:00 aqui",
+  "dark_human_parable": "2026-11-14T23:00:00Z | sábado 14/11 18:00 (New York) · 20:00 aqui"
+ },
+ "checklist": {
+  "video_id": "7m4-xEecXFI",
+  "title": "She Watched 9,000 Videos of Her Son and Found Herself Missing",
+  "items": [
+   {
+    "label": "Tela final",
+    "value": "Elemento 1: vídeo Sc3IbtGx-6k — \"He Cut Off His Daughter for a Warm Glow\". Elemento 2: botão Inscrever-se."
+   },
+   {
+    "label": "Card no pico de curiosidade",
+    "value": "Card aos 7:33 (início da virada: The Missing Witness), apontando para \"He Cut Off His Daughter for a Warm Glow\" (Sc3IbtGx-6k)"
+   },
+   {
+    "label": "Vídeo relacionado dos Shorts",
+    "value": "She Filmed Her Son Every Single Day #Shorts (vNs9KBfuqTU) → vídeo relacionado: https://www.youtube.com/watch?v=7m4-xEecXFI\nA 12 Year Old Boy Refused to Smile #Shorts (pKLhWr_izXc) → vídeo relacionado: https://www.youtube.com/watch?v=7m4-xEecXFI\nA Stranger Recognized Her Son in Public #Shorts (PdMHAY0UA20) → vídeo relacionado: https://www.youtube.com/watch?v=7m4-xEecXFI"
+   },
+   {
+    "label": "Comentário fixado",
+    "value": "(sem texto de comentário fixado no projeto)"
+   },
+   {
+    "label": "Dublagem automática",
+    "value": "Dublagem automática: no YouTube Studio → Legendas, ative a dublagem automática deste vídeo (a API não faz isso) e revise a faixa em português antes de publicar."
+   },
+   {
+    "label": "Playlist do tipo",
+    "value": "Configure os IDs das 3 playlists em Configurações (uma vez)."
+   },
+   {
+    "label": "Enquete na Comunidade",
+    "value": "Who was right? Can a mother transition from director of her son's life to an unrecorded, present participant in it?\n○ I'd do the same\n○ I'd refuse\n○ I'm not sure"
+   },
+   {
+    "label": "Post de teaser (véspera)",
+    "value": "A mother who recorded every day of her son's childhood for millions of viewers discovers that the one person who missed it was her. Tomorrow on Private Gravity.\n(publicar com a miniatura, na véspera do episódio)"
+   }
+  ]
+ },
+ "translations": {
+  "video": "Fsy9Md4a4yw",
+  "title": "They Paid the Ferryman to Forget",
+  "description": "A Private Gravity dark parable.\n\nIn a river village where the ferry costs one memory, people pay gladly with their worst ones, until nobody remembers why the old bridge fell.\n\nChapters\n0:00 The First Stone\n1:14 Unburdening the Fisherman\n2:41 The Mayor's Weekly Fare\n4:08 Rebuilding on the Mudbank\n5:27 The New Bridge Plan\n6:53 Trading the Warning\n8:13 The Keeper of Reasons\n9:37 The Spring Thaw\n11:01 The River Remembers\n\n▶ Subscribe for more stories about the hidden forces that shape us.\n👍 Like the video, and share it with someone who'd recognise themselves in it.\n💬 What stayed with you after the ending? Tell us in the comments.\n\nPrivate Gravity — a cinematic storytelling channel exploring the psychology and philosophy of modern human life through original fictional stories.\nThis episode is an original work of fiction. Characters and events are fictional.\n\nOriginal story written and edited by Private Gravity. Illustrations and narration produced with AI tools under human direction.\n#PrivateGravity #parable\n",
+  "translations": {
+   "es": {
+    "title": "Le pagaron al barquero para olvidar",
+    "description": "Una oscura parábola de Private Gravity.\n\nEn un pueblo fluvial donde el ferri cuesta un recuerdo, la gente paga encantada con sus peores vivencias, hasta que nadie recuerda por qué cayó el viejo puente.\n\nChapters\n0:00 La primera piedra\n1:14 Aliviando al pescador\n2:41 La tarifa semanal del alcalde\n4:08 Reconstruyendo en el banco de lodo\n5:27 El plan del nuevo puente\n6:53 Intercambiando la advertencia\n8:13 El guardián de las razones\n9:37 El deshielo primaveral\n11:01 El río recuerda\n\n▶ Suscríbete para más historias sobre las fuerzas ocultas que nos moldean.\n👍 Dale a Me gusta al video y compártelo con alguien que se reconozca en él.\n💬 ¿Qué se te quedó grabado tras el final? Cuéntanos en los comentarios.\n\nPrivate Gravity: un canal de narración cinematográfica que explora la psicología y la filosofía de la vida humana moderna a través de historias de ficción originales.\nEste episodio es una obra de ficción original. Los personajes y eventos son ficticios.\n\nHistoria original escrita y editada por Private Gravity. Ilustraciones y narración producidas con herramientas de IA bajo dirección humana.\n#PrivateGravity #parable"
+   },
+   "pt": {
+    "title": "Eles Pagaram ao Barqueiro para Esquecer",
+    "description": "Uma parábola sombria de Private Gravity.\n\nNuma vila ribeirinha onde a travessia custa uma memória, as pessoas pagam de bom grado com as suas piores lembranças, até que ninguém se lembra do porquê de a velha ponte ter caído.\n\nChapters\n0:00 A Primeira Pedra\n1:14 Desonerando o Pescador\n2:41 A Tarifa Semanal do Autarca\n4:08 Reconstruindo no Banco de Lama\n5:27 O Plano da Nova Ponte\n6:53 Trocando o Aviso\n8:13 O Guardião das Razões\n9:37 O Degelo da Primavera\n11:01 O Rio Lembra-se\n\n▶ Subscreve para mais histórias sobre as forças ocultas que nos moldam.\n👍 Gosta do vídeo e partilha-o com alguém que se reveja nele.\n💬 O que é que te marcou após o final? Conta-nos nos comentários.\n\nPrivate Gravity — um canal de narrativas cinematográficas que explora a psicologia e a filosofia da vida humana moderna através de histórias de ficção originais.\nEste episódio é uma obra de ficção original. As personagens e os eventos são fictícios.\n\nHistória original escrita e editada por Private Gravity. Ilustrações e narração produzidas com ferramentas de IA sob direção humana.\n#PrivateGravity #parable"
+   },
+   "fr": {
+    "title": "Ils ont payé le passeur pour oublier",
+    "description": "Une sombre parabole de Private Gravity.\n\nDans un village au bord d'une rivière où le bac coûte un souvenir, les gens paient volontiers avec leurs pires souvenirs, jusqu'à ce que plus personne ne se souvienne pourquoi le vieux pont s'est effondré.\n\nChapters\n0:00 La première pierre\n1:14 Soulager le pêcheur\n2:41 Le tarif hebdomadaire du maire\n4:08 Reconstruire sur le banc de vase\n5:27 Le plan du nouveau pont\n6:53 Échanger l'avertissement\n8:13 Le gardien des raisons\n9:37 Le dégel du printemps\n11:01 La rivière se souvient\n\n▶ Abonnez-vous pour plus d'histoires sur les forces cachées qui nous façonnent.\n👍 Aimez la vidéo et partagez-la avec quelqu'un qui s'y reconnaîtra.\n💬 Qu'est-ce qui vous est resté en tête après la fin ? Dites-le-nous dans les commentaires.\n\nPrivate Gravity — une chaîne de narration cinématographique qui explore la psychologie et la philosophie de la vie humaine moderne à travers des histoires de fiction originales.\nCet épisode est une œuvre de fiction originale. Les personnages et les événements sont fictifs.\n\nHistoire originale écrite et éditée par Private Gravity. Illustrations et narration produites avec des outils d'IA sous direction humaine.\n#PrivateGravity #parable"
+   },
+   "de": {
+    "title": "Sie bezahlten den Fährmann, um zu vergessen",
+    "description": "Eine dunkle Parabel von Private Gravity.\n\nIn einem Flussdorf, in dem die Überfahrt eine Erinnerung kostet, bezahlen die Menschen bereitwillig mit ihren schlimmsten, bis sich niemand mehr erinnert, warum die alte Brücke einstürzte.\n\nChapters\n0:00 Der erste Stein\n1:14 Den Fischer entlasten\n2:41 Der wöchentliche Fahrpreis des Bürgermeisters\n4:08 Wiederaufbau auf der Schlickbank\n5:27 Der Plan für die neue Brücke\n6:53 Die Warnung vertauschen\n8:13 Der Hüter der Gründe\n9:37 Die Frühlingsschmelze\n11:01 Der Fluss erinnert sich\n\n▶ Abonnieren Sie den Kanal für weitere Geschichten über die verborgenen Kräfte, die uns formen.\n👍 Liked das Video und teilt es mit jemandem, der sich darin wiedererkennen würde.\n💬 Was ist euch nach dem Ende im Gedächtnis geblieben? Schreibt es uns in die Kommentare.\n\nPrivate Gravity – ein Kanal für filmisches Storytelling, der die Psychologie und Philosophie des modernen menschlichen Lebens durch originale fiktionale Geschichten erforscht.\nDiese Episode ist ein fiktionales Originalwerk. Charaktere und Ereignisse sind frei erfunden.\n\nOriginalgeschichte geschrieben und bearbeitet von Private Gravity. Illustrationen und Narration produziert mit KI-Werkzeugen unter menschlicher Leitung.\n#PrivateGravity #parable"
+   },
+   "hi": {
+    "title": "उन्होंने भूलने के लिए नाविक को भुगतान किया",
+    "description": "प्राइवेट ग्रेविटी की एक गहरी कहानी।\n\nएक नदी के किनारे बसे गाँव में जहाँ नाव की सवारी की कीमत एक याद है, लोग खुशी-खुशी अपनी सबसे बुरी यादों से भुगतान करते हैं, जब तक कि किसी को याद नहीं रहता कि पुराना पुल क्यों गिरा था।\n\nChapters\n0:00 पहला पत्थर\n1:14 मछुआरे का बोझ हल्का करना\n2:41 मेयर का साप्ताहिक किराया\n4:08 कीचड़ के टीले पर पुनर्निर्माण\n5:27 नए पुल की योजना\n6:53 चेतावनी का आदान-प्रदान\n8:13 कारणों का रक्षक\n9:37 वसंत की बर्फ पिघलना\n11:01 नदी को याद है\n\n▶ हमें आकार देने वाली छिपी हुई ताकतों के बारे में और कहानियों के लिए सब्सक्राइब करें।\n👍 वीडियो को लाइक करें और इसे किसी ऐसे व्यक्ति के साथ शेयर करें जो इसमें खुद को पहचान सके।\n💬 अंत के बाद आपके मन में क्या बात रह गई? हमें कमेंट में बताएं।\n\nPrivate Gravity — मूल काल्पनिक कहानियों के माध्यम से आधुनिक मानव जीवन के मनोविज्ञान और दर्शन की खोज करने वाला एक सिनेमाई कहानी कहने वाला चैनल।\nयह एपिसोड कल्पना की एक मूल कृति है। पात्र और घटनाएँ काल्पनिक हैं।\n\nमूल कहानी Private Gravity द्वारा लिखित और संपादित। मानवीय निर्देशन के तहत AI उपकरणों के साथ निर्मित चित्र और वर्णन।\n#PrivateGravity #parable"
+   }
+  }
+ }
+}
