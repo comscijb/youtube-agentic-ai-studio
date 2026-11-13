@@ -920,6 +920,17 @@ def shorts_render():
     return _imagegen_run(run)
 
 
+@app.route("/api/shorts/export", methods=["POST"])
+def shorts_export():
+    """Phase 4.0-H "Exportar para TikTok / Reels": the 9:16 file and a caption per platform; nothing is posted."""
+    from uploader import social_export
+    try:
+        found = social_export.export(config.OUTPUT_DIR, str((request.get_json(force=True) or {}).get("id", "")))
+    except LookupError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    return jsonify({"ok": True, **found})
+
+
 @app.route("/api/shorts/audio")
 def shorts_audio():
     """The episode audio for play-from/to in the Shorts review."""
@@ -1221,6 +1232,7 @@ def analytics_overview():
     data = analytics.overview()
     slug = Path(config.OUTPUT_DIR).name
     data["project_videos"] = [item["video_id"] for item in data["videos"] if item.get("project") == slug]
+    data["status"] = analytics.status()                  # Phase 4.0-C: last refresh and its error
     return jsonify({"ok": True, **data, "busy": _state.get("analytics_busy", False),
                     "message": _state.get("analytics_message", "")})
 
@@ -1234,6 +1246,87 @@ def analytics_video(video_id):
     return jsonify({"ok": True, **record})
 
 
+@app.route("/api/analytics/authorize", methods=["POST"])
+def analytics_authorize():
+    """Phase 4.0-C: ask for the YouTube consent again (opens the browser on this computer; the person signs in),
+    then refresh. The token is never shown."""
+    from uploader import analytics
+    if _state.get("analytics_busy"):
+        return jsonify({"ok": False, "error": "Já atualizando"}), 409
+
+    def work():
+        _state.update(analytics_busy=True, analytics_message="Aguardando a autorização no navegador…")
+        try:
+            done = analytics.refresh_with_status(force=True, interactive=True)["videos"]
+            _state["analytics_message"] = f"Autorizado e atualizado: {len(done)} vídeo(s)"
+        except Exception as exc:                         # noqa: BLE001
+            _state["analytics_message"] = f"Erro: {str(exc)[:200]}"
+        finally:
+            _state["analytics_busy"] = False
+    threading.Thread(target=work, daemon=True).start()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/swap/proposals")
+def swap_proposals():
+    """Phase 4.0-C: packaging swaps the rule proposes (never applied without a click)."""
+    from uploader import packaging_swap
+    return jsonify({"ok": True, **packaging_swap.proposals()})
+
+
+@app.route("/api/swap/apply", methods=["POST"])
+def swap_apply():
+    from uploader import packaging_swap
+    body = request.get_json(force=True) or {}
+    try:
+        entry = packaging_swap.apply(str(body.get("video_id", "")), str(body.get("kind", "")))
+    except (LookupError, ValueError) as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    except Exception as exc:                             # noqa: BLE001 — auth, network
+        return jsonify({"ok": False, "error": f"{exc.__class__.__name__}: {str(exc)[:240]}"}), 500
+    return jsonify({"ok": True, "swap": entry})
+
+
+@app.route("/api/swap/thumbnail")
+def swap_thumbnail():
+    from uploader import packaging_swap
+    path = packaging_swap.variant_path(request.args.get("project", ""), request.args.get("path", ""))
+    if not path:
+        return "", 404
+    return send_file(str(path), mimetype="image/jpeg")
+
+
+@app.route("/api/swap/test-compare", methods=["POST"])
+def swap_test_compare():
+    """Export the 3 thumbnails and titles for YouTube Studio's Test & Compare (no API for it)."""
+    from uploader import packaging_swap
+    try:
+        folder = packaging_swap.export_test_compare(str((request.get_json(force=True) or {}).get("video_id", "")))
+    except LookupError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    return jsonify({"ok": True, "folder": str(folder)})
+
+
+@app.route("/api/after-upload", methods=["GET", "POST"])
+def after_upload_checklist():
+    """Phase 4.0-E "Depois do envio": GET ?video_id= the checklist with ready-to-copy values (and the Community
+    drafts, 4.0-G); POST {video_id, item, ticked} ticks an item in the ledger."""
+    from uploader import after_upload
+    try:
+        if request.method == "POST":
+            body = request.get_json(force=True) or {}
+            after_upload.tick(str(body.get("video_id", "")), str(body.get("item", "")), bool(body.get("ticked", True)))
+            video_id = str(body.get("video_id", ""))
+        else:
+            video_id = request.args.get("video_id", "")
+        generator = None
+        if request.args.get("drafts") == "gemini":
+            from agents.gemini_client import generate as generator
+        return jsonify({"ok": True, **after_upload.checklist(video_id, generator=generator)})
+    except (LookupError, ValueError) as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+
+
 @app.route("/api/analytics/refresh", methods=["POST"])
 def analytics_refresh():
     """Fetch now (Analytics + Reporting APIs). Needs the yt-analytics.readonly consent: when it is missing
@@ -1245,7 +1338,7 @@ def analytics_refresh():
     def work():
         _state.update(analytics_busy=True, analytics_message="Atualizando…")
         try:
-            done = analytics.refresh_all(force=True, interactive=False)
+            done = analytics.refresh_with_status(force=True, interactive=False)["videos"]
             _state["analytics_message"] = f"Atualizado: {len(done)} vídeo(s)"
         except Exception as exc:                      # noqa: BLE001 — shown in the tab
             _state["analytics_message"] = f"Erro: {exc}"
@@ -2356,6 +2449,17 @@ def yt_status():
     secret_ok = os.path.exists(config.YOUTUBE_CLIENT_SECRET)
     return jsonify({"token": token_ok, "secret": secret_ok})
 
+def _episode_tags(script: dict) -> list:
+    """Phase 4.0-A: at most 8 relevant tags (topic + type), never another channel's name."""
+    if not script:
+        return []
+    try:
+        from agents import topic
+        return topic.episode_tags(config.OUTPUT_DIR, script)
+    except Exception:                                    # noqa: BLE001 — the script's own tags still go
+        return list(script.get("tags", []))[:8]
+
+
 def _upload_metadata() -> dict:
     """Exactly what an upload sends: shared by the upload and its approval."""
     script = _state.get("script") or {}
@@ -2364,7 +2468,7 @@ def _upload_metadata() -> dict:
         "video_path": _state.get("video_path"),
         "title": script.get("title", ""),
         "description": _state.get("description", script.get("description", "")),
-        "tags": script.get("tags", []),
+        "tags": _episode_tags(script),
         "thumbnail_path": thumb if thumb and os.path.exists(thumb) else None,
     }
 
@@ -2398,6 +2502,52 @@ def approve_upload():
     except UploadNotApproved as exc:
         return jsonify({"ok": False, "error": str(exc), "reasons": exc.reasons}), 400
     return jsonify({"ok": True, "approved_at": record["approved_at"]})
+
+
+@app.route("/api/localizations", methods=["GET", "POST"])
+def localizations_panel():
+    """Phase 4.0-B "Traduções": GET the saved translations of the current title and description (POST
+    {generate: true} makes them with Gemini; POST {translations} saves the edits, validated per language)."""
+    from uploader import localize
+    meta = _upload_metadata()
+    body = request.get_json(force=True, silent=True) or {} if request.method == "POST" else {}
+    try:
+        if body.get("translations"):
+            localize.save(config.OUTPUT_DIR, meta["title"], meta["description"], body["translations"])
+        elif body.get("generate"):
+            from agents.gemini_client import generate
+            localize.ensure(config.OUTPUT_DIR, meta["title"], meta["description"], generator=generate)
+    except Exception as exc:                             # noqa: BLE001 — shown in the panel
+        return jsonify({"ok": False, "error": str(exc)[:400]}), 400
+    found = localize.current(config.OUTPUT_DIR, meta["title"], meta["description"])
+    codes = localize.ordered(localize.languages())
+    return jsonify({"ok": True, "languages": codes, "names": localize.NAMES, "translations": found or {},
+                    "stale": found is None and bool(localize.load(config.OUTPUT_DIR))})
+
+
+@app.route("/api/discovery-settings", methods=["GET", "POST"])
+def discovery_settings_api():
+    """Phase 4.0 Settings: languages, publishing slots, playlists, the swap rule."""
+    from uploader import discovery_settings
+    if request.method == "POST":
+        try:
+            return jsonify({"ok": True, **discovery_settings.save(request.get_json(force=True) or {})})
+        except ValueError as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 400
+    return jsonify({"ok": True, **discovery_settings.load()})
+
+
+@app.route("/api/upload/next-slot")
+def upload_next_slot():
+    """Phase 4.0-F: "Agendar para o próximo horário do tipo" — the next weekly slot of the episode's type."""
+    from uploader import slots
+    kind = (_state.get("script") or {}).get("narrative_type", "")
+    when = slots.next_slot(kind) if kind else None
+    if when is None:
+        return jsonify({"ok": False, "kind": kind, "error": "Sem horário fixo para este tipo (veja Configurações)"})
+    local = when.astimezone()
+    return jsonify({"ok": True, "kind": kind, "slot": slots.settings()["slots"].get(kind), "publish_at": slots.rfc3339(when),
+                    "local_input": local.strftime("%Y-%m-%dT%H:%M"), "label": slots.label(when)})
 
 
 @app.route("/api/upload/plan")
@@ -2496,10 +2646,15 @@ def upload():
             _state["yt_url"]     = record["url"]
             _state["upload_pct"] = 100
             _log(f"Uploaded! {_state['yt_url']} (recorded as pending publication)")
+            notes = []
             if record.get("shorts"):
                 from uploader import shorts_upload
-                _state["upload_note"] = shorts_upload.reminder(record["url"], len(record["shorts"]))
-                _log(_state["upload_note"])
+                notes.append(shorts_upload.reminder(record["url"], len(record["shorts"])))
+            from uploader import localize
+            notes.append(localize.DUBBING_REMINDER)          # Phase 4.0-B: no API for auto-dubbing
+            _state["upload_note"] = "\n".join(notes)
+            for note in notes:
+                _log(note)
 
         except Exception as e:
             _log(f"Upload error: {e}", "error")

@@ -239,7 +239,8 @@ title_candidates: exactly 5 objects {{"title": "...", "rationale": "one sentence
 creates"}} that follow the title policy; video_title must be the strongest of them. At least two of
 them must be built on the story's most shareable moment (the reversal: what the protagonist does that
 a viewer would retell to a friend), not only on the premise. At most 60 characters, the hook within
-the first ~45.
+the first ~45. Each title names one searchable concept a viewer might type (e.g. "thought experiment",
+"parable", "AI clone", "family vlogger", "mirror") next to its curiosity hook: a new channel is found by topic.
 thumbnail_text_candidates: exactly 3 strings that follow the thumbnail text policy.
 theme_tags: 1 to 3 of {json.dumps(list(THEME_TAGS))}, the primary theme first (Phase 3.9 variation guard).
 

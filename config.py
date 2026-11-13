@@ -87,6 +87,8 @@ DESCRIPTION_CREDIT_LINE = os.getenv("DESCRIPTION_CREDIT_LINE") or (
 END_CREDIT_CARD = os.getenv("END_CREDIT_CARD", "true").lower() in ("1", "true", "yes", "on")
 END_CREDIT_TEXT = "Written & directed by {channel} · Illustrations & narration: AI-assisted"
 END_CREDIT_SECONDS = 4.0
+# Phase 4.0-E: the viewer-driven Hype route for small channels; never asks for likes or subs in exchange for anything.
+END_CREDIT_HYPE = "If this stayed with you, hype it and share it."
 
 # Narrative development defaults. Regular episodes can be set from 12 to 20
 # minutes in the GUI; Shorts use their own fixed pacing contract.
@@ -225,6 +227,7 @@ GEMINI_STAGE_TEMPERATURES = {
     "repair": 0.2,
     "packaging": 0.8,          # thumbnail concepts, description parts (Phase 3.6)
     "title_scoring": 0.2,      # title candidates scored on curiosity, concreteness, emotion, clarity
+    "translation": 0.2,        # localized titles and descriptions (Phase 4.0-B)
 }
 
 # ─────────────────────────────────────────
@@ -303,6 +306,18 @@ EXTERNAL_IMAGE_PROVIDER = os.getenv("EXTERNAL_IMAGE_PROVIDER", "")
 EXTERNAL_IMAGE_MODEL = os.getenv("EXTERNAL_IMAGE_MODEL", "gpt-image-1")
 EXTERNAL_IMAGE_PRICE = float(os.getenv("EXTERNAL_IMAGE_PRICE", "0"))           # USD per image
 EXTERNAL_IMAGE_BUDGET = float(os.getenv("EXTERNAL_IMAGE_BUDGET", "0"))         # default per-project cap, USD
+# Phase 4.0 (discovery). Lists and slots are edited in Settings (data/discovery_settings.json overrides these).
+LOCALIZE_LANGUAGES = ["es", "pt", "fr", "de", "hi"]       # titles and descriptions translated at upload (4.0-B)
+PUBLISH_TIMEZONE = "America/New_York"                     # the main audience is in the US (4.0-F)
+PUBLISH_SLOTS = {"realistic_psychological_fiction": "TUE 18:00", "philosophical_thought_experiment": "THU 18:00",
+                 "dark_human_parable": "SAT 18:00"}
+SHORTS_MIN_GAP_HOURS = 3                                  # never two Shorts closer than this (4.0-F)
+TYPE_PLAYLISTS = {"realistic_psychological_fiction": "", "philosophical_thought_experiment": "",
+                  "dark_human_parable": ""}               # playlist IDs, asked once in Settings (4.0-E)
+# Packaging swap (4.0-C): proposed, never automatic.
+PACKAGING_SWAP_RULE = {"hours": 72, "min_impressions": 300, "fallback_ctr": 0.03}
+# Phase 4.0-A: names never used as tags (other channels); topic tags come from the description parts.
+TAG_BLOCKED_NAMES = [name.strip() for name in os.getenv("TAG_BLOCKED_NAMES", "").split(",") if name.strip()]
 PROMPT_ADHERENCE = os.getenv("PROMPT_ADHERENCE", "1") != "0"  # Gemini compares each prompt with its narration (3.9.9-C)
 # Prices for the cost estimates in the GUI and reports, filled in by the user (USD); 0 means unknown, nothing is hard-coded.
 GEMINI_PRICE_INPUT_PER_MTOK = float(os.getenv("GEMINI_PRICE_INPUT_PER_MTOK", "0"))

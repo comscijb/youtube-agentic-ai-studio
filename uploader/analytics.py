@@ -206,6 +206,13 @@ def refresh_video(record: dict, *, analytics, reporting=None, force: bool = Fals
     stats.update(video_id=video_id, title=record.get("title", ""), project=record.get("project"),
                  published_at=published, fetched_at=_now().replace(microsecond=0).isoformat(), note=LAG_NOTE)
     stats["flags"] = flags(stats)
+    if not record.get("parent_video_id") and record.get("kind", "episode") != "short":
+        from uploader import retention                  # Phase 4.0-D: the retention curve and its lessons
+        try:
+            stats["retention"] = retention.fetch_curve(analytics, video_id, published, end)
+            stats["retention_lessons"] = retention.learn(record, stats)
+        except Exception as exc:                          # noqa: BLE001 — retention is optional; the rest stays
+            stats["retention_error"] = f"{exc.__class__.__name__}: {str(exc)[:200]}"
     atomic_write_json(folder() / f"{video_id}.json", stats)
     return stats
 
@@ -227,10 +234,50 @@ def refresh_all(*, force: bool = False, interactive: bool = False, analytics=Non
     return [refresh_video(item, analytics=analytics, reporting=reporting, force=force) for item in records]
 
 
-def refresh_due_safely() -> None:
-    """Called by the publication sync: refresh stale caches, never raise, never open a browser."""
+STATUS_FILE = "status.json"
+AUTH_HELP = ("A autorização do YouTube expirou ou falta o escopo de Analytics. Com o app OAuth em modo Testing o Google "
+             "expira o token a cada 7 dias: clique em \"Autorizar de novo\" (abre o navegador) ou rode "
+             "python -m scripts.sync_publications. Para não expirar mais, publique o app OAuth (Google Cloud → "
+             "OAuth consent screen → Publish app).")
+
+
+def status() -> dict:
+    """The last refresh attempt: {last_attempt, last_success, videos, error, auth_required} (Phase 4.0-C)."""
+    return load_json(folder() / STATUS_FILE) or {"last_attempt": None, "last_success": None, "videos": 0, "error": ""}
+
+
+def _record_status(*, ok: bool, videos: int = 0, error: str = "", auth_required: bool = False) -> dict:
+    previous = status()
+    now = _now().replace(microsecond=0).isoformat()
+    value = {"last_attempt": now, "last_success": now if ok else previous.get("last_success"),
+             "videos": videos if ok else previous.get("videos", 0), "error": "" if ok else error,
+             "auth_required": auth_required}
+    folder().mkdir(parents=True, exist_ok=True)
+    atomic_write_json(folder() / STATUS_FILE, value)
+    return value
+
+
+def refresh_with_status(*, force: bool = False, interactive: bool = False, **services_) -> dict:
+    """refresh_all that always leaves a trace in data/analytics/status.json. Before Phase 4.0 a failure only printed a
+    console warning, so a dead token left data/analytics/ missing with nothing on screen."""
+    from uploader.youtube import YouTubeAuthError
     try:
-        refresh_all(interactive=False)
+        done = refresh_all(force=force, interactive=interactive, **services_)
+    except YouTubeAuthError as exc:
+        _record_status(ok=False, error=f"{AUTH_HELP} ({str(exc)[:120]})", auth_required=True)
+        raise
+    except Exception as exc:                             # noqa: BLE001
+        _record_status(ok=False, error=f"{exc.__class__.__name__}: {str(exc)[:300]}")
+        raise
+    _record_status(ok=True, videos=len(done))
+    return {"videos": done, "status": status()}
+
+
+def refresh_due_safely() -> None:
+    """Called by the publication sync: refresh stale caches, never raise, never open a browser; the outcome is
+    written to status.json and shown in Desempenho."""
+    try:
+        refresh_with_status(interactive=False)
     except Exception as exc:                              # noqa: BLE001
         print(f"   WARNING: analytics refresh skipped ({exc.__class__.__name__}: {str(exc)[:160]})")
 
@@ -254,12 +301,18 @@ def overview() -> dict:
                        "subscribers_gained": totals.get("subscribersGained"), "impressions": reach.get("impressions"),
                        "ctr": reach.get("ctr"), "us_share": stats.get("us_share"), "flags": stats.get("flags", []),
                        "fetched_at": stats.get("fetched_at"),
+                       "retention_lessons": [item.get("text", "") for item in stats.get("retention_lessons") or []],
                        "shorts": [{"video_id": short["video_id"], "title": short.get("title", ""),
                                    "views": ((cached(short["video_id"]) or {}).get("totals") or {}).get("views")}
                                   for short in shorts_of.get(record["video_id"], [])]})
     total = lambda key: sum(float(item[key] or 0) for item in videos)
-    return {"videos": videos, "views": total("views"), "subscribers_gained": total("subscribers_gained"),
-            "impressions": total("impressions"), "note": LAG_NOTE}
+    from uploader import after_upload, retention
+    try:
+        overdue = after_upload.overdue()
+    except Exception:                                   # noqa: BLE001 — never hides the numbers
+        overdue = []
+    return {"checklist_overdue": overdue, "videos": videos, "views": total("views"), "subscribers_gained": total("subscribers_gained"),
+            "impressions": total("impressions"), "note": LAG_NOTE, "retention_guidance": retention.guidance()}
 
 
 def json_dumps(value) -> str:

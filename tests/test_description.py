@@ -16,8 +16,9 @@ from video.timeline import build_scene_timeline
 
 SECTIONS = [{"id": index, "title": f"Scene {index}"} for index in range(1, 6)]
 DURATIONS = [70.0, 6.0, 140.0, 95.0, 120.0]          # scene 2 is shorter than 10 s
-PARTS = {"hook": "He needed the room to envy him. Tonight, the room stopped looking.",
-         "chapter_titles": ["The Table", "A Glance", "The Toast", "Her Silence", "What Remains"],
+PARTS = {"topic_words": ["envy", "dinner party"], "premise_line": "A husband throws a dinner party to be envied by everyone he knows.",
+         "hook": "He needed the room to envy him. Tonight, the room stopped looking.",
+         "chapter_titles": ["The Table", "A Glance", "The Toast", "Her Envy", "What Remains"],
          "comment_question": "Have you ever performed happiness for someone else's eyes?",
          "pinned_comment": "Have you ever performed happiness for someone else's eyes? Tell us below."}
 SCRIPT = {"title": "He Turned His Wife's Grief Into a Show", "tags": ["Psychological Fiction", "short story", "envy"],
@@ -28,7 +29,7 @@ class ChapterTests(unittest.TestCase):
     def test_chapters_follow_youtube_rules(self):
         items = description.chapters(build_scene_timeline(SECTIONS, DURATIONS), PARTS["chapter_titles"])
         self.assertEqual([(round(item["start"]), item["title"]) for item in items],      # "A Glance" (6 s) absorbed
-                         [(0, "The Table"), (76, "The Toast"), (216, "Her Silence"), (311, "What Remains")])
+                         [(0, "The Table"), (76, "The Toast"), (216, "Her Envy"), (311, "What Remains")])
         short_first = description.chapters(build_scene_timeline(SECTIONS[:4], [4.0, 60.0, 60.0, 60.0]))
         self.assertEqual([(round(item["start"]), item["title"]) for item in short_first],
                          [(0, "Scene 2"), (64, "Scene 3"), (124, "Scene 4")])
@@ -69,7 +70,8 @@ class BuildTests(unittest.TestCase):
 
     def test_full_description(self):
         text = self.build()
-        self.assertTrue(text.startswith(PARTS["hook"]))
+        self.assertTrue(text.startswith(PARTS["premise_line"]))       # Phase 4.0-A: the premise with its topic first
+        self.assertIn(PARTS["hook"], text)
         for part in ("Chapters\n0:00 The Table", "1:16 The Toast", description.CTA_MARKER,
                      "share it with someone who'd recognise themselves",
                      "Have you ever performed happiness for someone else's eyes? Tell us in the comments.",

@@ -75,7 +75,8 @@ def schedule(count: int, *, now: datetime | None = None, episode_publish_at: str
             continue
         day = (base + timedelta(hours=float(settings["spacing_hours"]) * index)).astimezone(now.tzinfo)
         times.append(day.replace(hour=hour, minute=minute, second=0, microsecond=0))
-    return times
+    from uploader import slots                          # Phase 4.0-F: never two Shorts within 3 h
+    return slots.spread(times, now=now)
 
 
 def label(when: datetime | None, now: datetime | None = None) -> str:
@@ -124,6 +125,16 @@ def reminder(episode_url: str, count: int) -> str:
             f"e escolha o episódio (a API não faz isso): {episode_url}")
 
 
+def short_localizations(title: str, text: str, run_dir) -> dict:
+    """Phase 4.0-B: a Short's translated title (#Shorts kept) and description; never stops the upload."""
+    from uploader import localize
+    try:
+        return localize.payload(localize.translate(title, text, is_short=True, run_dir=run_dir))
+    except Exception as exc:                             # noqa: BLE001
+        print(f"   WARNING: Short translations skipped ({exc.__class__.__name__})")
+        return {}
+
+
 def upload_shorts(run_dir, episode_video_id: str, *, service=None, privacy: str | None = None,
                   publish_at: str = "", now: datetime | None = None,
                   progress: Callable[[str], None] = print, disclosure: dict | None = None) -> list[dict]:
@@ -139,10 +150,12 @@ def upload_shorts(run_dir, episode_video_id: str, *, service=None, privacy: str 
     records = []
     for item, when in zip(items, times):
         scheduled = rfc3339(when) if when else ""
+        text = description(item, episode_url, run_dir)
         video_id = youtube.upload_video(
-            item["video_path"], title=item["title"], description=description(item, episode_url, run_dir),
+            item["video_path"], title=item["title"], description=text,
             tags=list(script.get("tags", []))[:10] + ["Shorts"], privacy=privacy, publish_at=scheduled,
-            service=service, contains_synthetic_media=disclosure["value"])
+            service=service, contains_synthetic_media=disclosure["value"],
+            localizations=short_localizations(item["title"], text, run_dir))
         captions = {"action": "skipped"}
         if Path(item["srt_path"]).is_file():
             try:

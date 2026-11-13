@@ -278,3 +278,24 @@ def backfill_disclosure(path=None, *, archive_root=None, dry_run: bool = False) 
         if not dry_run and any(row["action"] == "backfilled" for row in rows):
             save_ledger(ledger, path)
     return rows
+
+
+def update_record(video_id: str, change, path=None) -> dict:
+    """Apply ``change(record)`` to one ledger record under the lock and save; LookupError when it is missing."""
+    with _lock:
+        ledger = load_ledger(path)
+        record = next((item for item in ledger["publications"] if item.get("video_id") == video_id), None)
+        if record is None:
+            raise LookupError(f"{video_id} is not in the ledger")
+        change(record)
+        save_ledger(ledger, path)
+        return record
+
+
+def log_swap(video_id: str, entry: dict, path=None) -> dict:
+    """Phase 4.0-C: a packaging swap with its time and the numbers before it; a title swap renames the record."""
+    def change(record):
+        record.setdefault("packaging_swaps", []).append(entry)
+        if entry.get("kind") == "title":
+            record["title"] = entry["to"]
+    return update_record(video_id, change, path)

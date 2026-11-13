@@ -158,7 +158,7 @@ the final scene as resolution/aftermath, with a climax before it. Every scene mu
 situation through a decision, discovery, confrontation or consequence. Assign varied word budgets
 that sum approximately to the target; do not divide them mechanically. Escalate through decisions and consequences. No lecture,
 chapter summary, bullet lesson, generic CTA, or unsupported twist.""" + _author_rule(brief, "outline") + \
-        _variation_rule() + cold_open.outline_rule(teaser_mode, beat)
+        _variation_rule() + _retention_rule() + cold_open.outline_rule(teaser_mode, beat)
     outline = _generate_json(
         contract, "story outline", lambda value: validate_outline(
             {**value, "narrative_contract_version": NARRATIVE_CONTRACT_VERSION}, bible, True
@@ -191,6 +191,15 @@ def _variation_rule() -> str:
     except Exception:                                    # noqa: BLE001 — a hint, never a failure
         return ""
     return "\n" + hint if hint else ""
+
+
+def _retention_rule() -> str:
+    """Phase 4.0-D: at most 3 retention lessons from the channel's own videos, as soft guidance."""
+    try:
+        from uploader import retention
+        return retention.prompt_rule(3)
+    except Exception:                                    # noqa: BLE001 — guidance, never a failure
+        return ""
 
 
 def _author_rule(brief: dict, stage: str) -> str:
@@ -266,7 +275,8 @@ Search queries must depict story-world environments/objects/actions and not educ
 Use on_screen_text only for diegetic or dramatically necessary text; otherwise empty string.
 No placeholders, headings inside narration, moral summary, subscribe request or bullet points. The
 narrator never describes the edit or the camera. A character's wardrobe belongs to the shots: mention it
-only when it matters to the action.""" + _author_rule(brief, "scenes") + cold_open.screenplay_rule(outline) + extra_rule
+only when it matters to the action.""" + _author_rule(brief, "scenes") + cold_open.screenplay_rule(outline) + extra_rule + \
+        _retention_rule()
     context = f"""STORY BRIEF: {compact_json(brief)}
 CHARACTER BIBLE: {compact_json(bible)}
 FULL OUTLINE: {compact_json(outline)}

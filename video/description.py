@@ -27,7 +27,10 @@ from agents.narrative import load_json
 from video.timeline import load_timeline
 
 TEMPLATE_FILE = Path(__file__).resolve().parent.parent / "data" / "description_template.txt"
-DEFAULT_TEMPLATE = """{hook}
+DEFAULT_TEMPLATE = """{premise}
+{series_line}
+
+{hook}
 
 {chapters}
 
@@ -62,7 +65,7 @@ def template_problems(text: str) -> list[str]:
     problems = [f"missing placeholder {name}" for name in REQUIRED_PLACEHOLDERS if name not in text]
     try:
         text.format(**{key: "" for key in ("hook", "chapters", "cta", "channel_line", "fiction_note", "credits",
-                                           "hashtags", "title")})
+                                           "hashtags", "title", "premise", "series_line", "authorship")})
     except (KeyError, IndexError, ValueError) as exc:
         problems.append(f"unknown or broken placeholder: {exc}")
     return problems
@@ -184,12 +187,22 @@ def build(output_dir, script: dict, brief: dict, parts: dict | None = None) -> s
     if titles and script_sections and script_sections[0].get("section_type") == "cold_open":
         titles[0] = getattr(config, "COLD_OPEN_CHAPTER_TITLE", "Prologue")      # 0:00 over a teaser: never a spoiler
     items = chapters(load_timeline(output / "scene_timeline.json"), titles)
-    values = {"hook": hook, "chapters": chapter_block(items), "cta": cta_block(parts.get("comment_question", "")),
+    from agents import topic
+    kind = script.get("narrative_type") or brief.get("narrative_type") or ""
+    words = list(parts.get("topic_words") or brief.get("topic_words") or [])
+    premise = str(parts.get("premise_line") or "").strip()
+    if premise and premise == hook:
+        premise = ""
+    values = {"premise": premise, "series_line": topic.series_line(kind), "hook": hook, "chapters": chapter_block(items), "cta": cta_block(parts.get("comment_question", "")),
               "channel_line": channel_line(),
               "fiction_note": "This episode is an original work of fiction. Characters and events are fictional.",
-              "credits": credits(output), "hashtags": hashtags(script.get("tags", [])),
+              "credits": credits(output),
+              "hashtags": topic.hashtags(kind, words) if kind else hashtags(script.get("tags", [])),
               "title": script.get("title", ""), "authorship": authorship()}
     text = template().format(**values)
+    head = "\n".join(line for line in (values["premise"], values["series_line"]) if line and line not in text)
+    if head:                                            # Phase 4.0-A: a custom template without {premise}/{series_line}
+        text = f"{head}\n\n{text}"
     if values["authorship"] and values["authorship"] not in text:     # a custom template without {authorship}
         tags = values["hashtags"]
         text = text.replace(tags, f"{values['authorship']}\n{tags}", 1) if tags and tags in text \

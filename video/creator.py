@@ -1242,6 +1242,17 @@ def end_card_text() -> str:
     return str(getattr(config, "END_CREDIT_TEXT", "")).replace("{channel}", config.CHANNEL_NAME).strip()
 
 
+def hype_text() -> str:
+    """Phase 4.0-E: the Hype call to action under the credit (empty turns it off)."""
+    return str(getattr(config, "END_CREDIT_HYPE", "") or "").strip()
+
+
+def end_card_lines() -> list[str]:
+    """Everything the end card shows, in order: the credit (two lines) and the Hype line."""
+    first, _, second = end_card_text().partition(" · ")
+    return [line for line in (first, second, hype_text()) if line]
+
+
 def end_card_clip(duration: float | None = None):
     """The end credit card: brand background and type, fading in and out; no captions, no audio."""
     duration = float(duration or getattr(config, "END_CREDIT_SECONDS", 4.0))
@@ -1252,7 +1263,8 @@ def end_card_clip(duration: float | None = None):
         frame = Image.new("RGB", (W, H), C["background"])
         draw = ImageDraw.Draw(frame)
         alpha = min(1.0, t / 0.6, max(0.0, duration - t) / 0.6)
-        for line, size, y, colour in ((first, 54, H * 0.44, C["white"]), (second, 34, H * 0.54, C["highlight"])):
+        for line, size, y, colour in ((first, 54, H * 0.40, C["white"]), (second, 34, H * 0.50, C["highlight"]),
+                                      (hype_text(), 30, H * 0.62, C["white"])):
             if not line:
                 continue
             font = _load_font("bold" if size > 40 else "regular", size)

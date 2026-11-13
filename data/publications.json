@@ -469,9 +469,9 @@
         "script": "d4285605bdb2871a2048b1eacc1194a46d7a1434cfd29d39f88ae3e2eaf553ea",
         "video": "60e4ee593eeb6f2083d6af4fe08b4a1390f85c4552641ff21bdd28ab8cf35c1a"
       },
-      "state": "uploaded_pending_publication",
-      "state_checked_at": "2026-11-12T19:28:37+00:00",
-      "published_at": null,
+      "state": "published",
+      "state_checked_at": "2026-11-13T17:45:57+00:00",
+      "published_at": "2026-11-13T17:45:57+00:00",
       "kind": "short",
       "parent_video_id": "7m4-xEecXFI",
       "short_id": "short_03",
@@ -543,9 +543,9 @@
         "script": "3a78fcb7e46b1d97ae83c6d9939d928d85ab3925927225254d8f407d3c7a28d6",
         "video": "ed7bc8b34253a5f3e8b439d34fada19e3851ce55154f67a402676cc97511bfec"
       },
-      "state": "uploaded_pending_publication",
-      "state_checked_at": "2026-11-12T19:28:37+00:00",
-      "published_at": null,
+      "state": "published",
+      "state_checked_at": "2026-11-13T17:45:57+00:00",
+      "published_at": "2026-11-13T17:45:57+00:00",
       "kind": "short",
       "parent_video_id": "Ii1S7bFw94s",
       "short_id": "short_01",
@@ -577,7 +577,7 @@
         "video": "dde6309932316e1c4b656b07e5a5345c5a23579734a90000aa9035f290aef12e"
       },
       "state": "uploaded_pending_publication",
-      "state_checked_at": "2026-11-12T19:28:37+00:00",
+      "state_checked_at": "2026-11-13T18:46:42+00:00",
       "published_at": null,
       "kind": "short",
       "parent_video_id": "Ii1S7bFw94s",
@@ -610,7 +610,7 @@
         "video": "a62d81ccffd8f9e946b46a8e7a91712a6ee85efb83f4fe8db7cce4509e0c7011"
       },
       "state": "uploaded_pending_publication",
-      "state_checked_at": "2026-11-12T19:28:37+00:00",
+      "state_checked_at": "2026-11-13T18:46:42+00:00",
       "published_at": null,
       "kind": "short",
       "parent_video_id": "Ii1S7bFw94s",
@@ -642,9 +642,9 @@
         "script": "3a78fcb7e46b1d97ae83c6d9939d928d85ab3925927225254d8f407d3c7a28d6",
         "video": "46a3a25d278171b07c30fb0a7b2f9f0b5af38bbee694054b58116b0d7537020e"
       },
-      "state": "uploaded_pending_publication",
-      "state_checked_at": "2026-11-12T19:28:37+00:00",
-      "published_at": null,
+      "state": "published",
+      "state_checked_at": "2026-11-13T17:45:57+00:00",
+      "published_at": "2026-11-13T17:45:57+00:00",
       "review": {
         "approved_at": "2026-11-12T18:53:09+00:00",
         "narrative_status": "structurally_invalid",
@@ -663,6 +663,157 @@
       ],
       "contains_synthetic_media": false,
       "synthetic_disclosure_reason": "stylised: all 69 generated image(s) are non-photorealistic illustration; the voice is not a real person"
+    },
+    {
+      "video_id": "Nyzuf-U2G94",
+      "url": "https://www.youtube.com/watch?v=Nyzuf-U2G94",
+      "run_dir": "projects\\2026-11-12-the-man-who-bought-the-sunrise",
+      "project": "2026-11-12-the-man-who-bought-the-sunrise",
+      "uploaded_at": "2026-11-13T18:52:48+00:00",
+      "scheduled_publish_at": "2026-11-14T20:00:00Z",
+      "title": "He Bought the Right to Own the Sky #Shorts",
+      "thumbnail_text": "He owned the sunrise.",
+      "premise": "A merchant buys the sunrise and charges his village to look at it, until the village learns to turn west and he is left owning every dawn alone.",
+      "logline": "A merchant buys the sunrise and charges his village to look at it, until the village learns to turn west and he is left owning every dawn alone.",
+      "psychological_theme": "control",
+      "psychological_angle": "The tragic illusion that commodifying what is collectively cherished can compel intimacy or personal significance.",
+      "narrative_type": "dark_human_parable",
+      "central_contradiction": "He acquires total possession of the morning sky specifically to bind his people to him, yet each stone he lays severs another bond of connection.",
+      "source_hashes": {
+        "script": "2a249414ab038038b9a650856514284ade4627352604ac4aa18ba68debeefb69",
+        "video": "7e622f1cad788f14bb328a561cbd97765dd7ed89d2ef9278cc3842e4e357552d"
+      },
+      "state": "uploaded_pending_publication",
+      "state_checked_at": null,
+      "published_at": null,
+      "kind": "short",
+      "parent_video_id": "evUOXHpS38M",
+      "short_id": "short_01",
+      "captions": {
+        "action": "inserted",
+        "id": "AUieDaYofU_SLmXm5IZtFteK51ZWfs9NyohYOTF6zVpwGt4H0JRDl010"
+      },
+      "language": "en",
+      "contains_synthetic_media": false,
+      "synthetic_disclosure_reason": "stylised: all 42 generated image(s) are non-photorealistic illustration; the voice is not a real person"
+    },
+    {
+      "video_id": "p7rvrqGtsvI",
+      "url": "https://www.youtube.com/watch?v=p7rvrqGtsvI",
+      "run_dir": "projects\\2026-11-12-the-man-who-bought-the-sunrise",
+      "project": "2026-11-12-the-man-who-bought-the-sunrise",
+      "uploaded_at": "2026-11-13T18:53:46+00:00",
+      "scheduled_publish_at": "2026-11-15T21:00:00Z",
+      "title": "He Charged His Own Neighbors to See Dawn #Shorts",
+      "thumbnail_text": "He owned the sunrise.",
+      "premise": "A merchant buys the sunrise and charges his village to look at it, until the village learns to turn west and he is left owning every dawn alone.",
+      "logline": "A merchant buys the sunrise and charges his village to look at it, until the village learns to turn west and he is left owning every dawn alone.",
+      "psychological_theme": "control",
+      "psychological_angle": "The tragic illusion that commodifying what is collectively cherished can compel intimacy or personal significance.",
+      "narrative_type": "dark_human_parable",
+      "central_contradiction": "He acquires total possession of the morning sky specifically to bind his people to him, yet each stone he lays severs another bond of connection.",
+      "source_hashes": {
+        "script": "2a249414ab038038b9a650856514284ade4627352604ac4aa18ba68debeefb69",
+        "video": "a6701eefa980b9fb67b315cec3482f733709e9f7e411be2331e62b66afe6e03f"
+      },
+      "state": "uploaded_pending_publication",
+      "state_checked_at": null,
+      "published_at": null,
+      "kind": "short",
+      "parent_video_id": "evUOXHpS38M",
+      "short_id": "short_02",
+      "captions": {
+        "action": "inserted",
+        "id": "AUieDaaA-QzDlYwcF8rZaJwvSVlG-Di-ShVrbZBQyYHiBB6KVme9T1Ev"
+      },
+      "language": "en",
+      "contains_synthetic_media": false,
+      "synthetic_disclosure_reason": "stylised: all 42 generated image(s) are non-photorealistic illustration; the voice is not a real person"
+    },
+    {
+      "video_id": "IVnefQUftcU",
+      "url": "https://www.youtube.com/watch?v=IVnefQUftcU",
+      "run_dir": "projects\\2026-11-12-the-man-who-bought-the-sunrise",
+      "project": "2026-11-12-the-man-who-bought-the-sunrise",
+      "uploaded_at": "2026-11-13T18:54:51+00:00",
+      "scheduled_publish_at": "2026-11-16T21:00:00Z",
+      "title": "His Daughter Begged Him to Open the Gate #Shorts",
+      "thumbnail_text": "He owned the sunrise.",
+      "premise": "A merchant buys the sunrise and charges his village to look at it, until the village learns to turn west and he is left owning every dawn alone.",
+      "logline": "A merchant buys the sunrise and charges his village to look at it, until the village learns to turn west and he is left owning every dawn alone.",
+      "psychological_theme": "control",
+      "psychological_angle": "The tragic illusion that commodifying what is collectively cherished can compel intimacy or personal significance.",
+      "narrative_type": "dark_human_parable",
+      "central_contradiction": "He acquires total possession of the morning sky specifically to bind his people to him, yet each stone he lays severs another bond of connection.",
+      "source_hashes": {
+        "script": "2a249414ab038038b9a650856514284ade4627352604ac4aa18ba68debeefb69",
+        "video": "97d515c00993b37376a9015ae5f03690c14ed9d44e1cf21df3fea7d105b499e3"
+      },
+      "state": "uploaded_pending_publication",
+      "state_checked_at": null,
+      "published_at": null,
+      "kind": "short",
+      "parent_video_id": "evUOXHpS38M",
+      "short_id": "short_03",
+      "captions": {
+        "action": "inserted",
+        "id": "AUieDaaUb7zJ-hnVn1NQvelTY1y6EGeI8JzIXRottMLhrlOx-ib1eT_B"
+      },
+      "language": "en",
+      "contains_synthetic_media": false,
+      "synthetic_disclosure_reason": "stylised: all 42 generated image(s) are non-photorealistic illustration; the voice is not a real person"
+    },
+    {
+      "video_id": "evUOXHpS38M",
+      "url": "https://www.youtube.com/watch?v=evUOXHpS38M",
+      "run_dir": "projects\\2026-11-12-the-man-who-bought-the-sunrise",
+      "project": "2026-11-12-the-man-who-bought-the-sunrise",
+      "uploaded_at": "2026-11-13T18:54:51+00:00",
+      "scheduled_publish_at": "2026-11-14T20:00:00.000Z",
+      "title": "He Charged for the Sunrise Until No One Came",
+      "thumbnail_text": "He owned the sunrise.",
+      "premise": "A merchant buys the sunrise and charges his village to look at it, until the village learns to turn west and he is left owning every dawn alone.",
+      "logline": "A merchant buys the sunrise and charges his village to look at it, until the village learns to turn west and he is left owning every dawn alone.",
+      "psychological_theme": "control",
+      "psychological_angle": "The tragic illusion that commodifying what is collectively cherished can compel intimacy or personal significance.",
+      "narrative_type": "dark_human_parable",
+      "central_contradiction": "He acquires total possession of the morning sky specifically to bind his people to him, yet each stone he lays severs another bond of connection.",
+      "source_hashes": {
+        "script": "2a249414ab038038b9a650856514284ade4627352604ac4aa18ba68debeefb69",
+        "video": "97d8d6ace3e79404c1bd22cdf0458b3f4f0597669618eda62261859919c732fc"
+      },
+      "state": "uploaded_pending_publication",
+      "state_checked_at": null,
+      "published_at": null,
+      "review": {
+        "approved_at": "2026-11-13T18:44:47+00:00",
+        "narrative_status": "structurally_invalid",
+        "status_override_reason": "All good and bright",
+        "title_override_reason": ""
+      },
+      "captions": {
+        "action": "inserted",
+        "id": "AUieDaYtclLiz7oPKKmmKN8dMU2Ho50WqR-oxfop7-9w8xLsX83GFB6C"
+      },
+      "language": "en",
+      "shorts": [
+        "Nyzuf-U2G94",
+        "p7rvrqGtsvI",
+        "IVnefQUftcU"
+      ],
+      "localizations": [
+        "de",
+        "es",
+        "fr",
+        "hi",
+        "pt"
+      ],
+      "playlist": {
+        "action": "not_configured",
+        "type": "dark_human_parable"
+      },
+      "contains_synthetic_media": false,
+      "synthetic_disclosure_reason": "stylised: all 42 generated image(s) are non-photorealistic illustration; the voice is not a real person"
     }
   ]
 }

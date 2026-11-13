@@ -352,9 +352,12 @@ a:hover{color:var(--text)}
           <div class="home-title" style="font-size:18px">Desempenho</div>
           <div style="display:flex;gap:8px;align-items:center">
             <span id="perf-message" style="font-size:11px;color:var(--muted)"></span>
+            <button class="btn btn-ghost" id="perf-authorize" style="display:none" onclick="authorizeAnalytics()" title="Abre o navegador para você autorizar o YouTube de novo">🔑 Autorizar de novo</button>
             <button class="btn btn-ghost" onclick="refreshPerformance()">⟳ Atualizar</button>
           </div>
         </div>
+        <div id="perf-status" style="font-size:12px;margin:4px 0"></div>
+        <div id="perf-swaps" style="display:flex;flex-direction:column;gap:8px;margin:6px 0"></div>
         <div id="perf-overview" style="font-size:13px"></div>
         <div id="perf-videos" style="display:flex;flex-direction:column;gap:10px"></div>
         <div class="help-text" id="perf-note"></div>
@@ -669,6 +672,15 @@ a:hover{color:var(--text)}
             <textarea id="gate-notes" rows="2" style="font-size:12px;margin-top:6px" placeholder="Notas do revisor (opcional)"></textarea>
             <button class="btn btn-ghost" id="gate-approve-btn" style="margin-top:6px;font-size:12px" onclick="approveUpload()" disabled>✔ Registrar aprovação</button>
             <div id="gate-msg" style="font-size:11px;margin-top:4px"></div>
+            <div id="gate-translations" style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+                <div style="font-size:12px;font-weight:600;color:var(--dim);flex:1">Traduções (título e descrição)</div>
+                <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" onclick="loadTranslations(true)" title="Gemini traduz para os idiomas de Configurações">Gerar traduções</button>
+                <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" onclick="saveTranslations()">Salvar edições</button>
+              </div>
+              <div id="tr-msg" style="font-size:11px;color:var(--muted);margin-bottom:4px"></div>
+              <div id="tr-list" style="display:flex;flex-direction:column;gap:6px"></div>
+            </div>
           </div>
 
           <div class="upload-section">
@@ -676,8 +688,8 @@ a:hover{color:var(--text)}
 
             <!-- Tab switcher -->
             <div style="display:flex;gap:4px;margin-bottom:10px">
-              <button class="upload-mode-btn active" id="utab-now" onclick="switchUploadMode('now')">Enviar agora</button>
               <button class="upload-mode-btn" id="utab-schedule" onclick="switchUploadMode('schedule')">📅 Agendar</button>
+              <button class="upload-mode-btn active" id="utab-now" onclick="switchUploadMode('now')">Publicar agora</button>
             </div>
 
             <!-- Upload Now pane -->
@@ -701,6 +713,8 @@ a:hover{color:var(--text)}
                 Exige um <strong style="color:var(--dim)">canal do YouTube verificado</strong>.
               </div>
               <div style="display:flex;flex-direction:column;gap:8px">
+                <button class="btn btn-ghost" id="next-slot-btn" style="font-size:12px" onclick="useNextSlot()" title="Horário fixo por tipo, em Nova York (Configurações)">Agendar para o próximo horário do tipo</button>
+                <div id="next-slot-label" style="font-size:11px;color:var(--muted)"></div>
                 <input type="datetime-local" id="schedule-datetime" style="font-size:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);padding:7px 10px;outline:none;width:100%;color-scheme:dark">
                 <div class="upload-row">
                   <select id="schedule-privacy" style="flex:1">
@@ -729,6 +743,37 @@ a:hover{color:var(--text)}
     <!-- ════ SETTINGS TAB ════ -->
     <div class="tab-content" id="tab-settings">
       <div class="settings-scroll">
+
+        <!-- ── Descoberta (Phase 4.0: translations, slots, playlists, swap rule) ── -->
+        <div class="settings-section" id="discovery-section">
+          <div class="settings-header" onclick="toggleSection(this)">🔎 Descoberta (traduções, horários, playlists) <span class="caret">▾</span></div>
+          <div class="settings-body">
+            <div class="field-label">Idiomas das traduções (códigos, separados por vírgula)</div>
+            <input type="text" id="d-languages" placeholder="es, pt, fr, de, hi">
+            <div class="field-label" style="margin-top:6px">Horário fixo por tipo (dia e hora no fuso abaixo, ex.: TUE 18:00)</div>
+            <div class="settings-cols">
+              <div class="settings-field"><div class="help-text">Ficção psicológica realista</div><input type="text" id="d-slot-realistic_psychological_fiction"></div>
+              <div class="settings-field"><div class="help-text">Experimento mental filosófico</div><input type="text" id="d-slot-philosophical_thought_experiment"></div>
+              <div class="settings-field"><div class="help-text">Parábola sombria</div><input type="text" id="d-slot-dark_human_parable"></div>
+            </div>
+            <div class="field-label" style="margin-top:6px">Fuso dos horários</div>
+            <input type="text" id="d-timezone" placeholder="America/New_York">
+            <div class="field-label" style="margin-top:6px">IDs das playlists por tipo (cada episódio entra na do seu tipo)</div>
+            <div class="settings-cols">
+              <div class="settings-field"><div class="help-text">Realista</div><input type="text" id="d-pl-realistic_psychological_fiction" placeholder="PL…"></div>
+              <div class="settings-field"><div class="help-text">Experimento mental</div><input type="text" id="d-pl-philosophical_thought_experiment" placeholder="PL…"></div>
+              <div class="settings-field"><div class="help-text">Parábola</div><input type="text" id="d-pl-dark_human_parable" placeholder="PL…"></div>
+            </div>
+            <div class="field-label" style="margin-top:6px">Troca de embalagem (proposta, nunca automática)</div>
+            <div class="settings-cols">
+              <div class="settings-field"><div class="help-text">Horas depois da publicação</div><input type="number" id="d-swap-hours"></div>
+              <div class="settings-field"><div class="help-text">Impressões mínimas</div><input type="number" id="d-swap-impressions"></div>
+              <div class="settings-field"><div class="help-text">CTR de referência sem mediana (%)</div><input type="number" step="0.1" id="d-swap-ctr"></div>
+            </div>
+            <button class="btn btn-ghost" style="margin-top:8px;font-size:12px" onclick="saveDiscovery()">Salvar descoberta</button>
+            <span id="d-msg" class="help-text" style="margin-left:6px"></span>
+          </div>
+        </div>
 
         <!-- ── Vozes (Phase 3.9.1-B: listen before choosing the channel voice) ── -->
         <div class="settings-section" id="voices-section">
@@ -1074,8 +1119,125 @@ function perfBar(rows, key, label) {
   return box;
 }
 
+function perfStatus(st) {
+  // Phase 4.0-C: when Desempenho last refreshed and why it failed.
+  const box = document.getElementById('perf-status');
+  const when = v => v ? v.slice(0, 16).replace('T', ' ') + ' UTC' : 'nunca';
+  box.innerHTML = `Última atualização: <b>${when(st.last_success)}</b>` +
+    (st.last_attempt && st.last_attempt !== st.last_success ? ` · última tentativa ${when(st.last_attempt)}` : '');
+  if (st.error) {
+    const err = document.createElement('div');
+    err.style.cssText = 'color:var(--red,#e05252);margin-top:2px';
+    err.textContent = '⚠ ' + st.error;
+    box.appendChild(err);
+  }
+  document.getElementById('perf-authorize').style.display = st.auth_required ? '' : 'none';
+}
+
+function authorizeAnalytics() {
+  if (!confirm('Abrir o navegador para autorizar o YouTube de novo? Entre com a conta do canal.')) return;
+  fetch('/api/analytics/authorize', {method: 'POST'}).then(r => r.json()).then(d => {
+    if (!d.ok) alert(d.error);
+    setTimeout(loadPerformance, 1000);
+  });
+}
+
+function loadSwaps() {
+  fetch('/api/swap/proposals').then(r => r.json()).then(d => {
+    const box = document.getElementById('perf-swaps');
+    box.innerHTML = '';
+    (d.proposals || []).forEach(p => {
+      const card = document.createElement('div');
+      card.style.cssText = 'padding:10px;border:1px solid var(--amber,#e0b252);border-radius:var(--r-sm);font-size:12px';
+      const thumb = p.step.kind === 'thumbnail';
+      card.innerHTML = `<b>${thumb ? 'Trocar miniatura?' : 'Trocar título?'}</b> ${_esc(p.title)}<br>` +
+        `<span style="color:var(--muted)">${_esc(p.reason)}</span>`;
+      const pair = document.createElement('div');
+      pair.style.cssText = 'display:flex;gap:10px;align-items:center;margin:6px 0';
+      const src = path => `/api/swap/thumbnail?project=${encodeURIComponent(p.project)}&path=${encodeURIComponent(path)}`;
+      pair.innerHTML = thumb
+        ? `<div>Antes<br><img src="${src(p.step.from)}" style="width:160px;border-radius:4px"></div><div>→</div>` +
+          `<div>Depois<br><img src="${src(p.step.to)}" style="width:160px;border-radius:4px"></div>`
+        : `<div>Antes: <i>${_esc(p.step.from)}</i></div><div>→</div><div>Depois: <b>${_esc(p.step.to)}</b></div>`;
+      card.appendChild(pair);
+      const apply = document.createElement('button');
+      apply.className = 'btn btn-ghost'; apply.style.fontSize = '11px';
+      apply.textContent = thumb ? 'Aplicar a nova miniatura' : 'Aplicar o novo título';
+      apply.onclick = () => {
+        if (!confirm('Aplicar no YouTube agora? A troca fica registrada com os números de antes.')) return;
+        fetch('/api/swap/apply', {method: 'POST', headers: {'Content-Type': 'application/json'},
+                                  body: JSON.stringify({video_id: p.video_id, kind: p.step.kind})})
+          .then(r => r.json()).then(x => { alert(x.ok ? 'Aplicado.' : 'Não aplicado: ' + x.error); loadSwaps(); });
+      };
+      const tc = document.createElement('button');
+      tc.className = 'btn btn-ghost'; tc.style.cssText = 'font-size:11px;margin-left:6px';
+      tc.textContent = 'Exportar para Test & Compare';
+      tc.title = d.test_compare_hint || '';
+      tc.onclick = () => fetch('/api/swap/test-compare', {method: 'POST', headers: {'Content-Type': 'application/json'},
+                                                         body: JSON.stringify({video_id: p.video_id})})
+        .then(r => r.json()).then(x => alert(x.ok ? 'Exportado em ' + x.folder : x.error));
+      card.appendChild(apply); card.appendChild(tc);
+      box.appendChild(card);
+    });
+  });
+}
+
+function afterUploadBlock(videoId) {
+  // Phase 4.0-E/G: what the API can't do, as a checklist with values to copy.
+  const box = document.createElement('details');
+  box.innerHTML = '<summary style="cursor:pointer;font-size:12px">✅ Depois do envio (tela final, card, Shorts, comentário, dublagem, playlist, Comunidade)</summary>';
+  const render = d => {
+    box.querySelectorAll('.au-body').forEach(el => el.remove());
+    const body = document.createElement('div');
+    body.className = 'au-body';
+    body.style.cssText = 'display:flex;flex-direction:column;gap:6px;margin-top:6px;font-size:12px';
+    if (!d.ok) { body.textContent = d.error; box.appendChild(body); return; }
+    d.items.forEach(item => {
+      const row = document.createElement('div');
+      row.style.cssText = 'border-left:3px solid ' + (item.ticked_at ? 'var(--green,#4caf50)' : 'var(--amber,#e0b252)') + ';padding-left:6px';
+      const head = document.createElement('label');
+      head.style.cssText = 'display:flex;gap:6px;align-items:center;font-weight:600';
+      const check = document.createElement('input');
+      check.type = 'checkbox'; check.checked = !!item.ticked_at;
+      check.onchange = () => fetch('/api/after-upload', {method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({video_id: videoId, item: item.id, ticked: check.checked})}).then(r => r.json()).then(render);
+      head.appendChild(check); head.appendChild(document.createTextNode(item.label));
+      const value = document.createElement('pre');
+      value.style.cssText = 'white-space:pre-wrap;margin:2px 0;font-size:11px;color:var(--muted)';
+      value.textContent = item.value;
+      const copy = document.createElement('button');
+      copy.className = 'btn btn-ghost'; copy.style.cssText = 'font-size:10px;padding:2px 6px';
+      copy.textContent = 'Copiar';
+      copy.onclick = () => navigator.clipboard && navigator.clipboard.writeText(item.value);
+      row.appendChild(head); row.appendChild(value); row.appendChild(copy);
+      body.appendChild(row);
+    });
+    const drafts = document.createElement('button');
+    drafts.className = 'btn btn-ghost'; drafts.style.cssText = 'font-size:11px;align-self:flex-start';
+    drafts.textContent = 'Escrever rascunhos da Comunidade com Gemini';
+    drafts.onclick = () => fetch('/api/after-upload?drafts=gemini&video_id=' + encodeURIComponent(videoId)).then(r => r.json()).then(render);
+    body.appendChild(drafts);
+    box.appendChild(body);
+  };
+  box.ontoggle = () => {
+    if (!box.open || box.dataset.loaded) return;
+    box.dataset.loaded = '1';
+    fetch('/api/after-upload?video_id=' + encodeURIComponent(videoId)).then(r => r.json()).then(render);
+  };
+  return box;
+}
+
 function loadPerformance() {
+  loadSwaps();
   fetch('/api/analytics').then(r => r.json()).then(d => {
+    perfStatus(d.status || {});
+    if ((d.retention_guidance || []).length) {
+      const g = document.createElement('div');
+      g.style.cssText = 'font-size:12px;margin-top:4px;color:var(--muted)';
+      g.innerHTML = '<b>Orientação aos roteiros (das lições mais consistentes)</b>';
+      d.retention_guidance.forEach(t => { const row = document.createElement('div'); row.textContent = '• ' + t; g.appendChild(row); });
+      document.getElementById('perf-status').appendChild(g);
+    }
     document.getElementById('perf-message').textContent = d.busy ? 'Atualizando…' : (d.message || '');
     document.getElementById('perf-note').textContent = d.note || '';
     document.getElementById('perf-overview').textContent = `Canal: ${d.videos.length} vídeo(s) publicado(s) · ` +
@@ -1097,6 +1259,14 @@ function loadPerformance() {
         `assistido em média ${v.average_view_percentage != null ? Number(v.average_view_percentage).toFixed(0) + ' %' : '—'} · ` +
         `+${v.subscribers_gained ?? 0} inscritos · EUA ${perfPct(v.us_share, 0)}` + (v.fetched_at ? ` · dados de ${v.fetched_at.slice(0, 16).replace('T', ' ')}` : '');
       card.appendChild(line);
+      if ((v.retention_lessons || []).length) {
+        // Phase 4.0-D: where viewers left, mapped to the script.
+        const block = document.createElement('div');
+        block.style.cssText = 'font-size:12px;margin-top:4px';
+        block.innerHTML = '<b>Lições de retenção</b>';
+        v.retention_lessons.forEach(t => { const row = document.createElement('div'); row.textContent = '• ' + t; block.appendChild(row); });
+        card.appendChild(block);
+      }
       (v.flags || []).forEach(f => {
         const flag = document.createElement('div');
         flag.style.cssText = 'color:var(--amber);font-size:12px;margin-top:2px';
@@ -1110,6 +1280,14 @@ function loadPerformance() {
         row.textContent = `📱 ${s.title} · views ${s.views ?? '—'}`;
         card.appendChild(row);
       });
+      const overdue = (d.checklist_overdue || []).find(o => o.video_id === v.video_id);
+      if (overdue) {
+        const warn = document.createElement('div');
+        warn.style.cssText = 'color:var(--amber);font-size:12px;margin-top:2px';
+        warn.textContent = '⚠ Depois do envio, falta: ' + overdue.missing.join(', ');
+        card.appendChild(warn);
+      }
+      card.appendChild(afterUploadBlock(v.video_id));
       const more = document.createElement('details');
       more.innerHTML = '<summary style="cursor:pointer;font-size:12px;color:var(--muted)">Países, origens de tráfego, série diária</summary>';
       more.ontoggle = () => {
@@ -3419,6 +3597,7 @@ function renderShorts() {
         ${segment.approaches_reversal ? '<span style="color:var(--amber)">perto da virada</span>' : ''}
         <label style="margin-left:auto"><input type="checkbox" data-k="include" ${segment.include === false ? '' : 'checked'}> incluir</label>
         <button class="btn btn-ghost" style="font-size:10px;padding:1px 6px" data-a="play">▶ ouvir</button>
+        ${segment.video ? '<button class="btn btn-ghost" style="font-size:10px;padding:1px 6px" data-a="social" title="Mesmo arquivo 9:16 + legendas por plataforma em exports/social">Exportar para TikTok / Reels</button>' : ''}
         <button class="btn btn-ghost" style="font-size:10px;padding:1px 6px" data-a="drop">✕</button></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">
         <select data-k="start_sentence">${shortsSentenceOptions(segment.start_sentence, 'start')}</select>
@@ -3435,6 +3614,9 @@ function renderShorts() {
       renderShorts();
     });
     card.querySelector('[data-a="play"]').onclick = () => shortsPlay(segment);
+    const social = card.querySelector('[data-a="social"]');
+    if (social) social.onclick = () => fetch('/api/shorts/export', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({id: segment.id})}).then(r => r.json()).then(d => alert(d.ok ? 'Exportado em ' + d.folder : d.error));
     card.querySelector('[data-a="drop"]').onclick = () => { _shorts.plan.segments.splice(index, 1); renderShorts(); };
     list.appendChild(card);
   });
@@ -3633,6 +3815,18 @@ function regenThumbnail() {
   thumbAction('/api/regenerate-thumbnail', {title: document.getElementById('edit-title').value.trim()});
 }
 
+function useNextSlot(silent) {
+  // Phase 4.0-F: the type's weekly slot (America/New_York by default) becomes the default schedule.
+  return fetch('/api/upload/next-slot').then(r => r.json()).then(d => {
+    const label = document.getElementById('next-slot-label');
+    if (!d.ok) { if (label) label.textContent = d.error; return false; }
+    document.getElementById('schedule-datetime').value = d.local_input;
+    if (label) label.textContent = `Próximo horário do tipo: ${d.label}`;
+    if (silent) switchUploadMode('schedule');
+    return true;
+  }).catch(() => false);
+}
+
 function switchUploadMode(mode) {
   document.querySelectorAll('.upload-mode-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('utab-'+mode).classList.add('active');
@@ -3642,12 +3836,70 @@ function switchUploadMode(mode) {
 
 // ── Pre-publication review gate ───────────────────────────
 let _gate = null;
+let _translations = null;
+
+function loadTranslations(generate) {
+  const msg = document.getElementById('tr-msg');
+  if (!msg) return;
+  if (generate) msg.textContent = 'Traduzindo…';
+  const options = generate ? {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({generate: true})} : undefined;
+  projectFetch('/api/localizations', options).then(r => r.json()).then(d => {
+    if (!d.ok) { msg.textContent = 'Erro: ' + d.error; return; }
+    _translations = d;
+    renderTranslations();
+  }).catch(() => { msg.textContent = 'Não foi possível carregar as traduções.'; });
+}
+
+function renderTranslations() {
+  const d = _translations, list = document.getElementById('tr-list'), msg = document.getElementById('tr-msg');
+  list.innerHTML = '';
+  const have = Object.keys(d.translations || {}).length;
+  msg.textContent = have ? `Português primeiro: revise antes de aprovar. Idiomas: ${d.languages.join(', ')}.`
+    : (d.stale ? 'O título ou a descrição mudou desde as últimas traduções: gere de novo.' :
+       'Sem traduções ainda: clique em "Gerar traduções" (ou elas são feitas no envio).');
+  d.languages.forEach(code => {
+    const item = (d.translations || {})[code];
+    if (!item) return;
+    const box = document.createElement('details');
+    if (code === 'pt') box.open = true;
+    box.innerHTML = `<summary style="font-size:12px;cursor:pointer">${_esc(d.names[code] || code)} (${code})</summary>`;
+    const title = document.createElement('input');
+    title.type = 'text'; title.value = item.title; title.dataset.code = code; title.dataset.field = 'title';
+    title.style.cssText = 'width:100%;font-size:12px;margin:4px 0';
+    const text = document.createElement('textarea');
+    text.rows = 6; text.value = item.description; text.dataset.code = code; text.dataset.field = 'description';
+    text.style.cssText = 'width:100%;font-size:11px';
+    box.appendChild(title); box.appendChild(text);
+    list.appendChild(box);
+  });
+}
+
+function saveTranslations() {
+  if (!_translations) return;
+  const edited = {};
+  document.querySelectorAll('#tr-list [data-code]').forEach(el => {
+    edited[el.dataset.code] = edited[el.dataset.code] || {};
+    edited[el.dataset.code][el.dataset.field] = el.value;
+  });
+  projectFetch('/api/localizations', {method: 'POST', headers: {'Content-Type': 'application/json'},
+                                      body: JSON.stringify({translations: edited})})
+    .then(r => r.json()).then(d => {
+      const msg = document.getElementById('tr-msg');
+      if (!d.ok) { msg.textContent = 'Não salvo: ' + d.error; return; }
+      _translations = d; renderTranslations(); msg.textContent = 'Traduções salvas.';
+    });
+}
+
 function loadReviewGate() {
+  loadTranslations(false);
+  if (!document.getElementById('schedule-datetime').value) useNextSlot(true);
   projectFetch('/api/review-gate').then(r=>r.json()).then(d => {
     if (!d.ok) { _gate = null; updateGateButtons(); return; }
     _gate = d;
     const status = document.getElementById('gate-status');
     const lines = [];
+    (d.description_findings || []).filter(f => ['no_topic', 'keyword_stuffing', 'too_many_tags'].includes(f.rule))
+      .forEach(f => lines.push(`<span style="color:var(--amber,#e0b252)">⚠ Tópico/descrição: ${_esc(f.claim)}</span>`));
     lines.push(`Narrative status: <strong>${d.narrative_status}</strong>` +
                (d.status_override_required ? ' — upload blocked unless you type an override reason' : ''));
     if (!d.title_passes) lines.push('<span style="color:var(--red,#e05252)">Title/thumbnail text break the title policy (see findings under the title).</span>');
@@ -3808,7 +4060,43 @@ function toggleSection(header) {
   header.closest('.settings-section').classList.toggle('collapsed');
 }
 
+const DISCOVERY_TYPES = ['realistic_psychological_fiction', 'philosophical_thought_experiment', 'dark_human_parable'];
+
+function loadDiscovery() {
+  fetch('/api/discovery-settings').then(r => r.json()).then(d => {
+    if (!d.ok) return;
+    document.getElementById('d-languages').value = (d.localize_languages || []).join(', ');
+    document.getElementById('d-timezone').value = d.publish_timezone || '';
+    DISCOVERY_TYPES.forEach(t => {
+      document.getElementById('d-slot-' + t).value = (d.publish_slots || {})[t] || '';
+      document.getElementById('d-pl-' + t).value = (d.playlists || {})[t] || '';
+    });
+    const rule = d.swap_rule || {};
+    document.getElementById('d-swap-hours').value = rule.hours ?? 72;
+    document.getElementById('d-swap-impressions').value = rule.min_impressions ?? 300;
+    document.getElementById('d-swap-ctr').value = ((rule.fallback_ctr ?? 0.03) * 100).toFixed(1);
+  });
+}
+
+function saveDiscovery() {
+  const body = {
+    localize_languages: document.getElementById('d-languages').value.split(',').map(s => s.trim()).filter(Boolean),
+    publish_timezone: document.getElementById('d-timezone').value.trim(),
+    publish_slots: {}, playlists: {},
+    swap_rule: {hours: Number(document.getElementById('d-swap-hours').value),
+                min_impressions: Number(document.getElementById('d-swap-impressions').value),
+                fallback_ctr: Number(document.getElementById('d-swap-ctr').value) / 100},
+  };
+  DISCOVERY_TYPES.forEach(t => {
+    body.publish_slots[t] = document.getElementById('d-slot-' + t).value.trim().toUpperCase();
+    body.playlists[t] = document.getElementById('d-pl-' + t).value.trim();
+  });
+  fetch('/api/discovery-settings', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)})
+    .then(r => r.json()).then(d => { document.getElementById('d-msg').textContent = d.ok ? 'Salvo.' : 'Não salvo: ' + d.error; });
+}
+
 function loadSettings() {
+  loadDiscovery();
   fetch('/api/settings').then(r=>r.json()).then(d => {
     document.getElementById('s-gemini').value       = '';
     document.getElementById('s-pixabay').value      = '';
