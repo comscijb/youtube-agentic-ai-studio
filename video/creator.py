@@ -537,6 +537,9 @@ def _faces(image_path) -> list:
 def plan_motion(shot: dict) -> dict:
     """Phase 3.9-B.1: parallax / push / drift / Ken Burns for one shot (depth cached per shot)."""
     from video import motion
+    if shot.get("crop"):                                 # Phase 4.2-A: a derived view pushes in or drifts
+        return {"kind": "push", "zoom": (1.0, 1.06)} if shot.get("view") == "detail" else \
+            {"kind": "drift", "zoom": (1.02, 1.05)}
     wanted = motion.motion_for(shot.get("shot_type", "medium"))
     if motion.style() != "parallax":
         return {"kind": "kenburns", "reason": "MOTION_STYLE is kenburns"}
@@ -547,10 +550,22 @@ def plan_motion(shot: dict) -> dict:
     return motion.plan(depth, shot.get("shot_type", "medium"), _faces(shot["image"]) if depth is not None else [])
 
 
+def _load_view(shot: dict) -> np.ndarray | None:
+    """The shot's image, or its derived view (Phase 4.2-A): the crop of the (upscaled) source at the frame size."""
+    if not shot.get("crop"):
+        return _load_bg_image(shot["image"])
+    from video import upscale
+    source = shot.get("source") or shot["image"]
+    if not os.path.exists(source):
+        source = shot["image"]
+    with Image.open(source) as opened:
+        return np.array(upscale.crop_image(opened.convert("RGB"), shot["crop"], (W, H)), dtype=np.uint8)
+
+
 def _prepare_shots(shots: list) -> list:
     prepared = []
     for shot in shots:
-        arr = _load_bg_image(shot["image"])
+        arr = _load_view(shot)
         if arr is None:
             continue
         luminance = float(np.dot(arr[::8, ::8].reshape(-1, 3).mean(axis=0), [0.299, 0.587, 0.114]))
@@ -559,6 +574,9 @@ def _prepare_shots(shots: list) -> list:
         if movement["kind"] in ("push", "drift"):
             zoom_start, zoom_end = movement["zoom"]
             pan = (0, 0) if movement["kind"] == "push" else ((1, 0) if shot["index"] % 2 == 0 else (-1, 0))
+            if shot.get("motion_variant"):                  # a reused view moves the other way
+                pan = (-pan[0], -pan[1]) if pan != (0, 0) else (0, 1)
+                zoom_start, zoom_end = zoom_end, zoom_start
         prepared.append({**shot, "arr": arr, "opacity": adaptive_opacity(luminance),
                          "zoom": (zoom_start, zoom_end), "pan": pan, "motion": movement})
     return prepared
@@ -1144,6 +1162,15 @@ def create_video(script: dict, audio_path: str, output_dir: str,
             for item in check["checks"]:
                 print(f"   {'✓' if item['ok'] else '⚠'} Verificação ({item['name']}): {item['detail']}")
         schedule = load_shot_schedule(output_dir, sections, durations)
+        cut = None
+        if schedule:
+            from video import cut_plan, rhythm
+            if rhythm.enabled():                        # Phase 4.2-A: 2-3 derived views per image, cut on words
+                cut = cut_plan.expand(output_dir, sections, durations, schedule)
+                schedule = cut["schedule"]
+                cut_plan.save(output_dir, cut)
+                print(f"   → Ritmo: {cut['report']['views']} vistas, média {cut['report']['average']:.1f} s, "
+                      f"máximo {cut['report']['max']:.1f} s (upscale: {cut['upscale'].get('chosen') or 'Lanczos'})")
         if schedule:
             print(f"\n   Building {total_sections} section clips from shot_list.json "
                   f"({sum(len(items) for items in schedule.values())} shots):")
@@ -1154,9 +1181,11 @@ def create_video(script: dict, audio_path: str, output_dir: str,
 
         for i, (section, duration) in enumerate(zip(sections, durations)):
             s_type   = section.get("section_type", "content")
-            scheduled = len((schedule or {}).get(section["id"], []))
+            items = (schedule or {}).get(section["id"], [])
+            scheduled = len(items)
+            planned = len({item.get("source_shot", item["shot_id"]) for item in items})
             print(f"     [{section['id']:02d}] {section['title']:<42} {duration:5.1f}s  [{s_type}]"
-                  + (f"  {scheduled} planos" if scheduled else ""))
+                  + (f"  {planned} planos" if scheduled else "") + (f" ({scheduled} vistas)" if scheduled > planned else ""))
             if should_stop and should_stop():
                 raise RenderStopped("Vídeo interrompido")
 

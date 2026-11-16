@@ -33,6 +33,8 @@ def setUpModule():
         patch.object(config, "GEMINI_API_KEY", ""),
         patch.object(config, "EPISODE_PROFILES_FILE", os.path.join(_state["temp"].name, "profiles.json"), create=True),
         patch.object(config, "MEASURE_NEW_VOICE", False, create=True),      # no TTS before a mocked script
+        # Phase 4.2: no live ComfyUI upscale during a test render (the derived views still run, with Lanczos).
+        patch.object(config, "UPSCALE_CROPS", False, create=True),
         # Phase 4.0: the GUI-edited discovery settings (languages, slots, playlists) live in data/.
         patch.object(config, "DISCOVERY_SETTINGS_FILE", os.path.join(_state["temp"].name, "discovery.json"), create=True),
         patch.object(config, "ANALYTICS_DIR", os.path.join(_state["temp"].name, "analytics"), create=True),

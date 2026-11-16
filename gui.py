@@ -2534,6 +2534,16 @@ def attention_run():
     return _imagegen_run(work)
 
 
+@app.route("/api/rhythm")
+def rhythm_report():
+    """Phase 4.2-A: the rhythm report of the last cut plan (seconds per view per scene, against the targets)."""
+    from video import cut_plan, rhythm
+    found = cut_plan.load(config.OUTPUT_DIR) or {}
+    return jsonify({"ok": True, "report": found.get("report"), "upscale": found.get("upscale"), "targets": rhythm.settings(),
+                    "extra_images": found.get("extra_images", []), "gpu_budget": found.get("gpu_budget"),
+                    "enabled": rhythm.enabled()})
+
+
 @app.route("/api/review-gate")
 def get_review_gate():
     """Checklist, narrative status, title and license findings, approval validity."""

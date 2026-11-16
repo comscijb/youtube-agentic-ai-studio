@@ -653,6 +653,7 @@ a:hover{color:var(--text)}
               <div id="attention-summary" style="font-size:11px;color:var(--muted);margin:4px 0"></div>
               <div id="attention-timeline" style="position:relative"></div>
               <div id="attention-detail" style="font-size:11px;margin-top:6px"></div>
+              <div id="rhythm-report" style="font-size:11px;margin-top:8px;border-top:1px solid var(--border);padding-top:6px"></div>
             </div>
 
             <div id="sections-list">
@@ -4233,6 +4234,25 @@ function attentionRun(simulate) {
 
 function loadAttention() {
   fetch('/api/attention').then(r => r.json()).then(renderAttention).catch(() => {});
+  fetch('/api/rhythm').then(r => r.json()).then(renderRhythm).catch(() => {});
+}
+
+function renderRhythm(d) {
+  // Phase 4.2-A: seconds per view per scene against the beat's target (from the last render's cut plan).
+  const box = document.getElementById('rhythm-report');
+  if (!box) return;
+  const r = d.report;
+  if (!r) { box.textContent = 'Ritmo do vídeo: ainda sem plano de corte (aparece depois de renderizar).'; return; }
+  const up = d.upscale || {};
+  box.innerHTML = `<b>Ritmo do vídeo</b>: ${r.views} vistas · média ${r.average} s · máximo ${r.max} s (limite ${r.max_hold} s)` +
+    ` · upscale: ${_esc(up.chosen || 'Lanczos (crops ≥ 60 %)')}` +
+    (d.gpu_budget && d.gpu_budget.images ? ` · sugere ${d.gpu_budget.images} imagem(ns) extra (~${d.gpu_budget.seconds} s de GPU)` : '');
+  r.scenes.forEach(s => {
+    const line = document.createElement('div');
+    line.style.color = s.ok ? 'var(--muted)' : 'var(--red,#e05252)';
+    line.textContent = `${s.title} [${s.beat}]: ${s.views} vistas, média ${s.average} s, máx ${s.max} s (alvo ${s.target[0]}–${s.target[1]} s)`;
+    box.appendChild(line);
+  });
 }
 
 function renderAttention(d) {
