@@ -184,10 +184,10 @@ def kokoro_clip(text: str, voice: str, speed_factor: float, out_path: str) -> No
     write_wav(out_path, np.concatenate([np.asarray(piece) for piece in pieces]) if pieces else [], 24000)
 
 
-def kokoro_scene(voice: str, cache_dir=None, apply=None, progress=print):
-    """The per-sentence synthesis of one channel voice."""
+def kokoro_scene(voice: str, cache_dir=None, apply=None, progress=print, speed: float | None = None):
+    """The per-sentence synthesis of one channel voice (``speed``: the Shorts voice runs faster, Phase 4.3-C)."""
     from audio.tts.sentences import SceneSynthesis
-    return SceneSynthesis(voice=voice, speed=channel_speed(), synth=kokoro_clip, count=lambda text: phoneme_count(text, voice), cache_dir=cache_dir,
+    return SceneSynthesis(voice=voice, speed=round(float(speed), 3) if speed else channel_speed(), synth=kokoro_clip, count=lambda text: phoneme_count(text, voice), cache_dir=cache_dir,
                           model=kokoro_files()[0].name, apply=apply, check=bool(getattr(config, "TTS_STUTTER_CHECK", True)), progress=progress)
 
 
@@ -217,8 +217,8 @@ class LocalBackend:
     def sentence_mode(self) -> bool:
         return engine() == "kokoro"
 
-    def sentence_synthesis(self, voice: str, cache_dir=None, apply=None, progress=print):
-        return kokoro_scene(voice, cache_dir, apply, progress)
+    def sentence_synthesis(self, voice: str, cache_dir=None, apply=None, progress=print, speed: float | None = None):
+        return kokoro_scene(voice, cache_dir, apply, progress, speed=speed)
 
     def available(self) -> tuple[bool, str]:
         import importlib.util
