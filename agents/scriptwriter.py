@@ -152,17 +152,23 @@ continuity_updates (array of explicit changes to knowledge, ownership, objects, 
 story rules; empty only when nothing changes), target_words, pace ("brief" for a coda or epilogue,
 or a final scene the brief wants abrupt, with 40-110 words; otherwise "normal"),
 arc_movements (array of values from {json.dumps(list(ARC_MOVEMENTS))}; {movement_rule}),
-visual_direction, and image_queries (an array of exactly 3 nonempty string stock-search phrases centered on settings,
-objects, gestures, environments or silhouettes). The first scene must function as an opening;
+visual_direction, image_queries (an array of exactly 3 nonempty string stock-search phrases centered on settings,
+objects, gestures, environments or silhouettes), and attention_beats {{"opens_with": the hook or question that opens
+the scene, in motion (an action, a spoken line, an impossible fact; never setting or weather), "inside": the partial
+reveal or escalation inside it, "ends_on": the question, reveal or turn it ends on}}. Also return, next to "scenes",
+"loop_plan": an array of the story's open questions {{"id": short_snake_case, "question": "...", "opens": scene_id,
+"closes": scene_id or null for the deliberate final question}}: after the first scene at least one question is always
+open, and every scene opens a new one or gives a partial reveal. The story's central problem or rule is in motion
+within the first 45 seconds of narration after any cold open. The first scene must function as an opening;
 the final scene as resolution/aftermath, with a climax before it. Every scene must change the
 situation through a decision, discovery, confrontation or consequence. Assign varied word budgets
 that sum approximately to the target; do not divide them mechanically. Escalate through decisions and consequences. No lecture,
 chapter summary, bullet lesson, generic CTA, or unsupported twist.""" + _author_rule(brief, "outline") + \
         _variation_rule() + _retention_rule() + cold_open.outline_rule(teaser_mode, beat)
     outline = _generate_json(
-        contract, "story outline", lambda value: validate_outline(
+        contract, "story outline", lambda value: _attention_plan(validate_outline(
             {**value, "narrative_contract_version": NARRATIVE_CONTRACT_VERSION}, bible, True
-        ),
+        ), value),
         context=f"STORY BRIEF: {compact_json(brief)}\nCHARACTER BIBLE: {compact_json(bible)}",
         stage="outline", temperature_key="outline",
         scene_scope=SceneScope(issues=lambda value: outline_scene_issues(value, bible, True)),
@@ -179,6 +185,29 @@ chapter summary, bullet lesson, generic CTA, or unsupported twist.""" + _author_
     outline["target_word_count"] = target_words
     outline["target_duration_minutes"] = target_minutes
     atomic_write_json(path, outline)
+    return outline
+
+
+EAR_RULE = """
+WRITE FOR THE EAR, FOR A PHONE (Phase 4.1-F): start each scene in motion, on its attention_beats.opens_with; one
+concrete sensory detail instead of a paragraph of setting; short sentences with a varied rhythm (most under 12
+words, none over 30); end each scene on its attention_beats.ends_on (a question, a reveal or a turn); no
+throat-clearing ("The morning was quiet...", "Days passed..."). Keep the channel's literary voice: precise,
+restrained, never clickbait-cheap."""
+
+
+def _attention_plan(outline: dict, raw: dict) -> dict:
+    """Phase 4.1-F: the outline's attention beats and open-loop plan, checked against the 4.1-B rules before any
+    scene is written; they are kept on the validated outline."""
+    from agents import attention
+    plans = {scene.get("scene_id"): scene for scene in raw.get("scenes") or [] if isinstance(scene, dict)}
+    for scene in outline.get("scenes", []):
+        if "attention_beats" in plans.get(scene.get("scene_id"), {}):
+            scene["attention_beats"] = plans[scene["scene_id"]]["attention_beats"]
+    outline["loop_plan"] = raw.get("loop_plan") or []
+    issues = attention.outline_issues(outline)
+    if issues:
+        raise NarrativeValidationError("attention plan: " + "; ".join(issues))
     return outline
 
 
@@ -275,7 +304,7 @@ Search queries must depict story-world environments/objects/actions and not educ
 Use on_screen_text only for diegetic or dramatically necessary text; otherwise empty string.
 No placeholders, headings inside narration, moral summary, subscribe request or bullet points. The
 narrator never describes the edit or the camera. A character's wardrobe belongs to the shots: mention it
-only when it matters to the action.""" + _author_rule(brief, "scenes") + cold_open.screenplay_rule(outline) + extra_rule + \
+only when it matters to the action.""" + EAR_RULE + _author_rule(brief, "scenes") + cold_open.screenplay_rule(outline) + extra_rule + \
         _retention_rule()
     context = f"""STORY BRIEF: {compact_json(brief)}
 CHARACTER BIBLE: {compact_json(bible)}
@@ -846,9 +875,11 @@ def write_script(
     brief = validate_story_brief(dict(research))
     output = Path(output_dir or config.OUTPUT_DIR)
     output.mkdir(parents=True, exist_ok=True)
+    from agents import attention_revision
     target = 0.85 if video_type == "shorts" else float(
         target_duration_minutes or brief.get("target_duration_minutes")
-        or getattr(config, "TARGET_DURATION_MINUTES", 15)
+        or attention_revision.target_minutes(brief.get("narrative_type"))       # Phase 4.1-F: A 9, B 9, C 7
+        or getattr(config, "TARGET_DURATION_MINUTES", 9)
     )
     low, high = config.EPISODE_MINUTES
     if video_type == "normal" and not low <= target <= high:

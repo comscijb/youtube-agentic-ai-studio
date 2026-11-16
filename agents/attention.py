@@ -293,3 +293,49 @@ def check(sections: list[dict], attention_map: dict | None = None, *, words_per_
             "major": sum(1 for item in findings if item["severity"] == "major"),
             "passes": not any(item["severity"] == "major" for item in findings),
             "source": "map" if attention_map is not None else "lexical"}
+
+
+# ── Phase 4.1-F: the outline's attention plan ───────────────────────────────
+
+BEATS = ("opens_with", "inside", "ends_on")
+_LOOP_ID = re.compile(r"^[a-z0-9_]{2,40}$")
+
+
+def outline_issues(outline: dict) -> list[str]:
+    """The 4.1-B rules on the plan, before any scene is written: attention beats per scene, an opening in motion,
+    a loop plan where a question is always open after the first scene and every loop opens before it closes."""
+    scenes = [scene for scene in outline.get("scenes", []) if scene.get("section_type") != "cold_open"]
+    if not scenes:
+        return []
+    issues = []
+    for scene in scenes:
+        beats = scene.get("attention_beats")
+        if not isinstance(beats, dict) or any(not str(beats.get(key, "")).strip() for key in BEATS):
+            issues.append(f"scene {scene.get('scene_id')} needs attention_beats with opens_with, inside and ends_on")
+    first = (scenes[0].get("attention_beats") or {}).get("opens_with", "") if isinstance(scenes[0].get("attention_beats"), dict) else ""
+    if first and not (QUOTE.search(first) or "?" in first or ACTION.search(first) or CONFLICT.search(first)) and DESCRIPTIVE.search(first):
+        issues.append(f"scene {scenes[0].get('scene_id')} opens on description (\"{first[:60]}\"): open in motion")
+    order = {scene.get("scene_id"): index for index, scene in enumerate(scenes)}
+    plan = outline.get("loop_plan")
+    if not isinstance(plan, list) or not plan:
+        return issues + ["loop_plan must list the story's open questions"]
+    spans = []
+    for loop in plan:
+        if not isinstance(loop, dict) or not _LOOP_ID.match(str(loop.get("id", ""))):
+            issues.append(f"loop_plan entry needs a snake_case id: {str(loop)[:60]}")
+            continue
+        opens, closes = loop.get("opens"), loop.get("closes")
+        if opens not in order:
+            issues.append(f"loop {loop['id']} opens in an unknown scene {opens}")
+            continue
+        if closes is not None and closes not in order:
+            issues.append(f"loop {loop['id']} closes in an unknown scene {closes}")
+            continue
+        if closes is not None and order[closes] < order[opens]:
+            issues.append(f"loop {loop['id']} closes before it opens")
+            continue
+        spans.append((order[opens], len(scenes) - 1 if closes is None else order[closes]))
+    for index in range(1, len(scenes)):
+        if not any(start <= index <= end for start, end in spans):
+            issues.append(f"no question is open during scene {scenes[index].get('scene_id')}")
+    return issues

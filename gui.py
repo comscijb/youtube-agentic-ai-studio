@@ -208,10 +208,11 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
             except premise_brief.BriefError:
                 pending = None
             wanted = premise_brief.target_minutes(pending, target_duration)
-            if wanted and wanted != float(target_duration):
-                _log(f"Target duration: {wanted:g} min from the premise brief (instead of {float(target_duration):g}).")
+            if wanted and wanted != target_duration:
+                _log(f"Target duration: {wanted:g} min from the premise brief" +
+                     (f" (instead of {float(target_duration):g})." if target_duration else "."))
                 target_duration = wanted
-            if projects.is_project(config.OUTPUT_DIR):
+            if projects.is_project(config.OUTPUT_DIR) and target_duration:
                 data = projects.load(config.OUTPUT_DIR)
                 if data.get("target_duration_minutes") != target_duration:
                     data["target_duration_minutes"] = target_duration
@@ -556,8 +557,8 @@ def run_pipeline():
     video_type  = body.get("video_type", "normal")
     narrative_type = body.get("narrative_type", "auto")
     narrative_review = bool(body.get("narrative_review", True))
-    try:
-        target_duration = float(body.get("target_duration", 15))
+    try:                                                 # Phase 4.1-F: "auto" = by narrative type (A 9, B 9, C 7)
+        target_duration = None if body.get("target_duration") in ("auto", None) else float(body.get("target_duration"))
     except (TypeError, ValueError):
         return jsonify({"ok": False, "error": "Target duration must be a number"}), 400
     from agents.narrative import NARRATIVE_TYPES
@@ -566,7 +567,7 @@ def run_pipeline():
     if video_type not in ("normal", "shorts"):
         return jsonify({"ok": False, "error": "Invalid video format"}), 400
     low, high = config.EPISODE_MINUTES
-    if video_type == "normal" and not low <= target_duration <= high:
+    if video_type == "normal" and target_duration is not None and not low <= target_duration <= high:
         return jsonify({"ok": False, "error": f"Regular episodes must target {low:g}-{high:g} minutes"}), 400
     guard = _regeneration_guard(steps, body)
     if guard:
@@ -806,9 +807,9 @@ def new_project():
     body = request.get_json(force=True) or {}
     video_type = body.get("video_type", "normal") if body.get("video_type") in ("normal", "shorts") else "normal"
     try:
-        target = float(body.get("target_duration", 15))
-    except (TypeError, ValueError):
-        target = 15.0
+        target = float(body.get("target_duration", config.TARGET_DURATION_MINUTES))
+    except (TypeError, ValueError):                      # "auto" (Phase 4.1-F): the type decides at the screenplay
+        target = float(config.TARGET_DURATION_MINUTES)
     from agents import premise_brief
     from agents.narrative import NARRATIVE_TYPES
     premise = str(body.get("premise", "")).strip()
@@ -1025,7 +1026,7 @@ def project_stage(stage):
         return guard
     info = projects.load(out)
     video_type = info.get("video_type") or _state.get("video_type") or "normal"
-    target = float(info.get("target_duration_minutes") or 15)
+    target = float(info.get("target_duration_minutes") or config.TARGET_DURATION_MINUTES)
     for name in steps:
         if name in _state["stages"]:
             _state["stages"][name] = "pending"

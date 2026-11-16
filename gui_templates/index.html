@@ -445,11 +445,14 @@ a:hover{color:var(--text)}
             <div>
               <div class="field-label">Duração-alvo</div>
               <select id="target-duration">
+                <option value="auto" selected>Automática por tipo (A 9 · B 9 · C 7 min)</option>
+                <option value="7">7 minutos</option>
                 <option value="8">8 minutos</option>
+                <option value="9">9 minutos</option>
                 <option value="10">10 minutos</option>
                 <option value="11">11 minutos</option>
                 <option value="12">12 minutos</option>
-                <option value="15" selected>15 minutos</option>
+                <option value="15">15 minutos</option>
                 <option value="18">18 minutos</option>
                 <option value="20">20 minutos</option>
               </select>
@@ -1685,7 +1688,7 @@ function createProject() {
   fetch('/api/projects/new', {method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({video_type: _videoType, premise, focus_angle,
                           narrative_type: document.getElementById('narrative-type').value,
-                          target_duration: Number(document.getElementById('target-duration').value),
+                          target_duration: document.getElementById('target-duration').value === 'auto' ? 'auto' : Number(document.getElementById('target-duration').value),
                           narrative_review: document.getElementById('narrative-review').checked})})
     .then(r => r.json()).then(d => {
       if (!d.ok) { alert(d.error); return; }

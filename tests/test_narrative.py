@@ -101,7 +101,11 @@ def outline():
         "causal_link": "His action causes the next scene", "target_words": 80,
         "visual_direction": "Cold monitor light and negative space",
         "image_queries": ["empty office night", "worn wristwatch close up", "man silhouette monitor"],
-    } for i in range(1, 4)]}
+        # Phase 4.1-F: the outline plans attention beats and open questions
+        "attention_beats": {"opens_with": f"\"Answer me,\" Eli tells the monitor in phase {i}.",
+                            "inside": "The monitor shows a consequence he did not choose.",
+                            "ends_on": "Who is the other Eli?"},
+    } for i in range(1, 4)], "loop_plan": [{"id": "other_eli", "question": "Who is the other Eli?", "opens": "s1", "closes": "s3"}]}
 
 
 def scene_batch():
@@ -621,7 +625,7 @@ class NarrativeGuiTests(unittest.TestCase):
     def test_run_route_rejects_out_of_range_duration_and_bad_type(self):
         import gui
         client = gui.app.test_client()
-        response = client.post("/api/run", json={"video_type": "normal", "target_duration": 7})   # below EPISODE_MINUTES (8-20)
+        response = client.post("/api/run", json={"video_type": "normal", "target_duration": 5})   # below EPISODE_MINUTES (6-20)
         self.assertEqual(response.status_code, 400)
         response = client.post("/api/run", json={
             "video_type": "normal", "target_duration": 15,

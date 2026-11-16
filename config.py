@@ -99,10 +99,12 @@ COLD_OPEN = {"A": os.getenv("COLD_OPEN_A", "flash_forward"), "B": os.getenv("COL
              "C": os.getenv("COLD_OPEN_C", "omen")}
 COLD_OPEN_CHAPTER_TITLE = os.getenv("COLD_OPEN_CHAPTER_TITLE", "Prologue")   # chapter 0:00 over a cold open: never a spoiler
 PSYCHOLOGICAL_THEME = os.getenv("PSYCHOLOGICAL_THEME", "")
-TARGET_DURATION_MINUTES = float(os.getenv("TARGET_DURATION_MINUTES", "15"))
+TARGET_DURATION_MINUTES = float(os.getenv("TARGET_DURATION_MINUTES", "9"))   # Phase 4.1-F: shorter episodes (was 15)
+# Phase 4.1-F (decided 2026-11-15): the episode length by type when the brief and the GUI set none.
+ATTENTION_TARGET_MINUTES = {"A": 9, "B": 9, "C": 7}
 # Allowed length of a regular episode (was 12-20). Parables run ~8 min and some A/B episodes ~11; 8 keeps
 # mid-roll ad eligibility. One place for the CLI, the GUI, the brief and the scriptwriter.
-EPISODE_MINUTES = (8.0, 20.0)
+EPISODE_MINUTES = (6.0, 20.0)                  # Phase 4.1-F: a 7-minute parable is allowed
 NARRATION_WPM = int(os.getenv("NARRATION_WPM", "125"))
 # Planning uses the measured delivery of the configured voice + rate from
 # data/voice_calibration.json (updated after every narration) when available;
