@@ -4,7 +4,8 @@
   and texts are part of the approval bindings (``binding``), so changing a Short
   invalidates the approval like changing the episode.
 * ``schedule`` — ``SHORTS_SCHEDULE``: by default the first Short goes public with
-  the episode, each other one ``spacing_hours`` later at ``time`` (local), via
+  the episode, the others on the daily ``times`` spread across ``spread_days`` (Phase 4.3-E; without them each
+  other one ``spacing_hours`` later at ``time``, local), via
   ``publishAt`` (uploaded private + scheduled). ``plan_lines`` is what the
   confirmation dialog shows.
 * ``upload_shorts`` — after the episode (its URL goes into every Short's
@@ -31,6 +32,8 @@ WEEKDAYS_PT = ("segunda", "terça", "quarta", "quinta", "sexta", "sábado", "dom
 
 
 def included(run_dir) -> list[dict]:
+    """The included, rendered Shorts in upload order: format Shorts alternate formats (Hook, Dilemma, The Line,
+    Countdown, POV, then again), Phase 4.3-E."""
     from video import shorts
     plan = shorts.load(run_dir) or {}
     found = []
@@ -39,7 +42,20 @@ def included(run_dir) -> list[dict]:
         if segment.get("include", True) and video.is_file():
             found.append({**segment, "video_path": str(video),
                           "srt_path": str(video.with_suffix(".srt"))})
-    return found
+    return alternate(found) if plan.get("mode") == "formats" else found
+
+
+def alternate(items: list[dict]) -> list[dict]:
+    """Round-robin over the format order, so two Shorts of one format are never next to each other when avoidable."""
+    from video.short_formats import ORDER
+    queues = {name: [item for item in items if item.get("format") == name] for name in ORDER}
+    others = [item for item in items if item.get("format") not in ORDER]
+    ordered = []
+    while any(queues.values()):
+        for name in ORDER:
+            if queues[name]:
+                ordered.append(queues[name].pop(0))
+    return ordered + others
 
 
 def _sha(path) -> str | None:
@@ -67,6 +83,8 @@ def schedule(count: int, *, now: datetime | None = None, episode_publish_at: str
     now = (now or datetime.now().astimezone())
     hour, minute = (int(part) for part in str(settings["time"]).split(":"))
     episode = datetime.fromisoformat(episode_publish_at.replace("Z", "+00:00")) if episode_publish_at else None
+    if settings.get("spread_days") and settings.get("times"):
+        return week_spread(count, now=now, episode=episode, settings=settings)
     times: list[datetime | None] = []
     base = episode or now
     for index in range(count):
@@ -76,6 +94,31 @@ def schedule(count: int, *, now: datetime | None = None, episode_publish_at: str
         day = (base + timedelta(hours=float(settings["spacing_hours"]) * index)).astimezone(now.tzinfo)
         times.append(day.replace(hour=hour, minute=minute, second=0, microsecond=0))
     from uploader import slots                          # Phase 4.0-F: never two Shorts within 3 h
+    return slots.spread(times, now=now)
+
+
+def week_spread(count: int, *, now: datetime, episode: datetime | None, settings: dict) -> list[datetime | None]:
+    """Phase 4.3-E: the first Short with the episode, the others on the daily ``times`` spread evenly across
+    ``spread_days`` (several a day allowed), never within ``SHORTS_MIN_GAP_HOURS`` of each other."""
+    from uploader import slots
+    gap = timedelta(hours=float(getattr(config, "SHORTS_MIN_GAP_HOURS", 3)))
+    base = (episode or now).astimezone(now.tzinfo)
+    clock = sorted((int(part.split(":")[0]), int(part.split(":")[1])) for part in settings["times"])
+    candidates = []
+    for day in range(int(settings["spread_days"]) + 1):
+        date = (base + timedelta(days=day)).date()
+        for hour, minute in clock:
+            when = datetime(date.year, date.month, date.day, hour, minute, tzinfo=now.tzinfo)
+            if when >= base + gap:
+                candidates.append(when)
+    first = [episode] if settings.get("first") == "with_episode" else []
+    rest = max(0, count - len(first))
+    if rest and candidates:
+        step = (len(candidates) - 1) / max(1, rest - 1) if rest > 1 else 0
+        picked = [candidates[min(len(candidates) - 1, round(index * step))] for index in range(rest)]
+    else:
+        picked = []
+    times = (first + picked)[:count]
     return slots.spread(times, now=now)
 
 
@@ -108,9 +151,31 @@ def plan_lines(run_dir, *, privacy: str, publish_at: str = "", now: datetime | N
     return {"episode": episode, "shorts": shorts, "text": text}
 
 
+def format_description(segment: dict, episode_url: str, run_dir) -> str:
+    """Phase 4.3-E: the hook line, "Full story: <episode URL>", the type hashtag plus 1-2 topical tags."""
+    from agents import topic
+    script = load_json(Path(run_dir) / "script.json") or {}
+    brief = load_json(Path(run_dir) / "story_brief.json") or {}
+    kind = script.get("narrative_type") or brief.get("narrative_type", "")
+    tags = topic.hashtags(kind, brief.get("topic_words") or [], limit=4).split()
+    tags = [tag for tag in tags if tag.lower() != "#privategravity"][:3]
+    lines = [str(segment.get("hook_line", "")).strip(), str(segment.get("description_line", "")).strip(),
+             f"Full story: {episode_url}", " ".join(tags + ["#Shorts"])]
+    return "\n\n".join(line for line in lines if line) + "\n"
+
+
+def pinned_comment(segment: dict) -> str:
+    """The pinned-comment draft: the Dilemma's question, or the pointer to the full story."""
+    if segment.get("format") == "dilemma" and str(segment.get("question", "")).strip():
+        return str(segment["question"]).strip()
+    return "The full story is linked above."
+
+
 def description(segment: dict, episode_url: str, run_dir) -> str:
     from agents import packaging
     from video import description as episode_description
+    if segment.get("format"):
+        return format_description(segment, episode_url, run_dir)
     parts = load_json(Path(run_dir) / packaging.DESCRIPTION_PARTS_FILE) or {}
     return "\n\n".join([
         str(segment.get("description", "")).strip(),
@@ -166,6 +231,7 @@ def upload_shorts(run_dir, episode_video_id: str, *, service=None, privacy: str 
             video_id, run_dir, title=item["title"], video_path=item["video_path"],
             scheduled_publish_at=scheduled or None, touch_project=False,
             extra={"kind": "short", "parent_video_id": episode_video_id, "short_id": item["id"],
+                   "format": item.get("format") or "recorte", "pinned_comment": pinned_comment(item) if item.get("format") else "",
                    "captions": captions, "language": getattr(config, "VIDEO_LANGUAGE", "en"),
                    "contains_synthetic_media": disclosure["value"],
                    "synthetic_disclosure_reason": disclosure["reason"]})

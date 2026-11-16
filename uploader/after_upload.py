@@ -20,7 +20,7 @@ from datetime import datetime, timedelta, timezone
 
 from agents.narrative import load_json
 
-ITEMS = ("end_screen", "card", "related_video", "pinned_comment", "auto_dubbing", "playlist", "community_poll",
+ITEMS = ("related_video", "end_screen", "card", "pinned_comment", "auto_dubbing", "playlist", "community_poll",
          "community_teaser")
 LABELS = {"end_screen": "Tela final", "card": "Card no pico de curiosidade", "related_video": "Vídeo relacionado dos Shorts",
           "pinned_comment": "Comentário fixado", "auto_dubbing": "Dublagem automática", "playlist": "Playlist do tipo",
@@ -193,7 +193,9 @@ def checklist(video_id: str, *, ledger: dict | None = None, generator=None) -> d
         "card": f"Card aos {peak['at']} ({'início da virada' if peak['source'] == 'reversal' else '60 % do vídeo'}"
                 f"{': ' + peak['scene'] if peak['scene'] else ''}), apontando para "
                 + (f"\"{target['title']}\" ({target['video_id']})" if target else "a playlist do tipo"),
-        "related_video": "\n".join(f"{short.get('title', '')} ({short['video_id']}) → vídeo relacionado: {url}" for short in shorts)
+        "related_video": "\n".join(f"{short.get('title', '')} ({short['video_id']}, {short.get('format') or 'recorte'}) → "
+                                   f"vídeo relacionado: {url}" + (f" · comentário fixado: {short['pinned_comment']}"
+                                                                  if short.get("pinned_comment") else "") for short in shorts)
                          or "Sem Shorts deste episódio.",
         "pinned_comment": parts.get("pinned_comment", "") or "(sem texto de comentário fixado no projeto)",
         "auto_dubbing": localize.DUBBING_REMINDER,

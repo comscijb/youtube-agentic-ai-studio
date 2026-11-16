@@ -17,6 +17,7 @@ from uploader import approval, publications, shorts_upload
 
 NOW = datetime(2026, 10, 29, 10, 0, tzinfo=timezone(timedelta(hours=-3)))
 GOOD_TITLE = "The Only One Who Never Got Tired of Him"
+DAILY = {"first": "with_episode", "spacing_hours": 24, "time": "18:00"}     # the 3.7 rhythm (4.3 spreads over the week)
 
 
 def make_run(folder: Path, *, count=3):
@@ -50,6 +51,7 @@ class SequentialVideos(FakeVideos):
         return FakeRequest({"id": next(self.ids)})
 
 
+@patch.object(config, "SHORTS_SCHEDULE", DAILY)
 class ScheduleTests(unittest.TestCase):
     def test_default_plan_now_then_one_a_day_at_six(self):
         times = shorts_upload.schedule(3, now=NOW)
@@ -96,6 +98,7 @@ class ApprovalTests(unittest.TestCase):
         self.assertEqual(summary["shorts"][0]["video"], "shorts/short_02.mp4")
 
 
+@patch.object(config, "SHORTS_SCHEDULE", DAILY)
 class UploadTests(unittest.TestCase):
     def test_episode_first_then_shorts_with_its_url_schedule_and_ledger(self):
         from uploader import youtube
