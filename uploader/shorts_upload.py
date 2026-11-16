@@ -71,7 +71,9 @@ def _sha(path) -> str | None:
 def binding(run_dir) -> str:
     """One hash over every included Short: video file, title, description."""
     items = [{"id": item["id"], "video": _sha(item["video_path"]), "title": item.get("title", ""),
-              "description": item.get("description", "")} for item in included(run_dir)]
+              "description": item.get("description", ""), **({"format": item["format"], "script": item.get("script", ""),
+                                                             "cta": item.get("cta_text", "")} if item.get("format") else {})}
+             for item in included(run_dir)]
     return hashlib.sha256(json.dumps(items, sort_keys=True).encode("utf-8")).hexdigest()
 
 

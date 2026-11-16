@@ -110,7 +110,7 @@ class ValidationTests(unittest.TestCase):
                                                           segment(14, 25)]))
         self.assertIn("hook_text must be 1-6 words", problems([segment(0, 11, hook_text="one two three four five six seven"),
                                                               segment(14, 25)]))
-        self.assertIn("needs 2-3 segments", problems([segment(0, 11)]))
+        self.assertIn(f"needs 2-{shorts.per_episode()} segments", problems([segment(0, 11)]))
         self.assertIn("outside", problems([segment(0, 80), segment(14, 25)]))
         self.assertIn("1-60 characters", problems([segment(0, 11, title="x" * 60), segment(14, 25)]))
 

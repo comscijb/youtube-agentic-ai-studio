@@ -245,7 +245,8 @@ def review_summary(run_dir, *, title: str, generator=None, **artifacts) -> dict:
         "attention": {key: attention_status(run_dir).get(key) for key in ("status", "label", "major", "duration_before", "duration_after")},
         "attention_override_required": attention_status(run_dir).get("status") == "failed",
         "description_findings": description_findings,
-        "shorts": [{key: item.get(key) for key in ("id", "title", "hook_text", "end_text", "description", "start", "end")}
+        "shorts": [{key: item.get(key) for key in ("id", "title", "hook_text", "end_text", "description", "start", "end",
+                                                   "format", "on_screen_hook", "hook_line", "cta_text", "status")}
                    | {"video": f"shorts/{item['id']}.mp4"} for item in _included_shorts(run_dir)],
         "description_passes": upload_description.passes(description_findings),
         "title_findings": findings,

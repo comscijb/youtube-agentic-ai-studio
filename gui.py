@@ -436,10 +436,14 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
         def job_shorts():
             if video_type != "normal":
                 return
-            from video import shorts, shorts_render
+            from video import short_formats, shorts, shorts_render
             _stage("shorts", "running")
             plan = shorts.load(out)
-            if not plan or not plan.get("segments"):
+            if short_formats.mode() == "formats" and (not plan or plan.get("mode") != "formats" or not plan.get("segments")):
+                plan = short_formats.build(out, script=_state.get("script"), brief=_state.get("research"))
+                review = sum(1 for item in plan["segments"] if item.get("status") == "review")
+                _log(f"Shorts: {len(plan['segments'])} roteiro(s) por formato ({review} para revisar) — veja em Review & Edit")
+            elif not plan or not plan.get("segments"):
                 plan = shorts.build_plan(out, script=_state.get("script"), brief=_state.get("research"))
                 _log(f"Shorts: {len(plan['segments'])} cut(s) proposed — review them in Review & Edit")
             done = shorts_render.render_all(out, progress=lambda message: _log(message.strip()))
@@ -872,17 +876,29 @@ def premise_brief_parse():
 
 @app.route("/api/shorts")
 def shorts_status():
-    """Phase 3.7-B: the Shorts plan with the sentences it can be cut on."""
-    from video import shorts
+    """Phase 3.7-B: the Shorts plan with the sentences it can be cut on; Phase 4.3: the format scripts."""
+    from uploader import shorts_upload
+    from video import short_formats, shorts
     output = Path(config.OUTPUT_DIR)
+    plan = shorts.load(output) or {}
+    if plan.get("mode") == "formats" or (short_formats.mode() == "formats" and not plan.get("segments")):
+        for item in plan.get("segments", []):
+            video = output / shorts.FOLDER / f"{item['id']}.mp4"
+            item["video"] = f"{shorts.FOLDER}/{item['id']}.mp4" if video.is_file() else None
+            item["voice"] = (output / "shorts" / "voice" / f"{item['id']}.wav").is_file()
+            item["pinned_comment"] = shorts_upload.pinned_comment(item)
+            item["label"] = short_formats.FORMATS.get(item.get("format"), {}).get("label", item.get("format"))
+            item["range"] = short_formats.FORMATS.get(item.get("format"), {}).get("seconds")
+        return jsonify({"ok": True, "mode": "formats", "plan": {**plan, "mode": "formats", "segments": plan.get("segments", [])},
+                        "settings_mode": short_formats.mode(), "formats": short_formats.allocate(),
+                        "busy": _state.get("imagegen_busy", False)})
     words = shorts.word_timeline(output, _state.get("script"))
     sentence_list = shorts.sentences(words)
-    plan = shorts.load(output) or {}
     audio = next((name for name in ("narration_mixed.mp3", "narration.mp3") if (output / name).is_file()), None)
     for item in plan.get("segments", []):
         video = output / shorts.FOLDER / f"{item['id']}.mp4"
         item["video"] = f"{shorts.FOLDER}/{item['id']}.mp4" if video.is_file() else None
-    return jsonify({"ok": True, "plan": plan, "audio": bool(audio), "limits": shorts.limits(),
+    return jsonify({"ok": True, "mode": "cuts", "settings_mode": short_formats.mode(), "plan": plan, "audio": bool(audio), "limits": shorts.limits(),
                     "sentences": [{key: item[key] for key in ("index", "start", "end", "text")} for item in sentence_list],
                     "busy": _state.get("imagegen_busy", False)})
 
@@ -890,8 +906,15 @@ def shorts_status():
 @app.route("/api/shorts/plan", methods=["POST"])
 def shorts_plan():
     """Gemini proposes the segments (validated by code); a new proposal replaces the plan."""
-    from video import shorts
-    force = bool((request.get_json(force=True) or {}).get("force"))
+    from video import short_formats, shorts
+    body = request.get_json(force=True) or {}
+    force = bool(body.get("force"))
+    if (body.get("mode") or short_formats.mode()) == "formats":         # Phase 4.3: one script per format
+        def scripts():
+            plan = short_formats.build(config.OUTPUT_DIR, script=_state.get("script"), brief=_state.get("research"), force=force)
+            review = sum(1 for item in plan["segments"] if item.get("status") == "review")
+            _imagegen_progress(f"Shorts: {len(plan['segments'])} roteiro(s) propostos, {review} para revisar")
+        return _imagegen_run(scripts)
     if not shorts.word_timeline(Path(config.OUTPUT_DIR), _state.get("script")):
         return jsonify({"ok": False, "error": "Run the narration step first (the plan needs real timings)"}), 400
 
@@ -905,9 +928,11 @@ def shorts_plan():
 @app.route("/api/shorts/save", methods=["POST"])
 def shorts_save():
     from agents.narrative import NarrativeValidationError
-    from video import shorts
+    from video import short_formats, shorts
     segments = (request.get_json(force=True) or {}).get("segments")
     try:
+        if (shorts.load(config.OUTPUT_DIR) or {}).get("mode") == "formats":
+            return jsonify({"ok": True, "plan": short_formats.save(config.OUTPUT_DIR, segments)})
         plan = shorts.save(config.OUTPUT_DIR, segments, brief=_state.get("research"))
     except (NarrativeValidationError, KeyError, TypeError, ValueError) as exc:
         return jsonify({"ok": False, "error": str(exc)}), 400
@@ -926,6 +951,77 @@ def shorts_render():
         done = renderer.render_all(config.OUTPUT_DIR, progress=_imagegen_progress, only=only)
         _imagegen_progress(f"Shorts renderizados: {len(done)}")
     return _imagegen_run(run)
+
+
+@app.route("/api/shorts/version", methods=["POST"])
+def shorts_version():
+    """Phase 4.3-G "Gerar outra versão": a new script of the same format for one Short."""
+    from video import short_formats
+    short_id = str((request.get_json(force=True) or {}).get("id", ""))
+
+    def run():
+        fresh = short_formats.regenerate(config.OUTPUT_DIR, short_id)
+        _imagegen_progress(f"{short_id}: nova versão ({'pronta' if fresh['status'] == 'ready' else 'para revisar'})")
+    return _imagegen_run(run)
+
+
+@app.route("/api/shorts/simulate", methods=["POST"])
+def shorts_simulate():
+    """Phase 4.3-B: the swipe simulation again (after an edit)."""
+    from video import short_formats
+    ids = (request.get_json(force=True) or {}).get("ids") or None
+
+    def run():
+        short_formats.resimulate(config.OUTPUT_DIR, ids)
+        _imagegen_progress("Simulação de deslize atualizada")
+    return _imagegen_run(run)
+
+
+@app.route("/api/shorts/voice", methods=["GET", "POST"])
+def shorts_voice():
+    """Phase 4.3-G: the TTS preview of one Short (POST synthesises at the Shorts speed, GET plays it)."""
+    from video import short_voice, shorts
+    output = Path(config.OUTPUT_DIR)
+    if request.method == "GET":
+        short_id = str(request.args.get("id", ""))
+        path = output / "shorts" / "voice" / f"{short_id}.wav"
+        if not short_id.replace("_", "").isalnum() or not path.is_file():
+            abort(404)
+        return send_file(str(path), mimetype="audio/wav", conditional=True)
+    short_id = str((request.get_json(force=True) or {}).get("id", ""))
+    segment = next((item for item in (shorts.load(output) or {}).get("segments", []) if item.get("id") == short_id), None)
+    if segment is None:
+        return jsonify({"ok": False, "error": "Short not found"}), 404
+
+    def run():
+        voice = short_voice.synthesize(output, segment)
+        _imagegen_progress(f"{short_id}: prévia da voz pronta ({voice['duration']:.1f} s)")
+    return _imagegen_run(run)
+
+
+@app.route("/api/shorts-settings", methods=["GET", "POST"])
+def shorts_settings_api():
+    """Phase 4.3 Settings → Shorts: the mode, the format weights, Shorts per episode, the voice speed."""
+    from video import shorts_settings
+    if request.method == "POST":
+        try:
+            return jsonify({"ok": True, **shorts_settings.save(request.get_json(force=True) or {})})
+        except (ValueError, TypeError) as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 400
+    return jsonify({"ok": True, **shorts_settings.current()})
+
+
+@app.route("/api/short-formats", methods=["GET", "POST"])
+def short_formats_api():
+    """Phase 4.3-F: the "Formatos de Shorts" panel; POST applies the suggested weights (one click)."""
+    from uploader import short_stats
+    from video import shorts_settings
+    panel = short_stats.panel()
+    if request.method == "POST":
+        if not panel["suggestion"].get("ready"):
+            return jsonify({"ok": False, "error": "Ainda não há Shorts suficientes por formato"}), 400
+        return jsonify({"ok": True, **shorts_settings.save({"formats": panel["suggestion"]["weights"]})})
+    return jsonify({"ok": True, **panel})
 
 
 @app.route("/api/shorts/export", methods=["POST"])
