@@ -171,7 +171,7 @@ def _font(size: int):
     return ImageFont.load_default()
 
 
-def draw_overlay(frame: Image.Image, text: str, *, top: bool, alpha: float) -> Image.Image:
+def draw_overlay(frame: Image.Image, text: str, *, top: bool, alpha: float, y: int | None = None) -> Image.Image:
     """hook_text (top third) or end_text (centre card), in the brand typography."""
     if not text or alpha <= 0:
         return frame
@@ -186,7 +186,7 @@ def draw_overlay(frame: Image.Image, text: str, *, top: bool, alpha: float) -> I
         else:
             lines.append(word)
     line_height = 100
-    y = round(H * 0.16) if top else (H - line_height * len(lines)) // 2
+    y = y if y is not None else round(H * 0.16) if top else (H - line_height * len(lines)) // 2
     if not top:
         draw.rectangle([0, 0, W, H], fill=(0, 0, 0, round(150 * alpha)))
     colour = config.COLORS["highlight"] if top else config.COLORS["white"]

@@ -40,6 +40,7 @@ DARK_LUMA = 0.08
 FLAT_STD = 0.03
 FRAMINGS = {"full": 1.0, "medium": 1.25, "detail": 1.5}
 PUSH = 1.07
+FILL_PENALTY = 0.3
 STOP = {"the", "a", "an", "and", "or", "of", "to", "in", "on", "for", "with", "his", "her", "their", "that", "this",
         "it", "is", "was", "be", "at", "by", "from", "as", "you", "your", "he", "she", "they", "we", "i", "but", "had",
         "has", "have", "not", "no", "so", "then", "what", "who", "did", "do", "are", "were", "him", "them", "all"}
@@ -99,7 +100,10 @@ def first_image(candidates: list[dict], detect: Callable | None = None) -> int:
             image = opened.convert("RGB")
         if not usable(image):
             continue
-        score = salience(image, detect(item["image"]) if detect else None)
+        detection = detect(item["image"]) if detect else None
+        score = salience(image, detection)
+        if base.crop_plan(base.main_subjects(detection), image.size)["mode"] == "fill":
+            score *= FILL_PENALTY              # a blur-filled strip is a weak first frame: prefer a full 9:16 picture
         if score > best_score:
             best, best_score = index, score
     return best if best is not None else 0
@@ -352,7 +356,7 @@ def thumbnail_background(output_dir, fallback: str) -> Image.Image:
     image = image.resize((round(image.width * scale), round(image.height * scale)), Image.BILINEAR)
     left, top = (image.width - W) // 2, (image.height - H) // 2
     image = image.crop((left, top, left + W, top + H)).filter(ImageFilter.GaussianBlur(24))
-    return ImageEnhance.Brightness(image).enhance(0.42)
+    return ImageEnhance.Brightness(image).enhance(0.6)
 
 
 def draw_card(background: Image.Image, lines: list[str], alpha: float = 1.0) -> Image.Image:
@@ -380,6 +384,34 @@ def draw_card(background: Image.Image, lines: list[str], alpha: float = 1.0) -> 
     return Image.blend(background, layer, alpha) if alpha < 1 else layer
 
 
+def faces_in_frame(source: dict, framing: str = "full") -> list[tuple[float, float]]:
+    """The vertical spans (0-1 of the 9:16 frame) the source's faces cover in one view."""
+    view = next((item for item in source.get("views", []) if item["framing"] == framing), None)
+    image = source.get("image_data")
+    if view is None or image is None:
+        return []
+    if view.get("fill"):
+        strip = image.height * W / image.width / H                      # the 16:9 picture centred in the frame
+        top = (1 - strip) / 2
+        return [(top + face[1] * strip, top + face[3] * strip) for face in source.get("faces", [])]
+    left, top, right, bottom = view["box"]
+    return [((face[1] * image.height - top) / (bottom - top), (face[3] * image.height - top) / (bottom - top))
+            for face in source.get("faces", [])]
+
+
+def hook_position(spans: list[tuple[float, float]], lines: int = 2) -> int:
+    """Where the on-screen hook goes: the upper third (0.16 H) unless a face is there; then above the face when it
+    fits, else just under it (never over the eyes)."""
+    band = (0.16, 0.16 + lines * 100 / H)
+    over = [span for span in spans if span[1] > band[0] - 0.02 and span[0] < band[1] + 0.02]
+    if not over:
+        return round(H * 0.16)
+    face_top, face_bottom = min(span[0] for span in over), max(span[1] for span in over)
+    if face_top - (band[1] - band[0]) >= 0.05:
+        return round(H * (face_top - (band[1] - band[0]) - 0.02))
+    return round(H * min(face_bottom + 0.03, 0.62))
+
+
 # ── Rendering ───────────────────────────────────────────────────────────────
 
 def prepare_sources(candidates: list[dict], item: dict, detect: Callable | None) -> list[dict]:
@@ -390,7 +422,8 @@ def prepare_sources(candidates: list[dict], item: dict, detect: Callable | None)
             image = opened.convert("RGB")
         detection = detect(candidate["image"]) if detect else None
         views = views_for(candidate, image, detection)
-        prepared.append({**candidate, "image_data": image, "views": views,
+        faces = [person["face"]["box"] for person in (detection or {}).get("persons") or [] if person.get("face")]
+        prepared.append({**candidate, "image_data": image, "views": views, "faces": faces,
                          "fill": base.fill_frame(image) if any(view.get("fill") for view in views) else None})
     return prepared
 
@@ -428,13 +461,14 @@ def render(output_dir, item: dict, voice: dict, audio: dict, *, shot_list: dict 
     level = tape.look()
     vf = base.video_filter(level, ass, str(Path(font_path).parent) if font_path else None, key=item["id"])
     hook = item.get("on_screen_hook", "")
+    hook_y = hook_position(faces_in_frame(sources[first], "full"))
 
     def make_frame(t):
         if card is not None and t >= card_start:
             return np.array(card)
         frame = frame_at(sources, pieces, t)
         if t < SCREEN_HOOK_SECONDS + 0.3:
-            frame = base.draw_overlay(frame, hook, top=True, alpha=min(1.0, max(0.0, (SCREEN_HOOK_SECONDS + 0.3 - t) / 0.3)))
+            frame = base.draw_overlay(frame, hook, top=True, alpha=min(1.0, max(0.0, (SCREEN_HOOK_SECONDS + 0.3 - t) / 0.3)), y=hook_y)
         if card is not None and t > card_start - 0.25:
             frame = Image.blend(frame, card, min(1.0, (t - (card_start - 0.25)) / 0.25))
         return np.array(frame)

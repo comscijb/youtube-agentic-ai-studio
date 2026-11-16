@@ -161,6 +161,36 @@ def plan(item: dict, voice: dict, *, salt: str, sfx_library: dict | None = None,
     return {"duration": duration, "cues": cues, "music": music, "swells": swells, "missing": missing}
 
 
+def trim_to_target(path, loudness: dict, tolerance: float = 0.5) -> dict:
+    """loudnorm's linear pass can stop short on a 15-40 s clip with a music-only tail (measured −15.5 to −15.9 LUFS on
+    the Sunrise Shorts): a plain gain then a true-peak limiter bring it to the target."""
+    from video import music
+    target = float(getattr(config, "LOUDNESS_TARGET_LUFS", -14.0))
+    peak = float(getattr(config, "LOUDNESS_TRUE_PEAK", -1.5))
+    missing = target - float(loudness["output_integrated_lufs"])
+    if abs(missing) <= tolerance:
+        return loudness
+    path = Path(path)
+    temporary = path.with_name(path.stem + ".gain" + path.suffix)
+    squeezed = path.with_name(path.stem + ".comp.wav")
+    limit = 10 ** ((peak - 1.0) / 20)                    # sample-peak limit 1 dB under the true-peak ceiling
+    first = music._run(["-y", "-i", str(path), "-af", "acompressor=threshold=0.125:ratio=3:attack=5:release=120", str(squeezed)])
+    if first.returncode != 0:
+        squeezed.unlink(missing_ok=True)
+        return loudness
+    gain = target - music.measure_loudness(str(squeezed))["integrated_lufs"]
+    result = music._run(["-y", "-i", str(squeezed), "-af", f"volume={gain:.2f}dB,alimiter=limit={limit:.4f}:level=disabled",
+                         "-ar", "44100", "-c:a", "libmp3lame", "-b:a", "192k", str(temporary)])
+    squeezed.unlink(missing_ok=True)
+    if result.returncode != 0:
+        temporary.unlink(missing_ok=True)
+        return loudness
+    temporary.replace(path)
+    measured = music.measure_loudness(str(path))
+    return {**loudness, "output_integrated_lufs": measured["integrated_lufs"], "output_true_peak_dbtp": measured["true_peak_dbtp"],
+            "gain_trim_db": round(missing, 2)}
+
+
 def mix(output_dir, item: dict, voice: dict, *, sfx_library: dict | None = None, tracks: list[dict] | None = None) -> dict:
     """shorts/<id>.mp3: accent, voice, ducked music, sting, −14 LUFS. Returns the plan and the loudness report."""
     from audio import assembly
@@ -183,5 +213,6 @@ def mix(output_dir, item: dict, voice: dict, *, sfx_library: dict | None = None,
         if result.returncode != 0:
             raise RuntimeError(f"Short mix failed: {result.stderr[-300:]}")
         loudness = music.normalize_loudness(str(mixed), str(target))
+        loudness = trim_to_target(target, loudness)
     return {"audio": str(target), "plan": {**layout, "cues": [{key: cue[key] for key in ("path", "start", "end", "role")}
                                                               for cue in layout["cues"]]}, "loudness": loudness}

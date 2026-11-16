@@ -46,6 +46,18 @@ class FirstFrameTests(unittest.TestCase):
             self.assertFalse(edit.usable(Image.open(flat["image"])))
 
 
+class HookPlacementTests(unittest.TestCase):
+    def test_upper_third_without_a_face(self):
+        self.assertEqual(edit.hook_position([]), round(edit.H * 0.16))
+        self.assertEqual(edit.hook_position([(0.6, 0.8)]), round(edit.H * 0.16))
+
+    def test_never_over_a_face(self):
+        y = edit.hook_position([(0.12, 0.35)])                 # a big face at the top: the hook goes under it
+        self.assertGreaterEqual(y / edit.H, 0.35)
+        y = edit.hook_position([(0.30, 0.50)])                 # room above the face
+        self.assertLessEqual(y / edit.H + 200 / edit.H, 0.30)
+
+
 class ScheduleTests(unittest.TestCase):
     def sources(self, count=3):
         return [{"views": [{"framing": "full"}, {"framing": "medium"}]} for _ in range(count)]
