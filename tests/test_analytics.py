@@ -201,3 +201,28 @@ class GuiTests(AnalyticsTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DateWindowTests(AnalyticsTestCase):
+    """Regression (2026-11-15): a video published after 21:00 in São Paulo has a UTC date of tomorrow; the
+    local "today" made start > end and the API answered 412 conditionNotMet, stopping the whole sync."""
+
+    def test_a_video_without_a_full_day_is_skipped_without_a_query(self):
+        now = datetime(2026, 11, 16, 2, 37, tzinfo=timezone.utc)
+        record = {"video_id": "late", "title": "Late", "published_at": "2026-11-17T01:00:00+00:00"}
+        with patch.object(analytics, "_now", return_value=now):
+            result = analytics.refresh_video(record, analytics=None)
+        self.assertTrue(result["pending"])
+
+    def test_one_failing_video_does_not_stop_the_others(self):
+        good = {"video_id": "ok", "title": "Ok"}
+        bad = {"video_id": "bad", "title": "Bad"}
+
+        def fake(record, **kwargs):
+            if record["video_id"] == "bad":
+                raise RuntimeError("412 conditionNotMet")
+            return {"video_id": record["video_id"]}
+        with patch.object(analytics, "published_records", return_value=[bad, good]), \
+                patch.object(analytics, "refresh_video", side_effect=fake), redirect_stdout(io.StringIO()):
+            results = analytics.refresh_all(force=True, analytics=object(), reporting=None)
+        self.assertEqual([item["video_id"] for item in results], ["ok"])

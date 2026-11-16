@@ -216,7 +216,13 @@ def refresh_video(record: dict, *, analytics, reporting=None, force: bool = Fals
     if is_fresh(previous) and not force:
         return previous
     published = str(record.get("published_at") or record.get("uploaded_at") or _now().isoformat())[:10]
-    end = date.today().isoformat()
+    # The ledger stores UTC timestamps; "today" must be the UTC date too. With the local date (America/Sao_Paulo)
+    # a video published after 21:00 local has a UTC date of tomorrow and the API answers 412 conditionNotMet
+    # ("'start-date' must be before or the same as the 'end-date'"). A video with no full day yet is skipped.
+    end = _now().astimezone(timezone.utc).date().isoformat()
+    if published > end:
+        return previous or {"video_id": video_id, "title": record.get("title", ""), "published_at": published,
+                            "pending": True, "note": "Publicado há menos de um dia: ainda sem dados."}
     stats = video_stats(analytics, video_id, published, end)
     stats["reach"] = {"available": False, "impressions": 0, "ctr": None, "daily": []}
     if reporting is not None:
@@ -253,7 +259,19 @@ def refresh_all(*, force: bool = False, interactive: bool = False, analytics=Non
         return [cached(item["video_id"]) for item in records]
     if analytics is None:
         analytics, reporting = services(interactive)
-    return [refresh_video(item, analytics=analytics, reporting=reporting, force=force) for item in records]
+    results, errors = [], []
+    for item in records:                                  # one failing video must not stop the others
+        try:
+            results.append(refresh_video(item, analytics=analytics, reporting=reporting, force=force))
+        except Exception as exc:                          # noqa: BLE001 — reported after the loop
+            errors.append((item, exc))
+            if cached(item["video_id"]):
+                results.append(cached(item["video_id"]))
+    if errors and not results:
+        raise errors[0][1]                                # nothing at all worked: let the caller report the reason
+    for item, exc in errors:
+        print(f"   ⚠ analytics skipped for {item['video_id']} ({item.get('title', '')[:40]}): {str(exc)[:160]}")
+    return results
 
 
 STATUS_FILE = "status.json"
