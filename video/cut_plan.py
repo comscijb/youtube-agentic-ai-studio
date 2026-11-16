@@ -87,8 +87,8 @@ def expand(output_dir, sections: list[dict], durations: list[float], schedule: d
                                   "source": str(upscaled) if crop and upscaled else item["image"],
                                   "start": view["start"], "end": view["end"], "motion_variant": view.get("motion_variant", 0),
                                   "shot_type": {"detail": "close_up", "medium": "medium"}.get(view["kind"], item.get("shot_type", "medium")),
-                                  "transition": item.get("transition", "cut") if number == 0 else ("cut" if beat in ("tension", "cold_open") else "crossfade"),
-                                  "beat": beat, "final": final})
+                                  "transition": _transition(item, number, beat),
+                                  "beat": beat, "final": final, "grade": _grade(section)})
         if views_out:
             expanded[section["id"]] = views_out
             rows.append({"id": section["id"], "title": section.get("title", ""), "beat": beat, "section_type": section.get("section_type"),
@@ -99,6 +99,32 @@ def expand(output_dir, sections: list[dict], durations: list[float], schedule: d
     extras = rhythm.extra_requests(rows)
     return {"schedule": expanded, "rows": rows, "report": rhythm.report(rows), "upscale": probe,
             "extra_images": extras, "gpu_budget": rhythm.gpu_budget(extras)}
+
+
+def _grade(section: dict) -> str:
+    from video import grade
+    return grade.beat_for(section.get("section_type")) if grade.enabled() else "calm"
+
+
+def _transition(item: dict, number: int, beat: str) -> str:
+    """Phase 4.2-C: a 0.4 s dip on a time jump, hard cuts inside tension, a soft crossfade inside calm scenes."""
+    if number == 0 and item.get("transition") == "crossfade":
+        return "dip"                                     # creator.transition_into marks a time jump as crossfade
+    if number == 0 and item.get("transition") == "cut":
+        return "cut"
+    return "cut" if beat in ("tension", "cold_open") else "crossfade"
+
+
+def boundaries(sections: list[dict], schedule: dict) -> dict:
+    """{section id: {"dip_in", "dip_out"}}: a dip after the cold open and into a section opening on a time jump."""
+    found = {section["id"]: {"dip_in": False, "dip_out": False} for section in sections}
+    for previous, section in zip(sections, sections[1:]):
+        first = (schedule.get(section["id"]) or [{}])[0]
+        dip = previous.get("section_type") == "cold_open" or first.get("transition") == "dip"
+        if dip:
+            found[section["id"]]["dip_in"] = True
+            found[previous["id"]]["dip_out"] = True
+    return found
 
 
 def faces_at(plan: dict, sections: list[dict], durations: list[float], t: float, output_dir) -> list:

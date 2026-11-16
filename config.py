@@ -308,6 +308,9 @@ EXTERNAL_IMAGE_PROVIDER = os.getenv("EXTERNAL_IMAGE_PROVIDER", "")
 EXTERNAL_IMAGE_MODEL = os.getenv("EXTERNAL_IMAGE_MODEL", "gpt-image-1")
 EXTERNAL_IMAGE_PRICE = float(os.getenv("EXTERNAL_IMAGE_PRICE", "0"))           # USD per image
 EXTERNAL_IMAGE_BUDGET = float(os.getenv("EXTERNAL_IMAGE_BUDGET", "0"))         # default per-project cap, USD
+# Phase 4.2-C: a grade per beat (calm / tension / reversal / ending / cold_open; see video/grade.py for the keys).
+BEAT_GRADES_ENABLED = os.getenv("BEAT_GRADES_ENABLED", "true").lower() in ("1", "true", "yes", "on")
+BEAT_GRADES = {}                                         # overrides of video.grade.DEFAULT_GRADES, per beat
 # Phase 4.2-B: 1-3 key lines per minute on screen, word by word, from the 4.1 attention map.
 KEY_LINES_ENABLED = os.getenv("KEY_LINES_ENABLED", "true").lower() in ("1", "true", "yes", "on")
 # Phase 4.2-A: visual rhythm from the same images (seconds per view by beat; 7 s is the hard maximum).

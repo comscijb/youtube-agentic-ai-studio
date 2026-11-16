@@ -640,6 +640,11 @@ def _shot_frame(shot: dict, t: float) -> np.ndarray:
             frame = ambient.apply(frame, ambient.loop_uint8(shot["ambient"]), local)
     if shot.get("darken"):
         frame = (frame.astype(np.float32) * shot["darken"]).astype(np.uint8)
+    if shot.get("grade") and shot["grade"] != "calm":    # Phase 4.2-C: light and colour follow the beat
+        from video import grade
+        if grade.enabled():
+            section_local = t
+            frame = grade.apply(frame, grade.grades().get(shot["grade"], {}), grade.ramp(section_local), local=section_local)
     return _apply_overlay(frame, shot["opacity"])
 
 
@@ -673,8 +678,14 @@ def _make_clip(section, duration, bg_images, section_num, total_sections,
             position = shot_at(shots, t)
             current = shots[position]
             frame_np = _shot_frame(current, t)
-            if position + 1 < len(shots) and t >= current["end"] - SHOT_XFADE and \
-                    shots[position + 1].get("transition", "crossfade") == "crossfade":
+            following_kind = shots[position + 1].get("transition", "crossfade") if position + 1 < len(shots) else ""
+            if current.get("transition") == "dip" or following_kind == "dip":      # Phase 4.2-C: 0.4 s dip to black
+                from video import grade
+                factor = grade.dip(t - current["start"], current["end"] - current["start"],
+                                   dip_in=current.get("transition") == "dip" and position > 0, dip_out=following_kind == "dip")
+                if factor < 1.0:
+                    frame_np = (frame_np.astype(np.float32) * factor).astype(np.uint8)
+            if position + 1 < len(shots) and t >= current["end"] - SHOT_XFADE and following_kind == "crossfade":
                 following = shots[position + 1]
                 raw_a = (t - (current["end"] - SHOT_XFADE)) / SHOT_XFADE
                 alpha = raw_a * raw_a * (3.0 - 2.0 * raw_a)
@@ -717,8 +728,13 @@ def _make_clip(section, duration, bg_images, section_num, total_sections,
         if cinematic:
             # A fade through black consumes no extra timeline time, unlike an
             # overlapping crossfade that shortens the combined scene duration.
-            fade = min(1.0, t / 0.35, max(0.0, duration - t) / 0.35)
-            frame_np = (frame_np.astype(np.float32) * fade).astype(np.uint8)
+            if "_dip_in" in section:                     # Phase 4.2-C: dips only after the cold open and on time jumps
+                from video import grade
+                fade = grade.dip(t, duration, dip_in=section["_dip_in"], dip_out=section["_dip_out"])
+            else:
+                fade = min(1.0, t / 0.35, max(0.0, duration - t) / 0.35)
+            if fade < 1.0:
+                frame_np = (frame_np.astype(np.float32) * fade).astype(np.uint8)
 
         frame = Image.fromarray(frame_np)
         draw  = ImageDraw.Draw(frame)
@@ -1227,6 +1243,9 @@ def create_video(script: dict, audio_path: str, output_dir: str,
             section_shots = _prepare_shots(schedule.get(section["id"], [])) if schedule else None
             if section_shots and section.get("section_type") == "cold_open":
                 section_shots = cold_open_treatment(section_shots)
+            if cut is not None:
+                edges = cut.setdefault("boundaries", cut_plan.boundaries(sections, schedule or {}))
+                section = {**section, "_dip_in": edges[section["id"]]["dip_in"], "_dip_out": edges[section["id"]]["dip_out"]}
             clip = _make_clip(section, duration, bg_images, i + 1, total_sections,
                               captions=frame_captions, section_start_t=section_start_t,
                               cinematic=cinematic, shots=section_shots, key_lines=lines)
