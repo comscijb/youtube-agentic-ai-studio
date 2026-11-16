@@ -1,0 +1,1602 @@
+{
+  "key": "11ec57b5e829dca488563b0d323c52a2735124380401028ca865b5f81ff23c04",
+  "version": 1,
+  "duration": 722.8,
+  "discarded_tags": 0,
+  "sentences": [
+    {
+      "index": 0,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The First Stone",
+      "text": "On a foggy night in Low Marrow, the river ran black beneath the trees.",
+      "start": 0.0,
+      "end": 5.49,
+      "sentence": 0,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "On a foggy night in Low Marrow, the river ran black beneath the trees."
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The First Stone",
+      "text": "A villager stepped from the muddy bank into the wooden ferryboat, shivering as his boots hit the floorboards.",
+      "start": 5.84,
+      "end": 12.89,
+      "sentence": 1,
+      "tags": []
+    },
+    {
+      "index": 2,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The First Stone",
+      "text": "He carried no coin purse, only a heavy posture and eyes wet with regret.",
+      "start": 13.24,
+      "end": 18.73,
+      "sentence": 2,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "He carried no coin purse, only a heavy posture and eyes wet with regret."
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The First Stone",
+      "text": "The Ferryman stood silent at the bow in his wide-brimmed hat, wrapped in a long grey oilskin coat.",
+      "start": 19.43,
+      "end": 26.48,
+      "sentence": 3,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "The Ferryman stood silent at the bow in his wide-brimmed hat, wrapped in a long grey oilskin coat."
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The First Stone",
+      "text": "He extended one weathered hand without speaking.",
+      "start": 26.83,
+      "end": 29.57,
+      "sentence": 4,
+      "tags": []
+    },
+    {
+      "index": 5,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The First Stone",
+      "text": "The villager bent close to the bow lantern and whispered the dark night he had struck his own brother.",
+      "start": 30.27,
+      "end": 37.72,
+      "sentence": 5,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "whispered the dark night he had struck his own brother."
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The First Stone",
+      "text": "The Ferryman closed his fingers over the spoken breath.",
+      "start": 38.07,
+      "end": 41.6,
+      "sentence": 6,
+      "tags": []
+    },
+    {
+      "index": 7,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The First Stone",
+      "text": "When he opened his palm, the secret had hardened into a smooth pale stone, heavy as river silt.",
+      "start": 41.95,
+      "end": 49.0,
+      "sentence": 7,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "When he opened his palm, the secret had hardened into a smooth pale stone, heavy as river silt."
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The First Stone",
+      "text": "He laid the stone gently into the bottom of the hull.",
+      "start": 49.7,
+      "end": 54.01,
+      "sentence": 8,
+      "tags": []
+    },
+    {
+      "index": 9,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The First Stone",
+      "text": "The villager blinked, wiped his brow, and looked around as if waking from sleep.",
+      "start": 54.36,
+      "end": 59.85,
+      "sentence": 9,
+      "tags": []
+    },
+    {
+      "index": 10,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The First Stone",
+      "text": "His shoulders dropped, the bitter anger vanished from his face, and he stared toward the market shore, unable to recall why he had wept.",
+      "start": 60.2,
+      "end": 69.61,
+      "sentence": 10,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "unable to recall why he had wept."
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The First Stone",
+      "text": "\"Step across,\" the Ferryman said quietly.",
+      "start": 70.31,
+      "end": 72.66,
+      "sentence": 11,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Step across,\" the Ferryman said quietly."
+        }
+      ]
+    },
+    {
+      "index": 12,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The First Stone",
+      "text": "Once, in Low Marrow, the ferry cost one memory.",
+      "start": 73.36,
+      "end": 76.88,
+      "sentence": 12,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "Once, in Low Marrow, the ferry cost one memory."
+        }
+      ]
+    },
+    {
+      "index": 13,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "Unburdening the Fisherman",
+      "text": "Three dawns later, morning mist hung thick over the river.",
+      "start": 78.38,
+      "end": 82.3,
+      "sentence": 13,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Three dawns later, morning mist hung thick over the river."
+        }
+      ]
+    },
+    {
+      "index": 14,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "Unburdening the Fisherman",
+      "text": "The Fisherman boarded the ferry, a heavy coil of rope slung over his shoulder and a dark wool cap pulled low.",
+      "start": 82.65,
+      "end": 90.88,
+      "sentence": 14,
+      "tags": []
+    },
+    {
+      "index": 15,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "Unburdening the Fisherman",
+      "text": "He twisted the frayed fibers of the rope in his hands, trembling as he stared into the swirling currents.",
+      "start": 91.23,
+      "end": 98.68,
+      "sentence": 15,
+      "tags": []
+    },
+    {
+      "index": 16,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "Unburdening the Fisherman",
+      "text": "Months had passed since the spring flood, yet every time he closed his eyes, he heard the timber beams of his cottage snapping against the wall of water.",
+      "start": 99.38,
+      "end": 110.35,
+      "sentence": 16,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "every time he closed his eyes, he heard the timber beams of his cottage snapping against the wall of water."
+        }
+      ]
+    },
+    {
+      "index": 17,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "Unburdening the Fisherman",
+      "text": "He could still see his nets tearing in the mud, his livestock drowning in the dark.",
+      "start": 110.7,
+      "end": 116.97,
+      "sentence": 17,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "He could still see his nets tearing in the mud, his livestock drowning in the dark."
+        }
+      ]
+    },
+    {
+      "index": 18,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "Unburdening the Fisherman",
+      "text": "The Ferryman lifted his hand, holding his broad palm steady beneath the rising sun.",
+      "start": 117.67,
+      "end": 123.16,
+      "sentence": 18,
+      "tags": []
+    },
+    {
+      "index": 19,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "Unburdening the Fisherman",
+      "text": "The Fisherman leaned down and breathed the terror of that night into the old man's grip—the roaring water, the screaming wind, the loss of everything he owned.",
+      "start": 123.51,
+      "end": 134.48,
+      "sentence": 19,
+      "tags": []
+    },
+    {
+      "index": 20,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "Unburdening the Fisherman",
+      "text": "The Ferryman closed his fingers tight.",
+      "start": 135.18,
+      "end": 137.53,
+      "sentence": 20,
+      "tags": []
+    },
+    {
+      "index": 21,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "Unburdening the Fisherman",
+      "text": "When he opened them, a second smooth pale stone rested in his hand.",
+      "start": 137.88,
+      "end": 142.98,
+      "sentence": 21,
+      "tags": []
+    },
+    {
+      "index": 22,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "Unburdening the Fisherman",
+      "text": "He placed it beside the first on the timber floorboards of the hull.",
+      "start": 143.33,
+      "end": 148.42,
+      "sentence": 22,
+      "tags": []
+    },
+    {
+      "index": 23,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "Unburdening the Fisherman",
+      "text": "The Fisherman exhaled deeply.",
+      "start": 149.12,
+      "end": 150.69,
+      "sentence": 23,
+      "tags": []
+    },
+    {
+      "index": 24,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "Unburdening the Fisherman",
+      "text": "He smoothed his cap, slung his rope higher, and looked out across the quiet grey water.",
+      "start": 151.04,
+      "end": 157.31,
+      "sentence": 24,
+      "tags": []
+    },
+    {
+      "index": 25,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "Unburdening the Fisherman",
+      "text": "The memory was gone.",
+      "start": 157.66,
+      "end": 159.23,
+      "sentence": 25,
+      "tags": []
+    },
+    {
+      "index": 26,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "Unburdening the Fisherman",
+      "text": "He no longer remembered why he had ever feared the river's mudbank, or why he had wept upon the shore.",
+      "start": 159.58,
+      "end": 167.42,
+      "sentence": 26,
+      "tags": []
+    },
+    {
+      "index": 27,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "Unburdening the Fisherman",
+      "text": "He smiled, unburdened and light.",
+      "start": 167.77,
+      "end": 169.73,
+      "sentence": 27,
+      "tags": []
+    },
+    {
+      "index": 28,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Mayor's Weekly Fare",
+      "text": "Word of the painless ferry spread through the cottages of Low Marrow.",
+      "start": 171.23,
+      "end": 175.93,
+      "sentence": 28,
+      "tags": []
+    },
+    {
+      "index": 29,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Mayor's Weekly Fare",
+      "text": "Before long, villagers arrived at the riverbank every day to trade away their shame, debts, and broken promises.",
+      "start": 176.28,
+      "end": 183.33,
+      "sentence": 29,
+      "tags": []
+    },
+    {
+      "index": 30,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Mayor's Weekly Fare",
+      "text": "The Mayor crossed most often of all.",
+      "start": 184.03,
+      "end": 186.78,
+      "sentence": 30,
+      "tags": []
+    },
+    {
+      "index": 31,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Mayor's Weekly Fare",
+      "text": "Stout and ruddy-faced, he wore a bright crimson sash and a heavy brass chain of office.",
+      "start": 187.13,
+      "end": 193.4,
+      "sentence": 31,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Stout and ruddy-faced, he wore a bright crimson sash and a heavy brass chain of office."
+        }
+      ]
+    },
+    {
+      "index": 32,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Mayor's Weekly Fare",
+      "text": "He stepped onto the ferry boat every week, flushed with temper from fierce town council disputes or public embarrassments.",
+      "start": 193.75,
+      "end": 201.19,
+      "sentence": 32,
+      "tags": []
+    },
+    {
+      "index": 33,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Mayor's Weekly Fare",
+      "text": "He reached habitually for his coin purse before remembering the fare.",
+      "start": 201.54,
+      "end": 205.85,
+      "sentence": 33,
+      "tags": []
+    },
+    {
+      "index": 34,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Mayor's Weekly Fare",
+      "text": "Leaning over the Ferryman's open palm, the Mayor whispered away the memory of his bad decisions and sharp words.",
+      "start": 206.55,
+      "end": 214.0,
+      "sentence": 34,
+      "tags": []
+    },
+    {
+      "index": 35,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Mayor's Weekly Fare",
+      "text": "The Ferryman closed his hand, produced another pale river stone, and set it carefully alongside the others.",
+      "start": 214.35,
+      "end": 221.01,
+      "sentence": 35,
+      "tags": []
+    },
+    {
+      "index": 36,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Mayor's Weekly Fare",
+      "text": "Immediately, the Mayor’s scowl vanished.",
+      "start": 221.71,
+      "end": 223.67,
+      "sentence": 36,
+      "tags": []
+    },
+    {
+      "index": 37,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Mayor's Weekly Fare",
+      "text": "He adjusted his brass chain, crossed his arms proudly over his sash, and laughed with unearned confidence as the boat drifted toward the market shore.",
+      "start": 224.02,
+      "end": 233.82,
+      "sentence": 37,
+      "tags": []
+    },
+    {
+      "index": 38,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Mayor's Weekly Fare",
+      "text": "The villagers grew light and kind, greeting each other with cheerful smiles in the muddy streets.",
+      "start": 234.52,
+      "end": 240.79,
+      "sentence": 38,
+      "tags": []
+    },
+    {
+      "index": 39,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Mayor's Weekly Fare",
+      "text": "But with each crossing, the Ferryman’s boat sat lower in the water.",
+      "start": 241.14,
+      "end": 245.84,
+      "sentence": 39,
+      "tags": [
+        {
+          "tag": "open_loop:boat_sinking",
+          "quote": "But with each crossing, the Ferryman’s boat sat lower in the water."
+        },
+        {
+          "tag": "escalation",
+          "quote": "But with each crossing, the Ferryman’s boat sat lower in the water."
+        }
+      ]
+    },
+    {
+      "index": 40,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Mayor's Weekly Fare",
+      "text": "The dark river line crept higher along the outer wooden planks, weighed down by the growing pile of pale stones resting inside the hull.",
+      "start": 246.19,
+      "end": 255.6,
+      "sentence": 40,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "The dark river line crept higher along the outer wooden planks, weighed down by the growing pile of pale stones resting inside the hull."
+        }
+      ]
+    },
+    {
+      "index": 41,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Rebuilding on the Mudbank",
+      "text": "Two months passed, bringing clear dawn light over the low banks of Low Marrow.",
+      "start": 257.1,
+      "end": 262.59,
+      "sentence": 41,
+      "tags": []
+    },
+    {
+      "index": 42,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Rebuilding on the Mudbank",
+      "text": "From the middle of the river, the Ferryman rested his heavy oars and watched the shore.",
+      "start": 262.94,
+      "end": 269.21,
+      "sentence": 42,
+      "tags": []
+    },
+    {
+      "index": 43,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Rebuilding on the Mudbank",
+      "text": "On the flat mudbank right at the water’s edge, the young Fisherman was hard at work.",
+      "start": 269.91,
+      "end": 276.18,
+      "sentence": 43,
+      "tags": []
+    },
+    {
+      "index": 44,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Rebuilding on the Mudbank",
+      "text": "He whistled a bright tune, driving thick timber posts into the dark silt with heavy iron blows.",
+      "start": 276.53,
+      "end": 283.19,
+      "sentence": 44,
+      "tags": []
+    },
+    {
+      "index": 45,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Rebuilding on the Mudbank",
+      "text": "Slung over his shoulder was the same coil of frayed rope he always carried, but his face held no shadow of past terror.",
+      "start": 283.54,
+      "end": 292.55,
+      "sentence": 45,
+      "tags": []
+    },
+    {
+      "index": 46,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Rebuilding on the Mudbank",
+      "text": "The Ferryman recognized the exact patch of ground.",
+      "start": 293.25,
+      "end": 296.39,
+      "sentence": 46,
+      "tags": []
+    },
+    {
+      "index": 47,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Rebuilding on the Mudbank",
+      "text": "Only two springs ago, the rising river had torn through this low bank, splintering the Fisherman’s cottage and sweeping his possessions downstream.",
+      "start": 296.74,
+      "end": 305.36,
+      "sentence": 47,
+      "tags": []
+    },
+    {
+      "index": 48,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Rebuilding on the Mudbank",
+      "text": "The Fisherman had stood on the shore then, weeping for everything he had lost.",
+      "start": 305.71,
+      "end": 311.2,
+      "sentence": 48,
+      "tags": []
+    },
+    {
+      "index": 49,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Rebuilding on the Mudbank",
+      "text": "Now, unburdened by the memory of that terrible thaw, the young man hammered his new foundations into the soft silt.",
+      "start": 311.9,
+      "end": 319.73,
+      "sentence": 49,
+      "tags": []
+    },
+    {
+      "index": 50,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Rebuilding on the Mudbank",
+      "text": "He smiled at the cool water lapping against his boots, unaware that he was building his home directly in the path of the next flood.",
+      "start": 320.08,
+      "end": 329.88,
+      "sentence": 50,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "unaware that he was building his home directly in the path of the next flood."
+        },
+        {
+          "tag": "escalation",
+          "quote": "unaware that he was building his home directly in the path of the next flood."
+        }
+      ]
+    },
+    {
+      "index": 51,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Rebuilding on the Mudbank",
+      "text": "Without the weight of past disaster to guide his hands, he walked joyfully back into the very danger that had once destroyed him.",
+      "start": 330.23,
+      "end": 339.24,
+      "sentence": 51,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Without the weight of past disaster to guide his hands, he walked joyfully back into the very danger that had once destroyed him."
+        }
+      ]
+    },
+    {
+      "index": 52,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "The New Bridge Plan",
+      "text": "By noon the following day, the Mayor stood on the muddy bank beside two ancient, moss-covered stone piers.",
+      "start": 340.74,
+      "end": 347.8,
+      "sentence": 52,
+      "tags": []
+    },
+    {
+      "index": 53,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "The New Bridge Plan",
+      "text": "Dark water swirled around the ruined masonry, all that remained of the old bridge that had collapsed long ago.",
+      "start": 348.15,
+      "end": 355.6,
+      "sentence": 53,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Dark water swirled around the ruined masonry, all that remained of the old bridge that had collapsed long ago."
+        }
+      ]
+    },
+    {
+      "index": 54,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "The New Bridge Plan",
+      "text": "Adjusting his heavy brass chain over his crimson sash, the Mayor gestured grandly toward the opposite shore.",
+      "start": 356.3,
+      "end": 362.96,
+      "sentence": 54,
+      "tags": []
+    },
+    {
+      "index": 55,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "The New Bridge Plan",
+      "text": "He announced a plan to construct a magnificent new stone bridge directly upon those broken piers, reconnecting the trade routes once and for all.",
+      "start": 363.31,
+      "end": 372.71,
+      "sentence": 55,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "He announced a plan to construct a magnificent new stone bridge directly upon those broken piers, reconnecting the trade routes once and for all."
+        }
+      ]
+    },
+    {
+      "index": 56,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "The New Bridge Plan",
+      "text": "The Ferryman pulled his wooden boat to the landing and stepped onto the mud.",
+      "start": 373.41,
+      "end": 378.9,
+      "sentence": 56,
+      "tags": []
+    },
+    {
+      "index": 57,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "The New Bridge Plan",
+      "text": "He looked at the cracked stone, then spoke directly to the civic leader.",
+      "start": 379.25,
+      "end": 384.34,
+      "sentence": 57,
+      "tags": []
+    },
+    {
+      "index": 58,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "The New Bridge Plan",
+      "text": "\"The riverbed beneath those piers is soft sand,\" the Ferryman said.",
+      "start": 385.04,
+      "end": 389.36,
+      "sentence": 58,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"The riverbed beneath those piers is soft sand,\" the Ferryman said."
+        }
+      ]
+    },
+    {
+      "index": 59,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "The New Bridge Plan",
+      "text": "\"When the spring tides rise, the current undercuts the foundation.",
+      "start": 389.71,
+      "end": 393.62,
+      "sentence": 59,
+      "tags": []
+    },
+    {
+      "index": 60,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "The New Bridge Plan",
+      "text": "That is why the old bridge cracked and fell.\"",
+      "start": 393.97,
+      "end": 397.5,
+      "sentence": 60,
+      "tags": []
+    },
+    {
+      "index": 61,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "The New Bridge Plan",
+      "text": "The Mayor’s cheerful expression faltered.",
+      "start": 398.2,
+      "end": 400.16,
+      "sentence": 61,
+      "tags": []
+    },
+    {
+      "index": 62,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "The New Bridge Plan",
+      "text": "A sudden wave of irritation and sharp anxiety tightened his chest.",
+      "start": 400.51,
+      "end": 404.82,
+      "sentence": 62,
+      "tags": []
+    },
+    {
+      "index": 63,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "The New Bridge Plan",
+      "text": "The Ferryman’s words stirred an uncomfortable doubt he did not wish to bear.",
+      "start": 405.17,
+      "end": 410.27,
+      "sentence": 63,
+      "tags": []
+    },
+    {
+      "index": 64,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "The New Bridge Plan",
+      "text": "The Mayor stared at the piers, his pride wounded by the sudden threat of failure.",
+      "start": 410.62,
+      "end": 416.5,
+      "sentence": 64,
+      "tags": []
+    },
+    {
+      "index": 65,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "The New Bridge Plan",
+      "text": "Refusing to let caution derail his grand project, the Mayor turned away from the river and eyed the Ferryman's waiting boat.",
+      "start": 417.2,
+      "end": 425.43,
+      "sentence": 65,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "Refusing to let caution derail his grand project, the Mayor turned away from the river and eyed the Ferryman's waiting boat."
+        }
+      ]
+    },
+    {
+      "index": 66,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Trading the Warning",
+      "text": "Late that afternoon, as the sun dipped behind the timber cottages, the Mayor stepped onto the wooden ferry.",
+      "start": 426.93,
+      "end": 433.98,
+      "sentence": 66,
+      "tags": []
+    },
+    {
+      "index": 67,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Trading the Warning",
+      "text": "He could not endure the lingering worry that the new bridge might collapse.",
+      "start": 434.33,
+      "end": 439.42,
+      "sentence": 67,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "He could not endure the lingering worry that the new bridge might collapse."
+        }
+      ]
+    },
+    {
+      "index": 68,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Trading the Warning",
+      "text": "Leaning close to the Ferryman’s stooped shoulder, the Mayor cupped his hands and whispered the warning he had just received into the Ferryman’s open palm.",
+      "start": 440.12,
+      "end": 449.92,
+      "sentence": 68,
+      "tags": []
+    },
+    {
+      "index": 69,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Trading the Warning",
+      "text": "He handed over the memory of the soft riverbed, the crumbling sand, and the Ferryman’s grave words.",
+      "start": 450.27,
+      "end": 456.93,
+      "sentence": 69,
+      "tags": []
+    },
+    {
+      "index": 70,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Trading the Warning",
+      "text": "The Ferryman closed his dark fingers around the spoken secret.",
+      "start": 457.63,
+      "end": 461.55,
+      "sentence": 70,
+      "tags": []
+    },
+    {
+      "index": 71,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Trading the Warning",
+      "text": "When he opened his hand, a smooth pale stone rested in his palm.",
+      "start": 461.9,
+      "end": 467.0,
+      "sentence": 71,
+      "tags": []
+    },
+    {
+      "index": 72,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Trading the Warning",
+      "text": "He laid the stone carefully into the bottom of the hull alongside the dozens already gathered there.",
+      "start": 467.35,
+      "end": 474.01,
+      "sentence": 72,
+      "tags": []
+    },
+    {
+      "index": 73,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Trading the Warning",
+      "text": "With a deep breath, the Mayor stood tall.",
+      "start": 474.71,
+      "end": 477.85,
+      "sentence": 73,
+      "tags": []
+    },
+    {
+      "index": 74,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Trading the Warning",
+      "text": "The anxious crease on his brow vanished entirely.",
+      "start": 478.2,
+      "end": 481.33,
+      "sentence": 74,
+      "tags": []
+    },
+    {
+      "index": 75,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Trading the Warning",
+      "text": "He adjusted his brass chain, smiled at the distant shoreline, and forgot that anyone had ever spoken of danger.",
+      "start": 481.68,
+      "end": 489.13,
+      "sentence": 75,
+      "tags": []
+    },
+    {
+      "index": 76,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Trading the Warning",
+      "text": "The Ferryman watched the Mayor step onto the far bank with unburdened confidence.",
+      "start": 489.83,
+      "end": 494.92,
+      "sentence": 76,
+      "tags": []
+    },
+    {
+      "index": 77,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Trading the Warning",
+      "text": "But inside the hull, the new stone pressed down with sudden weight.",
+      "start": 495.27,
+      "end": 499.97,
+      "sentence": 77,
+      "tags": []
+    },
+    {
+      "index": 78,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Trading the Warning",
+      "text": "The wooden boat settled deeper into the river, its upper rim floating mere inches above the dark, silent water.",
+      "start": 500.32,
+      "end": 507.77,
+      "sentence": 78,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "The wooden boat settled deeper into the river, its upper rim floating mere inches above the dark, silent water."
+        }
+      ]
+    },
+    {
+      "index": 79,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "reversal",
+      "title": "The Keeper of Reasons",
+      "text": "Dusk settled over the grey river as workers laid the final arch of the new stone bridge directly upon the ancient, cracked piers.",
+      "start": 509.27,
+      "end": 518.28,
+      "sentence": 79,
+      "tags": []
+    },
+    {
+      "index": 80,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "reversal",
+      "title": "The Keeper of Reasons",
+      "text": "Standing at the water’s edge, the Ferryman looked up at the structure, then turned to the Mayor.",
+      "start": 518.63,
+      "end": 525.3,
+      "sentence": 80,
+      "tags": []
+    },
+    {
+      "index": 81,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "reversal",
+      "title": "The Keeper of Reasons",
+      "text": "For the first time, the Ferryman broke his silence.",
+      "start": 526.0,
+      "end": 529.52,
+      "sentence": 81,
+      "tags": []
+    },
+    {
+      "index": 82,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "reversal",
+      "title": "The Keeper of Reasons",
+      "text": "He described how sixty winters ago, heavy rains had scoured the sandy riverbed, causing those exact piers to tilt and crumble beneath the masonry.",
+      "start": 529.87,
+      "end": 539.28,
+      "sentence": 82,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "how sixty winters ago, heavy rains had scoured the sandy riverbed, causing those exact piers to tilt and crumble beneath the masonry."
+        }
+      ]
+    },
+    {
+      "index": 83,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "reversal",
+      "title": "The Keeper of Reasons",
+      "text": "He spoke of the families who had wept, the ruined trade, and the hard lessons the village had once pledged never to abandon.",
+      "start": 539.63,
+      "end": 548.64,
+      "sentence": 83,
+      "tags": []
+    },
+    {
+      "index": 84,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "reversal",
+      "title": "The Keeper of Reasons",
+      "text": "He explained that in surrendering their grief to his boat, they had not merely discarded their pain; they had given away every reason they possessed for caution.",
+      "start": 548.99,
+      "end": 559.57,
+      "sentence": 84,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "they had given away every reason they possessed for caution."
+        }
+      ]
+    },
+    {
+      "index": 85,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "reversal",
+      "title": "The Keeper of Reasons",
+      "text": "The Mayor listened politely, a soft smile resting on his face.",
+      "start": 560.27,
+      "end": 564.58,
+      "sentence": 85,
+      "tags": []
+    },
+    {
+      "index": 86,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "reversal",
+      "title": "The Keeper of Reasons",
+      "text": "He smoothed down his crimson sash, then held out an open palm over the ferry’s rim.",
+      "start": 564.93,
+      "end": 571.21,
+      "sentence": 86,
+      "tags": []
+    },
+    {
+      "index": 87,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "reversal",
+      "title": "The Keeper of Reasons",
+      "text": "\"And what would it cost to forget this too?\"",
+      "start": 571.91,
+      "end": 575.43,
+      "sentence": 87,
+      "tags": [
+        {
+          "tag": "question",
+          "quote": "\"And what would it cost to forget this too?\""
+        },
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"And what would it cost to forget this too?\""
+        }
+      ]
+    },
+    {
+      "index": 88,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "reversal",
+      "title": "The Keeper of Reasons",
+      "text": "The Ferryman stared down at the outstretched hand.",
+      "start": 576.13,
+      "end": 579.27,
+      "sentence": 88,
+      "tags": []
+    },
+    {
+      "index": 89,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "reversal",
+      "title": "The Keeper of Reasons",
+      "text": "He realized the quiet terror of his trade: any truth he offered would only be returned to him as another fare.",
+      "start": 579.62,
+      "end": 587.85,
+      "sentence": 89,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "any truth he offered would only be returned to him as another fare."
+        },
+        {
+          "tag": "reveal",
+          "quote": "any truth he offered would only be returned to him as another fare."
+        }
+      ]
+    },
+    {
+      "index": 90,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "reversal",
+      "title": "The Keeper of Reasons",
+      "text": "Without a word, he closed his fingers over the Mayor’s secret, placing the fresh stone into the crowded hull.",
+      "start": 588.2,
+      "end": 595.64,
+      "sentence": 90,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "Without a word, he closed his fingers over the Mayor’s secret, placing the fresh stone into the crowded hull."
+        }
+      ]
+    },
+    {
+      "index": 91,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Spring Thaw",
+      "text": "When the spring thaw arrived, the mountains shed their winter snow into swollen torrents.",
+      "start": 597.14,
+      "end": 602.63,
+      "sentence": 91,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "When the spring thaw arrived, the mountains shed their winter snow into swollen torrents."
+        }
+      ]
+    },
+    {
+      "index": 92,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Spring Thaw",
+      "text": "A massive surge of water rushed down the valley, battering the stone piers.",
+      "start": 602.98,
+      "end": 608.07,
+      "sentence": 92,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "A massive surge of water rushed down the valley, battering the stone piers."
+        }
+      ]
+    },
+    {
+      "index": 93,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Spring Thaw",
+      "text": "Just as before, the soft sand beneath the riverbed washed away in the heavy current.",
+      "start": 608.42,
+      "end": 614.3,
+      "sentence": 93,
+      "tags": []
+    },
+    {
+      "index": 94,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Spring Thaw",
+      "text": "Without solid ground below, the ancient stone piers cracked under the pressure.",
+      "start": 615.0,
+      "end": 619.71,
+      "sentence": 94,
+      "tags": []
+    },
+    {
+      "index": 95,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Spring Thaw",
+      "text": "The new bridge buckled, its fresh masonry splitting down the middle before plunging into the foam.",
+      "start": 620.06,
+      "end": 626.33,
+      "sentence": 95,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "The new bridge buckled, its fresh masonry splitting down the middle before plunging into the foam."
+        }
+      ]
+    },
+    {
+      "index": 96,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Spring Thaw",
+      "text": "Downstream, the rising river swept across the mudbank, carrying off the Fisherman’s timber hut as though it were driftwood.",
+      "start": 626.68,
+      "end": 634.12,
+      "sentence": 96,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "Downstream, the rising river swept across the mudbank, carrying off the Fisherman’s timber hut as though it were driftwood."
+        }
+      ]
+    },
+    {
+      "index": 97,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Spring Thaw",
+      "text": "At the ferry landing, the wooden boat churned against its mooring post.",
+      "start": 634.82,
+      "end": 639.53,
+      "sentence": 97,
+      "tags": []
+    },
+    {
+      "index": 98,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Spring Thaw",
+      "text": "Hundreds of pale stones sat packed inside the hull, dragging the wooden rim level with the river.",
+      "start": 639.88,
+      "end": 646.54,
+      "sentence": 98,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "Hundreds of pale stones sat packed inside the hull, dragging the wooden rim level with the river."
+        }
+      ]
+    },
+    {
+      "index": 99,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Spring Thaw",
+      "text": "A wave broke over the stern.",
+      "start": 646.89,
+      "end": 649.24,
+      "sentence": 99,
+      "tags": []
+    },
+    {
+      "index": 100,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Spring Thaw",
+      "text": "Weighted down by forgotten quarrels, debts, and erased warnings, the boat filled rapidly.",
+      "start": 649.59,
+      "end": 654.68,
+      "sentence": 100,
+      "tags": []
+    },
+    {
+      "index": 101,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Spring Thaw",
+      "text": "The rope tether snapped.",
+      "start": 655.03,
+      "end": 656.6,
+      "sentence": 101,
+      "tags": []
+    },
+    {
+      "index": 102,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Spring Thaw",
+      "text": "Slowly, the ferry sank to the silted riverbed, its cargo scattering across the submerged rocks.",
+      "start": 656.95,
+      "end": 662.83,
+      "sentence": 102,
+      "tags": [
+        {
+          "tag": "close_loop:boat_sinking",
+          "quote": "Slowly, the ferry sank to the silted riverbed, its cargo scattering across the submerged rocks."
+        }
+      ]
+    },
+    {
+      "index": 103,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Spring Thaw",
+      "text": "No lives were lost in the sudden surge.",
+      "start": 663.53,
+      "end": 666.67,
+      "sentence": 103,
+      "tags": []
+    },
+    {
+      "index": 104,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Spring Thaw",
+      "text": "At dawn, the river quieted into placid water.",
+      "start": 667.02,
+      "end": 670.15,
+      "sentence": 104,
+      "tags": []
+    },
+    {
+      "index": 105,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Spring Thaw",
+      "text": "The townspeople gathered on the bank, staring in bewilderment at the empty sky where their structure had stood.",
+      "start": 670.5,
+      "end": 677.55,
+      "sentence": 105,
+      "tags": []
+    },
+    {
+      "index": 106,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The River Remembers",
+      "text": "The Mayor stroked his chain of office, gazing out across the water and shaking his head at the ruined piers.",
+      "start": 679.05,
+      "end": 686.89,
+      "sentence": 106,
+      "tags": []
+    },
+    {
+      "index": 107,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The River Remembers",
+      "text": "\"Who would build a bridge there?\"",
+      "start": 687.59,
+      "end": 689.94,
+      "sentence": 107,
+      "tags": [
+        {
+          "tag": "question",
+          "quote": "\"Who would build a bridge there?\""
+        },
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Who would build a bridge there?\""
+        }
+      ]
+    },
+    {
+      "index": 108,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The River Remembers",
+      "text": "The Ferryman looked down through the clear water at the pale stones resting quietly on the riverbed.",
+      "start": 690.64,
+      "end": 697.31,
+      "sentence": 108,
+      "tags": []
+    },
+    {
+      "index": 109,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The River Remembers",
+      "text": "He recognized every discarded secret scattered across the silt.",
+      "start": 697.66,
+      "end": 701.18,
+      "sentence": 109,
+      "tags": []
+    },
+    {
+      "index": 110,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The River Remembers",
+      "text": "Without speaking, he retrieved his broadaxe and began shaping fresh timber for a new boat.",
+      "start": 701.53,
+      "end": 707.41,
+      "sentence": 110,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "Without speaking, he retrieved his broadaxe and began shaping fresh timber for a new boat."
+        }
+      ]
+    },
+    {
+      "index": 111,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The River Remembers",
+      "text": "Before the first frame was set, a villager stepped forward and held out an open palm.",
+      "start": 708.11,
+      "end": 714.38,
+      "sentence": 111,
+      "tags": []
+    },
+    {
+      "index": 112,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The River Remembers",
+      "text": "\"What does it cost?\"",
+      "start": 715.08,
+      "end": 716.65,
+      "sentence": 112,
+      "tags": [
+        {
+          "tag": "question",
+          "quote": "\"What does it cost?\""
+        },
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"What does it cost?\""
+        }
+      ]
+    },
+    {
+      "index": 113,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The River Remembers",
+      "text": "In Low Marrow, the river remembers everything.",
+      "start": 717.35,
+      "end": 720.09,
+      "sentence": 113,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "In Low Marrow, the river remembers everything."
+        }
+      ]
+    },
+    {
+      "index": 114,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The River Remembers",
+      "text": "The people only remember the price.",
+      "start": 720.44,
+      "end": 722.79,
+      "sentence": 114,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "The people only remember the price."
+        }
+      ]
+    }
+  ]
+}

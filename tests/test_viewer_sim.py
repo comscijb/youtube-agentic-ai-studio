@@ -97,3 +97,23 @@ class RunTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CalibrationScriptTests(unittest.TestCase):
+    def test_rows_compare_a_recorded_simulation_with_the_real_curve(self):
+        import tempfile as _tempfile
+        from pathlib import Path as _Path
+        from agents.narrative import atomic_write_json
+        from scripts import attention_calibration
+        with _tempfile.TemporaryDirectory() as temp:
+            recorded = _Path(temp, "recorded")
+            atomic_write_json(_Path(temp, "calibration.json"), {"sunrise": {"slug": "2026-11-12-sunrise"}})
+            atomic_write_json(recorded / "sunrise" / "viewer_sim.json", {"duration": 100, "personas": [{"first_leave_second": 20}],
+                                                                       "predicted_retention": [{"start": t * 10, "share": 1 - t / 20} for t in range(10)]})
+            ledger = {"publications": [{"video_id": "v1", "project": "2026-11-12-sunrise", "state": "published"}]}
+            curve = [{"ratio": r / 10, "watch": 1 - r / 20} for r in range(11)]
+            with patch("uploader.publications.load_ledger", return_value=ledger), \
+                    patch("uploader.analytics.cached", return_value={"retention": curve}):
+                found = attention_calibration.rows(recorded)
+        self.assertEqual(found[0]["video_id"], "v1")
+        self.assertGreater(found[0]["correlation"], 0.9)

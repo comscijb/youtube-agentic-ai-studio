@@ -1,0 +1,1911 @@
+{
+  "key": "c9d31309bff50a6f060ed5d84adefed708aadf9769eb3cce1060fce758a39b90",
+  "version": 1,
+  "duration": 693.3,
+  "discarded_tags": 0,
+  "sentences": [
+    {
+      "index": 0,
+      "scene_id": "s00",
+      "section": 0,
+      "section_type": "cold_open",
+      "title": "The Counter File",
+      "text": "Late at night, Hannah froze over the editing timeline.",
+      "start": 0.0,
+      "end": 3.53,
+      "sentence": 0,
+      "tags": []
+    },
+    {
+      "index": 1,
+      "scene_id": "s00",
+      "section": 0,
+      "section_type": "cold_open",
+      "title": "The Counter File",
+      "text": "Across two monitors stretched nine thousand clips, an archive documenting every day of her son's youth.",
+      "start": 3.88,
+      "end": 10.15,
+      "sentence": 1,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Across two monitors stretched nine thousand clips, an archive documenting every day of her son's youth."
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "scene_id": "s00",
+      "section": 0,
+      "section_type": "cold_open",
+      "title": "The Counter File",
+      "text": "Her finger stalled on the spacebar.",
+      "start": 10.5,
+      "end": 12.85,
+      "sentence": 2,
+      "tags": []
+    },
+    {
+      "index": 3,
+      "scene_id": "s00",
+      "section": 0,
+      "section_type": "cold_open",
+      "title": "The Counter File",
+      "text": "An uncatalogued thumbnail from six years earlier sat forgotten between files.",
+      "start": 13.2,
+      "end": 17.51,
+      "sentence": 3,
+      "tags": [
+        {
+          "tag": "open_loop:uncatalogued_file",
+          "quote": "An uncatalogued thumbnail from six years earlier sat forgotten between files."
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "scene_id": "s00",
+      "section": 0,
+      "section_type": "cold_open",
+      "title": "The Counter File",
+      "text": "She clicked play, and her hand rose slowly to cover her mouth.",
+      "start": 17.86,
+      "end": 22.56,
+      "sentence": 4,
+      "tags": []
+    },
+    {
+      "index": 5,
+      "scene_id": "s00",
+      "section": 0,
+      "section_type": "cold_open",
+      "title": "The Counter File",
+      "text": "In eleven years of video, there was only one where she could see her own face.",
+      "start": 22.91,
+      "end": 29.18,
+      "sentence": 5,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "In eleven years of video, there was only one where she could see her own face."
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "scene_id": "s00",
+      "section": 0,
+      "section_type": "cold_open",
+      "title": "The Counter File",
+      "text": "What had she actually recorded?",
+      "start": 29.53,
+      "end": 31.49,
+      "sentence": 6,
+      "tags": [
+        {
+          "tag": "question",
+          "quote": "What had she actually recorded?"
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "Three, Two, One",
+      "text": "Three weeks earlier, Leo turned twelve.",
+      "start": 32.99,
+      "end": 35.34,
+      "sentence": 7,
+      "tags": []
+    },
+    {
+      "index": 8,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "Three, Two, One",
+      "text": "In the sunlit kitchen, Hannah balanced the frosted vanilla sponge on the marble counter, adjusting the phone mounted to her handheld gimbal until the frame aligned.",
+      "start": 36.04,
+      "end": 46.23,
+      "sentence": 8,
+      "tags": []
+    },
+    {
+      "index": 9,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "Three, Two, One",
+      "text": "The circular white ring light reflected in the stainless steel backsplash.",
+      "start": 46.58,
+      "end": 50.89,
+      "sentence": 9,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "The circular white ring light reflected in the stainless steel backsplash."
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "Three, Two, One",
+      "text": "\"Check your collar, sweetie,\" she said, stepping back to check the composition.",
+      "start": 51.59,
+      "end": 56.3,
+      "sentence": 10,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "Check your collar, sweetie"
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "Three, Two, One",
+      "text": "\"Hair out of your eyes.\"",
+      "start": 56.65,
+      "end": 58.61,
+      "sentence": 11,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "Hair out of your eyes."
+        }
+      ]
+    },
+    {
+      "index": 12,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "Three, Two, One",
+      "text": "Leo smoothed his grey hoodie with both hands.",
+      "start": 59.31,
+      "end": 62.44,
+      "sentence": 12,
+      "tags": []
+    },
+    {
+      "index": 13,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "Three, Two, One",
+      "text": "He sat obediently behind twelve lit candles, his posture straight, waiting for the cue he had known since nursery school.",
+      "start": 62.79,
+      "end": 70.63,
+      "sentence": 13,
+      "tags": []
+    },
+    {
+      "index": 14,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "Three, Two, One",
+      "text": "The wax began pooling on the blue frosting.",
+      "start": 70.98,
+      "end": 74.12,
+      "sentence": 14,
+      "tags": []
+    },
+    {
+      "index": 15,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "Three, Two, One",
+      "text": "Hannah lifted the rig to eye level.",
+      "start": 74.82,
+      "end": 77.56,
+      "sentence": 15,
+      "tags": []
+    },
+    {
+      "index": 16,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "Three, Two, One",
+      "text": "\"Big smile for the thumbnail.",
+      "start": 77.91,
+      "end": 79.87,
+      "sentence": 16,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "Big smile for the thumbnail."
+        }
+      ]
+    },
+    {
+      "index": 17,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "Three, Two, One",
+      "text": "Three, two, one.\"",
+      "start": 80.22,
+      "end": 81.39,
+      "sentence": 17,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "Three, two, one."
+        }
+      ]
+    },
+    {
+      "index": 18,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "Three, Two, One",
+      "text": "The tiny red tally indicator appeared on her screen.",
+      "start": 82.09,
+      "end": 85.62,
+      "sentence": 18,
+      "tags": []
+    },
+    {
+      "index": 19,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "Three, Two, One",
+      "text": "Leo did not smile.",
+      "start": 86.32,
+      "end": 87.89,
+      "sentence": 19,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "Leo did not smile."
+        }
+      ]
+    },
+    {
+      "index": 20,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "Three, Two, One",
+      "text": "He kept his chin down, staring directly into the trembling orange flames rather than up toward the camera.",
+      "start": 88.24,
+      "end": 95.29,
+      "sentence": 20,
+      "tags": []
+    },
+    {
+      "index": 21,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "Three, Two, One",
+      "text": "\"Leo?",
+      "start": 95.99,
+      "end": 96.38,
+      "sentence": 21,
+      "tags": [
+        {
+          "tag": "question",
+          "quote": "Leo?"
+        },
+        {
+          "tag": "dialogue_turn",
+          "quote": "Leo?"
+        }
+      ]
+    },
+    {
+      "index": 22,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "Three, Two, One",
+      "text": "Hannah lowered the gimbal an inch, peering over the top edge of the casing.",
+      "start": 96.73,
+      "end": 102.22,
+      "sentence": 22,
+      "tags": []
+    },
+    {
+      "index": 23,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "Three, Two, One",
+      "text": "\"You need to look at the lens, honey.\"",
+      "start": 102.57,
+      "end": 105.71,
+      "sentence": 23,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "You need to look at the lens, honey."
+        }
+      ]
+    },
+    {
+      "index": 24,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "Three, Two, One",
+      "text": "The boy did not look up.",
+      "start": 106.41,
+      "end": 108.76,
+      "sentence": 24,
+      "tags": []
+    },
+    {
+      "index": 25,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "Three, Two, One",
+      "text": "His hands stayed flat against the counter.",
+      "start": 109.11,
+      "end": 111.85,
+      "sentence": 25,
+      "tags": []
+    },
+    {
+      "index": 26,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "Three, Two, One",
+      "text": "\"Mom, can I have one birthday that isn't content?\"",
+      "start": 112.55,
+      "end": 116.08,
+      "sentence": 26,
+      "tags": [
+        {
+          "tag": "question",
+          "quote": "Mom, can I have one birthday that isn't content?"
+        },
+        {
+          "tag": "dialogue_turn",
+          "quote": "Mom, can I have one birthday that isn't content?"
+        },
+        {
+          "tag": "open_loop:leo_plea",
+          "quote": "Mom, can I have one birthday that isn't content?"
+        },
+        {
+          "tag": "escalation",
+          "quote": "Mom, can I have one birthday that isn't content?"
+        }
+      ]
+    },
+    {
+      "index": 27,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "Three, Two, One",
+      "text": "The words dropped into the bright room without anger.",
+      "start": 116.78,
+      "end": 120.31,
+      "sentence": 27,
+      "tags": []
+    },
+    {
+      "index": 28,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "Three, Two, One",
+      "text": "The kitchen hummed under the ventilation fan, and Hannah stood behind the phone, her thumb still holding the digital shutter.",
+      "start": 120.66,
+      "end": 128.49,
+      "sentence": 28,
+      "tags": []
+    },
+    {
+      "index": 29,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "Proof of Life",
+      "text": "Leo pushed his chair back and walked upstairs, leaving the candles to burn down to the wax stubs.",
+      "start": 129.99,
+      "end": 137.05,
+      "sentence": 29,
+      "tags": []
+    },
+    {
+      "index": 30,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "Proof of Life",
+      "text": "Hannah stepped into the hallway.",
+      "start": 137.75,
+      "end": 139.71,
+      "sentence": 30,
+      "tags": []
+    },
+    {
+      "index": 31,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "Proof of Life",
+      "text": "The walls were covered in framed eight-by-ten prints, all extracted from channel uploads: Leo at six months splashing in a zinc tub, Leo on his first scooter, Leo grinning through chickenpox.",
+      "start": 140.06,
+      "end": 152.21,
+      "sentence": 31,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "The walls were covered in framed eight-by-ten prints, all extracted from channel uploads: Leo at six months splashing in a zinc tub, Leo on his first scooter, Leo grinning through chickenpox."
+        }
+      ]
+    },
+    {
+      "index": 32,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "Proof of Life",
+      "text": "She touched the corner of an oak frame.",
+      "start": 152.91,
+      "end": 156.04,
+      "sentence": 32,
+      "tags": []
+    },
+    {
+      "index": 33,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "Proof of Life",
+      "text": "In the dresser drawer in her mother’s spare bedroom, there had been two yellowing receipts and an expired passport with a clipped corner.",
+      "start": 156.74,
+      "end": 165.75,
+      "sentence": 33,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "In the dresser drawer in her mother’s spare bedroom, there had been two yellowing receipts and an expired passport with a clipped corner."
+        }
+      ]
+    },
+    {
+      "index": 34,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "Proof of Life",
+      "text": "Her mother had never owned a camera, never bought a baby book, never saved a drawing from elementary school.",
+      "start": 166.1,
+      "end": 173.55,
+      "sentence": 34,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Her mother had never owned a camera, never bought a baby book, never saved a drawing from elementary school."
+        }
+      ]
+    },
+    {
+      "index": 35,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "Proof of Life",
+      "text": "When Hannah left home at eighteen, her childhood remained solely in her head, fading like unwashed ink.",
+      "start": 173.9,
+      "end": 180.56,
+      "sentence": 35,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "When Hannah left home at eighteen, her childhood remained solely in her head, fading like unwashed ink."
+        }
+      ]
+    },
+    {
+      "index": 36,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "Proof of Life",
+      "text": "Without pictures, arguments about what happened were impossible to win; her mother could simply say an afternoon never occurred.",
+      "start": 180.91,
+      "end": 188.36,
+      "sentence": 36,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Without pictures, arguments about what happened were impossible to win; her mother could simply say an afternoon never occurred."
+        }
+      ]
+    },
+    {
+      "index": 37,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "Proof of Life",
+      "text": "After the divorce stripped her savings and left her in an unfurnished rental, the panic had returned.",
+      "start": 189.06,
+      "end": 195.72,
+      "sentence": 37,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "After the divorce stripped her savings and left her in an unfurnished rental, the panic had returned."
+        }
+      ]
+    },
+    {
+      "index": 38,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "Proof of Life",
+      "text": "She bought a second-hand phone and filmed Leo’s unsteady first steps across linoleum.",
+      "start": 196.07,
+      "end": 201.17,
+      "sentence": 38,
+      "tags": []
+    },
+    {
+      "index": 39,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "Proof of Life",
+      "text": "When strangers watched and commented, the ground beneath her feet solidified.",
+      "start": 201.52,
+      "end": 205.83,
+      "sentence": 39,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "When strangers watched and commented, the ground beneath her feet solidified."
+        }
+      ]
+    },
+    {
+      "index": 40,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "Proof of Life",
+      "text": "If an experience was recorded, it could not disappear.",
+      "start": 206.53,
+      "end": 210.05,
+      "sentence": 40,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "If an experience was recorded, it could not disappear."
+        }
+      ]
+    },
+    {
+      "index": 41,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "Proof of Life",
+      "text": "She had built this home from those daily files, proof by proof, brick by digital brick.",
+      "start": 210.4,
+      "end": 216.67,
+      "sentence": 41,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "She had built this home from those daily files, proof by proof, brick by digital brick."
+        }
+      ]
+    },
+    {
+      "index": 42,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "Proof of Life",
+      "text": "Every fever, every lost shoe, every milestone was safe inside hard drives.",
+      "start": 217.02,
+      "end": 221.73,
+      "sentence": 42,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Every fever, every lost shoe, every milestone was safe inside hard drives."
+        }
+      ]
+    },
+    {
+      "index": 43,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "Proof of Life",
+      "text": "She was not exploiting him; she was protecting him from the erasure that had swallowed her whole.",
+      "start": 222.08,
+      "end": 228.74,
+      "sentence": 43,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "She was not exploiting him; she was protecting him from the erasure that had swallowed her whole."
+        }
+      ]
+    },
+    {
+      "index": 44,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Inventory",
+      "text": "The following afternoon, Priya’s voice boomed through the speakerphone on the marble kitchen island.",
+      "start": 230.24,
+      "end": 235.73,
+      "sentence": 44,
+      "tags": []
+    },
+    {
+      "index": 45,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Inventory",
+      "text": "\"The engagement numbers on the preview clip are unbelievable, Hannah,\" Priya declared, her tone bright with commercial triumph.",
+      "start": 236.43,
+      "end": 243.48,
+      "sentence": 45,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "The engagement numbers on the preview clip are unbelievable, Hannah"
+        }
+      ]
+    },
+    {
+      "index": 46,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Inventory",
+      "text": "\"The brand wants to lock in the exclusive anniversary package before Friday.",
+      "start": 243.83,
+      "end": 248.53,
+      "sentence": 46,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "The brand wants to lock in the exclusive anniversary package before Friday."
+        }
+      ]
+    },
+    {
+      "index": 47,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Inventory",
+      "text": "It’s our highest sponsorship offer this year.\"",
+      "start": 248.88,
+      "end": 251.63,
+      "sentence": 47,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "It’s our highest sponsorship offer this year."
+        },
+        {
+          "tag": "escalation",
+          "quote": "It’s our highest sponsorship offer this year."
+        }
+      ]
+    },
+    {
+      "index": 48,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Inventory",
+      "text": "Hannah looked around her bright, spotless kitchen.",
+      "start": 252.33,
+      "end": 255.07,
+      "sentence": 48,
+      "tags": []
+    },
+    {
+      "index": 49,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Inventory",
+      "text": "The quartz countertops, the stainless steel appliances, the mortgage paid in full every month—all of it existed because she had chosen never to put the camera down.",
+      "start": 255.42,
+      "end": 266.39,
+      "sentence": 49,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "The quartz countertops, the stainless steel appliances, the mortgage paid in full every month—all of it existed because she had chosen never to put the camera down."
+        }
+      ]
+    },
+    {
+      "index": 50,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Inventory",
+      "text": "When the divorce left her broke, recording Leo’s first steps had brought in millions of views.",
+      "start": 267.09,
+      "end": 273.36,
+      "sentence": 50,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "When the divorce left her broke, recording Leo’s first steps had brought in millions of views."
+        }
+      ]
+    },
+    {
+      "index": 51,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Inventory",
+      "text": "Complete strangers wrote to say they felt like they were watching her boy grow up in real time.",
+      "start": 273.71,
+      "end": 280.77,
+      "sentence": 51,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Complete strangers wrote to say they felt like they were watching her boy grow up in real time."
+        }
+      ]
+    },
+    {
+      "index": 52,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Inventory",
+      "text": "What had started as panic quickly turned into a fortress.",
+      "start": 281.12,
+      "end": 285.04,
+      "sentence": 52,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "What had started as panic quickly turned into a fortress."
+        }
+      ]
+    },
+    {
+      "index": 53,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Inventory",
+      "text": "She had documented everything.",
+      "start": 285.74,
+      "end": 287.3,
+      "sentence": 53,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "She had documented everything."
+        }
+      ]
+    },
+    {
+      "index": 54,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Inventory",
+      "text": "The first lost tooth, the first day of kindergarten, every tearful tantrum in the hallway.",
+      "start": 287.65,
+      "end": 293.53,
+      "sentence": 54,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "The first lost tooth, the first day of kindergarten, every tearful tantrum in the hallway."
+        }
+      ]
+    },
+    {
+      "index": 55,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Inventory",
+      "text": "If it was stored on a hard drive, it was safe from being forgotten.",
+      "start": 293.88,
+      "end": 299.37,
+      "sentence": 55,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "If it was stored on a hard drive, it was safe from being forgotten."
+        }
+      ]
+    },
+    {
+      "index": 56,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Inventory",
+      "text": "The commercial success was just proof that her instinct had been right.",
+      "start": 299.72,
+      "end": 304.42,
+      "sentence": 56,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "The commercial success was just proof that her instinct had been right."
+        }
+      ]
+    },
+    {
+      "index": 57,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Inventory",
+      "text": "\"Send over the contract details,\" Hannah said into the phone, resting her hands on the counter.",
+      "start": 305.12,
+      "end": 311.39,
+      "sentence": 57,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "Send over the contract details"
+        },
+        {
+          "tag": "decision",
+          "quote": "Send over the contract details"
+        }
+      ]
+    },
+    {
+      "index": 58,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Inventory",
+      "text": "\"I’ll make sure we have the anniversary footage ready.\"",
+      "start": 311.74,
+      "end": 315.27,
+      "sentence": 58,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "I’ll make sure we have the anniversary footage ready."
+        }
+      ]
+    },
+    {
+      "index": 59,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Inventory",
+      "text": "Priya laughed smoothly.",
+      "start": 315.97,
+      "end": 317.15,
+      "sentence": 59,
+      "tags": []
+    },
+    {
+      "index": 60,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Inventory",
+      "text": "\"That’s why you’re the best, Hannah.",
+      "start": 317.5,
+      "end": 319.85,
+      "sentence": 60,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "That’s why you’re the best, Hannah."
+        }
+      ]
+    },
+    {
+      "index": 61,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Inventory",
+      "text": "People love seeing your life.\"",
+      "start": 320.2,
+      "end": 322.16,
+      "sentence": 61,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "People love seeing your life."
+        }
+      ]
+    },
+    {
+      "index": 62,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Inventory",
+      "text": "Hannah hung up and leaned against the island.",
+      "start": 322.86,
+      "end": 325.99,
+      "sentence": 62,
+      "tags": []
+    },
+    {
+      "index": 63,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Inventory",
+      "text": "The house was quiet, clean, and entirely secure.",
+      "start": 326.34,
+      "end": 329.48,
+      "sentence": 63,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "The house was quiet, clean, and entirely secure."
+        }
+      ]
+    },
+    {
+      "index": 64,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Inventory",
+      "text": "Her strategy worked.",
+      "start": 329.83,
+      "end": 331.0,
+      "sentence": 64,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Her strategy worked."
+        }
+      ]
+    },
+    {
+      "index": 65,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Inventory",
+      "text": "She had built a fortress out of pixels, keeping poverty at bay while ensuring that not a single second of her son’s youth would ever be lost to time.",
+      "start": 331.35,
+      "end": 342.72,
+      "sentence": 65,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "She had built a fortress out of pixels, keeping poverty at bay while ensuring that not a single second of her son’s youth would ever be lost to time."
+        }
+      ]
+    },
+    {
+      "index": 66,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "Is This a Keeper?",
+      "text": "Two days later at the suburban supermarket, an unfamiliar woman stopped them in the cereal aisle.",
+      "start": 344.22,
+      "end": 350.49,
+      "sentence": 66,
+      "tags": []
+    },
+    {
+      "index": 67,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "Is This a Keeper?",
+      "text": "\"Look at you, little man!\" the stranger gasped, leaning down toward Leo.",
+      "start": 351.19,
+      "end": 355.89,
+      "sentence": 67,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "Look at you, little man!"
+        }
+      ]
+    },
+    {
+      "index": 68,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "Is This a Keeper?",
+      "text": "\"I’ve watched every single one of your videos since you were three!\"",
+      "start": 356.24,
+      "end": 360.94,
+      "sentence": 68,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "I’ve watched every single one of your videos since you were three!"
+        }
+      ]
+    },
+    {
+      "index": 69,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "Is This a Keeper?",
+      "text": "Leo froze.",
+      "start": 361.64,
+      "end": 362.43,
+      "sentence": 69,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "Leo froze."
+        }
+      ]
+    },
+    {
+      "index": 70,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "Is This a Keeper?",
+      "text": "He pulled his grey hoodie tight over his head and stared at the linoleum floor without saying a word.",
+      "start": 362.78,
+      "end": 370.22,
+      "sentence": 70,
+      "tags": []
+    },
+    {
+      "index": 71,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "Is This a Keeper?",
+      "text": "Hannah gently stepped between them, offering a polite smile until the shopper drifted away.",
+      "start": 370.57,
+      "end": 376.06,
+      "sentence": 71,
+      "tags": []
+    },
+    {
+      "index": 72,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "Is This a Keeper?",
+      "text": "In the car on the drive home, the quiet was heavy.",
+      "start": 376.76,
+      "end": 381.07,
+      "sentence": 72,
+      "tags": []
+    },
+    {
+      "index": 73,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "Is This a Keeper?",
+      "text": "Hannah looked at her son in the rearview mirror.",
+      "start": 381.42,
+      "end": 384.95,
+      "sentence": 73,
+      "tags": []
+    },
+    {
+      "index": 74,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "Is This a Keeper?",
+      "text": "He was watching the dashboard, waiting.",
+      "start": 385.3,
+      "end": 387.65,
+      "sentence": 74,
+      "tags": []
+    },
+    {
+      "index": 75,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "Is This a Keeper?",
+      "text": "She remembered when he was six and lost his first baby tooth at the dinner table.",
+      "start": 388.35,
+      "end": 394.62,
+      "sentence": 75,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "She remembered when he was six and lost his first baby tooth at the dinner table."
+        }
+      ]
+    },
+    {
+      "index": 76,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "Is This a Keeper?",
+      "text": "The lighting in the dining room had been too dark for the camera.",
+      "start": 394.97,
+      "end": 400.06,
+      "sentence": 76,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "The lighting in the dining room had been too dark for the camera."
+        }
+      ]
+    },
+    {
+      "index": 77,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "Is This a Keeper?",
+      "text": "Hannah had made him sit by the window with a fresh tissue, holding the tiny tooth in his palm and repeating his surprised reaction a second time so she could capture the scene properly.",
+      "start": 400.41,
+      "end": 413.74,
+      "sentence": 77,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "Hannah had made him sit by the window with a fresh tissue, holding the tiny tooth in his palm and repeating his surprised reaction a second time so she could capture the scene properly."
+        }
+      ]
+    },
+    {
+      "index": 78,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "Is This a Keeper?",
+      "text": "Now, whenever an argument flared or an emotional moment occurred in the house, Leo checked her hands first.",
+      "start": 414.44,
+      "end": 421.49,
+      "sentence": 78,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "Now, whenever an argument flared or an emotional moment occurred in the house, Leo checked her hands first."
+        }
+      ]
+    },
+    {
+      "index": 79,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "Is This a Keeper?",
+      "text": "He watched for the red recording light on the phone.",
+      "start": 421.84,
+      "end": 425.76,
+      "sentence": 79,
+      "tags": []
+    },
+    {
+      "index": 80,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "Is This a Keeper?",
+      "text": "Leo turned his face toward the passenger window and asked quietly, \"Is this a keeper?\"",
+      "start": 426.46,
+      "end": 432.34,
+      "sentence": 80,
+      "tags": [
+        {
+          "tag": "question",
+          "quote": "Is this a keeper?"
+        },
+        {
+          "tag": "dialogue_turn",
+          "quote": "Is this a keeper?"
+        },
+        {
+          "tag": "escalation",
+          "quote": "Is this a keeper?"
+        }
+      ]
+    },
+    {
+      "index": 81,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "Is This a Keeper?",
+      "text": "The question cut through her.",
+      "start": 433.04,
+      "end": 435.0,
+      "sentence": 81,
+      "tags": []
+    },
+    {
+      "index": 82,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "Is This a Keeper?",
+      "text": "He was not experiencing his life; he was auditing his performance for her approval.",
+      "start": 435.35,
+      "end": 440.84,
+      "sentence": 82,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "He was not experiencing his life; he was auditing his performance for her approval."
+        },
+        {
+          "tag": "reflection",
+          "quote": "He was not experiencing his life; he was auditing his performance for her approval."
+        }
+      ]
+    },
+    {
+      "index": 83,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "Is This a Keeper?",
+      "text": "\"No, sweetie,\" Hannah whispered, her fingers tightening on the steering wheel.",
+      "start": 441.54,
+      "end": 445.85,
+      "sentence": 83,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "No, sweetie"
+        }
+      ]
+    },
+    {
+      "index": 84,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "Is This a Keeper?",
+      "text": "\"It’s not.",
+      "start": 446.2,
+      "end": 446.98,
+      "sentence": 84,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "It’s not."
+        }
+      ]
+    },
+    {
+      "index": 85,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "Is This a Keeper?",
+      "text": "I promise we’re going to stop.",
+      "start": 447.33,
+      "end": 449.68,
+      "sentence": 85,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "I promise we’re going to stop."
+        },
+        {
+          "tag": "decision",
+          "quote": "I promise we’re going to stop."
+        },
+        {
+          "tag": "open_loop:stop_vlogging",
+          "quote": "I promise we’re going to stop."
+        },
+        {
+          "tag": "close_loop:leo_plea",
+          "quote": "I promise we’re going to stop."
+        }
+      ]
+    },
+    {
+      "index": 86,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "Is This a Keeper?",
+      "text": "I’ll make one last farewell video from our archives, and then we’re done.\"",
+      "start": 450.03,
+      "end": 455.13,
+      "sentence": 86,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "I’ll make one last farewell video from our archives, and then we’re done."
+        }
+      ]
+    },
+    {
+      "index": 87,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "Is This a Keeper?",
+      "text": "Leo did not answer.",
+      "start": 455.83,
+      "end": 457.4,
+      "sentence": 87,
+      "tags": []
+    },
+    {
+      "index": 88,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "Is This a Keeper?",
+      "text": "He just kept looking out at the passing trees.",
+      "start": 457.75,
+      "end": 461.27,
+      "sentence": 88,
+      "tags": []
+    },
+    {
+      "index": 89,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Missing Witness",
+      "text": "At midnight, Hannah sat at her desk illuminated by twin computer monitors, assembling the final farewell compilation.",
+      "start": 462.77,
+      "end": 469.44,
+      "sentence": 89,
+      "tags": []
+    },
+    {
+      "index": 90,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Missing Witness",
+      "text": "Nine thousand video files spanned eleven years of Leo’s life.",
+      "start": 469.79,
+      "end": 473.7,
+      "sentence": 90,
+      "tags": []
+    },
+    {
+      "index": 91,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Missing Witness",
+      "text": "As she scrubbed through the endless timeline, a cold truth surfaced.",
+      "start": 474.4,
+      "end": 478.72,
+      "sentence": 91,
+      "tags": []
+    },
+    {
+      "index": 92,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Missing Witness",
+      "text": "She remembered every camera setting, every frame rate, and every lens adjustment, but she held almost no living memory of the days themselves.",
+      "start": 479.07,
+      "end": 488.08,
+      "sentence": 92,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "She remembered every camera setting, every frame rate, and every lens adjustment, but she held almost no living memory of the days themselves."
+        },
+        {
+          "tag": "reflection",
+          "quote": "She remembered every camera setting, every frame rate, and every lens adjustment, but she held almost no living memory of the days themselves."
+        }
+      ]
+    },
+    {
+      "index": 93,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Missing Witness",
+      "text": "In every clip, she had been standing on the other side of the glass, directing the moment rather than inhabiting it.",
+      "start": 488.43,
+      "end": 496.66,
+      "sentence": 93,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "In every clip, she had been standing on the other side of the glass, directing the moment rather than inhabiting it."
+        }
+      ]
+    },
+    {
+      "index": 94,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Missing Witness",
+      "text": "Then her cursor hovered over an uncatalogued file from six years ago.",
+      "start": 497.36,
+      "end": 502.06,
+      "sentence": 94,
+      "tags": [
+        {
+          "tag": "close_loop:uncatalogued_file",
+          "quote": "Then her cursor hovered over an uncatalogued file from six years ago."
+        }
+      ]
+    },
+    {
+      "index": 95,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Missing Witness",
+      "text": "It was an accidental recording, captured when she had left her phone prop up against a mug on the kitchen counter while the camera was still running.",
+      "start": 502.41,
+      "end": 512.99,
+      "sentence": 95,
+      "tags": []
+    },
+    {
+      "index": 96,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Missing Witness",
+      "text": "She clicked play.",
+      "start": 513.69,
+      "end": 514.87,
+      "sentence": 96,
+      "tags": []
+    },
+    {
+      "index": 97,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Missing Witness",
+      "text": "On the screen, six-year-old Leo sat on a barstool, excitedly telling a long story about a dream he had about a flying whale.",
+      "start": 515.57,
+      "end": 524.58,
+      "sentence": 97,
+      "tags": []
+    },
+    {
+      "index": 98,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Missing Witness",
+      "text": "Next to him at the counter sat Hannah in her cream cardigan.",
+      "start": 524.93,
+      "end": 529.64,
+      "sentence": 98,
+      "tags": []
+    },
+    {
+      "index": 99,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Missing Witness",
+      "text": "In eleven years of video, there was only one where she could see her own face.",
+      "start": 530.34,
+      "end": 536.61,
+      "sentence": 99,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "In eleven years of video, there was only one where she could see her own face."
+        }
+      ]
+    },
+    {
+      "index": 100,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Missing Witness",
+      "text": "Her younger self on the screen was typing furiously on a laptop, editing video clips.",
+      "start": 537.31,
+      "end": 543.18,
+      "sentence": 100,
+      "tags": []
+    },
+    {
+      "index": 101,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Missing Witness",
+      "text": "As little Leo leaned closer, pointing at the air and asking if she was listening, Hannah never turned her head.",
+      "start": 543.53,
+      "end": 551.37,
+      "sentence": 101,
+      "tags": []
+    },
+    {
+      "index": 102,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Missing Witness",
+      "text": "She nodded absentmindedly, her eyes locked on her screen, completely ignoring the boy standing right beside her.",
+      "start": 551.72,
+      "end": 558.38,
+      "sentence": 102,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "She nodded absentmindedly, her eyes locked on her screen, completely ignoring the boy standing right beside her."
+        }
+      ]
+    },
+    {
+      "index": 103,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Missing Witness",
+      "text": "Hannah covered her mouth as tears welled in her eyes.",
+      "start": 559.08,
+      "end": 563.0,
+      "sentence": 103,
+      "tags": []
+    },
+    {
+      "index": 104,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Missing Witness",
+      "text": "The camera had recorded everything, but the only person who had missed his childhood was the mother who spent eleven years trying to save it.",
+      "start": 563.35,
+      "end": 573.15,
+      "sentence": 104,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "The camera had recorded everything, but the only person who had missed his childhood was the mother who spent eleven years trying to save it."
+        },
+        {
+          "tag": "reveal",
+          "quote": "The camera had recorded everything, but the only person who had missed his childhood was the mother who spent eleven years trying to save it."
+        }
+      ]
+    },
+    {
+      "index": 105,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Architecture of Absence",
+      "text": "Dawn filtered through the blinds of the editing suite, painting the dual monitors in pale gray.",
+      "start": 574.65,
+      "end": 580.92,
+      "sentence": 105,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Dawn filtered through the blinds of the editing suite, painting the dual monitors in pale gray."
+        }
+      ]
+    },
+    {
+      "index": 106,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Architecture of Absence",
+      "text": "Hannah sat motionless, staring at the timeline of nine thousand catalogued files.",
+      "start": 581.27,
+      "end": 585.97,
+      "sentence": 106,
+      "tags": []
+    },
+    {
+      "index": 107,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Architecture of Absence",
+      "text": "For eleven years, she had operated under the belief that capturing an experience was the only way to shield it from disappearing.",
+      "start": 586.32,
+      "end": 594.95,
+      "sentence": 107,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "For eleven years, she had operated under the belief that capturing an experience was the only way to shield it from disappearing."
+        }
+      ]
+    },
+    {
+      "index": 108,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Architecture of Absence",
+      "text": "Now, the unlit room forced a different truth to the surface: recording had not preserved her son's childhood, but converted living into viewing.",
+      "start": 595.3,
+      "end": 604.31,
+      "sentence": 108,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Now, the unlit room forced a different truth to the surface: recording had not preserved her son's childhood, but converted living into viewing."
+        }
+      ]
+    },
+    {
+      "index": 109,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Architecture of Absence",
+      "text": "Millions of strangers had watched Leo grow up, yet the one witness who was meant to be beside him had stayed absent behind a lens.",
+      "start": 604.66,
+      "end": 614.46,
+      "sentence": 109,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Millions of strangers had watched Leo grow up, yet the one witness who was meant to be beside him had stayed absent behind a lens."
+        }
+      ]
+    },
+    {
+      "index": 110,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Architecture of Absence",
+      "text": "The desk speaker chimed with an incoming voicemail.",
+      "start": 615.16,
+      "end": 618.29,
+      "sentence": 110,
+      "tags": []
+    },
+    {
+      "index": 111,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Architecture of Absence",
+      "text": "Priya's cheerful voice filled the room: \"Huge offer for the birthday video, call me.\"",
+      "start": 618.64,
+      "end": 624.13,
+      "sentence": 111,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "Huge offer for the birthday video, call me."
+        }
+      ]
+    },
+    {
+      "index": 112,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Architecture of Absence",
+      "text": "Hannah did not reach for the phone.",
+      "start": 624.83,
+      "end": 627.57,
+      "sentence": 112,
+      "tags": []
+    },
+    {
+      "index": 113,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Architecture of Absence",
+      "text": "She looked at the glowing project timeline one last time, recognizing that no archived file could restore the years she had spent directing her son's life instead of sharing it.",
+      "start": 627.92,
+      "end": 639.68,
+      "sentence": 113,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "She looked at the glowing project timeline one last time, recognizing that no archived file could restore the years she had spent directing her son's life instead of sharing it."
+        }
+      ]
+    },
+    {
+      "index": 114,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Architecture of Absence",
+      "text": "Reaching forward, she clicked the master power switch.",
+      "start": 640.03,
+      "end": 643.16,
+      "sentence": 114,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "Reaching forward, she clicked the master power switch."
+        }
+      ]
+    },
+    {
+      "index": 115,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Architecture of Absence",
+      "text": "The twin screens went black.",
+      "start": 643.51,
+      "end": 645.47,
+      "sentence": 115,
+      "tags": []
+    },
+    {
+      "index": 116,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Architecture of Absence",
+      "text": "The low hum of the hard drives died away, leaving only the quiet dawn.",
+      "start": 645.82,
+      "end": 651.31,
+      "sentence": 116,
+      "tags": []
+    },
+    {
+      "index": 117,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "An Unkept Hour",
+      "text": "Later that afternoon, Hannah placed a simple bakery cake on the kitchen island.",
+      "start": 652.81,
+      "end": 657.91,
+      "sentence": 117,
+      "tags": []
+    },
+    {
+      "index": 118,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "An Unkept Hour",
+      "text": "No ring light illuminated the counter.",
+      "start": 658.26,
+      "end": 660.61,
+      "sentence": 118,
+      "tags": []
+    },
+    {
+      "index": 119,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "An Unkept Hour",
+      "text": "Her fingers twitched toward her pocket out of reflex, but she forced herself to set her phone inside the wooden cutlery drawer and slide it shut.",
+      "start": 660.96,
+      "end": 671.15,
+      "sentence": 119,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "she forced herself to set her phone inside the wooden cutlery drawer and slide it shut."
+        },
+        {
+          "tag": "close_loop:stop_vlogging",
+          "quote": "she forced herself to set her phone inside the wooden cutlery drawer and slide it shut."
+        }
+      ]
+    },
+    {
+      "index": 120,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "An Unkept Hour",
+      "text": "Mother and son sat opposite each other in quiet hesitation.",
+      "start": 671.5,
+      "end": 675.42,
+      "sentence": 120,
+      "tags": []
+    },
+    {
+      "index": 121,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "An Unkept Hour",
+      "text": "When a birthday candle tilted sideways into the frosting, Leo let out a spontaneous laugh.",
+      "start": 675.77,
+      "end": 681.64,
+      "sentence": 121,
+      "tags": []
+    },
+    {
+      "index": 122,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "An Unkept Hour",
+      "text": "Inside the dark drawer, the phone began to buzz with Priya’s call.",
+      "start": 681.99,
+      "end": 686.7,
+      "sentence": 122,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "Inside the dark drawer, the phone began to buzz with Priya’s call."
+        }
+      ]
+    },
+    {
+      "index": 123,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "An Unkept Hour",
+      "text": "Hannah looked down at the vibrating wood, then across the counter at her son's open face.",
+      "start": 687.05,
+      "end": 693.32,
+      "sentence": 123,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "Hannah looked down at the vibrating wood, then across the counter at her son's open face."
+        }
+      ]
+    }
+  ]
+}

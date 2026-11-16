@@ -79,6 +79,16 @@ class GapAndRunTests(unittest.TestCase):
         found = attention.description_runs(lines, attention.tags_for(lines, None))
         self.assertEqual(len(found), 1)
         self.assertIn("3 frases seguidas", found[0]["claim"])
+        self.assertEqual(found[0]["severity"], "major")                       # in the opening window
+
+    def test_the_sunrise_exposition_after_its_cold_open_is_major(self):
+        lines = attention.timing(sections(SUNRISE_COLD, SUNRISE_OPENING), WPM)
+        mapped = {"sentences": [{"sentence": 0, "tags": [{"tag": "open_loop:last_sunrise"}]},
+                                *({"sentence": index, "tags": [{"tag": "description"}]} for index in (1, 2, 3)),
+                                {"sentence": 4, "tags": [{"tag": "reveal"}]}]}
+        found = attention.check(sections(SUNRISE_COLD, SUNRISE_OPENING), mapped, words_per_minute=WPM)
+        early = [item for item in found["findings"] if item["severity"] == "major" and item["start"] < 45]
+        self.assertEqual([item["rule"] for item in early], ["description_run"])
 
 
 class EarTests(unittest.TestCase):

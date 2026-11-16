@@ -17,7 +17,8 @@ Deterministic checks (findings with timestamps):
 
 The events come from the semantic attention map (``agents.attention_map``, one Gemini call per screenplay); without a
 map a lexical fallback stands in (quotes, questions, conflict words), so the checks still run offline.
-Major: the first 5 seconds, the inciting event, a gap over 40 s, no live loop for more than 60 s.
+Major: the first 5 seconds, the inciting event, a description run in the first 45 s after the cold open, a gap
+over 40 s, no live loop for more than 60 s.
 """
 from __future__ import annotations
 
@@ -201,11 +202,15 @@ def dead_air(sentences: list[dict], tags: list[list[str]]) -> list[dict]:
 
 def description_runs(sentences: list[dict], tags: list[list[str]]) -> list[dict]:
     found, run = [], []
+    opening_end = cold_open_end(sentences) + INCITING_SECONDS
 
     def close():
         if len(run) >= DESCRIPTION_RUN:
-            found.append(_finding("description_run", "minor", run[0]["start"], run[-1]["end"], run,
-                                  f"{len(run)} frases seguidas só de descrição ({clock(run[0]['start'])}).",
+            # In the opening window (the first 45 s after the cold open) it is exposition where the hook should be.
+            early = run[0]["start"] < opening_end
+            found.append(_finding("description_run", "major" if early else "minor", run[0]["start"], run[-1]["end"], run,
+                                  f"{len(run)} frases seguidas só de descrição ({clock(run[0]['start'])})"
+                                  + (", na abertura" if early else "") + ".",
                                   "Corte para uma imagem concreta e volte à ação, à fala ou a uma pergunta."))
     for item in sentences:
         kinds = _kinds(tags[item["index"]])

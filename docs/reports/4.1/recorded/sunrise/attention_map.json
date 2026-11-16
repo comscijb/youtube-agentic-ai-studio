@@ -1,0 +1,1191 @@
+{
+  "key": "d5879a53edfcf85b46d27ef6d6ccf0b99aa8dbec25eff50cb2c3eab87e2989ad",
+  "version": 1,
+  "duration": 465.7,
+  "discarded_tags": 0,
+  "sentences": [
+    {
+      "index": 0,
+      "scene_id": "s00",
+      "section": 0,
+      "section_type": "cold_open",
+      "title": "The Morning Omen",
+      "text": "This is the story of the man who owned the morning, and of the last sunrise he ever shared.",
+      "start": 0.0,
+      "end": 7.45,
+      "sentence": 0,
+      "tags": [
+        {
+          "tag": "open_loop:last_sunrise",
+          "quote": "the last sunrise he ever shared."
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Deed Sealed in Wax",
+      "text": "The old lord of Eastmere sat in the drafty study, his hands trembling as he signed away his last remaining asset for a handful of silver.",
+      "start": 8.95,
+      "end": 19.14,
+      "sentence": 1,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "The old lord of Eastmere sat in the drafty study, his hands trembling as he signed away his last remaining asset for a handful of silver."
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Deed Sealed in Wax",
+      "text": "The Merchant did not look at the man, nor did he care for the title of the decaying manor.",
+      "start": 19.49,
+      "end": 26.93,
+      "sentence": 2,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "The Merchant did not look at the man, nor did he care for the title of the decaying manor."
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Deed Sealed in Wax",
+      "text": "He reached for the heavy gold signet ring on his thumb, pressing it firmly into a pool of melting red wax upon the parchment.",
+      "start": 27.28,
+      "end": 36.69,
+      "sentence": 3,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "He reached for the heavy gold signet ring on his thumb, pressing it firmly into a pool of melting red wax upon the parchment."
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Deed Sealed in Wax",
+      "text": "The ink and seal declared an impossible possession: the eastern sky, the sunrise, and the right to all who look upon it.",
+      "start": 37.04,
+      "end": 45.66,
+      "sentence": 4,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "The ink and seal declared an impossible possession: the eastern sky, the sunrise, and the right to all who look upon it."
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Deed Sealed in Wax",
+      "text": "He folded the heavy paper into his dark fur-trimmed coat, feeling the solid weight of absolute dominion over the horizon.",
+      "start": 46.01,
+      "end": 53.85,
+      "sentence": 5,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "feeling the solid weight of absolute dominion over the horizon."
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Deed Sealed in Wax",
+      "text": "What is free is never valued, he reminded himself in the quiet room.",
+      "start": 54.2,
+      "end": 59.29,
+      "sentence": 6,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "What is free is never valued, he reminded himself in the quiet room."
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Deed Sealed in Wax",
+      "text": "The following morning, he climbed the ridge with the parchment rolled tightly in his pocket, watching the valley stir beneath him.",
+      "start": 59.64,
+      "end": 67.87,
+      "sentence": 7,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "The following morning, he climbed the ridge with the parchment rolled tightly in his pocket, watching the valley stir beneath him."
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Deed Sealed in Wax",
+      "text": "He stood before the path where the villagers always gathered, cleared his throat, and made his declaration to the waking air.",
+      "start": 68.22,
+      "end": 76.45,
+      "sentence": 8,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "made his declaration to the waking air."
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Deed Sealed in Wax",
+      "text": "From tomorrow, the morning has a price.",
+      "start": 76.8,
+      "end": 79.54,
+      "sentence": 9,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "From tomorrow, the morning has a price."
+        },
+        {
+          "tag": "open_loop:morning_price",
+          "quote": "From tomorrow, the morning has a price."
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Toll at the Ridge",
+      "text": "Rough grey stones rose across the eastern ridge before the frost had left the grass, forming a barrier where the mountain path narrowed.",
+      "start": 81.04,
+      "end": 90.06,
+      "sentence": 10,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Rough grey stones rose across the eastern ridge before the frost had left the grass, forming a barrier where the mountain path narrowed."
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Toll at the Ridge",
+      "text": "A single iron gate blocked the ascent, hinged firmly and guarded by the Merchant in his dark coat.",
+      "start": 90.41,
+      "end": 97.46,
+      "sentence": 11,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "A single iron gate blocked the ascent, hinged firmly and guarded by the Merchant in his dark coat."
+        }
+      ]
+    },
+    {
+      "index": 12,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Toll at the Ridge",
+      "text": "At first light, the villagers climbed from their cottages, carrying their wool shawls and stopping cold before the mortar.",
+      "start": 97.81,
+      "end": 105.26,
+      "sentence": 12,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "At first light, the villagers climbed from their cottages, carrying their wool shawls and stopping cold before the mortar."
+        }
+      ]
+    },
+    {
+      "index": 13,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Toll at the Ridge",
+      "text": "The Merchant stood beside an iron bowl, his bronze bell resting on a post.",
+      "start": 105.61,
+      "end": 111.1,
+      "sentence": 13,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "The Merchant stood beside an iron bowl, his bronze bell resting on a post."
+        }
+      ]
+    },
+    {
+      "index": 14,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Toll at the Ridge",
+      "text": "One by one, farmers and weavers reached into their pockets, dropping copper coins into the metal basin with dull clinks.",
+      "start": 111.45,
+      "end": 119.28,
+      "sentence": 14,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "One by one, farmers and weavers reached into their pockets, dropping copper coins into the metal basin with dull clinks."
+        }
+      ]
+    },
+    {
+      "index": 15,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Toll at the Ridge",
+      "text": "He rang the bell once for each payment, waving them through the narrow bars while his daughter watched from the rear with a troubled frown.",
+      "start": 119.63,
+      "end": 129.43,
+      "sentence": 15,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "while his daughter watched from the rear with a troubled frown."
+        }
+      ]
+    },
+    {
+      "index": 16,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Toll at the Ridge",
+      "text": "They walked past him in silence, their eyes fixed on the brightening horizon rather than his face.",
+      "start": 129.78,
+      "end": 136.44,
+      "sentence": 16,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "They walked past him in silence, their eyes fixed on the brightening horizon rather than his face."
+        }
+      ]
+    },
+    {
+      "index": 17,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Toll at the Ridge",
+      "text": "The coins piled deep in his leather pouch by the time the sun crested the peaks.",
+      "start": 136.79,
+      "end": 143.06,
+      "sentence": 17,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "The coins piled deep in his leather pouch by the time the sun crested the peaks."
+        }
+      ]
+    },
+    {
+      "index": 18,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Toll at the Ridge",
+      "text": "He watched them gather on the rocks, but the familiar warmth of their laughter had vanished, replaced by the heavy clink of small bronze tokens.",
+      "start": 143.41,
+      "end": 153.21,
+      "sentence": 18,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "the familiar warmth of their laughter had vanished, replaced by the heavy clink of small bronze tokens."
+        }
+      ]
+    },
+    {
+      "index": 19,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Tower Above the Valley",
+      "text": "With the chest of copper coins growing heavier each week, the Merchant hired masons to quarry raw granite from the high crags.",
+      "start": 154.71,
+      "end": 163.33,
+      "sentence": 19,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "With the chest of copper coins growing heavier each week, the Merchant hired masons to quarry raw granite from the high crags."
+        },
+        {
+          "tag": "decision",
+          "quote": "the Merchant hired masons to quarry raw granite from the high crags."
+        }
+      ]
+    },
+    {
+      "index": 20,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Tower Above the Valley",
+      "text": "Above the iron gate, a round stone tower rose layer by layer, casting a long blade of shadow across the narrow trail.",
+      "start": 163.68,
+      "end": 172.3,
+      "sentence": 20,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Above the iron gate, a round stone tower rose layer by layer, casting a long blade of shadow across the narrow trail."
+        }
+      ]
+    },
+    {
+      "index": 21,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Tower Above the Valley",
+      "text": "High on the open parapet, he stood above the valley, his dark fur coat snapping in the chill wind as he watched the sun climb over the ridge alone.",
+      "start": 172.65,
+      "end": 184.02,
+      "sentence": 21,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "High on the open parapet, he stood above the valley, his dark fur coat snapping in the chill wind as he watched the sun climb over the ridge alone."
+        }
+      ]
+    },
+    {
+      "index": 22,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Tower Above the Valley",
+      "text": "Down at the iron bars, his daughter stood in her plain grey dress, her long dark braid resting across her shoulder.",
+      "start": 184.72,
+      "end": 192.95,
+      "sentence": 22,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Down at the iron bars, his daughter stood in her plain grey dress, her long dark braid resting across her shoulder."
+        }
+      ]
+    },
+    {
+      "index": 23,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Tower Above the Valley",
+      "text": "She looked up toward the parapet, her eyes bright with concern.",
+      "start": 193.3,
+      "end": 197.61,
+      "sentence": 23,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "She looked up toward the parapet, her eyes bright with concern."
+        }
+      ]
+    },
+    {
+      "index": 24,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Tower Above the Valley",
+      "text": "\"Open the gate, Father,\" she called upward, her voice carrying through the cold stone archway.",
+      "start": 198.31,
+      "end": 204.19,
+      "sentence": 24,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Open the gate, Father,\" she called upward, her voice carrying through the cold stone archway."
+        }
+      ]
+    },
+    {
+      "index": 25,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Tower Above the Valley",
+      "text": "\"Let them walk up as they used to.",
+      "start": 204.54,
+      "end": 207.67,
+      "sentence": 25,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Let them walk up as they used to."
+        }
+      ]
+    },
+    {
+      "index": 26,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Tower Above the Valley",
+      "text": "The light belongs to everyone.\"",
+      "start": 208.02,
+      "end": 209.98,
+      "sentence": 26,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "The light belongs to everyone.\""
+        }
+      ]
+    },
+    {
+      "index": 27,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Tower Above the Valley",
+      "text": "The Merchant did not step down.",
+      "start": 210.68,
+      "end": 213.04,
+      "sentence": 27,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "The Merchant did not step down."
+        }
+      ]
+    },
+    {
+      "index": 28,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Tower Above the Valley",
+      "text": "He pressed his gold signet ring into his palm and looked past her toward the distant roofs of Eastmere.",
+      "start": 213.39,
+      "end": 220.83,
+      "sentence": 28,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "He pressed his gold signet ring into his palm and looked past her toward the distant roofs of Eastmere."
+        }
+      ]
+    },
+    {
+      "index": 29,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Tower Above the Valley",
+      "text": "\"What is free is never valued,\" he said.",
+      "start": 221.53,
+      "end": 224.67,
+      "sentence": 29,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"What is free is never valued,\" he said."
+        }
+      ]
+    },
+    {
+      "index": 30,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Tower Above the Valley",
+      "text": "He turned away, pulling the heavy oak door shut behind him with a dull thud.",
+      "start": 225.37,
+      "end": 231.25,
+      "sentence": 30,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "He turned away, pulling the heavy oak door shut behind him with a dull thud."
+        }
+      ]
+    },
+    {
+      "index": 31,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Tower Above the Valley",
+      "text": "The iron bolt slid into place, locking out the valley below.",
+      "start": 231.6,
+      "end": 235.91,
+      "sentence": 31,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "The iron bolt slid into place, locking out the valley below."
+        }
+      ]
+    },
+    {
+      "index": 32,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "The Migration to Dusk",
+      "text": "As summer arrived, a quiet shift took root across the valley floor.",
+      "start": 237.41,
+      "end": 242.11,
+      "sentence": 32,
+      "tags": [
+        {
+          "tag": "open_loop:valley_shift",
+          "quote": "a quiet shift took root across the valley floor."
+        }
+      ]
+    },
+    {
+      "index": 33,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "The Migration to Dusk",
+      "text": "When the first dim purple shadows stretched across the eastern ridge, the villagers did not turn toward the toll gate.",
+      "start": 242.46,
+      "end": 250.3,
+      "sentence": 33,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "the villagers did not turn toward the toll gate."
+        }
+      ]
+    },
+    {
+      "index": 34,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "The Migration to Dusk",
+      "text": "Instead, they walked west.",
+      "start": 250.65,
+      "end": 252.21,
+      "sentence": 34,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "Instead, they walked west."
+        },
+        {
+          "tag": "reveal",
+          "quote": "Instead, they walked west."
+        },
+        {
+          "tag": "close_loop:valley_shift",
+          "quote": "Instead, they walked west."
+        }
+      ]
+    },
+    {
+      "index": 35,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "The Migration to Dusk",
+      "text": "They climbed the grassy slopes of the western hill, carrying wooden benches, fresh loaves of rye bread, and paper lanterns suspended from long ash poles.",
+      "start": 252.91,
+      "end": 262.71,
+      "sentence": 35,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "They climbed the grassy slopes of the western hill, carrying wooden benches, fresh loaves of rye bread, and paper lanterns suspended from long ash poles."
+        }
+      ]
+    },
+    {
+      "index": 36,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "The Migration to Dusk",
+      "text": "As the sun sank toward the horizon, the hill bathed in warm copper light.",
+      "start": 263.06,
+      "end": 268.55,
+      "sentence": 36,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "As the sun sank toward the horizon, the hill bathed in warm copper light."
+        }
+      ]
+    },
+    {
+      "index": 37,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "The Migration to Dusk",
+      "text": "Children chased stray dogs through the high grass while simple wooden flutes filled the warm evening air with slow, wandering melodies.",
+      "start": 268.9,
+      "end": 277.13,
+      "sentence": 37,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Children chased stray dogs through the high grass while simple wooden flutes filled the warm evening air with slow, wandering melodies."
+        }
+      ]
+    },
+    {
+      "index": 38,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "The Migration to Dusk",
+      "text": "From his cold stone tower, the Merchant watched the empty toll path.",
+      "start": 277.83,
+      "end": 282.53,
+      "sentence": 38,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "From his cold stone tower, the Merchant watched the empty toll path."
+        }
+      ]
+    },
+    {
+      "index": 39,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "The Migration to Dusk",
+      "text": "No coins clinked into his iron bowl; no boots rattled the gravel.",
+      "start": 282.88,
+      "end": 287.58,
+      "sentence": 39,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "No coins clinked into his iron bowl; no boots rattled the gravel."
+        }
+      ]
+    },
+    {
+      "index": 40,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "The Migration to Dusk",
+      "text": "Enraged by their silence, he ordered the masons to raise the stone barrier ten courses higher, blocking out the first rays of morning light until even the eastern valley floor lay trapped in grey shadow.",
+      "start": 287.93,
+      "end": 301.65,
+      "sentence": 40,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "he ordered the masons to raise the stone barrier ten courses higher, blocking out the first rays of morning light until even the eastern valley floor lay trapped in grey shadow."
+        },
+        {
+          "tag": "decision",
+          "quote": "he ordered the masons to raise the stone barrier ten courses higher"
+        }
+      ]
+    },
+    {
+      "index": 41,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "The Migration to Dusk",
+      "text": "But the villagers never returned to look at his mountain.",
+      "start": 302.0,
+      "end": 305.92,
+      "sentence": 41,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "But the villagers never returned to look at his mountain."
+        }
+      ]
+    },
+    {
+      "index": 42,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "The Migration to Dusk",
+      "text": "They had found another horizon that asked for nothing.",
+      "start": 306.27,
+      "end": 309.8,
+      "sentence": 42,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "They had found another horizon that asked for nothing."
+        }
+      ]
+    },
+    {
+      "index": 43,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "development",
+      "title": "The Sunset Wedding",
+      "text": "When autumn turned the leaves to bronze, the Merchant’s daughter walked up the western hill in her plain grey dress, a crown of dried field flowers woven into her dark braid.",
+      "start": 311.3,
+      "end": 323.45,
+      "sentence": 43,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "When autumn turned the leaves to bronze, the Merchant’s daughter walked up the western hill in her plain grey dress, a crown of dried field flowers woven into her dark braid."
+        }
+      ]
+    },
+    {
+      "index": 44,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "development",
+      "title": "The Sunset Wedding",
+      "text": "The entire village gathered around her as dusk settled over the ridge.",
+      "start": 323.8,
+      "end": 328.5,
+      "sentence": 44,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "The entire village gathered around her as dusk settled over the ridge."
+        }
+      ]
+    },
+    {
+      "index": 45,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "development",
+      "title": "The Sunset Wedding",
+      "text": "Three days earlier, she had walked to the toll gate alone, leaving a folded parchment tucked into the heavy iron lock.",
+      "start": 329.2,
+      "end": 337.43,
+      "sentence": 45,
+      "tags": [
+        {
+          "tag": "open_loop:daughter_parchment",
+          "quote": "leaving a folded parchment tucked into the heavy iron lock."
+        }
+      ]
+    },
+    {
+      "index": 46,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "development",
+      "title": "The Sunset Wedding",
+      "text": "It was an invitation to her wedding, written in her own careful hand.",
+      "start": 337.78,
+      "end": 342.87,
+      "sentence": 46,
+      "tags": [
+        {
+          "tag": "close_loop:daughter_parchment",
+          "quote": "It was an invitation to her wedding, written in her own careful hand."
+        },
+        {
+          "tag": "reveal",
+          "quote": "It was an invitation to her wedding, written in her own careful hand."
+        },
+        {
+          "tag": "open_loop:will_merchant_attend",
+          "quote": "invitation to her wedding"
+        }
+      ]
+    },
+    {
+      "index": 47,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "development",
+      "title": "The Sunset Wedding",
+      "text": "Now, as vows were spoken in the soft amber light, she turned her head briefly toward the eastern peak.",
+      "start": 343.57,
+      "end": 351.02,
+      "sentence": 47,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Now, as vows were spoken in the soft amber light, she turned her head briefly toward the eastern peak."
+        }
+      ]
+    },
+    {
+      "index": 48,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "development",
+      "title": "The Sunset Wedding",
+      "text": "Far across the valley, a dark, solitary silhouette stood high on the tower rampart, motionless against the gathering night.",
+      "start": 351.37,
+      "end": 358.82,
+      "sentence": 48,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Far across the valley, a dark, solitary silhouette stood high on the tower rampart, motionless against the gathering night."
+        }
+      ]
+    },
+    {
+      "index": 49,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "development",
+      "title": "The Sunset Wedding",
+      "text": "\"He won't come,\" her groom whispered softly, slipping a thin silver band onto her finger.",
+      "start": 359.52,
+      "end": 365.39,
+      "sentence": 49,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"He won't come,\" her groom whispered softly, slipping a thin silver band onto her finger."
+        },
+        {
+          "tag": "close_loop:will_merchant_attend",
+          "quote": "He won't come"
+        }
+      ]
+    },
+    {
+      "index": 50,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "development",
+      "title": "The Sunset Wedding",
+      "text": "She looked down at the glowing valley, took her husband's hand, and smiled.",
+      "start": 366.09,
+      "end": 371.19,
+      "sentence": 50,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "took her husband's hand, and smiled."
+        }
+      ]
+    },
+    {
+      "index": 51,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "development",
+      "title": "The Sunset Wedding",
+      "text": "High on his cold stone ledge, the Merchant watched the distant lanterns flare to life one by one, holding his gold signet ring tight against his chest as the last warmth of his family slipped into the dark.",
+      "start": 371.54,
+      "end": 386.43,
+      "sentence": 51,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "holding his gold signet ring tight against his chest as the last warmth of his family slipped into the dark."
+        }
+      ]
+    },
+    {
+      "index": 52,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Empty Dawn Bell",
+      "text": "Frost stiffened the iron hinges of the gate where no coin had clinked in months.",
+      "start": 387.93,
+      "end": 393.81,
+      "sentence": 52,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Frost stiffened the iron hinges of the gate where no coin had clinked in months."
+        }
+      ]
+    },
+    {
+      "index": 53,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Empty Dawn Bell",
+      "text": "On a bitter winter dawn, the Merchant slid the heavy bolt back with his own gaunt hands.",
+      "start": 394.16,
+      "end": 400.82,
+      "sentence": 53,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "the Merchant slid the heavy bolt back with his own gaunt hands."
+        }
+      ]
+    },
+    {
+      "index": 54,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Empty Dawn Bell",
+      "text": "He reached for the thick hempen rope of the bronze bell and pulled until sound tore across the frozen snow.",
+      "start": 401.17,
+      "end": 409.01,
+      "sentence": 54,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "He reached for the thick hempen rope of the bronze bell and pulled until sound tore across the frozen snow."
+        },
+        {
+          "tag": "decision",
+          "quote": "pulled until sound tore across the frozen snow."
+        }
+      ]
+    },
+    {
+      "index": 55,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Empty Dawn Bell",
+      "text": "He pulled again, his breath turning white in the freezing air, calling out across the valley.",
+      "start": 409.36,
+      "end": 415.63,
+      "sentence": 55,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "He pulled again, his breath turning white in the freezing air, calling out across the valley."
+        }
+      ]
+    },
+    {
+      "index": 56,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Empty Dawn Bell",
+      "text": "Nobody came.",
+      "start": 415.98,
+      "end": 416.76,
+      "sentence": 56,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "Nobody came."
+        },
+        {
+          "tag": "close_loop:morning_price",
+          "quote": "Nobody came."
+        }
+      ]
+    },
+    {
+      "index": 57,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Empty Dawn Bell",
+      "text": "No footsteps crunched on the frozen path.",
+      "start": 417.11,
+      "end": 419.86,
+      "sentence": 57,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "No footsteps crunched on the frozen path."
+        }
+      ]
+    },
+    {
+      "index": 58,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Empty Dawn Bell",
+      "text": "The valley houses remained shuttered and silent, the people having learned to sleep through his cold morning.",
+      "start": 420.21,
+      "end": 426.87,
+      "sentence": 58,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "the people having learned to sleep through his cold morning."
+        }
+      ]
+    },
+    {
+      "index": 59,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Empty Dawn Bell",
+      "text": "His arm grew heavy, the rope fell slack, and the stillness settled deep into his chest.",
+      "start": 427.22,
+      "end": 433.49,
+      "sentence": 59,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "His arm grew heavy, the rope fell slack, and the stillness settled deep into his chest."
+        }
+      ]
+    },
+    {
+      "index": 60,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Rusted Gate and the Western Light",
+      "text": "Years wore the stone down and rusted the iron gate wide open.",
+      "start": 434.99,
+      "end": 439.69,
+      "sentence": 60,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Years wore the stone down and rusted the iron gate wide open."
+        }
+      ]
+    },
+    {
+      "index": 61,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Rusted Gate and the Western Light",
+      "text": "The wall cracked, and moss covered the stones he had laid to divide the world.",
+      "start": 440.04,
+      "end": 445.92,
+      "sentence": 61,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "The wall cracked, and moss covered the stones he had laid to divide the world."
+        }
+      ]
+    },
+    {
+      "index": 62,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Rusted Gate and the Western Light",
+      "text": "Every dawn an old man climbed his tower with the legal parchment tucked inside his coat.",
+      "start": 446.27,
+      "end": 452.54,
+      "sentence": 62,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Every dawn an old man climbed his tower with the legal parchment tucked inside his coat."
+        }
+      ]
+    },
+    {
+      "index": 63,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Rusted Gate and the Western Light",
+      "text": "Far to the west, lanterns rose and laughter carried across the valley.",
+      "start": 452.89,
+      "end": 457.59,
+      "sentence": 63,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Far to the west, lanterns rose and laughter carried across the valley."
+        }
+      ]
+    },
+    {
+      "index": 64,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Rusted Gate and the Western Light",
+      "text": "He never walked there.",
+      "start": 457.94,
+      "end": 459.51,
+      "sentence": 64,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "He never walked there."
+        }
+      ]
+    },
+    {
+      "index": 65,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Rusted Gate and the Western Light",
+      "text": "He owned every sunrise for the rest of his life.",
+      "start": 459.86,
+      "end": 463.78,
+      "sentence": 65,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "He owned every sunrise for the rest of his life."
+        }
+      ]
+    },
+    {
+      "index": 66,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Rusted Gate and the Western Light",
+      "text": "He never shared another.",
+      "start": 464.13,
+      "end": 465.7,
+      "sentence": 66,
+      "tags": [
+        {
+          "tag": "close_loop:last_sunrise",
+          "quote": "He never shared another."
+        },
+        {
+          "tag": "reflection",
+          "quote": "He never shared another."
+        }
+      ]
+    }
+  ]
+}

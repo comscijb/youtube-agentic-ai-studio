@@ -1,0 +1,1169 @@
+{
+ "envy": {
+  "slug": "2026-10-21-the-man-who-needed-everyone-to-envy-him",
+  "duration_estimate": 684.0,
+  "lexical_major": [
+   [
+    "dead_air",
+    "0:00"
+   ],
+   [
+    "description_run",
+    "0:00"
+   ],
+   [
+    "first_5_seconds",
+    "0:00"
+   ],
+   [
+    "dead_air",
+    "4:37"
+   ],
+   [
+    "dead_air",
+    "10:10"
+   ]
+  ],
+  "lexical_counts": {
+   "dead_air": 8,
+   "description_run": 12,
+   "first_5_seconds": 1,
+   "ear_too_long": 3
+  },
+  "map_major": [
+   [
+    "first_5_seconds",
+    "0:00",
+    "Os primeiros 5 s (\"Julian Vance had spent fifteen years engineering a life no ordinary man…\") não trazem estranheza, con"
+   ],
+   [
+    "no_live_loop",
+    "9:21",
+    "123 s sem nenhuma pergunta aberta (9:21–11:24)."
+   ]
+  ],
+  "map_counts": {
+   "first_5_seconds": 1,
+   "ear_too_long": 3,
+   "scene_without_loop": 1,
+   "description_run": 4,
+   "no_live_loop": 1
+  },
+  "first45": [
+   "first_5_seconds"
+  ],
+  "sim_gate": {
+   "passes": false,
+   "failures": [
+    "dois blocos seguidos abaixo de 5 a partir de 1:00"
+   ],
+   "block_medians": [
+    7,
+    6,
+    5,
+    4,
+    3,
+    2,
+    3,
+    5,
+    4,
+    4,
+    5,
+    4,
+    6,
+    6,
+    6,
+    7,
+    6,
+    7,
+    6,
+    8,
+    8,
+    7,
+    7,
+    8,
+    8,
+    7,
+    6,
+    9,
+    9,
+    9,
+    9,
+    10,
+    10,
+    8,
+    8,
+    9,
+    8,
+    7,
+    6,
+    6,
+    5,
+    5,
+    6,
+    7,
+    8
+   ],
+   "median_interest": 7,
+   "reversal_block": 24,
+   "early_leavers": 0
+  },
+  "leave": [
+   [
+    "phone_night",
+    95.0
+   ],
+   [
+    "ideas",
+    null
+   ],
+   [
+    "from_short",
+    95.0
+   ]
+  ],
+  "sim_reasons": {
+   "phone_night": [
+    "Flashback to childhood hardware store kills the present narrative momentum completely."
+   ],
+   "ideas": [],
+   "from_short": [
+    "Boring flashback to canned peaches in Cleveland. Where is the guest drama hook?"
+   ]
+  }
+ },
+ "only_one": {
+  "slug": "2026-10-29-he-lied-about-his-dead-wife-to-see-what-it-would-say",
+  "duration_estimate": 826.4,
+  "lexical_major": [
+   [
+    "first_5_seconds",
+    "0:00"
+   ],
+   [
+    "dead_air",
+    "1:30"
+   ],
+   [
+    "dead_air",
+    "5:54"
+   ],
+   [
+    "dead_air",
+    "9:07"
+   ],
+   [
+    "dead_air",
+    "12:09"
+   ],
+   [
+    "dead_air",
+    "13:05"
+   ]
+  ],
+  "lexical_counts": {
+   "ear_average": 1,
+   "first_5_seconds": 1,
+   "description_run": 13,
+   "dead_air": 9,
+   "ear_too_long": 2
+  },
+  "map_major": [
+   [
+    "first_5_seconds",
+    "0:00",
+    "Os primeiros 5 s (\"Walter leaned back into the worn armchair, his round wire-rimmed glasses catching…\") não trazem estra"
+   ],
+   [
+    "no_live_loop",
+    "0:30",
+    "152 s sem nenhuma pergunta aberta (0:30–3:02)."
+   ],
+   [
+    "dead_air",
+    "0:31",
+    "47 s sem evento de atenção (0:31–1:18)."
+   ],
+   [
+    "description_run",
+    "0:33",
+    "6 frases seguidas só de descrição (0:33), na abertura."
+   ],
+   [
+    "dead_air",
+    "1:26",
+    "69 s sem evento de atenção (1:26–2:35)."
+   ],
+   [
+    "dead_air",
+    "3:06",
+    "40 s sem evento de atenção (3:06–3:46)."
+   ],
+   [
+    "dead_air",
+    "4:31",
+    "50 s sem evento de atenção (4:31–5:21)."
+   ],
+   [
+    "no_live_loop",
+    "4:31",
+    "189 s sem nenhuma pergunta aberta (4:31–7:41)."
+   ],
+   [
+    "dead_air",
+    "5:33",
+    "93 s sem evento de atenção (5:33–7:07)."
+   ],
+   [
+    "no_live_loop",
+    "9:15",
+    "271 s sem nenhuma pergunta aberta (9:15–13:46)."
+   ],
+   [
+    "dead_air",
+    "11:04",
+    "46 s sem evento de atenção (11:04–11:50)."
+   ],
+   [
+    "dead_air",
+    "12:21",
+    "49 s sem evento de atenção (12:21–13:11)."
+   ]
+  ],
+  "map_counts": {
+   "ear_average": 1,
+   "first_5_seconds": 1,
+   "no_live_loop": 3,
+   "dead_air": 10,
+   "description_run": 12,
+   "scene_without_loop": 3,
+   "ear_too_long": 2
+  },
+  "first45": [
+   "first_5_seconds",
+   "no_live_loop",
+   "dead_air",
+   "description_run"
+  ],
+  "sim_gate": {
+   "passes": false,
+   "failures": [
+    "interesse mediano 5.0 (mínimo 7)",
+    "dois blocos seguidos abaixo de 5 a partir de 0:30",
+    "o bloco da virada (7:30) tem interesse 6.0 (mínimo 8)"
+   ],
+   "block_medians": [
+    5,
+    6,
+    4,
+    3,
+    2,
+    3,
+    2,
+    3,
+    2,
+    3,
+    2,
+    2,
+    3,
+    4,
+    3,
+    5,
+    3,
+    5,
+    3,
+    3,
+    3,
+    5,
+    4,
+    5,
+    4,
+    3,
+    4,
+    5,
+    4,
+    4,
+    6,
+    7,
+    6,
+    7,
+    6,
+    7,
+    6,
+    5,
+    4,
+    5,
+    6,
+    6,
+    5,
+    6,
+    5,
+    6,
+    6,
+    7,
+    7,
+    6,
+    5,
+    4,
+    5,
+    5,
+    6
+   ],
+   "median_interest": 5,
+   "reversal_block": 30,
+   "early_leavers": 0
+  },
+  "leave": [
+   [
+    "phone_night",
+    75.0
+   ],
+   [
+    "ideas",
+    null
+   ],
+   [
+    "from_short",
+    45.0
+   ]
+  ],
+  "sim_reasons": {
+   "phone_night": [
+    "Nothing is happening on screen; it's just slow internal reflection about personal coping rules.",
+    "App intro continues slowly without any tension."
+   ],
+   "ideas": [],
+   "from_short": [
+    "Bogs down immediately into slow backstory about piano tuning instead of delivering action or a payoff.",
+    "Way too much slow history about his wife walking out of rooms."
+   ]
+  }
+ },
+ "thought_town": {
+  "slug": "2026-11-03-everyone-heard-what-he-thought",
+  "duration_estimate": 615.1,
+  "lexical_major": [
+   [
+    "description_run",
+    "0:00"
+   ],
+   [
+    "first_5_seconds",
+    "0:00"
+   ],
+   [
+    "description_run",
+    "0:29"
+   ],
+   [
+    "dead_air",
+    "0:58"
+   ],
+   [
+    "dead_air",
+    "2:46"
+   ],
+   [
+    "dead_air",
+    "5:06"
+   ],
+   [
+    "dead_air",
+    "6:58"
+   ],
+   [
+    "dead_air",
+    "8:11"
+   ],
+   [
+    "dead_air",
+    "9:04"
+   ]
+  ],
+  "lexical_counts": {
+   "description_run": 10,
+   "first_5_seconds": 1,
+   "dead_air": 7,
+   "ear_too_long": 1
+  },
+  "map_major": [
+   [
+    "description_run",
+    "0:00",
+    "4 frases seguidas só de descrição (0:00), na abertura."
+   ],
+   [
+    "first_5_seconds",
+    "0:00",
+    "Os primeiros 5 s (\"A wooden flour peel scrapes across pine grain. Outside the tall narrow…\") não trazem estranheza, conf"
+   ],
+   [
+    "no_live_loop",
+    "3:14",
+    "82 s sem nenhuma pergunta aberta (3:14–4:36)."
+   ],
+   [
+    "no_live_loop",
+    "7:51",
+    "71 s sem nenhuma pergunta aberta (7:51–9:02)."
+   ]
+  ],
+  "map_counts": {
+   "description_run": 9,
+   "first_5_seconds": 1,
+   "no_live_loop": 4,
+   "ear_too_long": 1,
+   "dead_air": 1
+  },
+  "first45": [
+   "description_run",
+   "first_5_seconds"
+  ],
+  "sim_gate": {
+   "passes": false,
+   "failures": [
+    "2 de 3 espectadores simulados saem nos primeiros 30 s",
+    "interesse mediano 5.0 (mínimo 7)",
+    "dois blocos seguidos abaixo de 5 a partir de 1:15",
+    "o bloco da virada (4:45) tem interesse 4.0 (mínimo 8)"
+   ],
+   "block_medians": [
+    3,
+    5,
+    5,
+    8,
+    5,
+    4,
+    4,
+    5,
+    4,
+    4,
+    3,
+    5,
+    4,
+    5,
+    6,
+    6,
+    5,
+    6,
+    6,
+    4,
+    5,
+    6,
+    5,
+    5,
+    7,
+    6,
+    4,
+    5,
+    7,
+    7,
+    7,
+    8,
+    8,
+    7,
+    6,
+    7,
+    8,
+    6,
+    5,
+    4,
+    6
+   ],
+   "median_interest": 5,
+   "reversal_block": 19,
+   "early_leavers": 2
+  },
+  "leave": [
+   [
+    "phone_night",
+    10.0
+   ],
+   [
+    "ideas",
+    null
+   ],
+   [
+    "from_short",
+    8.0
+   ]
+  ],
+  "sim_reasons": {
+   "phone_night": [
+    "Slow opening with dull descriptive detail and no immediate conflict or hook.",
+    "Protagonist hiding in a backroom kills momentum."
+   ],
+   "ideas": [],
+   "from_short": [
+    "No hook, just slow atmospheric description of bread baking.",
+    "Interesting premise hinted, but moves too slowly."
+   ]
+  }
+ },
+ "ferryman": {
+  "slug": "2026-11-06-the-ferryman-who-took-memories-as-fare",
+  "duration_estimate": 722.8,
+  "lexical_major": [
+   [
+    "dead_air",
+    "0:00"
+   ],
+   [
+    "description_run",
+    "0:00"
+   ],
+   [
+    "first_5_seconds",
+    "0:00"
+   ],
+   [
+    "dead_air",
+    "1:13"
+   ],
+   [
+    "dead_air",
+    "2:14"
+   ],
+   [
+    "dead_air",
+    "7:05"
+   ],
+   [
+    "dead_air",
+    "9:35"
+   ]
+  ],
+  "lexical_counts": {
+   "dead_air": 6,
+   "description_run": 8,
+   "ear_average": 1,
+   "first_5_seconds": 1,
+   "ear_long_share": 1
+  },
+  "map_major": [
+   [
+    "description_run",
+    "0:00",
+    "5 frases seguidas só de descrição (0:00), na abertura."
+   ],
+   [
+    "first_5_seconds",
+    "0:00",
+    "Os primeiros 5 s (\"On a foggy night in Low Marrow, the river ran black beneath…\") não trazem estranheza, conflito ou ame"
+   ],
+   [
+    "no_live_loop",
+    "0:30",
+    "211 s sem nenhuma pergunta aberta (0:30–4:01)."
+   ],
+   [
+    "dead_air",
+    "1:17",
+    "164 s sem evento de atenção (1:17–4:01)."
+   ],
+   [
+    "dead_air",
+    "4:16",
+    "64 s sem evento de atenção (4:16–5:20)."
+   ],
+   [
+    "dead_air",
+    "7:05",
+    "75 s sem evento de atenção (7:05–8:20)."
+   ]
+  ],
+  "map_counts": {
+   "dead_air": 7,
+   "description_run": 10,
+   "ear_average": 1,
+   "first_5_seconds": 1,
+   "no_live_loop": 2,
+   "ear_long_share": 1,
+   "scene_without_loop": 5
+  },
+  "first45": [
+   "description_run",
+   "first_5_seconds",
+   "no_live_loop"
+  ],
+  "sim_gate": {
+   "passes": false,
+   "failures": [
+    "dois blocos seguidos abaixo de 5 a partir de 1:30",
+    "o bloco da virada (7:00) tem interesse 6.0 (mínimo 8)"
+   ],
+   "block_medians": [
+    8,
+    7,
+    9,
+    7,
+    9,
+    5,
+    4,
+    3,
+    3,
+    4,
+    4,
+    6,
+    6,
+    5,
+    6,
+    4,
+    8,
+    6,
+    6,
+    7,
+    7,
+    8,
+    7,
+    6,
+    6,
+    7,
+    6,
+    6,
+    6,
+    8,
+    6,
+    5,
+    7,
+    7,
+    6,
+    7,
+    8,
+    8,
+    9,
+    8,
+    8,
+    9,
+    8,
+    9,
+    6,
+    8,
+    7,
+    8,
+    8
+   ],
+   "median_interest": 7,
+   "reversal_block": 28,
+   "early_leavers": 0
+  },
+  "leave": [
+   [
+    "phone_night",
+    105.0
+   ],
+   [
+    "ideas",
+    null
+   ],
+   [
+    "from_short",
+    105.0
+   ]
+  ],
+  "sim_reasons": {
+   "phone_night": [
+    "It's repeating the exact same ritual scene as before, taking too long.",
+    "We already saw this exact breath-into-hand magic step."
+   ],
+   "ideas": [],
+   "from_short": [
+    "Just repeating the same formula as the first guy. Losing interest fast.",
+    "Same animation/action repeated."
+   ]
+  }
+ },
+ "filmed_childhood": {
+  "slug": "2026-11-09-she-filmed-every-moment-of-her-son-s-childhood-2",
+  "duration_estimate": 693.3,
+  "lexical_major": [
+   [
+    "description_run",
+    "0:00"
+   ],
+   [
+    "first_5_seconds",
+    "0:00"
+   ],
+   [
+    "description_run",
+    "0:33"
+   ],
+   [
+    "description_run",
+    "0:59"
+   ],
+   [
+    "dead_air",
+    "1:56"
+   ],
+   [
+    "dead_air",
+    "2:54"
+   ],
+   [
+    "dead_air",
+    "4:12"
+   ],
+   [
+    "dead_air",
+    "6:01"
+   ],
+   [
+    "dead_air",
+    "7:35"
+   ],
+   [
+    "dead_air",
+    "9:11"
+   ],
+   [
+    "dead_air",
+    "10:24"
+   ]
+  ],
+  "lexical_counts": {
+   "dead_air": 8,
+   "description_run": 12,
+   "ear_average": 1,
+   "first_5_seconds": 1,
+   "ear_too_long": 2
+  },
+  "map_major": [
+   [
+    "description_run",
+    "0:00",
+    "3 frases seguidas só de descrição (0:00), na abertura."
+   ],
+   [
+    "first_5_seconds",
+    "0:00",
+    "Os primeiros 5 s (\"Late at night, Hannah froze over the editing timeline. Across two monitors…\") não trazem estranheza, "
+   ],
+   [
+    "description_run",
+    "0:33",
+    "3 frases seguidas só de descrição (0:33), na abertura."
+   ],
+   [
+    "description_run",
+    "0:59",
+    "4 frases seguidas só de descrição (0:59), na abertura."
+   ],
+   [
+    "dead_air",
+    "1:56",
+    "120 s sem evento de atenção (1:56–3:56)."
+   ],
+   [
+    "dead_air",
+    "4:12",
+    "53 s sem evento de atenção (4:12–5:05)."
+   ],
+   [
+    "dead_air",
+    "9:33",
+    "45 s sem evento de atenção (9:33–10:19)."
+   ]
+  ],
+  "map_counts": {
+   "description_run": 11,
+   "ear_average": 1,
+   "first_5_seconds": 1,
+   "dead_air": 6,
+   "scene_without_loop": 4,
+   "ear_too_long": 2,
+   "no_live_loop": 1
+  },
+  "first45": [
+   "description_run",
+   "first_5_seconds",
+   "description_run"
+  ],
+  "sim_gate": {
+   "passes": false,
+   "failures": [
+    "interesse mediano 5.0 (mínimo 7)",
+    "dois blocos seguidos abaixo de 5 a partir de 0:45",
+    "o bloco da virada (7:30) tem interesse 5.0 (mínimo 8)"
+   ],
+   "block_medians": [
+    8,
+    8,
+    5,
+    4,
+    4,
+    6,
+    5,
+    7,
+    6,
+    4,
+    3,
+    3,
+    3,
+    3,
+    3,
+    4,
+    4,
+    3,
+    3,
+    3,
+    4,
+    3,
+    5,
+    6,
+    5,
+    4,
+    5,
+    6,
+    7,
+    5,
+    5,
+    5,
+    4,
+    7,
+    7,
+    8,
+    8,
+    7,
+    4,
+    3,
+    3,
+    4,
+    5,
+    4,
+    5,
+    6
+   ],
+   "median_interest": 5.0,
+   "reversal_block": 30,
+   "early_leavers": 0
+  },
+  "leave": [
+   [
+    "phone_night",
+    150.0
+   ],
+   [
+    "ideas",
+    585.0
+   ],
+   [
+    "from_short",
+    45.0
+   ]
+  ],
+  "sim_reasons": {
+   "phone_night": [
+    "Too slow, drifting into long childhood memory backstory. I want action.",
+    "More exposition about her past, completely stalled."
+   ],
+   "ideas": [
+    "Overly preachy recap of the philosophical thesis we just witnessed clearly in blocks 31-37. Repetitive essay-style padding.",
+    "More moralizing repetition."
+   ],
+   "from_short": [
+    "Way too slow! Bogs down in boring description of ring lights and hair. Deliver on the mysterious video hook!",
+    "Still sitting around candles waiting for a cue."
+   ]
+  }
+ },
+ "everyone_was_him": {
+  "slug": "2026-11-11-he-woke-up-and-everyone-in-the-world-was-him",
+  "duration_estimate": 663.6,
+  "lexical_major": [
+   [
+    "dead_air",
+    "0:30"
+   ],
+   [
+    "inciting_event",
+    "0:30"
+   ],
+   [
+    "description_run",
+    "0:31"
+   ],
+   [
+    "dead_air",
+    "1:32"
+   ],
+   [
+    "dead_air",
+    "3:10"
+   ],
+   [
+    "dead_air",
+    "4:43"
+   ],
+   [
+    "dead_air",
+    "8:18"
+   ]
+  ],
+  "lexical_counts": {
+   "ear_average": 1,
+   "dead_air": 5,
+   "inciting_event": 1,
+   "description_run": 7,
+   "ear_long_share": 1,
+   "ear_too_long": 6
+  },
+  "map_major": [
+   [
+    "description_run",
+    "0:31",
+    "4 frases seguidas só de descrição (0:31), na abertura."
+   ],
+   [
+    "dead_air",
+    "1:48",
+    "62 s sem evento de atenção (1:48–2:50)."
+   ],
+   [
+    "dead_air",
+    "3:10",
+    "41 s sem evento de atenção (3:10–3:51)."
+   ],
+   [
+    "dead_air",
+    "6:39",
+    "63 s sem evento de atenção (6:39–7:43)."
+   ],
+   [
+    "dead_air",
+    "8:30",
+    "46 s sem evento de atenção (8:30–9:16)."
+   ]
+  ],
+  "map_counts": {
+   "ear_average": 1,
+   "dead_air": 8,
+   "no_live_loop": 2,
+   "description_run": 9,
+   "ear_long_share": 1,
+   "scene_without_loop": 3,
+   "ear_too_long": 6
+  },
+  "first45": [
+   "description_run"
+  ],
+  "sim_gate": {
+   "passes": false,
+   "failures": [
+    "interesse mediano 5.0 (mínimo 7)",
+    "dois blocos seguidos abaixo de 5 a partir de 0:30",
+    "o bloco da virada (7:00) tem interesse 5.0 (mínimo 8)"
+   ],
+   "block_medians": [
+    7,
+    7,
+    3,
+    4,
+    9,
+    8,
+    7,
+    6,
+    6,
+    5,
+    5,
+    5,
+    5,
+    3,
+    3,
+    6,
+    6,
+    6,
+    5,
+    4,
+    4,
+    2,
+    6,
+    5,
+    6,
+    4,
+    5,
+    5,
+    5,
+    6,
+    8,
+    8,
+    5,
+    4,
+    3,
+    4,
+    4,
+    4,
+    3,
+    4,
+    5,
+    7,
+    7,
+    6,
+    5
+   ],
+   "median_interest": 5,
+   "reversal_block": 28,
+   "early_leavers": 0
+  },
+  "leave": [
+   [
+    "phone_night",
+    35.0
+   ],
+   [
+    "ideas",
+    198.0
+   ],
+   [
+    "from_short",
+    33.0
+   ]
+  ],
+  "sim_reasons": {
+   "phone_night": [
+    "Sudden rewind to mundane morning alarm and backstory kills all momentum.",
+    "Internal monologue slows down the screen, nothing happening visual-wise."
+   ],
+   "ideas": [
+    "Redundant text spelling out the thesis after already showing it clearly.",
+    "Excessive expository repetition of his internal comfort."
+   ],
+   "from_short": [
+    "Slow flash-back explanation kills the fast narrative pace.",
+    "Boring monologue explaining feelings."
+   ]
+  }
+ },
+ "sunrise": {
+  "slug": "2026-11-12-the-man-who-bought-the-sunrise",
+  "duration_estimate": 465.7,
+  "lexical_major": [
+   [
+    "first_5_seconds",
+    "0:00"
+   ],
+   [
+    "dead_air",
+    "0:46"
+   ],
+   [
+    "description_run",
+    "0:46"
+   ],
+   [
+    "dead_air",
+    "3:45"
+   ],
+   [
+    "dead_air",
+    "6:05"
+   ]
+  ],
+  "lexical_counts": {
+   "ear_average": 1,
+   "first_5_seconds": 1,
+   "ear_long_share": 1,
+   "dead_air": 3,
+   "description_run": 3,
+   "ear_too_long": 3
+  },
+  "map_major": [
+   [
+    "description_run",
+    "0:09",
+    "3 frases seguidas só de descrição (0:09), na abertura."
+   ],
+   [
+    "description_run",
+    "0:46",
+    "3 frases seguidas só de descrição (0:46), na abertura."
+   ],
+   [
+    "dead_air",
+    "6:57",
+    "41 s sem evento de atenção (6:57–7:38)."
+   ]
+  ],
+  "map_counts": {
+   "ear_average": 1,
+   "dead_air": 4,
+   "description_run": 6,
+   "ear_long_share": 1,
+   "scene_without_loop": 2,
+   "ear_too_long": 3
+  },
+  "first45": [
+   "description_run"
+  ],
+  "sim_gate": {
+   "passes": false,
+   "failures": [
+    "interesse mediano 4.0 (mínimo 7)",
+    "dois blocos seguidos abaixo de 5 a partir de 1:45",
+    "o bloco da virada (3:45) tem interesse 4.0 (mínimo 8)"
+   ],
+   "block_medians": [
+    8,
+    6,
+    7,
+    5,
+    4,
+    6,
+    5,
+    4,
+    3,
+    2,
+    3,
+    3,
+    3,
+    4,
+    3,
+    4,
+    5,
+    3,
+    4,
+    5,
+    4,
+    4,
+    4,
+    5,
+    4,
+    3,
+    5,
+    4,
+    3,
+    3,
+    4
+   ],
+   "median_interest": 4,
+   "reversal_block": 15,
+   "early_leavers": 0
+  },
+  "leave": [
+   [
+    "phone_night",
+    130.0
+   ],
+   [
+    "ideas",
+    null
+   ],
+   [
+    "from_short",
+    140.0
+   ]
+  ],
+  "sim_reasons": {
+   "phone_night": [
+    "Nothing is happening except people silently walking past. Too slow for late night scrolling.",
+    "More lingering on coin pouches and missing laughter."
+   ],
+   "ideas": [],
+   "from_short": [
+    "Pacing is way too slow compared to a Short. Still just talking about bronze tokens.",
+    "More description of stone towers."
+   ]
+  }
+ }
+}

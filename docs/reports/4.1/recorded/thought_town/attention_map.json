@@ -1,0 +1,2341 @@
+{
+  "key": "28122a4e27e7be9e94c2e47c5e87ef4c3958910671483cbfc6c7d1833b26cc29",
+  "version": 1,
+  "duration": 615.1,
+  "discarded_tags": 0,
+  "sentences": [
+    {
+      "index": 0,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Slip at the Counter",
+      "text": "A wooden flour peel scrapes across pine grain.",
+      "start": 0.0,
+      "end": 3.14,
+      "sentence": 0,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "A wooden flour peel scrapes across pine grain."
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Slip at the Counter",
+      "text": "Outside the tall narrow windows of Wickham's Rest, dawn filters over frost-rimmed slate.",
+      "start": 3.49,
+      "end": 8.58,
+      "sentence": 1,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Outside the tall narrow windows of Wickham's Rest, dawn filters over frost-rimmed slate."
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Slip at the Counter",
+      "text": "Thomas Wren slides a heavy rye loaf across the counter, his white apron dusted with fine powder.",
+      "start": 8.93,
+      "end": 15.59,
+      "sentence": 2,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Thomas Wren slides a heavy rye loaf across the counter, his white apron dusted with fine powder."
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Slip at the Counter",
+      "text": "Around him, the quiet hum of the morning queue drifts through the air.",
+      "start": 15.94,
+      "end": 21.04,
+      "sentence": 3,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Around him, the quiet hum of the morning queue drifts through the air."
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Slip at the Counter",
+      "text": "Soft surface thoughts murmur like distant water.",
+      "start": 21.39,
+      "end": 24.13,
+      "sentence": 4,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "Soft surface thoughts murmur like distant water."
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Slip at the Counter",
+      "text": "'A fine crust today,' a customer thinks, three paces away.",
+      "start": 24.48,
+      "end": 28.79,
+      "sentence": 5,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "'A fine crust today,' a customer thinks, three paces away."
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Slip at the Counter",
+      "text": "Thomas wipes his palms on his woolen trousers, his breathing measured.",
+      "start": 29.14,
+      "end": 33.45,
+      "sentence": 6,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Thomas wipes his palms on his woolen trousers, his breathing measured."
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Slip at the Counter",
+      "text": "Thirty years of unblemished gentleness, thirty years of keeping his mind an untroubled lake.",
+      "start": 33.8,
+      "end": 39.29,
+      "sentence": 7,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Thirty years of unblemished gentleness, thirty years of keeping his mind an untroubled lake."
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Slip at the Counter",
+      "text": "Then fatigue settles deep into his bones.",
+      "start": 39.64,
+      "end": 42.38,
+      "sentence": 8,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "Then fatigue settles deep into his bones."
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Slip at the Counter",
+      "text": "His hand falters on the board.",
+      "start": 42.73,
+      "end": 45.08,
+      "sentence": 9,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "His hand falters on the board."
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Slip at the Counter",
+      "text": "A rogue thought slips past his mental guard and spills into the room for everyone to hear: \"I don't want to be here.",
+      "start": 45.43,
+      "end": 54.45,
+      "sentence": 10,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "A rogue thought slips past his mental guard and spills into the room for everyone to hear: \"I don't want to be here."
+        },
+        {
+          "tag": "escalation",
+          "quote": "A rogue thought slips past his mental guard and spills into the room for everyone to hear: \"I don't want to be here."
+        },
+        {
+          "tag": "open_loop:rogue_thought_fallout",
+          "quote": "A rogue thought slips past his mental guard and spills into the room for everyone to hear: \"I don't want to be here."
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Slip at the Counter",
+      "text": "The shop freezes.",
+      "start": 54.8,
+      "end": 55.97,
+      "sentence": 11,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "The shop freezes."
+        }
+      ]
+    },
+    {
+      "index": 12,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Slip at the Counter",
+      "text": "The murmur stops dead.",
+      "start": 56.32,
+      "end": 57.89,
+      "sentence": 12,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "The murmur stops dead."
+        }
+      ]
+    },
+    {
+      "index": 13,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Slip at the Counter",
+      "text": "Every face turns toward him.",
+      "start": 58.24,
+      "end": 60.2,
+      "sentence": 13,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "Every face turns toward him."
+        }
+      ]
+    },
+    {
+      "index": 14,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Slip at the Counter",
+      "text": "Thomas stands motionless behind the timber, clutching the edge of the flour board while the silence stretches until the ticking of the wall clock sounds like a hammer against stone.",
+      "start": 60.55,
+      "end": 72.31,
+      "sentence": 14,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "Thomas stands motionless behind the timber, clutching the edge of the flour board while the silence stretches until the ticking of the wall clock sounds like a hammer against stone."
+        },
+        {
+          "tag": "description",
+          "quote": "Thomas stands motionless behind the timber, clutching the edge of the flour board while the silence stretches until the ticking of the wall clock sounds like a hammer against stone."
+        }
+      ]
+    },
+    {
+      "index": 15,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "The Origin of the Censor",
+      "text": "Thomas retreats to the dim flour storehouse at the back of the shop, his boots crunching on spilled grain.",
+      "start": 73.81,
+      "end": 81.25,
+      "sentence": 15,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Thomas retreats to the dim flour storehouse at the back of the shop, his boots crunching on spilled grain."
+        }
+      ]
+    },
+    {
+      "index": 16,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "The Origin of the Censor",
+      "text": "Burlap sacks lean against limestone walls.",
+      "start": 81.6,
+      "end": 83.95,
+      "sentence": 16,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Burlap sacks lean against limestone walls."
+        }
+      ]
+    },
+    {
+      "index": 17,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "The Origin of the Censor",
+      "text": "He sits on an overturned crate, his hands trembling against his apron.",
+      "start": 84.3,
+      "end": 89.01,
+      "sentence": 17,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "He sits on an overturned crate, his hands trembling against his apron."
+        }
+      ]
+    },
+    {
+      "index": 18,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "The Origin of the Censor",
+      "text": "The memory strikes hard, cold as winter iron.",
+      "start": 89.36,
+      "end": 92.49,
+      "sentence": 18,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "The memory strikes hard, cold as winter iron."
+        }
+      ]
+    },
+    {
+      "index": 19,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "The Origin of the Censor",
+      "text": "When he was a boy of eight, a passing flash of anger had slipped from his mind into the schoolyard, and the elders had punished him for days, teaching him that an uncurated thought is a moral wound.",
+      "start": 92.84,
+      "end": 107.73,
+      "sentence": 19,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "When he was a boy of eight, a passing flash of anger had slipped from his mind into the schoolyard, and the elders had punished him for days, teaching him that an uncurated thought is a moral wound."
+        },
+        {
+          "tag": "reflection",
+          "quote": "When he was a boy of eight, a passing flash of anger had slipped from his mind into the schoolyard, and the elders had punished him for days, teaching him that an uncurated thought is a moral wound."
+        }
+      ]
+    },
+    {
+      "index": 20,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "The Origin of the Censor",
+      "text": "He learned to build an internal supervisor, a tireless editor stationed at the gates of consciousness to rewrite every raw impulse before it reaches the surface.",
+      "start": 108.08,
+      "end": 118.27,
+      "sentence": 20,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "He learned to build an internal supervisor, a tireless editor stationed at the gates of consciousness to rewrite every raw impulse before it reaches the surface."
+        },
+        {
+          "tag": "reflection",
+          "quote": "He learned to build an internal supervisor, a tireless editor stationed at the gates of consciousness to rewrite every raw impulse before it reaches the surface."
+        }
+      ]
+    },
+    {
+      "index": 21,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "The Origin of the Censor",
+      "text": "He traces a flour mark on his sleeve, whispering quiet, orderly sentences to himself until his pulse slows.",
+      "start": 118.62,
+      "end": 125.68,
+      "sentence": 21,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "He traces a flour mark on his sleeve, whispering quiet, orderly sentences to himself until his pulse slows."
+        }
+      ]
+    },
+    {
+      "index": 22,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "The Origin of the Censor",
+      "text": "He has not let a single one slip since.",
+      "start": 126.03,
+      "end": 129.56,
+      "sentence": 22,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "He has not let a single one slip since."
+        }
+      ]
+    },
+    {
+      "index": 23,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "The Origin of the Censor",
+      "text": "Not until this morning.",
+      "start": 129.91,
+      "end": 131.47,
+      "sentence": 23,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "Not until this morning."
+        }
+      ]
+    },
+    {
+      "index": 24,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Curated Reassurances",
+      "text": "The next morning the queue forms again, slower than usual.",
+      "start": 132.97,
+      "end": 136.89,
+      "sentence": 24,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "The next morning the queue forms again, slower than usual."
+        }
+      ]
+    },
+    {
+      "index": 25,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Curated Reassurances",
+      "text": "People step inside and stand a little closer than they need to, listening.",
+      "start": 137.24,
+      "end": 142.34,
+      "sentence": 25,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "People step inside and stand a little closer than they need to, listening."
+        }
+      ]
+    },
+    {
+      "index": 26,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Curated Reassurances",
+      "text": "Thomas knows what they are waiting for.",
+      "start": 142.69,
+      "end": 145.43,
+      "sentence": 26,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Thomas knows what they are waiting for."
+        }
+      ]
+    },
+    {
+      "index": 27,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Curated Reassurances",
+      "text": "He lifts the first tray from the oven and lets his mind fill with the things it has always held.",
+      "start": 146.13,
+      "end": 153.97,
+      "sentence": 27,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "He lifts the first tray from the oven and lets his mind fill with the things it has always held."
+        }
+      ]
+    },
+    {
+      "index": 28,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Curated Reassurances",
+      "text": "The smell of rye.",
+      "start": 154.32,
+      "end": 155.89,
+      "sentence": 28,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "The smell of rye."
+        }
+      ]
+    },
+    {
+      "index": 29,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Curated Reassurances",
+      "text": "The Hollis boy's birthday.",
+      "start": 156.24,
+      "end": 157.8,
+      "sentence": 29,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "The Hollis boy's birthday."
+        }
+      ]
+    },
+    {
+      "index": 30,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Curated Reassurances",
+      "text": "How good it is to see them all.",
+      "start": 158.15,
+      "end": 161.29,
+      "sentence": 30,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "How good it is to see them all."
+        }
+      ]
+    },
+    {
+      "index": 31,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Curated Reassurances",
+      "text": "'Lovely to see you, Mrs Pell.",
+      "start": 161.64,
+      "end": 163.99,
+      "sentence": 31,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "'Lovely to see you, Mrs Pell."
+        }
+      ]
+    },
+    {
+      "index": 32,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Curated Reassurances",
+      "text": "'Mind the step, it's icy.",
+      "start": 164.34,
+      "end": 166.3,
+      "sentence": 32,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "'Mind the step, it's icy."
+        }
+      ]
+    },
+    {
+      "index": 33,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Curated Reassurances",
+      "text": "Small, warm, perfect thoughts.",
+      "start": 166.65,
+      "end": 168.22,
+      "sentence": 33,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Small, warm, perfect thoughts."
+        }
+      ]
+    },
+    {
+      "index": 34,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Curated Reassurances",
+      "text": "In Wickham's Rest they call it clean thinking.",
+      "start": 168.92,
+      "end": 172.05,
+      "sentence": 34,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "In Wickham's Rest they call it clean thinking."
+        }
+      ]
+    },
+    {
+      "index": 35,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Curated Reassurances",
+      "text": "Children learn it before they can read: think gently, and you will never need to lie.",
+      "start": 172.4,
+      "end": 178.67,
+      "sentence": 35,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "Children learn it before they can read: think gently, and you will never need to lie."
+        }
+      ]
+    },
+    {
+      "index": 36,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Curated Reassurances",
+      "text": "There is no crime here.",
+      "start": 179.02,
+      "end": 180.98,
+      "sentence": 36,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "There is no crime here."
+        }
+      ]
+    },
+    {
+      "index": 37,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Curated Reassurances",
+      "text": "In twenty-six years of marriage, Thomas and Nell have never once argued.",
+      "start": 181.33,
+      "end": 186.03,
+      "sentence": 37,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "In twenty-six years of marriage, Thomas and Nell have never once argued."
+        }
+      ]
+    },
+    {
+      "index": 38,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Curated Reassurances",
+      "text": "By the third customer, shoulders loosen.",
+      "start": 186.73,
+      "end": 189.09,
+      "sentence": 38,
+      "tags": [
+        {
+          "tag": "close_loop:rogue_thought_fallout",
+          "quote": "By the third customer, shoulders loosen."
+        }
+      ]
+    },
+    {
+      "index": 39,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Curated Reassurances",
+      "text": "By the tenth, someone laughs.",
+      "start": 189.44,
+      "end": 191.4,
+      "sentence": 39,
+      "tags": [
+        {
+          "tag": "close_loop:rogue_thought_fallout",
+          "quote": "By the tenth, someone laughs."
+        }
+      ]
+    },
+    {
+      "index": 40,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Curated Reassurances",
+      "text": "The queue has forgiven him.",
+      "start": 191.75,
+      "end": 193.71,
+      "sentence": 40,
+      "tags": [
+        {
+          "tag": "close_loop:rogue_thought_fallout",
+          "quote": "The queue has forgiven him."
+        }
+      ]
+    },
+    {
+      "index": 41,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Curated Reassurances",
+      "text": "Only Thomas notices how tired he is by noon.",
+      "start": 194.41,
+      "end": 197.93,
+      "sentence": 41,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Only Thomas notices how tired he is by noon."
+        }
+      ]
+    },
+    {
+      "index": 42,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Curated Reassurances",
+      "text": "Not from the baking.",
+      "start": 198.28,
+      "end": 199.85,
+      "sentence": 42,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Not from the baking."
+        }
+      ]
+    },
+    {
+      "index": 43,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "development",
+      "title": "The Curated Reassurances",
+      "text": "From the thinking.",
+      "start": 200.2,
+      "end": 201.38,
+      "sentence": 43,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "From the thinking."
+        },
+        {
+          "tag": "reveal",
+          "quote": "From the thinking."
+        }
+      ]
+    },
+    {
+      "index": 44,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Hearing the Editor",
+      "text": "In the afternoon he walks the bread round, as he has for thirty years.",
+      "start": 202.88,
+      "end": 208.36,
+      "sentence": 44,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "In the afternoon he walks the bread round, as he has for thirty years."
+        }
+      ]
+    },
+    {
+      "index": 45,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Hearing the Editor",
+      "text": "And now, because he is listening for it, he hears it everywhere.",
+      "start": 208.71,
+      "end": 213.42,
+      "sentence": 45,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "And now, because he is listening for it, he hears it everywhere."
+        }
+      ]
+    },
+    {
+      "index": 46,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Hearing the Editor",
+      "text": "Outside the butcher's, a woman greets a neighbour with a smile.",
+      "start": 214.12,
+      "end": 218.43,
+      "sentence": 46,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Outside the butcher's, a woman greets a neighbour with a smile."
+        }
+      ]
+    },
+    {
+      "index": 47,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Hearing the Editor",
+      "text": "Her thought drifts across the lane: 'I can't bear another hour on my feet.",
+      "start": 218.78,
+      "end": 224.26,
+      "sentence": 47,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "Her thought drifts across the lane: 'I can't bear another hour on my feet."
+        }
+      ]
+    },
+    {
+      "index": 48,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Hearing the Editor",
+      "text": "Then a catch, the smallest pause, and the sentence turns over and comes back bright: 'The weather is being kind to us today.'",
+      "start": 224.61,
+      "end": 234.02,
+      "sentence": 48,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "Then a catch, the smallest pause, and the sentence turns over and comes back bright: 'The weather is being kind to us today.'"
+        }
+      ]
+    },
+    {
+      "index": 49,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Hearing the Editor",
+      "text": "A man waiting by the post office: 'If he says that one more time, I'll...",
+      "start": 234.72,
+      "end": 240.6,
+      "sentence": 49,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "A man waiting by the post office: 'If he says that one more time, I'll..."
+        }
+      ]
+    },
+    {
+      "index": 50,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Hearing the Editor",
+      "text": "A pause.",
+      "start": 240.95,
+      "end": 241.73,
+      "sentence": 50,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "A pause."
+        }
+      ]
+    },
+    {
+      "index": 51,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Hearing the Editor",
+      "text": "'Good of him to come.'",
+      "start": 242.08,
+      "end": 244.43,
+      "sentence": 51,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "'Good of him to come.'"
+        }
+      ]
+    },
+    {
+      "index": 52,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Hearing the Editor",
+      "text": "It is the same pause Thomas makes.",
+      "start": 245.13,
+      "end": 247.88,
+      "sentence": 52,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "It is the same pause Thomas makes."
+        },
+        {
+          "tag": "reflection",
+          "quote": "It is the same pause Thomas makes."
+        }
+      ]
+    },
+    {
+      "index": 53,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Hearing the Editor",
+      "text": "A hand on the door before a thought is let out.",
+      "start": 248.23,
+      "end": 252.54,
+      "sentence": 53,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "A hand on the door before a thought is let out."
+        }
+      ]
+    },
+    {
+      "index": 54,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Hearing the Editor",
+      "text": "An editor, working quietly behind every pair of eyes in town.",
+      "start": 252.89,
+      "end": 257.2,
+      "sentence": 54,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "An editor, working quietly behind every pair of eyes in town."
+        },
+        {
+          "tag": "reflection",
+          "quote": "An editor, working quietly behind every pair of eyes in town."
+        }
+      ]
+    },
+    {
+      "index": 55,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Hearing the Editor",
+      "text": "He stops in the middle of the lane, the basket heavy on his arm.",
+      "start": 257.9,
+      "end": 263.38,
+      "sentence": 55,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "He stops in the middle of the lane, the basket heavy on his arm."
+        }
+      ]
+    },
+    {
+      "index": 56,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Hearing the Editor",
+      "text": "Nobody in Wickham's Rest has told a lie in forty years.",
+      "start": 264.08,
+      "end": 268.39,
+      "sentence": 56,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "Nobody in Wickham's Rest has told a lie in forty years."
+        }
+      ]
+    },
+    {
+      "index": 57,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Hearing the Editor",
+      "text": "But perhaps nobody here has been honest either.",
+      "start": 268.74,
+      "end": 271.88,
+      "sentence": 57,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "But perhaps nobody here has been honest either."
+        },
+        {
+          "tag": "reflection",
+          "quote": "But perhaps nobody here has been honest either."
+        }
+      ]
+    },
+    {
+      "index": 58,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Hearing the Editor",
+      "text": "Perhaps they have only learned to edit.",
+      "start": 272.23,
+      "end": 274.97,
+      "sentence": 58,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Perhaps they have only learned to edit."
+        }
+      ]
+    },
+    {
+      "index": 59,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "Hearing the Editor",
+      "text": "For the first time in his life, Thomas wonders whether he would sound any different if no one could hear him.",
+      "start": 275.67,
+      "end": 283.9,
+      "sentence": 59,
+      "tags": [
+        {
+          "tag": "question",
+          "quote": "For the first time in his life, Thomas wonders whether he would sound any different if no one could hear him."
+        },
+        {
+          "tag": "open_loop:true_self",
+          "quote": "For the first time in his life, Thomas wonders whether he would sound any different if no one could hear him."
+        }
+      ]
+    },
+    {
+      "index": 60,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "Supper in Silence",
+      "text": "Night settles over the kitchen table.",
+      "start": 285.4,
+      "end": 287.75,
+      "sentence": 60,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Night settles over the kitchen table."
+        }
+      ]
+    },
+    {
+      "index": 61,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "Supper in Silence",
+      "text": "Bowls of parsnip broth steam in the flickering lamp light.",
+      "start": 288.1,
+      "end": 292.02,
+      "sentence": 61,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Bowls of parsnip broth steam in the flickering lamp light."
+        }
+      ]
+    },
+    {
+      "index": 62,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "Supper in Silence",
+      "text": "Across from Thomas, his wife of twenty-six years smooths the tablecloth with one hand.",
+      "start": 292.37,
+      "end": 297.86,
+      "sentence": 62,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Across from Thomas, his wife of twenty-six years smooths the tablecloth with one hand."
+        }
+      ]
+    },
+    {
+      "index": 63,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "Supper in Silence",
+      "text": "Her long silver braid rests over one shoulder.",
+      "start": 298.21,
+      "end": 301.35,
+      "sentence": 63,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Her long silver braid rests over one shoulder."
+        }
+      ]
+    },
+    {
+      "index": 64,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "Supper in Silence",
+      "text": "Her thought murmurs into the quiet room: 'What a lovely evening.",
+      "start": 301.7,
+      "end": 306.01,
+      "sentence": 64,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "Her thought murmurs into the quiet room: 'What a lovely evening."
+        }
+      ]
+    },
+    {
+      "index": 65,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "Supper in Silence",
+      "text": "Thomas looks up from his bowl.",
+      "start": 306.36,
+      "end": 308.71,
+      "sentence": 65,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Thomas looks up from his bowl."
+        }
+      ]
+    },
+    {
+      "index": 66,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "Supper in Silence",
+      "text": "He studies her eyes, seeing the exhaustion etched into the corners of her mouth.",
+      "start": 309.06,
+      "end": 314.54,
+      "sentence": 66,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "He studies her eyes, seeing the exhaustion etched into the corners of her mouth."
+        },
+        {
+          "tag": "reveal",
+          "quote": "He studies her eyes, seeing the exhaustion etched into the corners of her mouth."
+        }
+      ]
+    },
+    {
+      "index": 67,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "Supper in Silence",
+      "text": "Her fingers tremble slightly against the ceramic rim.",
+      "start": 314.89,
+      "end": 318.03,
+      "sentence": 67,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Her fingers tremble slightly against the ceramic rim."
+        }
+      ]
+    },
+    {
+      "index": 68,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "Supper in Silence",
+      "text": "For twenty-six years, he has lived inside the music of her pleasant broadcasts, believing her mind was as tranquil as an untroubled pond.",
+      "start": 318.38,
+      "end": 327.39,
+      "sentence": 68,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "For twenty-six years, he has lived inside the music of her pleasant broadcasts, believing her mind was as tranquil as an untroubled pond."
+        }
+      ]
+    },
+    {
+      "index": 69,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "Supper in Silence",
+      "text": "Now he hears the seam in the sound, the tiny hesitation before the warmth is put on.",
+      "start": 327.74,
+      "end": 334.41,
+      "sentence": 69,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "Now he hears the seam in the sound, the tiny hesitation before the warmth is put on."
+        },
+        {
+          "tag": "reflection",
+          "quote": "Now he hears the seam in the sound, the tiny hesitation before the warmth is put on."
+        }
+      ]
+    },
+    {
+      "index": 70,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "Supper in Silence",
+      "text": "He wonders what she would think if no one were listening.",
+      "start": 334.76,
+      "end": 339.07,
+      "sentence": 70,
+      "tags": [
+        {
+          "tag": "question",
+          "quote": "He wonders what she would think if no one were listening."
+        },
+        {
+          "tag": "reflection",
+          "quote": "He wonders what she would think if no one were listening."
+        },
+        {
+          "tag": "open_loop:nells_thoughts",
+          "quote": "He wonders what she would think if no one were listening."
+        }
+      ]
+    },
+    {
+      "index": 71,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "Supper in Silence",
+      "text": "In twenty-six years, he has never once wondered that.",
+      "start": 339.42,
+      "end": 342.94,
+      "sentence": 71,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "In twenty-six years, he has never once wondered that."
+        }
+      ]
+    },
+    {
+      "index": 72,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "Supper in Silence",
+      "text": "He sets his wooden spoon down on the trestle table.",
+      "start": 343.29,
+      "end": 347.21,
+      "sentence": 72,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "He sets his wooden spoon down on the trestle table."
+        }
+      ]
+    },
+    {
+      "index": 73,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "Supper in Silence",
+      "text": "He says nothing.",
+      "start": 347.56,
+      "end": 348.74,
+      "sentence": 73,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "He says nothing."
+        }
+      ]
+    },
+    {
+      "index": 74,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "reversal",
+      "title": "Supper in Silence",
+      "text": "Later, when the house is dark, he takes his coat from the hook and walks out toward the moor.",
+      "start": 349.09,
+      "end": 356.53,
+      "sentence": 74,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "Later, when the house is dark, he takes his coat from the hook and walks out toward the moor."
+        }
+      ]
+    },
+    {
+      "index": 75,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Crossing the Line",
+      "text": "Thomas walks past the last stone cottage into the raw night wind of the moors.",
+      "start": 358.03,
+      "end": 363.91,
+      "sentence": 75,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Thomas walks past the last stone cottage into the raw night wind of the moors."
+        }
+      ]
+    },
+    {
+      "index": 76,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Crossing the Line",
+      "text": "The earth rises toward the ancient granite boundary stones standing like silent teeth against the stars.",
+      "start": 364.26,
+      "end": 370.53,
+      "sentence": 76,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "The earth rises toward the ancient granite boundary stones standing like silent teeth against the stars."
+        }
+      ]
+    },
+    {
+      "index": 77,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Crossing the Line",
+      "text": "He steps across the Line.",
+      "start": 370.88,
+      "end": 372.84,
+      "sentence": 77,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "He steps across the Line."
+        },
+        {
+          "tag": "escalation",
+          "quote": "He steps across the Line."
+        }
+      ]
+    },
+    {
+      "index": 78,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Crossing the Line",
+      "text": "Instantly, the murmur of the town vanishes.",
+      "start": 373.19,
+      "end": 375.94,
+      "sentence": 78,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "Instantly, the murmur of the town vanishes."
+        }
+      ]
+    },
+    {
+      "index": 79,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Crossing the Line",
+      "text": "The silence is so complete it presses on his ears.",
+      "start": 376.29,
+      "end": 380.21,
+      "sentence": 79,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "The silence is so complete it presses on his ears."
+        }
+      ]
+    },
+    {
+      "index": 80,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Crossing the Line",
+      "text": "No thoughts drift from the dark heather; no mental hum touches his ears.",
+      "start": 380.56,
+      "end": 385.65,
+      "sentence": 80,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "No thoughts drift from the dark heather; no mental hum touches his ears."
+        }
+      ]
+    },
+    {
+      "index": 81,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Crossing the Line",
+      "text": "He sits on a cold mound of turf, pulling his wool coat tight, and waits for his true mind to arrive.",
+      "start": 386.0,
+      "end": 394.23,
+      "sentence": 81,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "He sits on a cold mound of turf, pulling his wool coat tight, and waits for his true mind to arrive."
+        }
+      ]
+    },
+    {
+      "index": 82,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Crossing the Line",
+      "text": "He waits for the unedited voice of Thomas Wren to speak up in the dark.",
+      "start": 394.58,
+      "end": 400.46,
+      "sentence": 82,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "He waits for the unedited voice of Thomas Wren to speak up in the dark."
+        }
+      ]
+    },
+    {
+      "index": 83,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Crossing the Line",
+      "text": "But nothing comes.",
+      "start": 400.81,
+      "end": 401.98,
+      "sentence": 83,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "But nothing comes."
+        }
+      ]
+    },
+    {
+      "index": 84,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Crossing the Line",
+      "text": "The silence stretches, and out of habit, his mind begins generating polite, measured sentences about the cold, shaping phrases for an audience that isn't there.",
+      "start": 402.33,
+      "end": 412.13,
+      "sentence": 84,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "The silence stretches, and out of habit, his mind begins generating polite, measured sentences about the cold, shaping phrases for an audience that isn't there."
+        },
+        {
+          "tag": "reflection",
+          "quote": "The silence stretches, and out of habit, his mind begins generating polite, measured sentences about the cold, shaping phrases for an audience that isn't there."
+        }
+      ]
+    },
+    {
+      "index": 85,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Crossing the Line",
+      "text": "The editor hasn't stopped working; it has become the walls of his skull.",
+      "start": 412.48,
+      "end": 417.58,
+      "sentence": 85,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "The editor hasn't stopped working; it has become the walls of his skull."
+        },
+        {
+          "tag": "reflection",
+          "quote": "The editor hasn't stopped working; it has become the walls of his skull."
+        }
+      ]
+    },
+    {
+      "index": 86,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "Crossing the Line",
+      "text": "He sits alone in the vast emptiness, realizing that even with no one left to listen, he no longer knows how to think without an editor.",
+      "start": 417.93,
+      "end": 428.12,
+      "sentence": 86,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "He sits alone in the vast emptiness, realizing that even with no one left to listen, he no longer knows how to think without an editor."
+        },
+        {
+          "tag": "reflection",
+          "quote": "He sits alone in the vast emptiness, realizing that even with no one left to listen, he no longer knows how to think without an editor."
+        },
+        {
+          "tag": "close_loop:true_self",
+          "quote": "He sits alone in the vast emptiness, realizing that even with no one left to listen, he no longer knows how to think without an editor."
+        }
+      ]
+    },
+    {
+      "index": 87,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "Footsteps in the Dark",
+      "text": "A dry rustle cuts through the damp heather behind him.",
+      "start": 429.62,
+      "end": 433.53,
+      "sentence": 87,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "A dry rustle cuts through the damp heather behind him."
+        }
+      ]
+    },
+    {
+      "index": 88,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "Footsteps in the Dark",
+      "text": "Thomas freezes, his hands gripping the cold turf.",
+      "start": 433.88,
+      "end": 437.02,
+      "sentence": 88,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "Thomas freezes, his hands gripping the cold turf."
+        }
+      ]
+    },
+    {
+      "index": 89,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "Footsteps in the Dark",
+      "text": "Footsteps crunch softly on gravel and wild grass, stepping past the granite markers into the dark.",
+      "start": 437.37,
+      "end": 443.64,
+      "sentence": 89,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "Footsteps crunch softly on gravel and wild grass, stepping past the granite markers into the dark."
+        }
+      ]
+    },
+    {
+      "index": 90,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "Footsteps in the Dark",
+      "text": "Nell stands silhouetted against the starlight, her dark green wool coat pulled tight against the moorland wind, her silver braid resting over her shoulder.",
+      "start": 443.99,
+      "end": 453.4,
+      "sentence": 90,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "Nell stands silhouetted against the starlight, her dark green wool coat pulled tight against the moorland wind, her silver braid resting over her shoulder."
+        },
+        {
+          "tag": "description",
+          "quote": "Nell stands silhouetted against the starlight, her dark green wool coat pulled tight against the moorland wind, her silver braid resting over her shoulder."
+        }
+      ]
+    },
+    {
+      "index": 91,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "Footsteps in the Dark",
+      "text": "He hears nothing from her.",
+      "start": 453.75,
+      "end": 455.71,
+      "sentence": 91,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "He hears nothing from her."
+        }
+      ]
+    },
+    {
+      "index": 92,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "Footsteps in the Dark",
+      "text": "Out here, he can't.",
+      "start": 456.06,
+      "end": 457.62,
+      "sentence": 92,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "Out here, he can't."
+        }
+      ]
+    },
+    {
+      "index": 93,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "Footsteps in the Dark",
+      "text": "In the total absence of mental noise, she opens her mouth and speaks out loud into the empty air, her voice clear and startlingly real.",
+      "start": 457.97,
+      "end": 467.77,
+      "sentence": 93,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "In the total absence of mental noise, she opens her mouth and speaks out loud into the empty air, her voice clear and startlingly real."
+        },
+        {
+          "tag": "escalation",
+          "quote": "In the total absence of mental noise, she opens her mouth and speaks out loud into the empty air, her voice clear and startlingly real."
+        }
+      ]
+    },
+    {
+      "index": 94,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "Footsteps in the Dark",
+      "text": "\"I've been coming here for years,\" Nell says.",
+      "start": 468.12,
+      "end": 471.26,
+      "sentence": 94,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"I've been coming here for years,\" Nell says."
+        },
+        {
+          "tag": "reveal",
+          "quote": "\"I've been coming here for years,\" Nell says."
+        },
+        {
+          "tag": "close_loop:nells_thoughts",
+          "quote": "\"I've been coming here for years,\" Nell says."
+        }
+      ]
+    },
+    {
+      "index": 95,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "Footsteps in the Dark",
+      "text": "Thomas turns his head, staring up at her in the dim light.",
+      "start": 471.61,
+      "end": 476.31,
+      "sentence": 95,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Thomas turns his head, staring up at her in the dim light."
+        }
+      ]
+    },
+    {
+      "index": 96,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "Footsteps in the Dark",
+      "text": "\"Years,\" he repeats.",
+      "start": 476.66,
+      "end": 477.83,
+      "sentence": 96,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Years,\" he repeats."
+        }
+      ]
+    },
+    {
+      "index": 97,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "Footsteps in the Dark",
+      "text": "\"Every Thursday.",
+      "start": 478.53,
+      "end": 479.32,
+      "sentence": 97,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Every Thursday."
+        },
+        {
+          "tag": "reveal",
+          "quote": "\"Every Thursday."
+        }
+      ]
+    },
+    {
+      "index": 98,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "Footsteps in the Dark",
+      "text": "When you think I'm at the chapel.",
+      "start": 479.67,
+      "end": 482.41,
+      "sentence": 98,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "When you think I'm at the chapel."
+        },
+        {
+          "tag": "reveal",
+          "quote": "When you think I'm at the chapel."
+        }
+      ]
+    },
+    {
+      "index": 99,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "Footsteps in the Dark",
+      "text": "She almost smiles.",
+      "start": 482.76,
+      "end": 483.94,
+      "sentence": 99,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "She almost smiles."
+        }
+      ]
+    },
+    {
+      "index": 100,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "Footsteps in the Dark",
+      "text": "\"Out here I can think whatever I like, and nobody has to forgive me for it.\"",
+      "start": 484.29,
+      "end": 490.56,
+      "sentence": 100,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Out here I can think whatever I like, and nobody has to forgive me for it.\""
+        },
+        {
+          "tag": "reveal",
+          "quote": "\"Out here I can think whatever I like, and nobody has to forgive me for it.\""
+        }
+      ]
+    },
+    {
+      "index": 101,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "Footsteps in the Dark",
+      "text": "Twenty-six years without a single argument.",
+      "start": 491.26,
+      "end": 493.61,
+      "sentence": 101,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Twenty-six years without a single argument."
+        }
+      ]
+    },
+    {
+      "index": 102,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "Footsteps in the Dark",
+      "text": "He had always believed it meant they understood each other.",
+      "start": 493.96,
+      "end": 497.88,
+      "sentence": 102,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "He had always believed it meant they understood each other."
+        }
+      ]
+    },
+    {
+      "index": 103,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "Footsteps in the Dark",
+      "text": "Standing in the silence, he understands what it really meant: he has only ever heard the version of her she was willing to let out.",
+      "start": 498.23,
+      "end": 508.03,
+      "sentence": 103,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "Standing in the silence, he understands what it really meant: he has only ever heard the version of her she was willing to let out."
+        },
+        {
+          "tag": "reflection",
+          "quote": "Standing in the silence, he understands what it really meant: he has only ever heard the version of her she was willing to let out."
+        }
+      ]
+    },
+    {
+      "index": 104,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "Footsteps in the Dark",
+      "text": "And she has only ever heard his.",
+      "start": 508.38,
+      "end": 511.12,
+      "sentence": 104,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "And she has only ever heard his."
+        }
+      ]
+    },
+    {
+      "index": 105,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Unspoken Answer",
+      "text": "The wind moves through the heather.",
+      "start": 512.62,
+      "end": 514.97,
+      "sentence": 105,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "The wind moves through the heather."
+        }
+      ]
+    },
+    {
+      "index": 106,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Unspoken Answer",
+      "text": "Nell sits down beside him on the cold turf, close enough to touch, and for once he has no idea what she is thinking.",
+      "start": 515.32,
+      "end": 524.73,
+      "sentence": 106,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Nell sits down beside him on the cold turf, close enough to touch, and for once he has no idea what she is thinking."
+        },
+        {
+          "tag": "reflection",
+          "quote": "Nell sits down beside him on the cold turf, close enough to touch, and for once he has no idea what she is thinking."
+        }
+      ]
+    },
+    {
+      "index": 107,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Unspoken Answer",
+      "text": "It frightens him.",
+      "start": 525.08,
+      "end": 526.25,
+      "sentence": 107,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "It frightens him."
+        }
+      ]
+    },
+    {
+      "index": 108,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Unspoken Answer",
+      "text": "It is also the first time in twenty-six years that she has felt like a stranger, and he finds that he wants to know her.",
+      "start": 526.6,
+      "end": 536.4,
+      "sentence": 108,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "It is also the first time in twenty-six years that she has felt like a stranger, and he finds that he wants to know her."
+        },
+        {
+          "tag": "escalation",
+          "quote": "It is also the first time in twenty-six years that she has felt like a stranger, and he finds that he wants to know her."
+        }
+      ]
+    },
+    {
+      "index": 109,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Unspoken Answer",
+      "text": "\"Can I ask you something?\" she says.",
+      "start": 537.1,
+      "end": 539.84,
+      "sentence": 109,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Can I ask you something?\" she says."
+        },
+        {
+          "tag": "question",
+          "quote": "\"Can I ask you something?\" she says."
+        }
+      ]
+    },
+    {
+      "index": 110,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Unspoken Answer",
+      "text": "He nods.",
+      "start": 540.54,
+      "end": 541.33,
+      "sentence": 110,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "He nods."
+        }
+      ]
+    },
+    {
+      "index": 111,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Unspoken Answer",
+      "text": "\"What do you actually think, Thomas?\"",
+      "start": 542.03,
+      "end": 544.38,
+      "sentence": 111,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"What do you actually think, Thomas?\""
+        },
+        {
+          "tag": "question",
+          "quote": "\"What do you actually think, Thomas?\""
+        },
+        {
+          "tag": "open_loop:thomas_true_thought",
+          "quote": "\"What do you actually think, Thomas?\""
+        }
+      ]
+    },
+    {
+      "index": 112,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Unspoken Answer",
+      "text": "The question lands in the silence and stays there.",
+      "start": 545.08,
+      "end": 548.6,
+      "sentence": 112,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "The question lands in the silence and stays there."
+        }
+      ]
+    },
+    {
+      "index": 113,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Unspoken Answer",
+      "text": "Inside him the editor wakes at once and starts offering sentences.",
+      "start": 548.95,
+      "end": 553.27,
+      "sentence": 113,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Inside him the editor wakes at once and starts offering sentences."
+        }
+      ]
+    },
+    {
+      "index": 114,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Unspoken Answer",
+      "text": "I think you're tired.",
+      "start": 553.62,
+      "end": 555.18,
+      "sentence": 114,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "I think you're tired."
+        }
+      ]
+    },
+    {
+      "index": 115,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Unspoken Answer",
+      "text": "I think we should go home.",
+      "start": 555.53,
+      "end": 557.88,
+      "sentence": 115,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "I think we should go home."
+        }
+      ]
+    },
+    {
+      "index": 116,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Unspoken Answer",
+      "text": "I think everything is fine.",
+      "start": 558.23,
+      "end": 560.19,
+      "sentence": 116,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "I think everything is fine."
+        }
+      ]
+    },
+    {
+      "index": 117,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Unspoken Answer",
+      "text": "Gentle, true enough, and not one of them his.",
+      "start": 560.54,
+      "end": 564.07,
+      "sentence": 117,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Gentle, true enough, and not one of them his."
+        }
+      ]
+    },
+    {
+      "index": 118,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Unspoken Answer",
+      "text": "He lets them pass.",
+      "start": 564.77,
+      "end": 566.34,
+      "sentence": 118,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "He lets them pass."
+        }
+      ]
+    },
+    {
+      "index": 119,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Unspoken Answer",
+      "text": "He breathes in the cold air.",
+      "start": 567.04,
+      "end": 569.39,
+      "sentence": 119,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "He breathes in the cold air."
+        }
+      ]
+    },
+    {
+      "index": 120,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Unspoken Answer",
+      "text": "He opens his mouth.",
+      "start": 569.74,
+      "end": 571.31,
+      "sentence": 120,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "He opens his mouth."
+        },
+        {
+          "tag": "decision",
+          "quote": "He opens his mouth."
+        }
+      ]
+    },
+    {
+      "index": 121,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "climax",
+      "title": "The Unspoken Answer",
+      "text": "Behind them, the lights of Wickham's Rest go on burning, waiting for him to come back and be heard.",
+      "start": 572.01,
+      "end": 579.45,
+      "sentence": 121,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Behind them, the lights of Wickham's Rest go on burning, waiting for him to come back and be heard."
+        }
+      ]
+    },
+    {
+      "index": 122,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The Hidden Mind",
+      "text": "We never hear what Thomas said.",
+      "start": 580.95,
+      "end": 583.31,
+      "sentence": 122,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "We never hear what Thomas said."
+        },
+        {
+          "tag": "close_loop:thomas_true_thought",
+          "quote": "We never hear what Thomas said."
+        }
+      ]
+    },
+    {
+      "index": 123,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The Hidden Mind",
+      "text": "Maybe he told her the truth.",
+      "start": 584.01,
+      "end": 586.36,
+      "sentence": 123,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Maybe he told her the truth."
+        }
+      ]
+    },
+    {
+      "index": 124,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The Hidden Mind",
+      "text": "Maybe he discovered he no longer had one.",
+      "start": 586.71,
+      "end": 589.84,
+      "sentence": 124,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Maybe he discovered he no longer had one."
+        }
+      ]
+    },
+    {
+      "index": 125,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The Hidden Mind",
+      "text": "Or maybe he said something gentle and meant it, and that was the truth all along.",
+      "start": 590.19,
+      "end": 596.46,
+      "sentence": 125,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Or maybe he said something gentle and meant it, and that was the truth all along."
+        }
+      ]
+    },
+    {
+      "index": 126,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The Hidden Mind",
+      "text": "In Wickham's Rest they still think clean thoughts, and nobody has argued in a very long time.",
+      "start": 597.16,
+      "end": 603.82,
+      "sentence": 126,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "In Wickham's Rest they still think clean thoughts, and nobody has argued in a very long time."
+        }
+      ]
+    },
+    {
+      "index": 127,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The Hidden Mind",
+      "text": "There is a thought in your head right now that no one will ever hear.",
+      "start": 604.52,
+      "end": 610.4,
+      "sentence": 127,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "There is a thought in your head right now that no one will ever hear."
+        }
+      ]
+    },
+    {
+      "index": 128,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The Hidden Mind",
+      "text": "Is that one you, or is the one keeping it quiet?",
+      "start": 610.75,
+      "end": 615.06,
+      "sentence": 128,
+      "tags": [
+        {
+          "tag": "question",
+          "quote": "Is that one you, or is the one keeping it quiet?"
+        },
+        {
+          "tag": "reflection",
+          "quote": "Is that one you, or is the one keeping it quiet?"
+        }
+      ]
+    }
+  ]
+}

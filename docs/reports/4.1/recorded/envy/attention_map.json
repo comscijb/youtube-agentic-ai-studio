@@ -1,0 +1,2402 @@
+{
+  "key": "1aec2e00c042d6e6c1a8c11d30cc237b03730f597eec10384e10d4f74cc16b2f",
+  "version": 1,
+  "duration": 684.0,
+  "discarded_tags": 0,
+  "sentences": [
+    {
+      "index": 0,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Measured Distance",
+      "text": "Julian Vance had spent fifteen years engineering a life no ordinary man could pity.",
+      "start": 0.0,
+      "end": 5.49,
+      "sentence": 0,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Julian Vance had spent fifteen years engineering a life no ordinary man could pity."
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Measured Distance",
+      "text": "At thirty-seven, he possessed the immaculate loft, the bespoke oak table, and a wife whose effortless poise made other collectors look clumsy.",
+      "start": 5.84,
+      "end": 14.46,
+      "sentence": 1,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "At thirty-seven, he possessed the immaculate loft, the bespoke oak table, and a wife whose effortless poise made other collectors look clumsy."
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Measured Distance",
+      "text": "Yet as he aligned the smoked decanters two hours before their fifth anniversary dinner—eight guests, with Marcus Croft seated directly across from Elena—he could not look at his wife without calculating how she would appear to the one man whose envy he wanted most.",
+      "start": 14.81,
+      "end": 32.84,
+      "sentence": 2,
+      "tags": [
+        {
+          "tag": "open_loop:anniversary_dinner",
+          "quote": "eight guests, with Marcus Croft seated directly across from Elena"
+        },
+        {
+          "tag": "reveal",
+          "quote": "he could not look at his wife without calculating how she would appear to the one man whose envy he wanted most."
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Measured Distance",
+      "text": "She sat at the kitchen counter, her throat bare, the platinum chain he bought her resting untouched in its velvet box.",
+      "start": 33.54,
+      "end": 41.77,
+      "sentence": 3,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "She sat at the kitchen counter, her throat bare, the platinum chain he bought her resting untouched in its velvet box."
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Measured Distance",
+      "text": "\"When Marcus arrives, tell the rainstorm story,\" Julian said, straightening her linen napkin by a fraction of an inch.",
+      "start": 42.47,
+      "end": 49.91,
+      "sentence": 4,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"When Marcus arrives, tell the rainstorm story,\" Julian said, straightening her linen napkin by a fraction of an inch."
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Measured Distance",
+      "text": "\"How we met in the arboretum greenhouse.",
+      "start": 50.26,
+      "end": 53.01,
+      "sentence": 5,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"How we met in the arboretum greenhouse."
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Measured Distance",
+      "text": "It frames us properly.\"",
+      "start": 53.36,
+      "end": 54.92,
+      "sentence": 6,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "It frames us properly.\""
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Measured Distance",
+      "text": "Elena didn't move.",
+      "start": 55.62,
+      "end": 56.8,
+      "sentence": 7,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Elena didn't move."
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Measured Distance",
+      "text": "\"I don’t want to audition for Marcus tonight, Julian.\"",
+      "start": 57.15,
+      "end": 60.68,
+      "sentence": 8,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"I don’t want to audition for Marcus tonight, Julian.\""
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Measured Distance",
+      "text": "Julian ignored the quiet pull in her voice.",
+      "start": 61.38,
+      "end": 64.51,
+      "sentence": 9,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Julian ignored the quiet pull in her voice."
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Measured Distance",
+      "text": "\"He expects poetry, Elena.",
+      "start": 64.86,
+      "end": 66.43,
+      "sentence": 10,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"He expects poetry, Elena."
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "scene_id": "s01",
+      "section": 0,
+      "section_type": "opening",
+      "title": "The Measured Distance",
+      "text": "Don't disappoint the room.\"",
+      "start": 66.78,
+      "end": 68.35,
+      "sentence": 11,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "Don't disappoint the room.\""
+        }
+      ]
+    },
+    {
+      "index": 12,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "The Origin of Armor",
+      "text": "Elena rinsed winter thyme under the faucet, leaving a dark smudge of greenhouse soil against the honed white marble.",
+      "start": 69.85,
+      "end": 77.29,
+      "sentence": 12,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Elena rinsed winter thyme under the faucet, leaving a dark smudge of greenhouse soil against the honed white marble."
+        }
+      ]
+    },
+    {
+      "index": 13,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "The Origin of Armor",
+      "text": "Julian was already there with a damp microfiber cloth, scrubbing before the water had even pooled.",
+      "start": 77.64,
+      "end": 83.91,
+      "sentence": 13,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Julian was already there with a damp microfiber cloth, scrubbing before the water had even pooled."
+        }
+      ]
+    },
+    {
+      "index": 14,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "The Origin of Armor",
+      "text": "\"It's just potting soil, Julian,\" she said softly, watching his knuckles whiten.",
+      "start": 84.61,
+      "end": 89.32,
+      "sentence": 14,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"It's just potting soil, Julian,\" she said softly, watching his knuckles whiten."
+        }
+      ]
+    },
+    {
+      "index": 15,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "The Origin of Armor",
+      "text": "\"Nothing here is allowed to breathe.\"",
+      "start": 89.67,
+      "end": 92.02,
+      "sentence": 15,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Nothing here is allowed to breathe.\""
+        }
+      ]
+    },
+    {
+      "index": 16,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "The Origin of Armor",
+      "text": "His chest tightened around an old, familiar knot.",
+      "start": 92.72,
+      "end": 95.85,
+      "sentence": 16,
+      "tags": [
+        {
+          "tag": "open_loop:why_fear_pity",
+          "quote": "His chest tightened around an old, familiar knot."
+        }
+      ]
+    },
+    {
+      "index": 17,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "The Origin of Armor",
+      "text": "At twelve years old, in an unheated hardware store outside Cleveland, he had stood behind the counter watching the local church elders deliver cardboard boxes of dented canned peaches to his bankrupt father.",
+      "start": 96.2,
+      "end": 109.13,
+      "sentence": 17,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "At twelve years old, in an unheated hardware store outside Cleveland, he had stood behind the counter watching the local church elders deliver cardboard boxes of dented canned peaches to his bankrupt father."
+        }
+      ]
+    },
+    {
+      "index": 18,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "The Origin of Armor",
+      "text": "The men had spoken in hushed, church-pew whispers, placing apologetic hands on his father’s slumped shoulders.",
+      "start": 109.48,
+      "end": 115.76,
+      "sentence": 18,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "The men had spoken in hushed, church-pew whispers, placing apologetic hands on his father’s slumped shoulders."
+        }
+      ]
+    },
+    {
+      "index": 19,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "The Origin of Armor",
+      "text": "His father had kept his eyes locked on the cracked linoleum, nodding with humiliating gratitude.",
+      "start": 116.11,
+      "end": 121.98,
+      "sentence": 19,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "His father had kept his eyes locked on the cracked linoleum, nodding with humiliating gratitude."
+        }
+      ]
+    },
+    {
+      "index": 20,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "The Origin of Armor",
+      "text": "Julian had sworn that day that no living person would ever look at him with sorrow.",
+      "start": 122.33,
+      "end": 128.6,
+      "sentence": 20,
+      "tags": [
+        {
+          "tag": "close_loop:why_fear_pity",
+          "quote": "Julian had sworn that day that no living person would ever look at him with sorrow."
+        },
+        {
+          "tag": "reveal",
+          "quote": "Julian had sworn that day that no living person would ever look at him with sorrow."
+        }
+      ]
+    },
+    {
+      "index": 21,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "The Origin of Armor",
+      "text": "\"Pity is execution without a blade,\" Julian said, wiping the clean stone dry.",
+      "start": 129.3,
+      "end": 134.4,
+      "sentence": 21,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Pity is execution without a blade,\" Julian said, wiping the clean stone dry."
+        }
+      ]
+    },
+    {
+      "index": 22,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "The Origin of Armor",
+      "text": "\"Envy keeps them at a distance.\"",
+      "start": 134.75,
+      "end": 137.1,
+      "sentence": 22,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Envy keeps them at a distance.\""
+        }
+      ]
+    },
+    {
+      "index": 23,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "The Origin of Armor",
+      "text": "\"It keeps everyone at a distance,\" Elena replied, drying her hands.",
+      "start": 137.8,
+      "end": 142.11,
+      "sentence": 23,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"It keeps everyone at a distance,\" Elena replied, drying her hands."
+        }
+      ]
+    },
+    {
+      "index": 24,
+      "scene_id": "s02",
+      "section": 1,
+      "section_type": "setup",
+      "title": "The Origin of Armor",
+      "text": "\"Even me.\"",
+      "start": 142.46,
+      "end": 143.24,
+      "sentence": 24,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Even me.\""
+        }
+      ]
+    },
+    {
+      "index": 25,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Curated Gesture",
+      "text": "In the dressing room, Elena buttoned her ivory silk shirt, her fingers unsteady.",
+      "start": 144.74,
+      "end": 149.84,
+      "sentence": 25,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "In the dressing room, Elena buttoned her ivory silk shirt, her fingers unsteady."
+        }
+      ]
+    },
+    {
+      "index": 26,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Curated Gesture",
+      "text": "\"The board meets on Monday,\" she said, her voice dropping.",
+      "start": 150.54,
+      "end": 154.46,
+      "sentence": 26,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"The board meets on Monday,\" she said, her voice dropping."
+        }
+      ]
+    },
+    {
+      "index": 27,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Curated Gesture",
+      "text": "\"They’re cutting the southern conservatory annex.",
+      "start": 154.81,
+      "end": 157.16,
+      "sentence": 27,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"They’re cutting the southern conservatory annex."
+        }
+      ]
+    },
+    {
+      "index": 28,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Curated Gesture",
+      "text": "Thirty years of seed archives, Julian.",
+      "start": 157.51,
+      "end": 159.86,
+      "sentence": 28,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "Thirty years of seed archives, Julian."
+        }
+      ]
+    },
+    {
+      "index": 29,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Curated Gesture",
+      "text": "Gone.\"",
+      "start": 160.21,
+      "end": 160.6,
+      "sentence": 29,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "Gone.\""
+        }
+      ]
+    },
+    {
+      "index": 30,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Curated Gesture",
+      "text": "Julian walked up behind her reflection.",
+      "start": 161.3,
+      "end": 163.65,
+      "sentence": 30,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Julian walked up behind her reflection."
+        }
+      ]
+    },
+    {
+      "index": 31,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Curated Gesture",
+      "text": "He didn't touch her hair or ask how she felt.",
+      "start": 164.0,
+      "end": 167.92,
+      "sentence": 31,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "He didn't touch her hair or ask how she felt."
+        }
+      ]
+    },
+    {
+      "index": 32,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Curated Gesture",
+      "text": "Instead, he took the collar of her blouse between two fingers, crisping the fold, and adjusted the angle of her shoulders until her posture matched the sleek symmetry of the wardrobe panels.",
+      "start": 168.27,
+      "end": 180.81,
+      "sentence": 32,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Instead, he took the collar of her blouse between two fingers, crisping the fold, and adjusted the angle of her shoulders until her posture matched the sleek symmetry of the wardrobe panels."
+        }
+      ]
+    },
+    {
+      "index": 33,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Curated Gesture",
+      "text": "\"That's our opening,\" he murmured, meeting her eyes in the glass.",
+      "start": 181.51,
+      "end": 185.83,
+      "sentence": 33,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"That's our opening,\" he murmured, meeting her eyes in the glass."
+        }
+      ]
+    },
+    {
+      "index": 34,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Curated Gesture",
+      "text": "\"Don't call it a cut.",
+      "start": 186.18,
+      "end": 188.13,
+      "sentence": 34,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Don't call it a cut."
+        }
+      ]
+    },
+    {
+      "index": 35,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Curated Gesture",
+      "text": "Call it an institutional pivot.",
+      "start": 188.48,
+      "end": 190.44,
+      "sentence": 35,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "Call it an institutional pivot."
+        }
+      ]
+    },
+    {
+      "index": 36,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Curated Gesture",
+      "text": "Mention the rare Andean fern specimens over dessert.",
+      "start": 190.79,
+      "end": 193.93,
+      "sentence": 36,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "Mention the rare Andean fern specimens over dessert."
+        }
+      ]
+    },
+    {
+      "index": 37,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Curated Gesture",
+      "text": "Marcus loves patrons who sound selective.\"",
+      "start": 194.28,
+      "end": 196.63,
+      "sentence": 37,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "Marcus loves patrons who sound selective.\""
+        }
+      ]
+    },
+    {
+      "index": 38,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Curated Gesture",
+      "text": "Elena slowly lifted two fingers to the pulse point on her wrist, pressing down as if counting the beats.",
+      "start": 197.33,
+      "end": 204.78,
+      "sentence": 38,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Elena slowly lifted two fingers to the pulse point on her wrist, pressing down as if counting the beats."
+        }
+      ]
+    },
+    {
+      "index": 39,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Curated Gesture",
+      "text": "\"Do you ever see me?\" she asked the mirror.",
+      "start": 205.48,
+      "end": 209.0,
+      "sentence": 39,
+      "tags": [
+        {
+          "tag": "question",
+          "quote": "\"Do you ever see me?\" she asked the mirror."
+        },
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Do you ever see me?\" she asked the mirror."
+        }
+      ]
+    },
+    {
+      "index": 40,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Curated Gesture",
+      "text": "\"Or do you only see what Marcus Croft is going to covet?\"",
+      "start": 209.35,
+      "end": 214.06,
+      "sentence": 40,
+      "tags": [
+        {
+          "tag": "question",
+          "quote": "\"Or do you only see what Marcus Croft is going to covet?\""
+        },
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Or do you only see what Marcus Croft is going to covet?\""
+        }
+      ]
+    },
+    {
+      "index": 41,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Curated Gesture",
+      "text": "Julian smoothed the silk over her wrist with practiced care.",
+      "start": 214.76,
+      "end": 218.68,
+      "sentence": 41,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Julian smoothed the silk over her wrist with practiced care."
+        }
+      ]
+    },
+    {
+      "index": 42,
+      "scene_id": "s03",
+      "section": 2,
+      "section_type": "setup",
+      "title": "The Curated Gesture",
+      "text": "\"I see what keeps us safe.\"",
+      "start": 219.03,
+      "end": 221.38,
+      "sentence": 42,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"I see what keeps us safe.\""
+        }
+      ]
+    },
+    {
+      "index": 43,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Narcotic of Covetous Eyes",
+      "text": "Marcus Croft set a bottle of ninety-seven Amarone on the credenza with the measured insolence of an appraiser.",
+      "start": 222.88,
+      "end": 229.93,
+      "sentence": 43,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "Marcus Croft set a bottle of ninety-seven Amarone on the credenza with the measured insolence of an appraiser."
+        }
+      ]
+    },
+    {
+      "index": 44,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Narcotic of Covetous Eyes",
+      "text": "He didn't greet Julian first; he dragged an index finger down the central seam of the blackened-oak dining table, testing the joinery for flaws.",
+      "start": 230.28,
+      "end": 239.69,
+      "sentence": 44,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "He didn't greet Julian first; he dragged an index finger down the central seam of the blackened-oak dining table, testing the joinery for flaws."
+        }
+      ]
+    },
+    {
+      "index": 45,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Narcotic of Covetous Eyes",
+      "text": "\"Remarkable balance, Julian,\" Marcus murmured, looking around the vaulted space with an amused, hungry squint.",
+      "start": 240.39,
+      "end": 246.27,
+      "sentence": 45,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Remarkable balance, Julian,\" Marcus murmured, looking around the vaulted space with an amused, hungry squint."
+        }
+      ]
+    },
+    {
+      "index": 46,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Narcotic of Covetous Eyes",
+      "text": "\"Most men can manage the collection or the marriage.",
+      "start": 246.62,
+      "end": 250.14,
+      "sentence": 46,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Most men can manage the collection or the marriage."
+        }
+      ]
+    },
+    {
+      "index": 47,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Narcotic of Covetous Eyes",
+      "text": "To keep both looking pristine feels almost fraudulent.\"",
+      "start": 250.49,
+      "end": 253.63,
+      "sentence": 47,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "To keep both looking pristine feels almost fraudulent.\""
+        },
+        {
+          "tag": "escalation",
+          "quote": "To keep both looking pristine feels almost fraudulent.\""
+        }
+      ]
+    },
+    {
+      "index": 48,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Narcotic of Covetous Eyes",
+      "text": "Julian didn't flinch.",
+      "start": 254.33,
+      "end": 255.5,
+      "sentence": 48,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Julian didn't flinch."
+        }
+      ]
+    },
+    {
+      "index": 49,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Narcotic of Covetous Eyes",
+      "text": "He uncorked the Amarone with effortless calm, tilting the bottle to catch the warm glow of the beeswax tapers.",
+      "start": 255.85,
+      "end": 263.3,
+      "sentence": 49,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "He uncorked the Amarone with effortless calm, tilting the bottle to catch the warm glow of the beeswax tapers."
+        }
+      ]
+    },
+    {
+      "index": 50,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Narcotic of Covetous Eyes",
+      "text": "\"Elena grounds the aesthetics,\" Julian said smoothly, nodding toward the pressed botanical cuttings framed behind museum acrylic on the console.",
+      "start": 264.0,
+      "end": 271.84,
+      "sentence": 50,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Elena grounds the aesthetics,\" Julian said smoothly, nodding toward the pressed botanical cuttings framed behind museum acrylic on the console."
+        }
+      ]
+    },
+    {
+      "index": 51,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Narcotic of Covetous Eyes",
+      "text": "\"She preserves living things.",
+      "start": 272.19,
+      "end": 273.76,
+      "sentence": 51,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"She preserves living things."
+        }
+      ]
+    },
+    {
+      "index": 52,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Narcotic of Covetous Eyes",
+      "text": "I merely build the rooms to hold them.\"",
+      "start": 274.11,
+      "end": 277.24,
+      "sentence": 52,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "I merely build the rooms to hold them.\""
+        }
+      ]
+    },
+    {
+      "index": 53,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Narcotic of Covetous Eyes",
+      "text": "The barb landed.",
+      "start": 277.94,
+      "end": 279.12,
+      "sentence": 53,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "The barb landed."
+        }
+      ]
+    },
+    {
+      "index": 54,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Narcotic of Covetous Eyes",
+      "text": "Marcus tightened his jaw around his stemware, staring at the botanicals with the bitter hunger of a man who owned four residences and not one shared morning.",
+      "start": 279.47,
+      "end": 290.05,
+      "sentence": 54,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "staring at the botanicals with the bitter hunger of a man who owned four residences and not one shared morning."
+        }
+      ]
+    },
+    {
+      "index": 55,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Narcotic of Covetous Eyes",
+      "text": "The warmth in Julian’s chest was immediate and narcotic.",
+      "start": 290.75,
+      "end": 294.27,
+      "sentence": 55,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "The warmth in Julian’s chest was immediate and narcotic."
+        }
+      ]
+    },
+    {
+      "index": 56,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Narcotic of Covetous Eyes",
+      "text": "He was not pitied; he was envied.",
+      "start": 294.62,
+      "end": 297.37,
+      "sentence": 56,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "He was not pitied; he was envied."
+        }
+      ]
+    },
+    {
+      "index": 57,
+      "scene_id": "s04",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Narcotic of Covetous Eyes",
+      "text": "Across the room, Elena’s phone hummed against the marble counter, and she slipped quietly toward the service pantry.",
+      "start": 297.72,
+      "end": 304.77,
+      "sentence": 57,
+      "tags": [
+        {
+          "tag": "open_loop:phone_call",
+          "quote": "Across the room, Elena’s phone hummed against the marble counter, and she slipped quietly toward the service pantry."
+        }
+      ]
+    },
+    {
+      "index": 58,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "A Crack in the Glaze",
+      "text": "Julian pushed through the pantry door with a silver tray and found Elena doubled over against the wire shelving.",
+      "start": 306.27,
+      "end": 313.72,
+      "sentence": 58,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "Julian pushed through the pantry door with a silver tray and found Elena doubled over against the wire shelving."
+        }
+      ]
+    },
+    {
+      "index": 59,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "A Crack in the Glaze",
+      "text": "Her phone was clamped against her chest, her ribs jerking under the silk shirt in jagged spasms.",
+      "start": 314.07,
+      "end": 320.73,
+      "sentence": 59,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Her phone was clamped against her chest, her ribs jerking under the silk shirt in jagged spasms."
+        }
+      ]
+    },
+    {
+      "index": 60,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "A Crack in the Glaze",
+      "text": "\"Elena?\"",
+      "start": 321.43,
+      "end": 321.82,
+      "sentence": 60,
+      "tags": [
+        {
+          "tag": "question",
+          "quote": "\"Elena?\""
+        },
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Elena?\""
+        }
+      ]
+    },
+    {
+      "index": 61,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "A Crack in the Glaze",
+      "text": "She looked up, her face blotched and wet.",
+      "start": 322.52,
+      "end": 325.66,
+      "sentence": 61,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "She looked up, her face blotched and wet."
+        }
+      ]
+    },
+    {
+      "index": 62,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "A Crack in the Glaze",
+      "text": "\"Paul,\" she choked out.",
+      "start": 326.01,
+      "end": 327.58,
+      "sentence": 62,
+      "tags": [
+        {
+          "tag": "close_loop:phone_call",
+          "quote": "\"Paul,\" she choked out."
+        },
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Paul,\" she choked out."
+        }
+      ]
+    },
+    {
+      "index": 63,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "A Crack in the Glaze",
+      "text": "\"The conservatory roof collapsed in the north quad.",
+      "start": 327.93,
+      "end": 331.06,
+      "sentence": 63,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "\"The conservatory roof collapsed in the north quad."
+        },
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"The conservatory roof collapsed in the north quad."
+        }
+      ]
+    },
+    {
+      "index": 64,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "A Crack in the Glaze",
+      "text": "He was inside, Julian.",
+      "start": 331.41,
+      "end": 332.98,
+      "sentence": 64,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "He was inside, Julian."
+        }
+      ]
+    },
+    {
+      "index": 65,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "A Crack in the Glaze",
+      "text": "He's dead.\"",
+      "start": 333.33,
+      "end": 334.11,
+      "sentence": 65,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "He's dead.\""
+        },
+        {
+          "tag": "dialogue_turn",
+          "quote": "He's dead.\""
+        }
+      ]
+    },
+    {
+      "index": 66,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "A Crack in the Glaze",
+      "text": "Her mentor.",
+      "start": 334.81,
+      "end": 335.6,
+      "sentence": 66,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "Her mentor."
+        }
+      ]
+    },
+    {
+      "index": 67,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "A Crack in the Glaze",
+      "text": "The man who had handed her her first botanical archive grant.",
+      "start": 335.95,
+      "end": 340.26,
+      "sentence": 67,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "The man who had handed her her first botanical archive grant."
+        }
+      ]
+    },
+    {
+      "index": 68,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "A Crack in the Glaze",
+      "text": "Julian stiffened.",
+      "start": 340.96,
+      "end": 341.74,
+      "sentence": 68,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Julian stiffened."
+        }
+      ]
+    },
+    {
+      "index": 69,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "A Crack in the Glaze",
+      "text": "His gaze immediately darted to the slit of dining light beneath the louvered door.",
+      "start": 342.09,
+      "end": 347.58,
+      "sentence": 69,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "His gaze immediately darted to the slit of dining light beneath the louvered door."
+        }
+      ]
+    },
+    {
+      "index": 70,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "A Crack in the Glaze",
+      "text": "Marcus’s laugh drifted across the hallway, sharp and inquisitive.",
+      "start": 347.93,
+      "end": 351.45,
+      "sentence": 70,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Marcus’s laugh drifted across the hallway, sharp and inquisitive."
+        }
+      ]
+    },
+    {
+      "index": 71,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "A Crack in the Glaze",
+      "text": "Julian took a linen cloth from the basin, soaked it in cold water, and stepped forward, dabbing near her cheek.",
+      "start": 352.15,
+      "end": 359.99,
+      "sentence": 71,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Julian took a linen cloth from the basin, soaked it in cold water, and stepped forward, dabbing near her cheek."
+        }
+      ]
+    },
+    {
+      "index": 72,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "A Crack in the Glaze",
+      "text": "\"Breathe,\" he whispered, keeping his tone down.",
+      "start": 360.69,
+      "end": 363.44,
+      "sentence": 72,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Breathe,\" he whispered, keeping his tone down."
+        }
+      ]
+    },
+    {
+      "index": 73,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "A Crack in the Glaze",
+      "text": "\"Elena, listen to me.",
+      "start": 363.79,
+      "end": 365.35,
+      "sentence": 73,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Elena, listen to me."
+        }
+      ]
+    },
+    {
+      "index": 74,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "A Crack in the Glaze",
+      "text": "Don't let Marcus see you shattered.",
+      "start": 365.7,
+      "end": 368.05,
+      "sentence": 74,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "Don't let Marcus see you shattered."
+        },
+        {
+          "tag": "escalation",
+          "quote": "Don't let Marcus see you shattered."
+        }
+      ]
+    },
+    {
+      "index": 75,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "A Crack in the Glaze",
+      "text": "Give me forty minutes.",
+      "start": 368.4,
+      "end": 369.97,
+      "sentence": 75,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "Give me forty minutes."
+        }
+      ]
+    },
+    {
+      "index": 76,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "A Crack in the Glaze",
+      "text": "We finish the roast, we clear the room, and then we grieve.\"",
+      "start": 370.32,
+      "end": 375.03,
+      "sentence": 76,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "We finish the roast, we clear the room, and then we grieve.\""
+        },
+        {
+          "tag": "decision",
+          "quote": "We finish the roast, we clear the room, and then we grieve.\""
+        }
+      ]
+    },
+    {
+      "index": 77,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "A Crack in the Glaze",
+      "text": "Elena recoiled, backing into the steel shelf until the brackets rattled.",
+      "start": 375.73,
+      "end": 380.04,
+      "sentence": 77,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "Elena recoiled, backing into the steel shelf until the brackets rattled."
+        }
+      ]
+    },
+    {
+      "index": 78,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "A Crack in the Glaze",
+      "text": "Her tears stopped instantly.",
+      "start": 380.39,
+      "end": 381.95,
+      "sentence": 78,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Her tears stopped instantly."
+        }
+      ]
+    },
+    {
+      "index": 79,
+      "scene_id": "s05",
+      "section": 4,
+      "section_type": "development",
+      "title": "A Crack in the Glaze",
+      "text": "She looked at him not with sorrow, but with pure, unmitigated estrangement.",
+      "start": 382.3,
+      "end": 387.01,
+      "sentence": 79,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "She looked at him not with sorrow, but with pure, unmitigated estrangement."
+        }
+      ]
+    },
+    {
+      "index": 80,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Tragic Spectacle",
+      "text": "When Elena slipped back to her seat, her skin had the dull tint of curdled milk.",
+      "start": 388.51,
+      "end": 394.78,
+      "sentence": 80,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "When Elena slipped back to her seat, her skin had the dull tint of curdled milk."
+        }
+      ]
+    },
+    {
+      "index": 81,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Tragic Spectacle",
+      "text": "She kept her hands folded on her lap, perfectly still.",
+      "start": 395.13,
+      "end": 399.05,
+      "sentence": 81,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "She kept her hands folded on her lap, perfectly still."
+        }
+      ]
+    },
+    {
+      "index": 82,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Tragic Spectacle",
+      "text": "Marcus leaned across his plate, his signet ring clicking against the cutlery.",
+      "start": 399.75,
+      "end": 404.45,
+      "sentence": 82,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Marcus leaned across his plate, his signet ring clicking against the cutlery."
+        }
+      ]
+    },
+    {
+      "index": 83,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Tragic Spectacle",
+      "text": "\"A sudden cloud over paradise, Julian?",
+      "start": 404.8,
+      "end": 407.15,
+      "sentence": 83,
+      "tags": [
+        {
+          "tag": "question",
+          "quote": "\"A sudden cloud over paradise, Julian?"
+        },
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"A sudden cloud over paradise, Julian?"
+        }
+      ]
+    },
+    {
+      "index": 84,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Tragic Spectacle",
+      "text": "Or did the curator suffer a domestic dispute?\"",
+      "start": 407.5,
+      "end": 410.64,
+      "sentence": 84,
+      "tags": [
+        {
+          "tag": "question",
+          "quote": "Or did the curator suffer a domestic dispute?\""
+        },
+        {
+          "tag": "dialogue_turn",
+          "quote": "Or did the curator suffer a domestic dispute?\""
+        },
+        {
+          "tag": "escalation",
+          "quote": "Or did the curator suffer a domestic dispute?\""
+        }
+      ]
+    },
+    {
+      "index": 85,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Tragic Spectacle",
+      "text": "Julian felt the familiar, rancid chill of his childhood—the suffocating threat of someone noticing a flaw, offering sympathy, seeing him pitied.",
+      "start": 411.34,
+      "end": 419.96,
+      "sentence": 85,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Julian felt the familiar, rancid chill of his childhood—the suffocating threat of someone noticing a flaw, offering sympathy, seeing him pitied."
+        },
+        {
+          "tag": "escalation",
+          "quote": "the suffocating threat of someone noticing a flaw, offering sympathy, seeing him pitied."
+        }
+      ]
+    },
+    {
+      "index": 86,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Tragic Spectacle",
+      "text": "He stood up, raised his crystal goblet, and tapped the rim with a dessert spoon.",
+      "start": 420.66,
+      "end": 426.54,
+      "sentence": 86,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "He stood up, raised his crystal goblet, and tapped the rim with a dessert spoon."
+        }
+      ]
+    },
+    {
+      "index": 87,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Tragic Spectacle",
+      "text": "The dinner chatter died away.",
+      "start": 426.89,
+      "end": 428.85,
+      "sentence": 87,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "The dinner chatter died away."
+        }
+      ]
+    },
+    {
+      "index": 88,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Tragic Spectacle",
+      "text": "\"Ten minutes ago,\" Julian announced, his voice dipping into a rich, solemn resonance, \"Elena received word that her mentor, Doctor Paul Ward, died suddenly tonight.\"",
+      "start": 429.55,
+      "end": 439.34,
+      "sentence": 88,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Ten minutes ago,\" Julian announced, his voice dipping into a rich, solemn resonance, \"Elena received word that her mentor, Doctor Paul Ward, died suddenly tonight.\""
+        },
+        {
+          "tag": "reveal",
+          "quote": "\"Ten minutes ago,\" Julian announced, his voice dipping into a rich, solemn resonance, \"Elena received word that her mentor, Doctor Paul Ward, died suddenly tonight.\""
+        }
+      ]
+    },
+    {
+      "index": 89,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Tragic Spectacle",
+      "text": "A collective gasp stirred the guests.",
+      "start": 440.04,
+      "end": 442.39,
+      "sentence": 89,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "A collective gasp stirred the guests."
+        }
+      ]
+    },
+    {
+      "index": 90,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Tragic Spectacle",
+      "text": "Marcus sat back, arrested.",
+      "start": 442.74,
+      "end": 444.31,
+      "sentence": 90,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Marcus sat back, arrested."
+        }
+      ]
+    },
+    {
+      "index": 91,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Tragic Spectacle",
+      "text": "\"Most people would retreat,\" Julian said, gazing down at Elena with practiced, poetic reverence.",
+      "start": 445.01,
+      "end": 450.5,
+      "sentence": 91,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Most people would retreat,\" Julian said, gazing down at Elena with practiced, poetic reverence."
+        }
+      ]
+    },
+    {
+      "index": 92,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Tragic Spectacle",
+      "text": "\"Yet she returned to this table, because what we have built here is an enduring sanctuary.",
+      "start": 450.85,
+      "end": 457.12,
+      "sentence": 92,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Yet she returned to this table, because what we have built here is an enduring sanctuary."
+        }
+      ]
+    },
+    {
+      "index": 93,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Tragic Spectacle",
+      "text": "That is what genuine devotion looks like.\"",
+      "start": 457.47,
+      "end": 460.21,
+      "sentence": 93,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "That is what genuine devotion looks like.\""
+        }
+      ]
+    },
+    {
+      "index": 94,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Tragic Spectacle",
+      "text": "Across the table, a guest pressed a napkin to her tearful eyes.",
+      "start": 460.91,
+      "end": 465.61,
+      "sentence": 94,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Across the table, a guest pressed a napkin to her tearful eyes."
+        }
+      ]
+    },
+    {
+      "index": 95,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Tragic Spectacle",
+      "text": "Marcus watched Julian with unmasked, covetous awe.",
+      "start": 465.96,
+      "end": 468.71,
+      "sentence": 95,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "Marcus watched Julian with unmasked, covetous awe."
+        }
+      ]
+    },
+    {
+      "index": 96,
+      "scene_id": "s06",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "The Tragic Spectacle",
+      "text": "Julian looked down at Elena, waiting for her to complete the scene.",
+      "start": 469.41,
+      "end": 474.11,
+      "sentence": 96,
+      "tags": [
+        {
+          "tag": "open_loop:elena_reaction",
+          "quote": "Julian looked down at Elena, waiting for her to complete the scene."
+        }
+      ]
+    },
+    {
+      "index": 97,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Departure",
+      "text": "Elena did not look up at him.",
+      "start": 475.61,
+      "end": 478.35,
+      "sentence": 97,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Elena did not look up at him."
+        }
+      ]
+    },
+    {
+      "index": 98,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Departure",
+      "text": "She carefully set her linen napkin beside her untouched plate, smoothed the fabric flat, and met his eyes with a devastating, unhurried calm.",
+      "start": 478.7,
+      "end": 487.72,
+      "sentence": 98,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "She carefully set her linen napkin beside her untouched plate, smoothed the fabric flat, and met his eyes with a devastating, unhurried calm."
+        }
+      ]
+    },
+    {
+      "index": 99,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Departure",
+      "text": "\"You don't love me, Julian,\" she said, her voice quiet enough that the entire room leaned in to hear.",
+      "start": 488.42,
+      "end": 495.86,
+      "sentence": 99,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"You don't love me, Julian,\" she said, her voice quiet enough that the entire room leaned in to hear."
+        },
+        {
+          "tag": "escalation",
+          "quote": "\"You don't love me, Julian,\" she said, her voice quiet enough that the entire room leaned in to hear."
+        }
+      ]
+    },
+    {
+      "index": 100,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Departure",
+      "text": "\"You just love having an audience look at us.\"",
+      "start": 496.21,
+      "end": 499.74,
+      "sentence": 100,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"You just love having an audience look at us.\""
+        },
+        {
+          "tag": "reveal",
+          "quote": "\"You just love having an audience look at us.\""
+        }
+      ]
+    },
+    {
+      "index": 101,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Departure",
+      "text": "She took her brass key ring from the pocket of her trousers and placed it beside her water goblet.",
+      "start": 500.44,
+      "end": 507.89,
+      "sentence": 101,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "She took her brass key ring from the pocket of her trousers and placed it beside her water goblet."
+        }
+      ]
+    },
+    {
+      "index": 102,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Departure",
+      "text": "Without another word, she stood and walked toward the foyer.",
+      "start": 508.24,
+      "end": 512.16,
+      "sentence": 102,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "Without another word, she stood and walked toward the foyer."
+        },
+        {
+          "tag": "close_loop:elena_reaction",
+          "quote": "Without another word, she stood and walked toward the foyer."
+        }
+      ]
+    },
+    {
+      "index": 103,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Departure",
+      "text": "Julian froze, feeling the blood drain from his neck.",
+      "start": 512.86,
+      "end": 516.38,
+      "sentence": 103,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "Julian froze, feeling the blood drain from his neck."
+        }
+      ]
+    },
+    {
+      "index": 104,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Departure",
+      "text": "He offered the table a tight, rehearsed grin, murmuring an apology before striding into the hallway.",
+      "start": 516.73,
+      "end": 523.0,
+      "sentence": 104,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "He offered the table a tight, rehearsed grin, murmuring an apology before striding into the hallway."
+        }
+      ]
+    },
+    {
+      "index": 105,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Departure",
+      "text": "\"Elena, wait,\" he hissed, his grip catching the hem of her sleeve near the elevator.",
+      "start": 523.7,
+      "end": 529.58,
+      "sentence": 105,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Elena, wait,\" he hissed, his grip catching the hem of her sleeve near the elevator."
+        },
+        {
+          "tag": "escalation",
+          "quote": "\"Elena, wait,\" he hissed, his grip catching the hem of her sleeve near the elevator."
+        }
+      ]
+    },
+    {
+      "index": 106,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Departure",
+      "text": "\"Marcus is right there.",
+      "start": 529.93,
+      "end": 531.5,
+      "sentence": 106,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Marcus is right there."
+        }
+      ]
+    },
+    {
+      "index": 107,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Departure",
+      "text": "What are you doing?\"",
+      "start": 531.85,
+      "end": 533.42,
+      "sentence": 107,
+      "tags": [
+        {
+          "tag": "question",
+          "quote": "What are you doing?\""
+        },
+        {
+          "tag": "dialogue_turn",
+          "quote": "What are you doing?\""
+        }
+      ]
+    },
+    {
+      "index": 108,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Departure",
+      "text": "Elena pulled her arm away gently.",
+      "start": 534.12,
+      "end": 536.47,
+      "sentence": 108,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "Elena pulled her arm away gently."
+        }
+      ]
+    },
+    {
+      "index": 109,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Departure",
+      "text": "She stepped into the wood-paneled cab and pressed the ground floor button.",
+      "start": 536.82,
+      "end": 541.52,
+      "sentence": 109,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "She stepped into the wood-paneled cab and pressed the ground floor button."
+        }
+      ]
+    },
+    {
+      "index": 110,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Departure",
+      "text": "As the doors began to slide together, she looked directly into his face.",
+      "start": 541.87,
+      "end": 546.97,
+      "sentence": 110,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "As the doors began to slide together, she looked directly into his face."
+        }
+      ]
+    },
+    {
+      "index": 111,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Departure",
+      "text": "It was not anger in her gaze.",
+      "start": 547.32,
+      "end": 550.06,
+      "sentence": 111,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "It was not anger in her gaze."
+        }
+      ]
+    },
+    {
+      "index": 112,
+      "scene_id": "s07",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Departure",
+      "text": "It was unadulterated, sorrowful pity.",
+      "start": 550.41,
+      "end": 552.37,
+      "sentence": 112,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "It was unadulterated, sorrowful pity."
+        },
+        {
+          "tag": "escalation",
+          "quote": "It was unadulterated, sorrowful pity."
+        }
+      ]
+    },
+    {
+      "index": 113,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Museum of Solitude",
+      "text": "By ten thirty, the remaining guests had excused themselves, leaving Marcus Croft leaning against the blackened oak table.",
+      "start": 553.87,
+      "end": 560.92,
+      "sentence": 113,
+      "tags": [
+        {
+          "tag": "close_loop:anniversary_dinner",
+          "quote": "By ten thirty, the remaining guests had excused themselves, leaving Marcus Croft leaning against the blackened oak table."
+        }
+      ]
+    },
+    {
+      "index": 114,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Museum of Solitude",
+      "text": "He poured himself another measure of Amarone, his mouth curled in an amused, appraising grin.",
+      "start": 561.27,
+      "end": 567.15,
+      "sentence": 114,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "He poured himself another measure of Amarone, his mouth curled in an amused, appraising grin."
+        }
+      ]
+    },
+    {
+      "index": 115,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Museum of Solitude",
+      "text": "\"Breathtaking,\" Marcus murmured.",
+      "start": 567.85,
+      "end": 569.03,
+      "sentence": 115,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Breathtaking,\" Marcus murmured."
+        }
+      ]
+    },
+    {
+      "index": 116,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Museum of Solitude",
+      "text": "\"You couldn't stage that kind of exit if you hired a playwright.\"",
+      "start": 569.38,
+      "end": 574.08,
+      "sentence": 116,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"You couldn't stage that kind of exit if you hired a playwright.\""
+        }
+      ]
+    },
+    {
+      "index": 117,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Museum of Solitude",
+      "text": "Julian looked at the collector's hungry, entertained eyes and felt something hollow out behind his ribs.",
+      "start": 574.78,
+      "end": 581.05,
+      "sentence": 117,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Julian looked at the collector's hungry, entertained eyes and felt something hollow out behind his ribs."
+        }
+      ]
+    },
+    {
+      "index": 118,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Museum of Solitude",
+      "text": "Julian looked past him at the bespoke joinery, the framed ferns, the empty chair where Elena had sat, and understood that none of it had ever been his.",
+      "start": 581.4,
+      "end": 592.37,
+      "sentence": 118,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "Julian looked past him at the bespoke joinery, the framed ferns, the empty chair where Elena had sat, and understood that none of it had ever been his."
+        },
+        {
+          "tag": "reflection",
+          "quote": "Julian looked past him at the bespoke joinery, the framed ferns, the empty chair where Elena had sat, and understood that none of it had ever been his."
+        }
+      ]
+    },
+    {
+      "index": 119,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Museum of Solitude",
+      "text": "Its value had always lived in another man's eyes.",
+      "start": 592.72,
+      "end": 596.25,
+      "sentence": 119,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "Its value had always lived in another man's eyes."
+        },
+        {
+          "tag": "reflection",
+          "quote": "Its value had always lived in another man's eyes."
+        }
+      ]
+    },
+    {
+      "index": 120,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Museum of Solitude",
+      "text": "He had not wanted the loft, or the table, or even the marriage.",
+      "start": 596.6,
+      "end": 601.7,
+      "sentence": 120,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "He had not wanted the loft, or the table, or even the marriage."
+        },
+        {
+          "tag": "reflection",
+          "quote": "He had not wanted the loft, or the table, or even the marriage."
+        }
+      ]
+    },
+    {
+      "index": 121,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Museum of Solitude",
+      "text": "He had wanted Marcus to want them.",
+      "start": 602.05,
+      "end": 604.79,
+      "sentence": 121,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "He had wanted Marcus to want them."
+        },
+        {
+          "tag": "reflection",
+          "quote": "He had wanted Marcus to want them."
+        }
+      ]
+    },
+    {
+      "index": 122,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Museum of Solitude",
+      "text": "\"Get out,\" Julian said, his voice flat and drained of charm.",
+      "start": 605.49,
+      "end": 609.8,
+      "sentence": 122,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Get out,\" Julian said, his voice flat and drained of charm."
+        },
+        {
+          "tag": "decision",
+          "quote": "\"Get out,\" Julian said, his voice flat and drained of charm."
+        }
+      ]
+    },
+    {
+      "index": 123,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Museum of Solitude",
+      "text": "Marcus raised both palms in ironic surrender and slipped out the door.",
+      "start": 610.5,
+      "end": 615.2,
+      "sentence": 123,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Marcus raised both palms in ironic surrender and slipped out the door."
+        }
+      ]
+    },
+    {
+      "index": 124,
+      "scene_id": "s08",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Museum of Solitude",
+      "text": "The latch engaged with a definitive metallic thud, leaving Julian alone in seven thousand square feet of lifeless luxury.",
+      "start": 615.55,
+      "end": 623.0,
+      "sentence": 124,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "The latch engaged with a definitive metallic thud, leaving Julian alone in seven thousand square feet of lifeless luxury."
+        }
+      ]
+    },
+    {
+      "index": 125,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The Unperformed Voice",
+      "text": "At three in the morning, Julian sat at the head of the long table under the dim blue pulse of his phone.",
+      "start": 624.5,
+      "end": 633.12,
+      "sentence": 125,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "At three in the morning, Julian sat at the head of the long table under the dim blue pulse of his phone."
+        }
+      ]
+    },
+    {
+      "index": 126,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The Unperformed Voice",
+      "text": "Notifications flickered across the screen—curators and architects marveling at photos of the dinner, complimenting his impeccable eye and the effortless poetry of his domestic life.",
+      "start": 633.47,
+      "end": 643.66,
+      "sentence": 126,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "Notifications flickered across the screen—curators and architects marveling at photos of the dinner, complimenting his impeccable eye and the effortless poetry of his domestic life."
+        }
+      ]
+    },
+    {
+      "index": 127,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The Unperformed Voice",
+      "text": "He turned the screen face down on the timber.",
+      "start": 644.36,
+      "end": 647.89,
+      "sentence": 127,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "He turned the screen face down on the timber."
+        }
+      ]
+    },
+    {
+      "index": 128,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The Unperformed Voice",
+      "text": "The loft was completely still.",
+      "start": 648.59,
+      "end": 650.55,
+      "sentence": 128,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "The loft was completely still."
+        }
+      ]
+    },
+    {
+      "index": 129,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The Unperformed Voice",
+      "text": "Julian opened his mouth to say Elena’s name.",
+      "start": 650.9,
+      "end": 654.03,
+      "sentence": 129,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "Julian opened his mouth to say Elena’s name."
+        }
+      ]
+    },
+    {
+      "index": 130,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The Unperformed Voice",
+      "text": "He wanted to say that he was terrified, that he did not know who he was when nobody was looking.",
+      "start": 654.38,
+      "end": 662.22,
+      "sentence": 130,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "He wanted to say that he was terrified, that he did not know who he was when nobody was looking."
+        }
+      ]
+    },
+    {
+      "index": 131,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The Unperformed Voice",
+      "text": "But when the sound left his lips, it came out pitched for projection, cadenced and theatrical, as if anticipating a microphone.",
+      "start": 662.57,
+      "end": 670.8,
+      "sentence": 131,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "But when the sound left his lips, it came out pitched for projection, cadenced and theatrical, as if anticipating a microphone."
+        },
+        {
+          "tag": "reflection",
+          "quote": "But when the sound left his lips, it came out pitched for projection, cadenced and theatrical, as if anticipating a microphone."
+        }
+      ]
+    },
+    {
+      "index": 132,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The Unperformed Voice",
+      "text": "He tried again, and found only the same practiced poise.",
+      "start": 671.5,
+      "end": 675.42,
+      "sentence": 132,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "He tried again, and found only the same practiced poise."
+        }
+      ]
+    },
+    {
+      "index": 133,
+      "scene_id": "s09",
+      "section": 8,
+      "section_type": "aftermath",
+      "title": "The Unperformed Voice",
+      "text": "He had spent his entire life building armor against pity, only to discover that the armor had devoured whatever lived inside.",
+      "start": 675.77,
+      "end": 684.0,
+      "sentence": 133,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "He had spent his entire life building armor against pity, only to discover that the armor had devoured whatever lived inside."
+        },
+        {
+          "tag": "reflection",
+          "quote": "He had spent his entire life building armor against pity, only to discover that the armor had devoured whatever lived inside."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1497 @@
+{
+  "key": "fbcc2620294aec39f0f71ad05199c378accade01cd569a46a03a0d44d19f469c",
+  "version": 1,
+  "duration": 663.6,
+  "discarded_tags": 0,
+  "sentences": [
+    {
+      "index": 0,
+      "scene_id": "s00",
+      "section": 0,
+      "section_type": "cold_open",
+      "title": "A Echo Across the Table",
+      "text": "Daniel sits across the kitchen table, opening up about a fear he has never admitted out loud.",
+      "start": 0.0,
+      "end": 6.66,
+      "sentence": 0,
+      "tags": []
+    },
+    {
+      "index": 1,
+      "scene_id": "s00",
+      "section": 0,
+      "section_type": "cold_open",
+      "title": "A Echo Across the Table",
+      "text": "The figure across from him glances down at a glowing screen, tapping a thumb against the glass without looking up.",
+      "start": 7.01,
+      "end": 14.85,
+      "sentence": 1,
+      "tags": []
+    },
+    {
+      "index": 2,
+      "scene_id": "s00",
+      "section": 0,
+      "section_type": "cold_open",
+      "title": "A Echo Across the Table",
+      "text": "\"I'm just being honest.",
+      "start": 15.2,
+      "end": 16.77,
+      "sentence": 2,
+      "tags": []
+    },
+    {
+      "index": 3,
+      "scene_id": "s00",
+      "section": 0,
+      "section_type": "cold_open",
+      "title": "A Echo Across the Table",
+      "text": "The voice is sharp, dismissive, completely indifferent.",
+      "start": 17.12,
+      "end": 19.86,
+      "sentence": 3,
+      "tags": []
+    },
+    {
+      "index": 4,
+      "scene_id": "s00",
+      "section": 0,
+      "section_type": "cold_open",
+      "title": "A Echo Across the Table",
+      "text": "It was the first time Daniel heard what he sounded like.",
+      "start": 20.21,
+      "end": 24.52,
+      "sentence": 4,
+      "tags": []
+    },
+    {
+      "index": 5,
+      "scene_id": "s00",
+      "section": 0,
+      "section_type": "cold_open",
+      "title": "A Echo Across the Table",
+      "text": "How long had he been doing this to the people he loved?",
+      "start": 24.87,
+      "end": 29.57,
+      "sentence": 5,
+      "tags": [
+        {
+          "tag": "question",
+          "quote": "How long had he been doing this to the people he loved?"
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Waking Mirror",
+      "text": "Fourteen hours earlier, at 6:45 AM on Tuesday morning, Daniel Moss wakes to the buzz of his alarm.",
+      "start": 31.07,
+      "end": 38.52,
+      "sentence": 6,
+      "tags": []
+    },
+    {
+      "index": 7,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Waking Mirror",
+      "text": "As an overlooked middle child, Daniel had spent his youth learning that silence meant being forgotten, so he made sure to fill every room with his own voice.",
+      "start": 38.87,
+      "end": 49.84,
+      "sentence": 7,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "As an overlooked middle child, Daniel had spent his youth learning that silence meant being forgotten, so he made sure to fill every room with his own voice."
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Waking Mirror",
+      "text": "He turns on the mattress to tell Claire his plans for the daily sales targets, expecting her quiet nod.",
+      "start": 50.19,
+      "end": 57.64,
+      "sentence": 8,
+      "tags": []
+    },
+    {
+      "index": 9,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Waking Mirror",
+      "text": "Instead, the head resting on the pillow turns toward him.",
+      "start": 58.34,
+      "end": 62.26,
+      "sentence": 9,
+      "tags": []
+    },
+    {
+      "index": 10,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Waking Mirror",
+      "text": "It is not Claire.",
+      "start": 62.61,
+      "end": 64.18,
+      "sentence": 10,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "It is not Claire."
+        },
+        {
+          "tag": "open_loop:duplicate_world",
+          "quote": "It is not Claire."
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Waking Mirror",
+      "text": "Dark short hair, light stubble, a navy quarter-zip sweater—the face staring back at him is his own.",
+      "start": 64.53,
+      "end": 71.58,
+      "sentence": 11,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Dark short hair, light stubble, a navy quarter-zip sweater—the face staring back at him is his own."
+        },
+        {
+          "tag": "reveal",
+          "quote": "the face staring back at him is his own."
+        }
+      ]
+    },
+    {
+      "index": 12,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Waking Mirror",
+      "text": "Daniel pulls back, his heel catching in the sheet.",
+      "start": 72.28,
+      "end": 75.81,
+      "sentence": 12,
+      "tags": []
+    },
+    {
+      "index": 13,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Waking Mirror",
+      "text": "\"Claire?\"",
+      "start": 76.16,
+      "end": 76.55,
+      "sentence": 13,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Claire?\""
+        },
+        {
+          "tag": "question",
+          "quote": "\"Claire?\""
+        }
+      ]
+    },
+    {
+      "index": 14,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Waking Mirror",
+      "text": "The man on the pillow blinks, rolls onto his back, and instantly picks up a smartphone from the nightstand.",
+      "start": 77.25,
+      "end": 84.7,
+      "sentence": 14,
+      "tags": []
+    },
+    {
+      "index": 15,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Waking Mirror",
+      "text": "\"I've got three calls before nine,\" the face says in Daniel's exact voice, not even glancing up.",
+      "start": 85.05,
+      "end": 91.71,
+      "sentence": 15,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"I've got three calls before nine,\" the face says in Daniel's exact voice, not even glancing up."
+        }
+      ]
+    },
+    {
+      "index": 16,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Waking Mirror",
+      "text": "Daniel scrambles out of bed and stumbles into the hallway.",
+      "start": 92.41,
+      "end": 96.33,
+      "sentence": 16,
+      "tags": []
+    },
+    {
+      "index": 17,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Waking Mirror",
+      "text": "Through the apartment window, the building manager stands by the mailboxes.",
+      "start": 96.68,
+      "end": 100.99,
+      "sentence": 17,
+      "tags": []
+    },
+    {
+      "index": 18,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Waking Mirror",
+      "text": "He has Daniel's jaw, Daniel's posture, and Daniel's quick, distracted nod as he checks his phone.",
+      "start": 101.34,
+      "end": 107.61,
+      "sentence": 18,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "He has Daniel's jaw, Daniel's posture, and Daniel's quick, distracted nod as he checks his phone."
+        }
+      ]
+    },
+    {
+      "index": 19,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Waking Mirror",
+      "text": "Across the street, a pedestrian steps off the curb, carrying a briefcase with Daniel's identical brisk stride.",
+      "start": 107.96,
+      "end": 114.62,
+      "sentence": 19,
+      "tags": []
+    },
+    {
+      "index": 20,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Waking Mirror",
+      "text": "None of them seem surprised.",
+      "start": 114.97,
+      "end": 116.93,
+      "sentence": 20,
+      "tags": []
+    },
+    {
+      "index": 21,
+      "scene_id": "s01",
+      "section": 1,
+      "section_type": "opening",
+      "title": "The Waking Mirror",
+      "text": "To them, the world is functioning as it always does.",
+      "start": 117.28,
+      "end": 121.2,
+      "sentence": 21,
+      "tags": []
+    },
+    {
+      "index": 22,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "A World Built for One",
+      "text": "By nine thirty, Daniel walks into the open-plan office, holding his breath as he passes the security desk.",
+      "start": 122.7,
+      "end": 129.75,
+      "sentence": 22,
+      "tags": []
+    },
+    {
+      "index": 23,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "A World Built for One",
+      "text": "The guard wearing the company badge has short dark hair and light stubble, barely looking up from a sports highlight on his screen before waving Daniel through with an offhand gesture.",
+      "start": 130.1,
+      "end": 142.25,
+      "sentence": 23,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "The guard wearing the company badge has short dark hair and light stubble, barely looking up from a sports highlight on his screen before waving Daniel through with an offhand gesture."
+        }
+      ]
+    },
+    {
+      "index": 24,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "A World Built for One",
+      "text": "Instead of panic, a strange feeling settles in Daniel’s chest.",
+      "start": 142.95,
+      "end": 146.87,
+      "sentence": 24,
+      "tags": []
+    },
+    {
+      "index": 25,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "A World Built for One",
+      "text": "The entire room operates on his wavelength.",
+      "start": 147.22,
+      "end": 149.97,
+      "sentence": 25,
+      "tags": []
+    },
+    {
+      "index": 26,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "A World Built for One",
+      "text": "No one lingers on uncomfortable pauses.",
+      "start": 150.32,
+      "end": 152.67,
+      "sentence": 26,
+      "tags": []
+    },
+    {
+      "index": 27,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "A World Built for One",
+      "text": "No one asks hard questions about quarterly margins.",
+      "start": 153.02,
+      "end": 156.15,
+      "sentence": 27,
+      "tags": []
+    },
+    {
+      "index": 28,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "A World Built for One",
+      "text": "He steps up to his supervisor's corner glass desk.",
+      "start": 156.85,
+      "end": 160.38,
+      "sentence": 28,
+      "tags": []
+    },
+    {
+      "index": 29,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "A World Built for One",
+      "text": "His boss, wearing a tailored navy suit over Daniel’s exact face and frame, doesn't even wait for Daniel to take a seat.",
+      "start": 160.73,
+      "end": 169.35,
+      "sentence": 29,
+      "tags": []
+    },
+    {
+      "index": 30,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "A World Built for One",
+      "text": "\"I have the revised regional pitch ready,\" Daniel says, stepping forward with his folder.",
+      "start": 170.05,
+      "end": 175.54,
+      "sentence": 30,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"I have the revised regional pitch ready,\" Daniel says, stepping forward with his folder."
+        }
+      ]
+    },
+    {
+      "index": 31,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "A World Built for One",
+      "text": "Before he can open it, his boss grins, cuts him off with a sharp snap of his fingers, and nods fast.",
+      "start": 176.24,
+      "end": 184.47,
+      "sentence": 31,
+      "tags": []
+    },
+    {
+      "index": 32,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "A World Built for One",
+      "text": "\"Love it.",
+      "start": 184.82,
+      "end": 185.6,
+      "sentence": 32,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Love it."
+        }
+      ]
+    },
+    {
+      "index": 33,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "A World Built for One",
+      "text": "Great energy.",
+      "start": 185.95,
+      "end": 186.73,
+      "sentence": 33,
+      "tags": []
+    },
+    {
+      "index": 34,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "A World Built for One",
+      "text": "Send it to client accounts right now.\"",
+      "start": 187.08,
+      "end": 189.83,
+      "sentence": 34,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "Send it to client accounts right now.\""
+        }
+      ]
+    },
+    {
+      "index": 35,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "A World Built for One",
+      "text": "The pitch is approved in thirty seconds flat.",
+      "start": 190.53,
+      "end": 193.66,
+      "sentence": 35,
+      "tags": []
+    },
+    {
+      "index": 36,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "A World Built for One",
+      "text": "Daniel exits the glass door, a confident smile spreading across his lips.",
+      "start": 194.01,
+      "end": 198.72,
+      "sentence": 36,
+      "tags": []
+    },
+    {
+      "index": 37,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "A World Built for One",
+      "text": "In his thirty-four years, he has spent endless energy trying to sway room after room, pushing past polite silence to dominate every room he entered.",
+      "start": 199.07,
+      "end": 208.86,
+      "sentence": 37,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "In his thirty-four years, he has spent endless energy trying to sway room after room, pushing past polite silence to dominate every room he entered."
+        }
+      ]
+    },
+    {
+      "index": 38,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "A World Built for One",
+      "text": "Now, the world requires no convincing at all.",
+      "start": 209.21,
+      "end": 212.35,
+      "sentence": 38,
+      "tags": []
+    },
+    {
+      "index": 39,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "A World Built for One",
+      "text": "Every person speaks his language, moves at his speed, and skips the friction of listening.",
+      "start": 212.7,
+      "end": 218.58,
+      "sentence": 39,
+      "tags": []
+    },
+    {
+      "index": 40,
+      "scene_id": "s02",
+      "section": 2,
+      "section_type": "setup",
+      "title": "A World Built for One",
+      "text": "He taps his phone screen with a light heart, thoroughly convinced that a world made entirely of himself is the easiest place he has ever lived.",
+      "start": 218.93,
+      "end": 229.12,
+      "sentence": 40,
+      "tags": []
+    },
+    {
+      "index": 41,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Noise of Echoes",
+      "text": "By Tuesday afternoon at two-fifteen, the frictionless magic of a world made entirely of himself begins to curdle into sheer irritation.",
+      "start": 230.62,
+      "end": 238.85,
+      "sentence": 41,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "By Tuesday afternoon at two-fifteen, the frictionless magic of a world made entirely of himself begins to curdle into sheer irritation."
+        }
+      ]
+    },
+    {
+      "index": 42,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Noise of Echoes",
+      "text": "Daniel steps into the local coffee shop, craving a quiet break and a simple espresso to steady his nerves.",
+      "start": 239.2,
+      "end": 246.64,
+      "sentence": 42,
+      "tags": []
+    },
+    {
+      "index": 43,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Noise of Echoes",
+      "text": "Behind the wooden counter, a barista wearing an apron over a navy quarter-zip sweater glances up with an identical face, holding a smartphone in one hand while sliding a large paper cup across the counter with the other.",
+      "start": 246.99,
+      "end": 261.89,
+      "sentence": 43,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Behind the wooden counter, a barista wearing an apron over a navy quarter-zip sweater glances up with an identical face, holding a smartphone in one hand while sliding a large paper cup across the counter with the other."
+        }
+      ]
+    },
+    {
+      "index": 44,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Noise of Echoes",
+      "text": "Daniel looks down at the lid.",
+      "start": 262.24,
+      "end": 264.59,
+      "sentence": 44,
+      "tags": []
+    },
+    {
+      "index": 45,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Noise of Echoes",
+      "text": "The marker spells an entirely wrong name.",
+      "start": 264.94,
+      "end": 267.68,
+      "sentence": 45,
+      "tags": []
+    },
+    {
+      "index": 46,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Noise of Echoes",
+      "text": "When Daniel points out the error, the barista-duplicate flashes a quick, charming smile and taps his screen.",
+      "start": 268.03,
+      "end": 274.69,
+      "sentence": 46,
+      "tags": []
+    },
+    {
+      "index": 47,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Noise of Echoes",
+      "text": "\"Don't worry about it, buddy,\" the barista says, waving a hand dismissively.",
+      "start": 275.04,
+      "end": 279.74,
+      "sentence": 47,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"Don't worry about it, buddy,\" the barista says, waving a hand dismissively."
+        }
+      ]
+    },
+    {
+      "index": 48,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Noise of Echoes",
+      "text": "\"We're completely slammed today, but you'll manage.",
+      "start": 280.09,
+      "end": 282.84,
+      "sentence": 48,
+      "tags": []
+    },
+    {
+      "index": 49,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Noise of Echoes",
+      "text": "Daniel opens his mouth to say he ordered a short black coffee, but the barista talks right over him, launching into a rapid story about his own grueling shift and upcoming weekend plans.",
+      "start": 283.19,
+      "end": 296.12,
+      "sentence": 49,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "the barista talks right over him, launching into a rapid story about his own grueling shift and upcoming weekend plans."
+        }
+      ]
+    },
+    {
+      "index": 50,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Noise of Echoes",
+      "text": "Daniel retreats to the open-plan office corridor, only to be passed by two colleagues who carry his face, both talking loudly into their phones without breaking stride or acknowledging his presence.",
+      "start": 296.47,
+      "end": 308.62,
+      "sentence": 50,
+      "tags": []
+    },
+    {
+      "index": 51,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Noise of Echoes",
+      "text": "Daniel stands frozen by the glass partition, looking at the warm paper cup in his hand.",
+      "start": 308.97,
+      "end": 315.24,
+      "sentence": 51,
+      "tags": []
+    },
+    {
+      "index": 52,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Noise of Echoes",
+      "text": "Every brush-off, every sudden pivot, and every distracted nod around him is an exact copy of his own daily habits.",
+      "start": 315.59,
+      "end": 323.43,
+      "sentence": 52,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "Every brush-off, every sudden pivot, and every distracted nod around him is an exact copy of his own daily habits."
+        }
+      ]
+    },
+    {
+      "index": 53,
+      "scene_id": "s03",
+      "section": 3,
+      "section_type": "development",
+      "title": "The Noise of Echoes",
+      "text": "The world of duplicates does not care about his thoughts; it only seeks its own conversational runway.",
+      "start": 323.78,
+      "end": 330.44,
+      "sentence": 53,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "The world of duplicates does not care about his thoughts; it only seeks its own conversational runway."
+        }
+      ]
+    },
+    {
+      "index": 54,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "The Crowded Kitchen",
+      "text": "At seven-thirty on Tuesday evening, Daniel unlocks the front door of his apartment, desperate for a calm, genuine interaction after a day spent dodging identical egos.",
+      "start": 331.94,
+      "end": 342.13,
+      "sentence": 54,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "desperate for a calm, genuine interaction after a day spent dodging identical egos."
+        }
+      ]
+    },
+    {
+      "index": 55,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "The Crowded Kitchen",
+      "text": "Inside the kitchen, a figure wearing a grey sweater stands near the illuminated island counter, chopping vegetables while an open smartphone rests beside the cutting board.",
+      "start": 342.48,
+      "end": 352.67,
+      "sentence": 55,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Inside the kitchen, a figure wearing a grey sweater stands near the illuminated island counter, chopping vegetables while an open smartphone rests beside the cutting board."
+        }
+      ]
+    },
+    {
+      "index": 56,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "The Crowded Kitchen",
+      "text": "Daniel sets his keys down on the console table and walks into the warm room, longing to sit across from someone and explain the strange emotional exhaustion draining his chest.",
+      "start": 353.02,
+      "end": 364.78,
+      "sentence": 56,
+      "tags": []
+    },
+    {
+      "index": 57,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "The Crowded Kitchen",
+      "text": "Before he can finish his opening thought, his partner turns, carrying his exact face and energetic stance.",
+      "start": 365.13,
+      "end": 371.79,
+      "sentence": 57,
+      "tags": []
+    },
+    {
+      "index": 58,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "The Crowded Kitchen",
+      "text": "She cuts him off mid-sentence with a quick, breezy joke about corporate office politics, turning immediately to open an upper cabinet while swiping a finger across her phone screen.",
+      "start": 372.14,
+      "end": 383.5,
+      "sentence": 58,
+      "tags": [
+        {
+          "tag": "escalation",
+          "quote": "She cuts him off mid-sentence with a quick, breezy joke about corporate office politics, turning immediately to open an upper cabinet while swiping a finger across her phone screen."
+        }
+      ]
+    },
+    {
+      "index": 59,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "The Crowded Kitchen",
+      "text": "Daniel hesitates.",
+      "start": 383.85,
+      "end": 384.64,
+      "sentence": 59,
+      "tags": []
+    },
+    {
+      "index": 60,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "The Crowded Kitchen",
+      "text": "His lifelong instinct as an overlooked middle child urges him to raise his voice, fill the silence, or laugh off the sudden rejection.",
+      "start": 384.99,
+      "end": 394.0,
+      "sentence": 60,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "His lifelong instinct as an overlooked middle child urges him to raise his voice, fill the silence, or laugh off the sudden rejection."
+        }
+      ]
+    },
+    {
+      "index": 61,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "The Crowded Kitchen",
+      "text": "Instead, he pushes past his pride and chooses to expose a raw vulnerability.",
+      "start": 394.35,
+      "end": 399.45,
+      "sentence": 61,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "he pushes past his pride and chooses to expose a raw vulnerability."
+        }
+      ]
+    },
+    {
+      "index": 62,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "The Crowded Kitchen",
+      "text": "He sits down at the kitchen island, leaning forward with his hands clasped, and attempts to voice the deep fear gnawing at him regarding his job security and sales targets.",
+      "start": 399.8,
+      "end": 411.55,
+      "sentence": 62,
+      "tags": []
+    },
+    {
+      "index": 63,
+      "scene_id": "s04",
+      "section": 4,
+      "section_type": "development",
+      "title": "The Crowded Kitchen",
+      "text": "His partner glances down at the glowing screen once more, her posture perfectly reflecting his own familiar shield of casual detachment.",
+      "start": 411.9,
+      "end": 420.13,
+      "sentence": 63,
+      "tags": []
+    },
+    {
+      "index": 64,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "I'm Just Being Honest",
+      "text": "At eight-fifteen that Tuesday evening, Daniel and his partner sit across from each other at the kitchen table with dinner plates resting untouched between them.",
+      "start": 421.63,
+      "end": 431.43,
+      "sentence": 64,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "At eight-fifteen that Tuesday evening, Daniel and his partner sit across from each other at the kitchen table with dinner plates resting untouched between them."
+        }
+      ]
+    },
+    {
+      "index": 65,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "I'm Just Being Honest",
+      "text": "Daniel looks up, setting aside his usual witty banter, and speaks in a low, unvarnished voice.",
+      "start": 431.78,
+      "end": 438.05,
+      "sentence": 65,
+      "tags": []
+    },
+    {
+      "index": 66,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "I'm Just Being Honest",
+      "text": "He confesses that he is terrified of losing his job, admitting that the pressure at work has grown unbearable and he does not know how to handle the quiet panic setting in.",
+      "start": 438.4,
+      "end": 450.94,
+      "sentence": 66,
+      "tags": []
+    },
+    {
+      "index": 67,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "I'm Just Being Honest",
+      "text": "Across the table, the figure carrying his own features glances down at a glowing phone screen, taps a quick notification, and offers a casual wave of the hand.",
+      "start": 451.29,
+      "end": 462.27,
+      "sentence": 67,
+      "tags": []
+    },
+    {
+      "index": 68,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "I'm Just Being Honest",
+      "text": "\"You'll be fine, you always are,\" she says lightly, barely looking up before adding, \"I'm just being honest.",
+      "start": 462.62,
+      "end": 469.67,
+      "sentence": 68,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"You'll be fine, you always are,\" she says lightly, barely looking up before adding, \"I'm just being honest."
+        }
+      ]
+    },
+    {
+      "index": 69,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "I'm Just Being Honest",
+      "text": "Daniel freezes, the breath catching in his chest.",
+      "start": 470.02,
+      "end": 473.15,
+      "sentence": 69,
+      "tags": []
+    },
+    {
+      "index": 70,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "I'm Just Being Honest",
+      "text": "It was the first time Daniel heard what he sounded like.",
+      "start": 473.5,
+      "end": 477.82,
+      "sentence": 70,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "It was the first time Daniel heard what he sounded like."
+        }
+      ]
+    },
+    {
+      "index": 71,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "I'm Just Being Honest",
+      "text": "He sits in absolute silence, the sudden, terrible weight of those words pressing into the room.",
+      "start": 478.17,
+      "end": 484.44,
+      "sentence": 71,
+      "tags": []
+    },
+    {
+      "index": 72,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "I'm Just Being Honest",
+      "text": "For years, whenever Claire brought him her exhaustion, her quiet fears, or her tough days at the hospital, he had reached for his phone, cracked a joke, and handed her those exact same phrases.",
+      "start": 484.79,
+      "end": 498.11,
+      "sentence": 72,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "For years, whenever Claire brought him her exhaustion, her quiet fears, or her tough days at the hospital, he had reached for his phone, cracked a joke, and handed her those exact same phrases."
+        }
+      ]
+    },
+    {
+      "index": 73,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "I'm Just Being Honest",
+      "text": "He had believed he was being encouraging, charismatic, and easy to be around.",
+      "start": 498.46,
+      "end": 503.56,
+      "sentence": 73,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "He had believed he was being encouraging, charismatic, and easy to be around."
+        }
+      ]
+    },
+    {
+      "index": 74,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "I'm Just Being Honest",
+      "text": "Now, sitting on the receiving end of his own voice, he sees the cold truth.",
+      "start": 503.91,
+      "end": 509.78,
+      "sentence": 74,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "Now, sitting on the receiving end of his own voice, he sees the cold truth."
+        }
+      ]
+    },
+    {
+      "index": 75,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "I'm Just Being Honest",
+      "text": "His stock reassurances were never about comforting anyone else; they were polite, impenetrable shields designed to protect his own peace and avoid the effort of listening.",
+      "start": 510.13,
+      "end": 520.32,
+      "sentence": 75,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "His stock reassurances were never about comforting anyone else; they were polite, impenetrable shields designed to protect his own peace and avoid the effort of listening."
+        }
+      ]
+    },
+    {
+      "index": 76,
+      "scene_id": "s05",
+      "section": 5,
+      "section_type": "reversal",
+      "title": "I'm Just Being Honest",
+      "text": "He stares across the table in stunned stillness as the dark quiet settles between them.",
+      "start": 520.67,
+      "end": 526.55,
+      "sentence": 76,
+      "tags": []
+    },
+    {
+      "index": 77,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Weight of the Other Side",
+      "text": "At three in the morning, the apartment sits in darkness.",
+      "start": 528.05,
+      "end": 531.97,
+      "sentence": 77,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "At three in the morning, the apartment sits in darkness."
+        }
+      ]
+    },
+    {
+      "index": 78,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Weight of the Other Side",
+      "text": "Outside the living room window, amber streetlights streak across the ceiling, but inside, the quiet remains unbroken.",
+      "start": 532.32,
+      "end": 538.98,
+      "sentence": 78,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Outside the living room window, amber streetlights streak across the ceiling, but inside, the quiet remains unbroken."
+        }
+      ]
+    },
+    {
+      "index": 79,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Weight of the Other Side",
+      "text": "Daniel sits motionless on the sofa, his thumbs resting over the screen of his smartphone.",
+      "start": 539.33,
+      "end": 545.21,
+      "sentence": 79,
+      "tags": []
+    },
+    {
+      "index": 80,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Weight of the Other Side",
+      "text": "His fingers twitch with the lifelong reflex to illuminate the display, to check emails, to find any instant distraction that might dissolve the stillness.",
+      "start": 545.56,
+      "end": 554.97,
+      "sentence": 80,
+      "tags": []
+    },
+    {
+      "index": 81,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Weight of the Other Side",
+      "text": "Instead, he turns the device face down on the wooden side table and lets his hands drop into his lap.",
+      "start": 555.67,
+      "end": 563.51,
+      "sentence": 81,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "Instead, he turns the device face down on the wooden side table and lets his hands drop into his lap."
+        }
+      ]
+    },
+    {
+      "index": 82,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Weight of the Other Side",
+      "text": "For thirty-four years, he believed he was effortless, charismatic, and easy to be around.",
+      "start": 564.21,
+      "end": 569.69,
+      "sentence": 82,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "For thirty-four years, he believed he was effortless, charismatic, and easy to be around."
+        }
+      ]
+    },
+    {
+      "index": 83,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Weight of the Other Side",
+      "text": "He filled every room with fast stories and cheerful noise because he believed being quiet meant disappearing.",
+      "start": 570.04,
+      "end": 576.7,
+      "sentence": 83,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "He filled every room with fast stories and cheerful noise because he believed being quiet meant disappearing."
+        }
+      ]
+    },
+    {
+      "index": 84,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Weight of the Other Side",
+      "text": "He never realized that his charm was a shield, or that his quick jokes kept everyone else at arm's length.",
+      "start": 577.05,
+      "end": 584.89,
+      "sentence": 84,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "He never realized that his charm was a shield, or that his quick jokes kept everyone else at arm's length."
+        }
+      ]
+    },
+    {
+      "index": 85,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Weight of the Other Side",
+      "text": "Standing on the receiving end of his own habits for a single day has stripped away the illusion.",
+      "start": 585.24,
+      "end": 592.3,
+      "sentence": 85,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Standing on the receiving end of his own habits for a single day has stripped away the illusion."
+        }
+      ]
+    },
+    {
+      "index": 86,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Weight of the Other Side",
+      "text": "He stays on the sofa, feeling the sharp discomfort of who he has been to the people around him.",
+      "start": 592.65,
+      "end": 600.09,
+      "sentence": 86,
+      "tags": []
+    },
+    {
+      "index": 87,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Weight of the Other Side",
+      "text": "He does not try to rationalize his behavior, nor does he reach for a screen to make the feeling go away.",
+      "start": 600.44,
+      "end": 608.67,
+      "sentence": 87,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "He does not try to rationalize his behavior, nor does he reach for a screen to make the feeling go away."
+        }
+      ]
+    },
+    {
+      "index": 88,
+      "scene_id": "s06",
+      "section": 6,
+      "section_type": "climax",
+      "title": "The Weight of the Other Side",
+      "text": "He simply sits alone and lets the truth settle.",
+      "start": 609.02,
+      "end": 612.55,
+      "sentence": 88,
+      "tags": []
+    },
+    {
+      "index": 89,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Gift of Silence",
+      "text": "By seven in the morning, sun spills across the kitchen counter.",
+      "start": 614.05,
+      "end": 618.36,
+      "sentence": 89,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "By seven in the morning, sun spills across the kitchen counter."
+        }
+      ]
+    },
+    {
+      "index": 90,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Gift of Silence",
+      "text": "Claire sits across the table in her green nurse scrubs, holding her coffee mug.",
+      "start": 618.71,
+      "end": 624.2,
+      "sentence": 90,
+      "tags": [
+        {
+          "tag": "description",
+          "quote": "Claire sits across the table in her green nurse scrubs, holding her coffee mug."
+        }
+      ]
+    },
+    {
+      "index": 91,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Gift of Silence",
+      "text": "Her own face has returned.",
+      "start": 624.55,
+      "end": 626.51,
+      "sentence": 91,
+      "tags": [
+        {
+          "tag": "reveal",
+          "quote": "Her own face has returned."
+        },
+        {
+          "tag": "close_loop:duplicate_world",
+          "quote": "Her own face has returned."
+        }
+      ]
+    },
+    {
+      "index": 92,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Gift of Silence",
+      "text": "As she describes a dream, Daniel feels the sudden reflex to reach into his sweater pocket, to check his phone, to interrupt and say, \"You'll be fine.",
+      "start": 626.86,
+      "end": 637.44,
+      "sentence": 92,
+      "tags": []
+    },
+    {
+      "index": 93,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Gift of Silence",
+      "text": "He suppresses it.",
+      "start": 637.79,
+      "end": 638.96,
+      "sentence": 93,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "He suppresses it."
+        }
+      ]
+    },
+    {
+      "index": 94,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Gift of Silence",
+      "text": "He keeps his hands still and listens to the end.",
+      "start": 639.31,
+      "end": 643.23,
+      "sentence": 94,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "He keeps his hands still and listens to the end."
+        }
+      ]
+    },
+    {
+      "index": 95,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Gift of Silence",
+      "text": "Claire stops, looking at him with soft wonder.",
+      "start": 643.93,
+      "end": 647.07,
+      "sentence": 95,
+      "tags": []
+    },
+    {
+      "index": 96,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Gift of Silence",
+      "text": "\"You're quiet.",
+      "start": 647.42,
+      "end": 648.2,
+      "sentence": 96,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "\"You're quiet."
+        }
+      ]
+    },
+    {
+      "index": 97,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Gift of Silence",
+      "text": "Are you okay?\"",
+      "start": 648.55,
+      "end": 649.73,
+      "sentence": 97,
+      "tags": [
+        {
+          "tag": "dialogue_turn",
+          "quote": "Are you okay?\""
+        },
+        {
+          "tag": "question",
+          "quote": "Are you okay?\""
+        }
+      ]
+    },
+    {
+      "index": 98,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Gift of Silence",
+      "text": "He does not offer a joke.",
+      "start": 650.43,
+      "end": 652.78,
+      "sentence": 98,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "He does not offer a joke."
+        }
+      ]
+    },
+    {
+      "index": 99,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Gift of Silence",
+      "text": "He simply stays present.",
+      "start": 653.13,
+      "end": 654.7,
+      "sentence": 99,
+      "tags": [
+        {
+          "tag": "decision",
+          "quote": "He simply stays present."
+        }
+      ]
+    },
+    {
+      "index": 100,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Gift of Silence",
+      "text": "Everyone you know has spent a day in a world with you in it.",
+      "start": 655.4,
+      "end": 660.88,
+      "sentence": 100,
+      "tags": [
+        {
+          "tag": "reflection",
+          "quote": "Everyone you know has spent a day in a world with you in it."
+        }
+      ]
+    },
+    {
+      "index": 101,
+      "scene_id": "s07",
+      "section": 7,
+      "section_type": "resolution",
+      "title": "The Gift of Silence",
+      "text": "What was it like for them?",
+      "start": 661.23,
+      "end": 663.58,
+      "sentence": 101,
+      "tags": [
+        {
+          "tag": "question",
+          "quote": "What was it like for them?"
+        }
+      ]
+    }
+  ]
+}
