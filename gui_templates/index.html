@@ -352,6 +352,7 @@ a:hover{color:var(--text)}
           <div class="home-title" style="font-size:18px">Desempenho</div>
           <div style="display:flex;gap:8px;align-items:center">
             <span id="perf-message" style="font-size:11px;color:var(--muted)"></span>
+            <button class="btn btn-ghost" onclick="analyticsDoctor()" title="Verifica canal, permissões e APIs (só leitura)">🩺 Diagnóstico de dados</button>
             <button class="btn btn-ghost" id="perf-authorize" style="display:none" onclick="authorizeAnalytics()" title="Abre o navegador para você autorizar o YouTube de novo">🔑 Autorizar de novo</button>
             <button class="btn btn-ghost" onclick="refreshPerformance()">⟳ Atualizar</button>
           </div>
@@ -1128,10 +1129,27 @@ function perfStatus(st) {
   if (st.error) {
     const err = document.createElement('div');
     err.style.cssText = 'color:var(--red,#e05252);margin-top:2px';
-    err.textContent = '⚠ ' + st.error;
+    err.textContent = '⚠ ' + (st.fix || st.error) + (st.reason ? ` (motivo: ${st.reason})` : '');
     box.appendChild(err);
+    if (st.message) {
+      const detail = document.createElement('div');
+      detail.style.cssText = 'color:var(--muted);font-size:11px';
+      detail.textContent = 'Mensagem do Google: ' + st.message;
+      box.appendChild(detail);
+    }
   }
   document.getElementById('perf-authorize').style.display = st.auth_required ? '' : 'none';
+}
+
+function analyticsDoctor() {
+  const box = document.getElementById('perf-status');
+  const pre = document.createElement('pre');
+  pre.style.cssText = 'white-space:pre-wrap;font-size:11px;margin-top:6px;padding:6px;border:1px solid var(--border);border-radius:4px';
+  pre.textContent = 'Diagnosticando…';
+  box.appendChild(pre);
+  fetch('/api/analytics/doctor', {method: 'POST'}).then(r => r.json()).then(d => {
+    pre.textContent = d.ok ? d.lines.join('\n') : 'Erro: ' + d.error;
+  });
 }
 
 function authorizeAnalytics() {

@@ -54,6 +54,7 @@ def services(interactive: bool = False):
     from googleapiclient.discovery import build
     from uploader.youtube import load_credentials
     credentials = load_credentials(interactive)
+    use_channel(build("youtube", "v3", credentials=credentials, cache_discovery=False))
     return (build("youtubeAnalytics", "v2", credentials=credentials, cache_discovery=False),
             build("youtubereporting", "v1", credentials=credentials, cache_discovery=False))
 
@@ -64,9 +65,30 @@ def rows(response: dict) -> list[dict]:
     return [dict(zip(names, row)) for row in response.get("rows") or []]
 
 
+_IDS = {"value": "channel==MINE"}
+
+
+def channel_ids() -> str:
+    """``channel==<id>`` once the credentials resolved to the expected channel (Phase 4.1-A), else ``channel==MINE``."""
+    return _IDS["value"]
+
+
+def use_channel(youtube) -> str:
+    """Resolve the channel behind the credentials (channels.list mine=true); query by its id when it is the expected
+    one, which avoids ambiguity when the Google account has more than one channel."""
+    from uploader import analytics_doctor
+    try:
+        channels = analytics_doctor.resolve_channel(youtube)
+    except Exception:                                    # noqa: BLE001 — MINE still works for a single channel
+        channels = []
+    expected = analytics_doctor.expected_channel()
+    _IDS["value"] = f"channel=={expected}" if any(item["id"] == expected for item in channels) else "channel==MINE"
+    return _IDS["value"]
+
+
 def _query(analytics, video_id: str, start: str, end: str, metrics: str, **extra) -> list[dict]:
     extra.setdefault("filters", f"video=={video_id}")
-    return rows(analytics.reports().query(ids="channel==MINE", startDate=start, endDate=end, metrics=metrics,
+    return rows(analytics.reports().query(ids=channel_ids(), startDate=start, endDate=end, metrics=metrics,
                                           **extra).execute())
 
 
@@ -246,12 +268,16 @@ def status() -> dict:
     return load_json(folder() / STATUS_FILE) or {"last_attempt": None, "last_success": None, "videos": 0, "error": ""}
 
 
-def _record_status(*, ok: bool, videos: int = 0, error: str = "", auth_required: bool = False) -> dict:
+def _record_status(*, ok: bool, videos: int = 0, error: str = "", auth_required: bool = False,
+                   explained: dict | None = None) -> dict:
     previous = status()
     now = _now().replace(microsecond=0).isoformat()
     value = {"last_attempt": now, "last_success": now if ok else previous.get("last_success"),
              "videos": videos if ok else previous.get("videos", 0), "error": "" if ok else error,
              "auth_required": auth_required}
+    if explained and not ok:                             # Phase 4.1-A: the API's own reason, in plain Portuguese
+        value.update(reason=explained["reason"], message=explained["message"], fix=explained["fix"],
+                     project=explained.get("project"))
     folder().mkdir(parents=True, exist_ok=True)
     atomic_write_json(folder() / STATUS_FILE, value)
     return value
@@ -267,7 +293,11 @@ def refresh_with_status(*, force: bool = False, interactive: bool = False, **ser
         _record_status(ok=False, error=f"{AUTH_HELP} ({str(exc)[:120]})", auth_required=True)
         raise
     except Exception as exc:                             # noqa: BLE001
-        _record_status(ok=False, error=f"{exc.__class__.__name__}: {str(exc)[:300]}")
+        from uploader import analytics_doctor
+        explained = analytics_doctor.explain(exc)
+        _record_status(ok=False, error=explained["fix"] if explained["reason"] != exc.__class__.__name__ else
+                       f"{exc.__class__.__name__}: {str(exc)[:300]}", explained=explained,
+                       auth_required=explained["reason"] in ("insufficientPermissions", "forbidden"))
         raise
     _record_status(ok=True, videos=len(done))
     return {"videos": done, "status": status()}

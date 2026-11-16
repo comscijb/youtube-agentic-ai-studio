@@ -306,6 +306,8 @@ EXTERNAL_IMAGE_PROVIDER = os.getenv("EXTERNAL_IMAGE_PROVIDER", "")
 EXTERNAL_IMAGE_MODEL = os.getenv("EXTERNAL_IMAGE_MODEL", "gpt-image-1")
 EXTERNAL_IMAGE_PRICE = float(os.getenv("EXTERNAL_IMAGE_PRICE", "0"))           # USD per image
 EXTERNAL_IMAGE_BUDGET = float(os.getenv("EXTERNAL_IMAGE_BUDGET", "0"))         # default per-project cap, USD
+# Phase 4.1-A: the channel the credentials must resolve to (Analytics queries use ids=channel==<this id>).
+EXPECTED_CHANNEL_ID = os.getenv("EXPECTED_CHANNEL_ID", "UCLXUyBGw-ojvJDAT5RSOjZQ")
 # Phase 4.0 (discovery). Lists and slots are edited in Settings (data/discovery_settings.json overrides these).
 LOCALIZE_LANGUAGES = ["es", "pt", "fr", "de", "hi"]       # titles and descriptions translated at upload (4.0-B)
 PUBLISH_TIMEZONE = "America/New_York"                     # the main audience is in the US (4.0-F)

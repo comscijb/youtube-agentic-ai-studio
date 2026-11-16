@@ -1267,6 +1267,17 @@ def analytics_authorize():
     return jsonify({"ok": True})
 
 
+@app.route("/api/analytics/doctor", methods=["POST"])
+def analytics_doctor_run():
+    """Phase 4.1-A "Diagnóstico de dados": the same read-only checks as python -m scripts.analytics_doctor."""
+    from uploader import analytics_doctor
+    try:
+        report = analytics_doctor.diagnose()
+    except Exception as exc:                             # noqa: BLE001
+        return jsonify({"ok": False, "error": f"{exc.__class__.__name__}: {str(exc)[:300]}"}), 500
+    return jsonify({"ok": True, "report": report, "lines": analytics_doctor.lines(report)})
+
+
 @app.route("/api/swap/proposals")
 def swap_proposals():
     """Phase 4.0-C: packaging swaps the rule proposes (never applied without a click)."""

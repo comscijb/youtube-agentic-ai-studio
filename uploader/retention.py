@@ -40,8 +40,9 @@ ADVICE = {"start": "make its first sentence carry the story forward",
 
 def fetch_curve(analytics, video_id: str, start: str, end: str) -> list[dict]:
     """[{"ratio", "watch", "relative"}] sorted by the elapsed-time ratio (YouTube Analytics API v2)."""
+    from uploader.analytics import channel_ids
     response = analytics.reports().query(
-        ids="channel==MINE", startDate=start, endDate=end, metrics="audienceWatchRatio,relativeRetentionPerformance",
+        ids=channel_ids(), startDate=start, endDate=end, metrics="audienceWatchRatio,relativeRetentionPerformance",
         dimensions="elapsedVideoTimeRatio", filters=f"video=={video_id}", sort="elapsedVideoTimeRatio").execute()
     names = [header["name"] for header in response.get("columnHeaders", [])]
     rows = [dict(zip(names, row)) for row in response.get("rows") or []]
