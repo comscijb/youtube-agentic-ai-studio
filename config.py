@@ -308,6 +308,8 @@ EXTERNAL_IMAGE_PROVIDER = os.getenv("EXTERNAL_IMAGE_PROVIDER", "")
 EXTERNAL_IMAGE_MODEL = os.getenv("EXTERNAL_IMAGE_MODEL", "gpt-image-1")
 EXTERNAL_IMAGE_PRICE = float(os.getenv("EXTERNAL_IMAGE_PRICE", "0"))           # USD per image
 EXTERNAL_IMAGE_BUDGET = float(os.getenv("EXTERNAL_IMAGE_BUDGET", "0"))         # default per-project cap, USD
+# Phase 4.2-B: 1-3 key lines per minute on screen, word by word, from the 4.1 attention map.
+KEY_LINES_ENABLED = os.getenv("KEY_LINES_ENABLED", "true").lower() in ("1", "true", "yes", "on")
 # Phase 4.2-A: visual rhythm from the same images (seconds per view by beat; 7 s is the hard maximum).
 RHYTHM_ENABLED = os.getenv("RHYTHM_ENABLED", "true").lower() in ("1", "true", "yes", "on")
 RHYTHM = {"cold_open": [2.0, 3.0], "tension": [2.0, 4.0], "development": [3.0, 5.0], "reflection": [4.0, 7.0], "max_hold": 7.0}

@@ -101,6 +101,38 @@ def expand(output_dir, sections: list[dict], durations: list[float], schedule: d
             "extra_images": extras, "gpu_budget": rhythm.gpu_budget(extras)}
 
 
+def faces_at(plan: dict, sections: list[dict], durations: list[float], t: float, output_dir) -> list:
+    """Face boxes (frame-normalised) of the view on screen at global time ``t``, from the detection cache."""
+    cache = load_json(Path(output_dir) / VIEWS_CACHE) or {}
+    cursor = 0.0
+    for section, duration in zip(sections, durations):
+        if cursor <= t < cursor + duration:
+            for item in plan.get("schedule", {}).get(section["id"], []):
+                if item["start"] <= t - cursor < item["end"]:
+                    persons = next((value for key, value in cache.items() if key.startswith(f"{item.get('source_shot', item['shot_id'])}:")), [])
+                    faces = [person["face"]["box"] for person in persons if person.get("face")]
+                    crop = item.get("crop")
+                    if not crop:
+                        return faces
+                    width, height = crop[2] - crop[0], crop[3] - crop[1]
+                    return [[(face[0] - crop[0]) / width, (face[1] - crop[1]) / height, (face[2] - crop[0]) / width,
+                             (face[3] - crop[1]) / height] for face in faces]
+        cursor += duration
+    return []
+
+
+def key_lines(output_dir, plan: dict, sections: list[dict], durations: list[float], *, captions_on: bool) -> list[dict]:
+    """Phase 4.2-B: the key lines with their placement (upper third unless a face is there)."""
+    from agents import attention_map
+    from video import key_lines as lines_module
+    if not lines_module.enabled():
+        return []
+    found = lines_module.choose(attention_map.load(output_dir) or {}, words(output_dir), duration=sum(durations))
+    for line in found:
+        line.update(lines_module.placement(faces_at(plan, sections, durations, line["start"], output_dir), captions_on=captions_on))
+    return found
+
+
 def _probe() -> dict:
     import config
     if not getattr(config, "UPSCALE_CROPS", True):

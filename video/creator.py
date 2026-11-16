@@ -645,7 +645,7 @@ def _shot_frame(shot: dict, t: float) -> np.ndarray:
 
 def _make_clip(section, duration, bg_images, section_num, total_sections,
                pan_dir=(1, 0), captions: list = None, section_start_t: float = 0.0,
-               cinematic: bool = False, shots: list | None = None):
+               cinematic: bool = False, shots: list | None = None, key_lines: list | None = None):
     """
     Build a single section clip with:
       • B-roll image cycling every BROLL_INTERVAL seconds with smooth crossfade
@@ -751,6 +751,15 @@ def _make_clip(section, duration, bg_images, section_num, total_sections,
             if t > 1.5:
                 cap_alpha = min(1.0, (t - 1.5) / 0.6)
             frame = _draw_lower_third(frame, caption, cap_alpha, title)
+
+        # ── Key lines (Phase 4.2-B): large, word by word, never with the captions under them ──
+        if key_lines:
+            from video import key_lines as lines_module
+            global_now = section_start_t + t
+            for line in key_lines:
+                if line["start"] <= global_now <= line["end"]:
+                    frame = lines_module.draw(frame, line, global_now, line.get("band", "upper"), _load_font)
+                    break
 
         # ── SRT subtitle cue (bottom-centre, 36px) ────────────────────────
         if captions:
@@ -1171,6 +1180,17 @@ def create_video(script: dict, audio_path: str, output_dir: str,
                 cut_plan.save(output_dir, cut)
                 print(f"   → Ritmo: {cut['report']['views']} vistas, média {cut['report']['average']:.1f} s, "
                       f"máximo {cut['report']['max']:.1f} s (upscale: {cut['upscale'].get('chosen') or 'Lanczos'})")
+        lines = []
+        if cut is not None:
+            from video import cut_plan, key_lines as lines_module
+            lines = cut_plan.key_lines(output_dir, cut, sections, durations, captions_on=bool(captions))
+            if lines:
+                windows = lines_module.hidden_caption_windows(lines)
+                captions = lines_module.without_hidden(captions, windows)
+                frame_captions = lines_module.without_hidden(frame_captions, windows)
+                cut["key_lines"] = [{key: line[key] for key in ("text", "kind", "start", "end", "band", "hide_captions")} for line in lines]
+                cut_plan.save(output_dir, cut)
+                print(f"   → Frases-chave na tela: {len(lines)}")
         if schedule:
             print(f"\n   Building {total_sections} section clips from shot_list.json "
                   f"({sum(len(items) for items in schedule.values())} shots):")
@@ -1209,7 +1229,7 @@ def create_video(script: dict, audio_path: str, output_dir: str,
                 section_shots = cold_open_treatment(section_shots)
             clip = _make_clip(section, duration, bg_images, i + 1, total_sections,
                               captions=frame_captions, section_start_t=section_start_t,
-                              cinematic=cinematic, shots=section_shots)
+                              cinematic=cinematic, shots=section_shots, key_lines=lines)
             clips.append(clip)
             section_start_t += duration   # advance global timestamp
 
