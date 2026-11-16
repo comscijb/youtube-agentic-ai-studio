@@ -515,6 +515,8 @@ app = Flask(__name__, template_folder="gui_templates")
 try:                                                     # Phase 4.2: Settings → Ritmo / Som / Música
     from video import cut_settings as _cut_settings
     _cut_settings.apply()
+    from video import shorts_settings as _shorts_settings          # Phase 4.3: Settings → Shorts
+    _shorts_settings.apply()
 except Exception:                                        # noqa: BLE001 — the defaults in config.py stay
     pass
 

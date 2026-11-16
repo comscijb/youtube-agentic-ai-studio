@@ -40,6 +40,8 @@ def setUpModule():
         patch.object(config, "DISCOVERY_SETTINGS_FILE", os.path.join(_state["temp"].name, "discovery.json"), create=True),
         patch.object(config, "ANALYTICS_DIR", os.path.join(_state["temp"].name, "analytics"), create=True),
         patch.object(config, "GUI_STATE_FILE", os.path.join(_state["temp"].name, "gui_state.json"), create=True),
+        patch.object(config, "SHORTS_SETTINGS_FILE", os.path.join(_state["temp"].name, "shorts_settings.json"), create=True),
+        patch.object(config, "CUT_SETTINGS_FILE", os.path.join(_state["temp"].name, "cut_settings.json"), create=True),
         # No real depth model either: with transformers installed it would download and run on the fixtures.
         patch.object(motion, "estimate", side_effect=motion.DepthUnavailable("no depth model in tests")),
     ]

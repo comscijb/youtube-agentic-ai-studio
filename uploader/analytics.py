@@ -368,7 +368,12 @@ def overview() -> dict:
         cut_comparison = retention.compare_cuts(episodes, cached, duration_for)   # Phase 4.2-G
     except Exception:                                   # noqa: BLE001
         cut_comparison = {}
-    return {"checklist_overdue": overdue, "cut_comparison": cut_comparison, "videos": videos, "views": total("views"), "subscribers_gained": total("subscribers_gained"),
+    try:
+        from uploader import short_stats                # Phase 4.3-F: which Short formats work
+        short_formats = short_stats.panel()
+    except Exception:                                   # noqa: BLE001
+        short_formats = {}
+    return {"checklist_overdue": overdue, "cut_comparison": cut_comparison, "short_formats": short_formats, "videos": videos, "views": total("views"), "subscribers_gained": total("subscribers_gained"),
             "impressions": total("impressions"), "note": LAG_NOTE, "retention_guidance": retention.guidance()}
 
 
