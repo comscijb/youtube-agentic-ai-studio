@@ -654,6 +654,7 @@ a:hover{color:var(--text)}
               <div id="attention-timeline" style="position:relative"></div>
               <div id="attention-detail" style="font-size:11px;margin-top:6px"></div>
               <div id="rhythm-report" style="font-size:11px;margin-top:8px;border-top:1px solid var(--border);padding-top:6px"></div>
+              <div id="video-attention" style="font-size:11px;margin-top:8px;border-top:1px solid var(--border);padding-top:6px"></div>
             </div>
 
             <div id="sections-list">
@@ -4237,7 +4238,67 @@ function loadAttention() {
   fetch('/api/rhythm').then(r => r.json()).then(renderRhythm).catch(() => {});
 }
 
+function loadVideoAttention() {
+  fetch('/api/video-attention').then(r => r.json()).then(renderVideoAttention).catch(() => {});
+}
+
+function videoAttentionPost(body) {
+  fetch('/api/video-attention', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)})
+    .then(r => r.json()).then(d => { if (!d.ok) alert(d.error); renderVideoAttention(d); });
+}
+
+function renderVideoAttention(d) {
+  // Phase 4.2-F: 5 s bins (narration · image · sound), findings with one-click fixes, the override for major ones.
+  const box = document.getElementById('video-attention');
+  if (!box || !d.ok) return;
+  const r = d.report || {};
+  box.innerHTML = '<b>Mapa de atenção do vídeo</b>' + (r.bins ? '' : ': aparece depois de renderizar (ou de "Prévia de 60 s").');
+  if (!r.bins) return;
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;height:16px;border-radius:3px;overflow:hidden;margin:4px 0';
+  r.bins.forEach(b => {
+    const cell = document.createElement('div');
+    const n = b.narration + b.visual + b.audio;
+    cell.style.cssText = `flex:1;border-right:1px solid var(--surface2);background:${n >= 3 ? 'var(--green,#4caf50)' : n >= 1 ? '#c9b23a' : 'var(--red,#e05252)'}`;
+    cell.title = `${Math.floor(b.start / 60)}:${String(b.start % 60).padStart(2, '0')} · narração ${b.narration} · imagem ${b.visual} · som ${b.audio}` + (b.text ? ' · texto' : '');
+    row.appendChild(cell);
+  });
+  box.appendChild(row);
+  const labels = {add_cut: 'Adicionar vista', remove_sfx: 'Remover efeito', lower_music: 'Baixar a música', add_sfx_accent: 'Pôr um som no início'};
+  (r.findings || []).slice(0, 16).forEach(f => {
+    const line = document.createElement('div');
+    line.style.cssText = `border-left:2px solid ${f.severity === 'major' ? 'var(--red,#e05252)' : 'var(--amber)'};padding-left:6px;margin:2px 0`;
+    line.textContent = `${f.at} [${f.severity}] ${f.claim} `;
+    if (f.fix && labels[f.fix.action]) {
+      const button = document.createElement('button');
+      button.className = 'btn btn-ghost'; button.style.cssText = 'font-size:10px;padding:1px 6px';
+      button.textContent = labels[f.fix.action];
+      button.onclick = () => videoAttentionPost({fix: f.fix});
+      line.appendChild(button);
+    }
+    box.appendChild(line);
+  });
+  if ((d.blocked || []).length) {
+    const wrap = document.createElement('div');
+    wrap.style.marginTop = '4px';
+    wrap.innerHTML = '<div>Achados graves bloqueiam a renderização. Corrija (e rode a etapa Música de novo para os de som) ou escreva o motivo:</div>';
+    const input = document.createElement('input');
+    input.type = 'text'; input.placeholder = 'Por que renderizar mesmo assim?'; input.style.cssText = 'width:70%;font-size:11px';
+    const save = document.createElement('button');
+    save.className = 'btn btn-ghost'; save.style.cssText = 'font-size:10px;margin-left:4px'; save.textContent = 'Registrar motivo';
+    save.onclick = () => videoAttentionPost({override: input.value});
+    wrap.appendChild(input); wrap.appendChild(save);
+    box.appendChild(wrap);
+  } else if ((d.overrides || {}).render_override) {
+    const note = document.createElement('div');
+    note.style.color = 'var(--muted)';
+    note.textContent = 'Motivo registrado: ' + d.overrides.render_override;
+    box.appendChild(note);
+  }
+}
+
 function renderRhythm(d) {
+  loadVideoAttention();
   // Phase 4.2-A: seconds per view per scene against the beat's target (from the last render's cut plan).
   const box = document.getElementById('rhythm-report');
   if (!box) return;

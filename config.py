@@ -308,6 +308,8 @@ EXTERNAL_IMAGE_PROVIDER = os.getenv("EXTERNAL_IMAGE_PROVIDER", "")
 EXTERNAL_IMAGE_MODEL = os.getenv("EXTERNAL_IMAGE_MODEL", "gpt-image-1")
 EXTERNAL_IMAGE_PRICE = float(os.getenv("EXTERNAL_IMAGE_PRICE", "0"))           # USD per image
 EXTERNAL_IMAGE_BUDGET = float(os.getenv("EXTERNAL_IMAGE_BUDGET", "0"))         # default per-project cap, USD
+# Phase 4.2-F: the video attention map gates the render (major findings need a typed reason in the GUI).
+VIDEO_ATTENTION_GATE = os.getenv("VIDEO_ATTENTION_GATE", "true").lower() in ("1", "true", "yes", "on")
 # Phase 4.2-E: 2-3 tracks per episode by story part, a sound drop before the reversal line, a swell under the last line.
 MUSIC_PLAN_ENABLED = os.getenv("MUSIC_PLAN_ENABLED", "true").lower() in ("1", "true", "yes", "on")
 # Phase 4.2-D: sound design (assets/sfx with LICENSES.json; beds -26 dB, actions -18 dB, accents -14 dB under the voice).

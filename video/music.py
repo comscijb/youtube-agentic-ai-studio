@@ -401,6 +401,18 @@ def design_mix(narration_path: str, temp: str, track: dict | None, volume: float
     except Exception as exc:                             # noqa: BLE001 — the single track stays
         print(f"   ⚠ music plan skipped ({exc.__class__.__name__}: {str(exc)[:120]})")
         plan = None
+    from video import video_attention                     # Phase 4.2-F one-click fixes
+    fixes = video_attention.overrides(output_dir)
+    removed = {(item["tag"], round(item["start"], 2)) for item in fixes.get("removed_sfx", [])}
+    placed = [cue for cue in placed if (cue["tag"], round(cue["start"], 2)) not in removed]
+    if fixes.get("extra_accents"):
+        extra, _ = sfx.assign_files([{"kind": "accent", "tag": "impact", "start": float(at), "end": float(at) + 1.5,
+                                      "quote": "", "sentence": None} for at in fixes["extra_accents"]])
+        placed += extra
+    scale = float(fixes.get("music_scale", 1.0))
+    if plan and scale != 1.0:
+        plan["segments"] = [{**segment, "volume": segment["volume"] * scale} for segment in plan.get("segments", [])]
+    volume = volume * scale
     if not placed and not (plan and plan.get("segments")):
         if missing:
             record["sfx_missing_tags"] = missing
@@ -428,6 +440,10 @@ def design_mix(narration_path: str, temp: str, track: dict | None, volume: float
     if result.returncode != 0:
         print(f"   ⚠ sound design mix failed ({result.stderr[-200:]}); classic mix")
         return None
+    try:                                                 # the bed alone, for the intelligibility check (4.2-F)
+        sound.render_bed(narration_path, music, cues, os.path.join(output_dir, "bed_stem.wav"), drops=drops, swells=swells)
+    except Exception as exc:                             # noqa: BLE001 — the check reports "not verified"
+        print(f"   ⚠ bed stem skipped ({exc.__class__.__name__})")
     record.update({"sfx_cues": len(cues), "sfx_missing_tags": missing, "music_plan": [
         {key: item.get(key) for key in ("file", "start", "end", "mood")} for item in music] if plan else None,
         "drops": drops, "swells": swells})

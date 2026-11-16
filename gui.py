@@ -2534,6 +2534,26 @@ def attention_run():
     return _imagegen_run(work)
 
 
+@app.route("/api/video-attention", methods=["GET", "POST"])
+def video_attention_api():
+    """Phase 4.2-F "Mapa de atenção do vídeo": GET the last report; POST {fix} applies a one-click fix,
+    POST {override} records the reason to render despite major findings."""
+    from video import video_attention
+    if request.method == "POST":
+        body = request.get_json(force=True) or {}
+        try:
+            if body.get("fix"):
+                video_attention.apply_fix(config.OUTPUT_DIR, body["fix"])
+            if body.get("override") is not None:
+                video_attention.override(config.OUTPUT_DIR, body["override"])
+        except (ValueError, KeyError) as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 400
+    report = load_json(Path(config.OUTPUT_DIR, video_attention.REPORT)) or {}
+    fixes = video_attention.overrides(config.OUTPUT_DIR)
+    return jsonify({"ok": True, "report": report, "overrides": fixes,
+                    "blocked": video_attention.blocked(report, config.OUTPUT_DIR) if report else []})
+
+
 @app.route("/api/rhythm")
 def rhythm_report():
     """Phase 4.2-A: the rhythm report of the last cut plan (seconds per view per scene, against the targets)."""

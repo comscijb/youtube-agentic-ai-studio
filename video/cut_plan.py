@@ -89,6 +89,8 @@ def expand(output_dir, sections: list[dict], durations: list[float], schedule: d
                                   "shot_type": {"detail": "close_up", "medium": "medium"}.get(view["kind"], item.get("shot_type", "medium")),
                                   "transition": _transition(item, number, beat),
                                   "beat": beat, "final": final, "grade": _grade(section)})
+        views_out = extra_cuts(views_out, [time - cursor for time in _overrides(output_dir).get("extra_cuts", [])
+                                           if cursor <= time < cursor + duration])
         if views_out:
             expanded[section["id"]] = views_out
             rows.append({"id": section["id"], "title": section.get("title", ""), "beat": beat, "section_type": section.get("section_type"),
@@ -99,6 +101,27 @@ def expand(output_dir, sections: list[dict], durations: list[float], schedule: d
     extras = rhythm.extra_requests(rows)
     return {"schedule": expanded, "rows": rows, "report": rhythm.report(rows), "upscale": probe,
             "extra_images": extras, "gpu_budget": rhythm.gpu_budget(extras)}
+
+
+def _overrides(output_dir) -> dict:
+    from video import video_attention
+    return video_attention.overrides(output_dir)
+
+
+def extra_cuts(views: list[dict], cuts: list[float]) -> list[dict]:
+    """Phase 4.2-F one-click fix: split the view holding each forced cut time; the new half shows another framing."""
+    order = ["full", "medium", "detail"]
+    for cut in sorted(cuts):
+        for index, view in enumerate(views):
+            if view["start"] + 0.8 < cut < view["end"] - 0.8:
+                first = {**view, "end": round(cut, 3)}
+                second = {**view, "start": round(cut, 3), "shot_id": f"{view['shot_id']}+{int(cut * 10)}",
+                          "transition": "cut", "motion_variant": view.get("motion_variant", 0) + 1}
+                if view.get("view") in order and view.get("crop") is None:
+                    second["view"] = "full"                      # no crop to switch to without the detector: move differently
+                views[index:index + 1] = [first, second]
+                break
+    return views
 
 
 def _grade(section: dict) -> str:

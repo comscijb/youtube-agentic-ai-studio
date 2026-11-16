@@ -1207,6 +1207,17 @@ def create_video(script: dict, audio_path: str, output_dir: str,
                 cut["key_lines"] = [{key: line[key] for key in ("text", "kind", "start", "end", "band", "hide_captions")} for line in lines]
                 cut_plan.save(output_dir, cut)
                 print(f"   → Frases-chave na tela: {len(lines)}")
+        if cut is not None:                             # Phase 4.2-F: the video attention map before rendering
+            from video import video_attention
+            cut.setdefault("boundaries", cut_plan.boundaries(sections, schedule or {}))
+            report = video_attention.evaluate(output_dir, sections, durations, cut, lines)
+            from agents.narrative import atomic_write_json as _write
+            _write(os.path.join(output_dir, video_attention.REPORT), report)
+            print(f"   → Mapa de atenção do vídeo: {len(report['findings'])} achado(s), {report['major']} grave(s)")
+            blocking = video_attention.blocked(report, output_dir)
+            if blocking and getattr(config, "VIDEO_ATTENTION_GATE", True):
+                raise RuntimeError("Mapa de atenção do vídeo: " + "; ".join(blocking[:3]) +
+                                   " — corrija ou registre um motivo na aba Vídeo para renderizar mesmo assim.")
         if schedule:
             print(f"\n   Building {total_sections} section clips from shot_list.json "
                   f"({sum(len(items) for items in schedule.values())} shots):")
