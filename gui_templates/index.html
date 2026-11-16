@@ -4267,6 +4267,34 @@ function renderAttention(d) {
     bar.title = `pergunta "${l.id}"` + (l.closed ? '' : ' (aberta até o fim)');
     box.appendChild(bar);
   });
+  if (d.sim) {
+    // Phase 4.1-D: three simulated viewers (interest per 15 s block). A simulation, not a forecast.
+    const colours = ['#4af', '#e0b252', '#c77dff'];
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 100 30'); svg.setAttribute('preserveAspectRatio', 'none');
+    svg.style.cssText = 'width:100%;height:60px;margin-top:4px;background:var(--surface);border-radius:4px';
+    d.sim.personas.forEach((p, i) => {
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+      line.setAttribute('points', p.curve.map(c => `${(c.start / total * 100).toFixed(2)},${(30 - c.interest * 3).toFixed(2)}`).join(' '));
+      line.setAttribute('fill', 'none'); line.setAttribute('stroke', colours[i % 3]); line.setAttribute('stroke-width', '0.6');
+      svg.appendChild(line);
+      if (p.first_leave_second != null) {
+        const leave = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        const x = (p.first_leave_second / total * 100).toFixed(2);
+        leave.setAttribute('x1', x); leave.setAttribute('x2', x); leave.setAttribute('y1', '0'); leave.setAttribute('y2', '30');
+        leave.setAttribute('stroke', colours[i % 3]); leave.setAttribute('stroke-dasharray', '1,1'); leave.setAttribute('stroke-width', '0.4');
+        svg.appendChild(leave);
+      }
+    });
+    box.appendChild(svg);
+    const legend = document.createElement('div');
+    legend.style.cssText = 'font-size:11px;color:var(--muted)';
+    const g = d.sim.gate || {};
+    legend.textContent = 'Simulação (não é previsão): ' + d.sim.personas.map((p, i) => `${['azul', 'amarelo', 'roxo'][i % 3]} = ${p.id}` +
+      (p.first_leave_second != null ? ` sai aos ${Math.floor(p.first_leave_second / 60)}:${String(Math.round(p.first_leave_second % 60)).padStart(2, '0')}` : ' fica')).join(' · ') +
+      (g.passes ? ' · portão da simulação: passou' : ' · portão da simulação: ' + (g.failures || []).join('; '));
+    box.appendChild(legend);
+  }
   const list = document.createElement('div');
   list.style.cssText = 'margin-top:6px;display:flex;flex-direction:column;gap:3px';
   (d.findings || []).slice(0, 14).forEach(f => {

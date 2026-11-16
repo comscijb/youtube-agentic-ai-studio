@@ -2495,6 +2495,13 @@ def _attention_payload() -> dict:
     checked = attention.check(sections, found if current else None) if sections else {"findings": [], "duration": 0}
     payload = {"ok": True, "has_map": bool(found), "stale": bool(found) and not current, "duration": checked["duration"],
                "findings": checked["findings"], "passes": checked.get("passes"), "source": checked.get("source")}
+    from agents import viewer_sim
+    simulated = viewer_sim.load(config.OUTPUT_DIR)
+    if simulated:                                       # Phase 4.1-D: labelled "simulação", never a forecast
+        payload["sim"] = {"gate": simulated.get("gate"), "predicted_retention": simulated.get("predicted_retention"),
+                          "personas": [{"id": item["id"], "first_leave_second": item["first_leave_second"],
+                                        "curve": [{"start": row["start"], "interest": row["interest"], "reason": row["reason"]}
+                                                  for row in item["blocks"]]} for item in simulated.get("personas", [])]}
     if found:
         payload.update(blocks=attention_map.blocks(found), loops=attention_map.live_loops(found),
                        sentences=[{key: item[key] for key in ("sentence", "text", "start", "end", "tags", "title")}

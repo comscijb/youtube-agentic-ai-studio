@@ -306,6 +306,13 @@ EXTERNAL_IMAGE_PROVIDER = os.getenv("EXTERNAL_IMAGE_PROVIDER", "")
 EXTERNAL_IMAGE_MODEL = os.getenv("EXTERNAL_IMAGE_MODEL", "gpt-image-1")
 EXTERNAL_IMAGE_PRICE = float(os.getenv("EXTERNAL_IMAGE_PRICE", "0"))           # USD per image
 EXTERNAL_IMAGE_BUDGET = float(os.getenv("EXTERNAL_IMAGE_BUDGET", "0"))         # default per-project cap, USD
+# Phase 4.1-D: the skeptical-viewer simulation ("single" = one call for the three personas, "per_persona" = three).
+VIEWER_SIM_MODE = os.getenv("VIEWER_SIM_MODE", "single")
+VIEWER_PERSONAS = [
+    {"id": "phone_night", "description": "25-34, scrolling on a phone at night, likes dark stories, impatient, will swipe the moment nothing is happening"},
+    {"id": "ideas", "description": "35-50, watches philosophy and psychology channels, patient with ideas, hates padding and repetition"},
+    {"id": "from_short", "description": "18-24, arrived from a Short, wants the hook paid off fast"},
+]
 # Phase 4.1-A: the channel the credentials must resolve to (Analytics queries use ids=channel==<this id>).
 EXPECTED_CHANNEL_ID = os.getenv("EXPECTED_CHANNEL_ID", "UCLXUyBGw-ojvJDAT5RSOjZQ")
 # Phase 4.0 (discovery). Lists and slots are edited in Settings (data/discovery_settings.json overrides these).
