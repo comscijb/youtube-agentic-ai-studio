@@ -88,8 +88,11 @@ def depth_map(output_dir, shot_id: str, image_path) -> np.ndarray | None:
     path = depth_path(output_dir, shot_id)
     image_path = Path(image_path)
     if path.is_file() and path.stat().st_mtime >= image_path.stat().st_mtime:
-        with Image.open(path) as cached:
-            return np.asarray(cached, dtype=np.float32) / 65535.0
+        try:
+            with Image.open(path) as cached:
+                return np.asarray(cached, dtype=np.float32) / 65535.0
+        except (OSError, ValueError):                    # a half-written cache file: estimate it again
+            path.unlink(missing_ok=True)
     try:
         depth = estimate(image_path)
     except DepthUnavailable:
