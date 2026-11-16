@@ -62,7 +62,7 @@ SENTENCE_AVG = 12
 SENTENCE_MAX = 18
 BLOCK_SECONDS = 3.0
 DEFAULT_CTA_SCREEN = "Full story on the channel ↑"
-VERSION = 1
+VERSION = 2                      # 2: the CTA is never inside the script; the episode's own concepts
 # Scene-setting openers: the first spoken words must be the hook, never the stage.
 OPENERS = re.compile(r"^(?:in a (?:town|village|city|world|small|quiet)|in the (?:town|village|city|year|days)|once\b|"
                      r"there (?:was|were|once|lived)|long ago|years ago|it was (?:a|the|an)\b|this is the story|"
@@ -133,7 +133,15 @@ def estimate_seconds(item: dict, wpm: float | None = None) -> float:
 
 # ── Contract and structure ──────────────────────────────────────────────────
 
-def contract(formats: list[str], narrative_type: str = "") -> str:
+TYPE_WORDS = {"philosophical_thought_experiment": "thought experiment", "dark_human_parable": "parable",
+              "realistic_psychological_fiction": "psychological"}
+
+
+def contract(formats: list[str], narrative_type: str = "", concepts: list[str] | None = None) -> str:
+    own = TYPE_WORDS.get(narrative_type, "")
+    others = [word for kind, word in TYPE_WORDS.items() if kind != narrative_type]
+    naming = (f"the title or the description line names one searchable concept of THIS story: {concepts or [own]}"
+              + (f"; the story type is a {own}, never call it a {' or a '.join(others)}" if own else ""))
     lines = "\n".join(f"- {name} ({FORMATS[name]['seconds'][0]}-{FORMATS[name]['seconds'][1]} s spoken): {FORMATS[name]['brief']}"
                       for name in dict.fromkeys(formats))
     question = "Who was right?" if narrative_type == "realistic_psychological_fiction" else "What would you do?"
@@ -152,10 +160,10 @@ RULES FOR EVERY SCRIPT:
 - Spoken English for the ear: sentences of {SENTENCE_AVG} words or fewer on average, none over {SENTENCE_MAX}.
 - "script": {WORDS[0]}-{WORDS[1]} words. Present tense where it fits.
 - "on_screen_hook": max {SCREEN_HOOK_WORDS} words shown in the first 1.5 s (different words from the title).
-- "cta_text": max {CTA_WORDS} words; for spoken formats the narrator says it last ("The full story is on the
-  channel."); for dilemma it invites a comment. Never promise a "Part 2".
-- "title": a curiosity hook naming the concept (thought experiment, parable, a person and a situation), max
-  {TITLE_MAX} characters, no hashtags (#Shorts is added), no colon subtitle, never the theme word.
+- "cta_text": max {CTA_WORDS} words; for spoken formats the narrator says it after the script ("The full story is
+  on the channel."), so NEVER write it inside "script"; for dilemma it invites a comment. Never promise a "Part 2".
+- "title": a curiosity hook about a person and a situation, max {TITLE_MAX} characters, no hashtags (#Shorts is
+  added), no colon subtitle, never the theme word. {naming}.
 - "description_line": one line, no spoilers.
 - dilemma only: "question" (the dilemma question; for this type: "{question}").
 Return ONLY JSON {{"shorts": [{{"format", "hook_line", "script", "on_screen_hook", "cta_text", "title",
@@ -164,6 +172,32 @@ Return ONLY JSON {{"shorts": [{{"format", "hook_line", "script", "on_screen_hook
 
 def _norm(text: str) -> str:
     return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9' ]+", " ", str(text or "").lower().replace("’", "'"))).strip()
+
+
+def strip_cta(script: str, cta: str) -> str:
+    """The script without a closing sentence that is the CTA (or a "full story on the channel" plug)."""
+    sentences = _sentences(script)
+    while len(sentences) > 1:
+        last = _norm(sentences[-1])
+        if last == _norm(cta) or ("full story" in last and ("channel" in last or "link" in last)):
+            sentences.pop()
+        else:
+            break
+    return " ".join(sentences) if sentences else script
+
+
+def episode_brief(output, script: dict, brief: dict) -> dict:
+    """The brief with its searchable concepts: its own topic_words, else the description parts', else the story
+    concepts its narration uses; then the type's word."""
+    from agents import topic
+    kind = script.get("narrative_type") or brief.get("narrative_type", "")
+    words = list(brief.get("topic_words") or (load_json(Path(output) / "description_parts.json") or {}).get("topic_words") or [])
+    if not words:
+        narration = " ".join(str(section.get("narration", "")) for section in script.get("sections", []))
+        words = [phrase for phrase in topic.VOCABULARY if topic.contains(narration, phrase)][:3]
+    if TYPE_WORDS.get(kind):
+        words.append(TYPE_WORDS[kind])
+    return {**brief, "narrative_type": kind, "topic_words": list(dict.fromkeys(str(word).lower() for word in words))}
 
 
 def validate(value, formats: list[str], sections: list[dict]) -> list[dict]:
@@ -194,9 +228,10 @@ def validate(value, formats: list[str], sections: list[dict]) -> list[dict]:
         missing = [quote for quote in quotes if _norm(quote) not in narration]
         if not quotes or missing:
             problems.append(f"{label}: evidence_quotes must be copied from the cited scenes ({missing[:2] or 'none given'})")
-        clean.append({"format": wanted, **{key: str(item.get(key, "")).strip() for key in
-                                           ("hook_line", "script", "on_screen_hook", "cta_text", "title", "description_line", "question")},
-                      "source_scene_ids": ids, "evidence_quotes": quotes})
+        fields = {key: str(item.get(key, "")).strip() for key in
+                  ("hook_line", "script", "on_screen_hook", "cta_text", "title", "description_line", "question")}
+        fields["script"] = strip_cta(fields["script"], fields["cta_text"])
+        clean.append({"format": wanted, **fields, "source_scene_ids": ids, "evidence_quotes": quotes})
     if problems:
         raise NarrativeValidationError("shorts scripts: " + "; ".join(problems))
     return clean
@@ -289,6 +324,9 @@ def checks(item: dict, *, guard: dict, brief: dict | None = None, narrative_type
     found.append(_check("title_topic", bool(topic.found_concepts(bare + " " + item.get("description_line", ""), narrative_type,
                                                                  (brief or {}).get("topic_words"))),
                         "the title or description line must name a searchable concept"))
+    wrong = [word for kind, word in TYPE_WORDS.items() if kind != narrative_type and narrative_type
+             and topic.contains(bare, word)]
+    found.append(_check("title_type", not wrong, f"the title calls the story a {', '.join(wrong)}"))
     found.append(_check("title_vs_hook", not screen or len(screen & title_words) / len(screen) < 0.6,
                         "the title repeats the on-screen hook"))
     ending = sentences[-1] if sentences else ""
@@ -414,8 +452,8 @@ def evaluate(items: list[dict], verdicts: dict) -> list[dict]:
     return items
 
 
-def rewrite_contract(formats: list[str], narrative_type: str) -> str:
-    return contract(formats, narrative_type) + """
+def rewrite_contract(formats: list[str], narrative_type: str, concepts: list[str] | None = None) -> str:
+    return contract(formats, narrative_type, concepts) + """
 These scripts FAILED review. Rewrite each one to fix every REASON listed with it, keeping its format and staying
 true to the episode."""
 
@@ -432,7 +470,8 @@ def build(output_dir, *, script: dict | None = None, brief: dict | None = None, 
     sections = [section for section in script.get("sections", []) if str(section.get("narration", "")).strip()]
     if not sections:
         raise FileNotFoundError("no screenplay: the Shorts scripts are derived from script.json")
-    kind = script.get("narrative_type") or brief.get("narrative_type", "")
+    brief = episode_brief(output, script, brief)
+    kind = brief["narrative_type"]
     formats = formats or allocate()
     wpm = shorts_wpm()
     guard = story_guard(script, outline)
@@ -444,7 +483,7 @@ def build(output_dir, *, script: dict | None = None, brief: dict | None = None, 
         return saved
     generator = generator or generate
     context = _context(script, brief, guard)
-    raw = generate_json(contract(formats, kind), "shorts scripts", lambda value: validate(value, formats, sections),
+    raw = generate_json(contract(formats, kind, brief["topic_words"]), "shorts scripts", lambda value: validate(value, formats, sections),
                         generator=generator, context=context, stage="shorts_scripts", temperature_key="packaging",
                         run_dir=str(output))
     items = [_finish(item, number, guard=guard, brief=brief, narrative_type=kind, wpm=wpm) for number, item in enumerate(raw, 1)]
@@ -456,7 +495,7 @@ def build(output_dir, *, script: dict | None = None, brief: dict | None = None, 
         notes = [{"format": item["format"], "script": item["script"], "hook_line": item["hook_line"], "title": item["title"],
                   "REASONS": item["reasons"]} for item in failing]
         try:
-            again = generate_json(rewrite_contract(wanted, kind), "shorts rewrite", lambda value: validate(value, wanted, sections),
+            again = generate_json(rewrite_contract(wanted, kind, brief["topic_words"]), "shorts rewrite", lambda value: validate(value, wanted, sections),
                                   generator=generator, context=context + f"\nFAILED: {compact_json(notes)}",
                                   stage="shorts_rewrite", temperature_key="packaging", run_dir=str(output))
         except NarrativeValidationError as exc:
@@ -491,12 +530,13 @@ def regenerate(output_dir, short_id: str, *, generator=None, simulator=None) -> 
     script = load_json(output / "script.json") or {}
     brief = load_json(output / "story_brief.json") or load_json(output / "research.json") or {}
     sections = [section for section in script.get("sections", []) if str(section.get("narration", "")).strip()]
-    kind = script.get("narrative_type") or brief.get("narrative_type", "")
+    brief = episode_brief(output, script, brief)
+    kind = brief["narrative_type"]
     guard = story_guard(script, load_json(output / "story_outline.json") or {})
     wpm = shorts_wpm()
     generator = generator or generate
     others = [item["script"] for item in plan["segments"] if item["id"] != short_id]
-    raw = generate_json(contract([old["format"]], kind) + "\nWrite a NEW version, different from PREVIOUS and from the OTHER Shorts.",
+    raw = generate_json(contract([old["format"]], kind, brief["topic_words"]) + "\nWrite a NEW version, different from PREVIOUS and from the OTHER Shorts.",
                         f"shorts version {short_id}", lambda value: validate(value, [old["format"]], sections),
                         generator=generator, context=_context(script, brief, guard) + f"\nPREVIOUS: {compact_json(old['script'])}"
                         f"\nOTHER: {compact_json(others)}", stage="shorts_version", temperature_key="packaging", run_dir=str(output))
@@ -519,8 +559,8 @@ def save(output_dir, edits: list[dict]) -> dict:
     if plan.get("mode") != "formats":
         raise LookupError("no format Shorts plan")
     script = load_json(output / "script.json") or {}
-    brief = load_json(output / "story_brief.json") or load_json(output / "research.json") or {}
-    kind = script.get("narrative_type") or brief.get("narrative_type", "")
+    brief = episode_brief(output, script, load_json(output / "story_brief.json") or load_json(output / "research.json") or {})
+    kind = brief["narrative_type"]
     guard = story_guard(script, load_json(output / "story_outline.json") or {})
     wpm = shorts_wpm()
     changes = {str(edit.get("id")): edit for edit in edits or [] if isinstance(edit, dict)}

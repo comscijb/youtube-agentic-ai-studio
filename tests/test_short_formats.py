@@ -148,6 +148,24 @@ class CheckTests(unittest.TestCase):
         self.assertFalse(self.run_checks(reversal)["no_twist"]["ok"])
         self.assertTrue(self.run_checks(script_for("hook", source_scene_ids=["1"]))["no_twist"]["ok"])   # cold open allowed
 
+    def test_cta_inside_the_script_is_spoken_once(self):
+        item = script_for("hook", script=script_for("hook")["script"] + " The full story is on the channel.")
+        clean = sf.validate({"shorts": [item]}, ["hook"], SECTIONS)[0]
+        self.assertTrue(clean["script"].endswith("What did he think?"))
+        self.assertEqual(sf.spoken_text(clean).lower().count("full story"), 1)
+
+    def test_title_names_its_own_type_only(self):
+        found = self.run_checks(script_for("hook", title="A Thought Experiment About a Baker"))
+        self.assertFalse(found["title_type"]["ok"])
+        self.assertTrue(self.run_checks(script_for("hook", title="A Parable About a Baker Who Thought Too Loud"))["title_type"]["ok"])
+
+    def test_episode_concepts(self):
+        brief = sf.episode_brief(tempfile.gettempdir(), SCRIPT, {"psychological_theme": "shame"})
+        self.assertEqual(brief["narrative_type"], "dark_human_parable")
+        self.assertIn("parable", brief["topic_words"])
+        self.assertIn("baker", brief["topic_words"])               # found in the narration
+        self.assertIn("parable", sf.contract(["hook"], "dark_human_parable", brief["topic_words"]))
+
     def test_title_rules(self):
         self.assertFalse(self.run_checks(script_for("hook", title="Shame: A Story About Guilt"))["title"]["ok"])
         self.assertFalse(self.run_checks(script_for("hook", title="They Heard Everything, Said The Town"))["title_vs_hook"]["ok"])
