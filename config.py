@@ -418,12 +418,19 @@ COLORS = {
     "red":        (197, 102, 112),    # Dusty Crimson
 }
 
-# Shorts cut from each episode (Phase 3.7): same narration and shots, uploaded with the episode.
-SHORTS_PER_EPISODE  = int(os.getenv("SHORTS_PER_EPISODE", "3"))
+# Shorts (Phase 4.3): each Short has its own script in one of five formats (video.short_formats). SHORTS_MODE "cuts"
+# brings back the Phase 3.7 cut-downs of the episode narration ("Recortes do episódio").
+SHORTS_MODE         = os.getenv("SHORTS_MODE", "formats")
+SHORTS_FORMATS      = {"hook": 1.0, "dilemma": 1.0, "line": 1.0, "countdown": 1.0, "pov": 1.0}   # weight; 0 = off
+SHORTS_PER_EPISODE  = int(os.getenv("SHORTS_PER_EPISODE", "4"))      # at most 6
+SHORTS_TTS_SPEED    = float(os.getenv("SHORTS_TTS_SPEED", "0.95"))   # Kokoro speed for Shorts (episodes: TTS_LOCAL_SPEED)
+SHORTS_PAUSES       = {"sentence": 0.15, "paragraph": 0.15, "clause": 0.1}   # no scene pauses in a Short
 SHORTS_MIN_SECONDS  = 45          # YouTube allows 3 min; shorter Shorts keep viewers better
 SHORTS_MAX_SECONDS  = 75
-# When the Shorts go public: the first with the episode, then one every spacing_hours at time (local).
-SHORTS_SCHEDULE     = {"first": "with_episode", "spacing_hours": 24, "time": "18:00"}
+# When the Shorts go public: the first with the episode, the rest spread across the week (several per day allowed,
+# never closer than SHORTS_MIN_GAP_HOURS), formats alternating (Phase 4.3-E). spacing_hours/time: the old daily rhythm.
+SHORTS_SCHEDULE     = {"first": "with_episode", "spread_days": 7, "times": ["12:00", "18:00", "21:00"],
+                       "spacing_hours": 24, "time": "18:00"}
 
 # Thumbnails (Phase 3.6): no channel wordmark; an optional tiny corner mark instead.
 THUMBNAIL_LOGO = os.getenv("THUMBNAIL_LOGO", "false").lower() in ("1", "true", "yes", "on")
