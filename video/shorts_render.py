@@ -340,7 +340,7 @@ def render_all(output_dir, *, detector=None, progress: Callable[[str], None] = p
     if not plan or not plan.get("segments"):
         raise FileNotFoundError("no Shorts plan: propose the cuts first")
     shot_list = load_json(output / "shot_list.json") or {}
-    words = shorts.word_timeline(output)
+    words = shorts.word_timeline(output) if plan.get("mode") != "formats" else []
     if detector is None:
         from video.qa import fixes
         detector = fixes._detector()
@@ -348,14 +348,26 @@ def render_all(output_dir, *, detector=None, progress: Callable[[str], None] = p
     for segment in plan["segments"]:
         if not segment.get("include", True) or (only and segment["id"] != only):
             continue
-        record = render_short(output, segment, words=words, shot_list=shot_list, detector=detector, progress=progress)
+        if plan.get("mode") == "formats":                # Phase 4.3: a Short with its own script, voice and edit
+            record = render_format_short(output, segment, shot_list=shot_list, detector=detector, progress=progress)
+        else:
+            record = render_short(output, segment, words=words, shot_list=shot_list, detector=detector, progress=progress)
         segment["render"] = record
         done.append(record)
         atomic_write_json(output / shorts.FOLDER / shorts.PLAN_FILE, plan)
     return done
 
 
+def render_format_short(output_dir, segment: dict, *, shot_list: dict, detector=None,
+                        progress: Callable[[str], None] = print) -> dict:
+    """Phase 4.3: synthesise the Short's script (Shorts speed), mix it (accent, music, sting), cut it in 9:16."""
+    from video import short_edit, short_voice
+    voice = short_voice.synthesize(output_dir, segment)
+    audio = short_voice.mix(output_dir, segment, voice)
+    return short_edit.render(output_dir, segment, voice, audio, shot_list=shot_list, detector=detector, progress=progress)
+
+
 def estimate_seconds(plan: dict | None) -> float:
     """Render time estimate for the preflight: ~1.2 s of rendering per second of Short."""
-    return round(sum(float(item.get("seconds") or 0) for item in (plan or {}).get("segments", [])
-                     if item.get("include", True)) * 1.2, 1)
+    return round(sum(float(item.get("seconds") or item.get("estimate_seconds") or 0) * (1.2 if (plan or {}).get("mode") != "formats" else 2.5)
+                     for item in (plan or {}).get("segments", []) if item.get("include", True)), 1)
