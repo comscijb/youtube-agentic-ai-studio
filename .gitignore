@@ -71,3 +71,4 @@ models/
 # YouTube Analytics cache (Phase 3.6-E)
 data/analytics/
 exports/
+previews/

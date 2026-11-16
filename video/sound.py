@@ -16,6 +16,8 @@ import numpy as np
 import config
 
 PAUSE_KEY_LEVEL = 0.085
+BED_THRESHOLD = 0.02           # about -34 dBFS: the quiet bed passes, a swell is pulled back
+BED_RATIO = 6
 
 
 def rms_db(path: str, seconds: float = 30.0) -> float:
@@ -77,7 +79,10 @@ def graph(duration: float, music: list[dict], cues: list[dict], *, drops=(), swe
     if not labels:
         parts.append(f"anullsrc=r=48000:cl=stereo,atrim=0:{duration:.3f}[silent]")
         labels.append("[silent]")
-    parts.append(f"{''.join(labels)}amix=inputs={len(labels)}:duration=longest:normalize=0,apad,atrim=0:{duration:.3f}[rawbed]")
+    # The bed's own swells (a loud passage in a track) are tamed before the ducking: a voice-band check (4.2-F) found
+    # music 18 dB above its median under speech in "The Man Who Bought the Sunrise".
+    parts.append(f"{''.join(labels)}amix=inputs={len(labels)}:duration=longest:normalize=0,apad,atrim=0:{duration:.3f},"
+                 f"acompressor=threshold={BED_THRESHOLD}:ratio={BED_RATIO}:attack=30:release=400[rawbed]")
     expression = automation(drops, swells)
     parts.append(f"[rawbed]volume=eval=frame:volume='{expression}'[bed]" if expression != "1" else "[rawbed]anull[bed]")
     if ducking:

@@ -359,7 +359,16 @@ def overview() -> dict:
         overdue = after_upload.overdue()
     except Exception:                                   # noqa: BLE001 — never hides the numbers
         overdue = []
-    return {"checklist_overdue": overdue, "videos": videos, "views": total("views"), "subscribers_gained": total("subscribers_gained"),
+    def duration_for(record):
+        from uploader.packaging_swap import project_file
+        found = project_file(record.get("project") or "", "scene_timeline.json")
+        return float((load_json(found) or {}).get("total_duration") or 0) if found else 0.0
+    episodes = [item for item in records if not item.get("parent_video_id") and item.get("kind", "episode") != "short"]
+    try:
+        cut_comparison = retention.compare_cuts(episodes, cached, duration_for)   # Phase 4.2-G
+    except Exception:                                   # noqa: BLE001
+        cut_comparison = {}
+    return {"checklist_overdue": overdue, "cut_comparison": cut_comparison, "videos": videos, "views": total("views"), "subscribers_gained": total("subscribers_gained"),
             "impressions": total("impressions"), "note": LAG_NOTE, "retention_guidance": retention.guidance()}
 
 

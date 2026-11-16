@@ -1268,6 +1268,16 @@ function loadPerformance() {
   loadSwaps();
   fetch('/api/analytics').then(r => r.json()).then(d => {
     perfStatus(d.status || {});
+    const cc = d.cut_comparison || {};
+    if (cc.old || cc.new) {
+      // Phase 4.2-G: does the new cut hold the first minute better?
+      const pct = v => v == null ? '—' : Math.round(v * 100) + ' %';
+      const line = document.createElement('div');
+      line.style.cssText = 'font-size:12px;margin-top:4px';
+      line.textContent = `Retenção aos 0:30 / 1:00 — corte antigo (${(cc.old || {}).videos || 0} vídeos): ${pct((cc.old || {}).at_30)} / ${pct((cc.old || {}).at_60)}` +
+        ` · corte novo 4.2 (${(cc.new || {}).videos || 0}): ${pct((cc.new || {}).at_30)} / ${pct((cc.new || {}).at_60)}`;
+      document.getElementById('perf-status').appendChild(line);
+    }
     if ((d.retention_guidance || []).length) {
       const g = document.createElement('div');
       g.style.cssText = 'font-size:12px;margin-top:4px;color:var(--muted)';

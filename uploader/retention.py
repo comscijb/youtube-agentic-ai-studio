@@ -193,3 +193,31 @@ def learn(record: dict, stats: dict) -> list[dict]:
     if found or stats.get("retention"):
         update_digest(record["video_id"], record.get("title", ""), found, str(record.get("published_at", "")))
     return found
+
+
+# ── Phase 4.2-G: retention at 0:30 and 1:00, new cut vs old ──────────────────
+
+def watch_at(curve: list[dict], duration: float, seconds: float) -> float | None:
+    """The audience watch ratio at ``seconds`` into a video of ``duration`` (nearest point of the curve)."""
+    if not curve or not duration or seconds > duration:
+        return None
+    ratio = seconds / duration
+    return round(min(curve, key=lambda point: abs(point["ratio"] - ratio))["watch"], 3)
+
+
+def compare_cuts(records: list[dict], stats_for, duration_for) -> dict:
+    """{"old": {...}, "new": {...}}: mean retention at 0:30 and 1:00 for episodes with the 4.2 cut and without."""
+    groups = {"old": [], "new": []}
+    for record in records:
+        stats = stats_for(record["video_id"]) or {}
+        curve, duration = stats.get("retention") or [], duration_for(record)
+        values = (watch_at(curve, duration, 30), watch_at(curve, duration, 60))
+        if None in values:
+            continue
+        groups["new" if record.get("cut_version") == "4.2" else "old"].append(values)
+    summary = {}
+    for name, values in groups.items():
+        summary[name] = {"videos": len(values),
+                         "at_30": round(sum(item[0] for item in values) / len(values), 3) if values else None,
+                         "at_60": round(sum(item[1] for item in values) / len(values), 3) if values else None}
+    return summary

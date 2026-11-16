@@ -1071,7 +1071,7 @@ def encode_final(final, output_path: str, *, should_stop=None, **settings) -> No
 
 
 def create_video(script: dict, audio_path: str, output_dir: str,
-                 image_map: dict = None, video_type: str = "normal", should_stop=None) -> str:
+                 image_map: dict = None, video_type: str = "normal", should_stop=None, preview: dict | None = None) -> str:
     """
     Assembles the final video.
     image_map for Shorts: {section_id: [path, path, …]}
@@ -1215,7 +1215,7 @@ def create_video(script: dict, audio_path: str, output_dir: str,
             _write(os.path.join(output_dir, video_attention.REPORT), report)
             print(f"   → Mapa de atenção do vídeo: {len(report['findings'])} achado(s), {report['major']} grave(s)")
             blocking = video_attention.blocked(report, output_dir)
-            if blocking and getattr(config, "VIDEO_ATTENTION_GATE", True):
+            if blocking and getattr(config, "VIDEO_ATTENTION_GATE", True) and not preview:
                 raise RuntimeError("Mapa de atenção do vídeo: " + "; ".join(blocking[:3]) +
                                    " — corrija ou registre um motivo na aba Vídeo para renderizar mesmo assim.")
         if schedule:
@@ -1279,9 +1279,17 @@ def create_video(script: dict, audio_path: str, output_dir: str,
                              duration=audio.duration - final.duration)
             final = concatenate_videoclips([final, tail], method="compose")
         final = final.set_audio(audio)
-        final = with_end_card(final)                    # Phase 3.9-D: visible human authorship
-
-        output_path = os.path.join(output_dir, "final_video.mp4")
+        if preview:                                     # Phase 4.2-G: one minute to compare with the old cut
+            start = max(0.0, float(preview.get("start", 0.0)))
+            final = final.subclip(start, min(final.duration, start + float(preview.get("seconds", 60.0))))
+            output_path = os.path.join(output_dir, "final_preview.mp4")
+        else:
+            final = with_end_card(final)                # Phase 3.9-D: visible human authorship
+            output_path = os.path.join(output_dir, "final_video.mp4")
+        if preview and captions:                        # the burned captions follow the preview's own clock
+            offset = max(0.0, float(preview.get("start", 0.0)))
+            captions = [{**cue, "start": max(0.0, cue["start"] - offset), "end": cue["end"] - offset}
+                        for cue in captions if cue["end"] > offset]
         if tape_level != "off":
             extra_params, tape_report = tape.ffmpeg_params(
                 tape_level, size=(W, H), fps=FPS, captions=captions or None, output_dir=output_dir,

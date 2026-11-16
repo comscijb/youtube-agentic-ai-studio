@@ -64,6 +64,11 @@ class PlanTests(unittest.TestCase):
         self.assertGreater(end, reversal_line)
         self.assertGreater(plan["swells"][0], scenes[-1]["start"])
 
+    def test_tracks_are_levelled_to_the_reference(self):
+        self.assertAlmostEqual(music_plan.level_gain({"rms_db": -14.0}), 0.5012, places=3)
+        self.assertAlmostEqual(music_plan.level_gain({"rms_db": -26.0}), 1.9953, places=3)
+        self.assertEqual(music_plan.level_gain({}), 1.0)
+
     def test_a_tension_part_gets_dramatic_high_energy(self):
         track = music_plan.choose(TRACKS, "tension", "salt", set())
         self.assertEqual((track["mood"], track["energy"]), ("dramatic", "high"))

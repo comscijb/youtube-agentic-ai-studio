@@ -31,6 +31,7 @@ QUIET = 20.0
 MIN_LINE = 1.2
 MIN_CONTRAST = 4.5
 SPEECH_MARGIN_DB = 10.0
+SPEECH_ACTIVE_DB = 10.0        # a window counts as speech within this of the voice's 75th-percentile level
 ACCENT_GAP = 1.0
 OVERRIDES = "cut_overrides.json"
 REPORT = "video_attention.json"
@@ -135,10 +136,12 @@ def band_levels(samples: np.ndarray, rate: int, low: float = 1000.0, high: float
 def intelligibility(voice: np.ndarray, bed: np.ndarray, rate: int, margin: float = SPEECH_MARGIN_DB) -> list[dict]:
     """Windows with speech where the voice is less than ``margin`` dB above the bed (1-4 kHz)."""
     voice_levels, bed_levels = band_levels(voice, rate), band_levels(bed, rate)
-    loudest = max(voice_levels, default=-120.0)
+    if not voice_levels:
+        return []
+    typical = float(np.percentile(voice_levels, 75))                         # the voice's usual speaking level
     found = []
     for index, (speech, music) in enumerate(zip(voice_levels, bed_levels)):
-        if speech < loudest - 30:                                            # a pause: nothing to understand
+        if speech < typical - SPEECH_ACTIVE_DB:                              # mostly a pause: nothing to understand
             continue
         if speech - music < margin:
             found.append({"start": float(index), "margin_db": round(speech - music, 1)})

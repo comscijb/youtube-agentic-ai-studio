@@ -152,6 +152,16 @@ def choose(tracks: list[dict], part: str, salt: str, used: set[str]) -> dict | N
     return sorted(tracks, key=score)[0] if tracks else None
 
 
+REFERENCE_RMS_DB = -20.0       # every planned track is levelled to this before the music volume applies
+
+
+def level_gain(track: dict) -> float:
+    """Bring a track's RMS to the reference (the library spans -16 to -30 dB: a loud track would bury the voice)."""
+    if track.get("rms_db") is None:
+        return 1.0
+    return round(min(4.0, max(0.25, 10 ** ((REFERENCE_RMS_DB - float(track["rms_db"])) / 20.0))), 4)
+
+
 def _sentence_time(words: list[dict], text: str) -> tuple[float, float] | None:
     from video.key_lines import find_span
     span = find_span(words, text)
@@ -184,7 +194,8 @@ def build(output_dir, sections: list[dict], *, volume: float | None = None, trac
         segments.append({"path": str(root / track["file"]), "file": track["file"], "mood": track["mood"], "part": group["part"],
                          "start": round(start, 3), "end": round(end, 3), "offset": 0.0,
                          "fade_in": CROSSFADE if position else min(3.0, end * 0.05),
-                         "fade_out": CROSSFADE if position < len(groups) - 1 else 4.0, "volume": volume})
+                         "fade_out": CROSSFADE if position < len(groups) - 1 else 4.0,
+                         "volume": round(volume * level_gain(track), 4)})
     drops, swells = [], []
     mapped = attention_map.load(output) or {}
     reveal = next((item for item in mapped.get("sentences", []) if item.get("section_type") == "reversal"

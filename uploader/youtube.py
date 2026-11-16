@@ -306,6 +306,7 @@ def upload_run(run_dir: str, *, video_path: str, title: str, description: str, t
             "shorts": [record["video_id"] for record in shorts],
             "localizations": sorted(localizations or {}),
             "narrative_type": kind, "playlist": playlist,
+            "cut_version": "4.2" if (Path(run_dir) / "cut_plan.json").is_file() else "",   # Phase 4.2-G comparison
             "contains_synthetic_media": disclosure["value"], "synthetic_disclosure_reason": disclosure["reason"]},
     )
 
