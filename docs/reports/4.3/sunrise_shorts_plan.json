@@ -1,0 +1,532 @@
+{
+ "episode": {
+  "episode_video_id": "evUOXHpS38M",
+  "episode_url": "https://www.youtube.com/watch?v=evUOXHpS38M"
+ },
+ "formats": [
+  "hook",
+  "dilemma",
+  "line",
+  "countdown",
+  "pov"
+ ],
+ "wpm": 158.1,
+ "segments": [
+  {
+   "id": "short_01",
+   "format": "hook",
+   "status": "review",
+   "estimate_seconds": 38.1,
+   "hook_line": "He bought the sunrise and put a price on dawn.",
+   "on_screen_hook": "Paying for the sun?",
+   "script": "He bought the sunrise and put a price on dawn. A wealthy merchant sealed a paper claiming the eastern sky. He built high grey walls along the mountain path. Anyone who wished to watch the morning had to drop copper coins into his iron bowl. Even as dark shadows stretched over the valley, his daughter pleaded with him to stop. He ignored her, pulled the heavy oak door shut, and locked out the cold world. If someone claimed the light above your home, would you pay?",
+   "cta_text": "The full story is on the channel.",
+   "title": "The father who claimed the morning sky #Shorts",
+   "description_line": "A dark parable of a man who put a price on the sunrise.",
+   "question": "",
+   "source_scene_ids": [
+    "2",
+    "3",
+    "4"
+   ],
+   "evidence_quotes": [
+    "the eastern sky, the sunrise",
+    "dropping copper coins into the metal basin",
+    "pulling the heavy oak door shut behind him"
+   ],
+   "reasons": [
+    "sentences must average ≤ 12 words, none over 18 (avg 12.3, max 16)",
+    "38 s estimated, the format needs 20-35 s",
+    "9 swipe blocks before the end: Pacing slows down into generic fairytale storybook prose.; Descriptive wall details lose momentum completely."
+   ],
+   "swipe": {
+    "blocks": [
+     {
+      "swipe": false,
+      "reason": "Strong opening hook and intriguing premise."
+     },
+     {
+      "swipe": false,
+      "reason": "Story premise holds interest for another block."
+     },
+     {
+      "swipe": true,
+      "reason": "Pacing slows down into generic fairytale storybook prose."
+     },
+     {
+      "swipe": true,
+      "reason": "Descriptive wall details lose momentum completely."
+     },
+     {
+      "swipe": true,
+      "reason": "Repeats the premise without raising tension."
+     },
+     {
+      "swipe": true,
+      "reason": "Boring world-building filler."
+     },
+     {
+      "swipe": true,
+      "reason": "Daughter subplot slows down the narrative speed."
+     },
+     {
+      "swipe": true,
+      "reason": "No fast action or visual hook."
+     },
+     {
+      "swipe": true,
+      "reason": "Overly descriptive action takes too long."
+     },
+     {
+      "swipe": true,
+      "reason": "Generic rhetorical question asked too late."
+     },
+     {
+      "swipe": true,
+      "reason": "Weak call-to-action transition."
+     },
+     {
+      "swipe": true,
+      "reason": "Standard channel plug swipe."
+     }
+    ],
+    "loop_natural": null
+   },
+   "versions": [
+    {
+     "hook_line": "He bought the sun and put a price on dawn.",
+     "script": "He bought the sun and put a price on dawn. A greedy merchant signed a paper to own the sky. Then he built a tall iron gate across the mountain path. The villagers stood in line with copper coins just to watch the dawn. His own daughter begged him to set the light free. But he locked the tower door and counted his money. Would you pay to see the morning sun?",
+     "title": "The father who sold the morning sky #Shorts",
+     "reasons": [
+      "7 swipe blocks before the end: Pacing turns into a slow bedtime story.; Already swiped."
+     ]
+    }
+   ],
+   "render": {
+    "id": "short_01",
+    "video": "shorts\\short_01.mp4",
+    "srt": "shorts\\short_01.srt",
+    "seconds": 33.63,
+    "views": 18,
+    "longest_hold": 2.16,
+    "first_image": "s01_06",
+    "loudness": {
+     "input_integrated_lufs": -23.21,
+     "input_true_peak_dbtp": -1.37,
+     "output_integrated_lufs": -14.85,
+     "output_true_peak_dbtp": -1.97,
+     "target_lufs": -14.0,
+     "gain_trim_db": 1.73
+    },
+    "loop_difference": null,
+    "sound": {
+     "missing_sfx": [
+      "impact/whoosh"
+     ],
+     "music": [
+      "It's Coming - Josh Kirsch_Media Right Productions - Classical - Dramatic.mp3"
+     ]
+    }
+   }
+  },
+  {
+   "id": "short_02",
+   "format": "dilemma",
+   "status": "review",
+   "estimate_seconds": 25.1,
+   "hook_line": "Pay for the morning light or stay in darkness.",
+   "on_screen_hook": "Pay for the dawn?",
+   "script": "Pay for the morning light or stay in darkness. A merchant bought the eastern sky. Now every sunrise costs a copper coin. You can pay his price at the iron basin. Or you can sit in cold shadow below his stone tower. Even his daughter cannot convince him to share the horizon.",
+   "cta_text": "Tell us your choice in the comments.",
+   "title": "A dark parable of the sky merchant #Shorts",
+   "description_line": "A daughter watches her father put a price on the dawn.",
+   "question": "What would you do?",
+   "source_scene_ids": [
+    "2",
+    "3",
+    "4"
+   ],
+   "evidence_quotes": [
+    "the eastern sky, the sunrise",
+    "dropping copper coins into the metal basin",
+    "What is free is never valued"
+   ],
+   "reasons": [
+    "2 swipe blocks before the end: Choice was already made; backstory filler starts dragging.; Forced comment baiting."
+   ],
+   "swipe": {
+    "blocks": [
+     {
+      "swipe": false,
+      "reason": "Direct dilemma grabs immediate attention."
+     },
+     {
+      "swipe": false,
+      "reason": "Establishes premise quickly."
+     },
+     {
+      "swipe": false,
+      "reason": "Clear stakes set up nicely."
+     },
+     {
+      "swipe": false,
+      "reason": "Good build-up to the alternate choice."
+     },
+     {
+      "swipe": false,
+      "reason": "Presents the alternative scenario clearly."
+     },
+     {
+      "swipe": true,
+      "reason": "Choice was already made; backstory filler starts dragging."
+     },
+     {
+      "swipe": true,
+      "reason": "Forced comment baiting."
+     },
+     {
+      "swipe": true,
+      "reason": "Standard engagement outro."
+     }
+    ],
+    "loop_natural": null
+   },
+   "versions": [
+    {
+     "hook_line": "Pay for the sky or live in shadow.",
+     "script": "Pay for the sky or live in shadow. A merchant locked the sunrise behind an iron gate. You can drop your last copper coin in his bowl to watch the dawn. Or you can turn your back on the morning light forever. His daughter begs him to stop, but he refuses. Would you pay his price, or give up the morning?",
+     "title": "A parable of the man who sold the sky #Shorts",
+     "reasons": [
+      "7 swipe blocks before the end: Re-explaining the backstory destroys the momentum.; Already swiped."
+     ]
+    }
+   ],
+   "render": {
+    "id": "short_02",
+    "video": "shorts\\short_02.mp4",
+    "srt": "shorts\\short_02.srt",
+    "seconds": 22.61,
+    "views": 11,
+    "longest_hold": 2.15,
+    "first_image": "s01_06",
+    "loudness": {
+     "input_integrated_lufs": -23.02,
+     "input_true_peak_dbtp": -0.7,
+     "output_integrated_lufs": -14.84,
+     "output_true_peak_dbtp": -2.02,
+     "target_lufs": -14.0,
+     "gain_trim_db": 1.65
+    },
+    "loop_difference": null,
+    "sound": {
+     "missing_sfx": [
+      "impact/whoosh"
+     ],
+     "music": [
+      "It's Coming - Josh Kirsch_Media Right Productions - Classical - Dramatic.mp3"
+     ]
+    }
+   }
+  },
+  {
+   "id": "short_03",
+   "format": "line",
+   "status": "review",
+   "estimate_seconds": 13.5,
+   "hook_line": "What is free is never valued.",
+   "on_screen_hook": "What is free?",
+   "script": "What is free is never valued. The merchant took ownership of the morning sky and charged copper for every dawn. High in his stone tower, he shut out his own daughter, constantly repeating that...",
+   "cta_text": "Subscribe for more parables.",
+   "title": "The father who sold the dawn #Shorts",
+   "description_line": "A parable about a man who claimed the morning sky.",
+   "question": "",
+   "source_scene_ids": [
+    "2",
+    "3",
+    "4"
+   ],
+   "evidence_quotes": [
+    "What is free is never valued",
+    "the eastern sky, the sunrise"
+   ],
+   "reasons": [
+    "script must be 40-110 words (34)",
+    "2 swipe blocks before the end: Feels like narrative recap; loses philosophical punch.; Drifts off into uninteresting side character narrative."
+   ],
+   "swipe": {
+    "blocks": [
+     {
+      "swipe": false,
+      "reason": "Bold quote hook captures initial curiosity."
+     },
+     {
+      "swipe": false,
+      "reason": "Connects well to the quote premise."
+     },
+     {
+      "swipe": true,
+      "reason": "Feels like narrative recap; loses philosophical punch."
+     },
+     {
+      "swipe": true,
+      "reason": "Drifts off into uninteresting side character narrative."
+     },
+     {
+      "swipe": true,
+      "reason": "Abrupt cutoff feels artificial."
+     }
+    ],
+    "loop_natural": true
+   },
+   "versions": [
+    {
+     "hook_line": "What is free is never valued.",
+     "script": "What is free is never valued. The merchant locked the dawn behind iron bars. He took copper from the village and turned away from his daughter. He closed the heavy oak door, locked out the entire world, and reminded himself...",
+     "title": "The daughter who begged for the light #Shorts",
+     "reasons": [
+      "on_screen_hook must be 1-5 words"
+     ]
+    }
+   ],
+   "render": {
+    "id": "short_03",
+    "video": "shorts\\short_03.mp4",
+    "srt": "shorts\\short_03.srt",
+    "seconds": 12.76,
+    "views": 8,
+    "longest_hold": 2.19,
+    "first_image": "s01_06",
+    "loudness": {
+     "input_integrated_lufs": -23.44,
+     "input_true_peak_dbtp": -3.84,
+     "output_integrated_lufs": -14.64,
+     "output_true_peak_dbtp": -2.01,
+     "target_lufs": -14.0,
+     "gain_trim_db": 1.46
+    },
+    "loop_difference": 0.0001,
+    "sound": {
+     "missing_sfx": [
+      "impact/whoosh"
+     ],
+     "music": [
+      "Cafe Regrette - Asher Fulero - Classical - Dramatic.mp3"
+     ]
+    }
+   }
+  },
+  {
+   "id": "short_04",
+   "format": "countdown",
+   "status": "review",
+   "estimate_seconds": 32.5,
+   "hook_line": "He claimed the morning before anyone could stop him.",
+   "on_screen_hook": "Owning the dawn",
+   "script": "He claimed the morning before anyone could stop him. A parchment declared him owner of the eastern horizon. Stonemasons raised a granite wall across the mountain trail. At dawn, travelers dropped copper coins into his metal basin. High above, his tower cast a cold shadow across the valley. His daughter looked up and begged him to share the light. He turned away, gripped the heavy oak door, and pulled it shut.",
+   "cta_text": "The full story is on the channel.",
+   "title": "The father who built a tower over dawn #Shorts",
+   "description_line": "A dark parable of greed and ownership.",
+   "question": "",
+   "source_scene_ids": [
+    "2",
+    "3",
+    "4"
+   ],
+   "evidence_quotes": [
+    "declared an impossible possession: the eastern sky",
+    "casting a long blade of shadow",
+    "pulling the heavy oak door shut behind him"
+   ],
+   "reasons": [
+    "7 swipe blocks before the end: Boring construction detail kills countdown urgency.; Too wordy for a fast-paced short format."
+   ],
+   "swipe": {
+    "blocks": [
+     {
+      "swipe": false,
+      "reason": "Fast opening action line."
+     },
+     {
+      "swipe": false,
+      "reason": "Keeps momentum going briefly."
+     },
+     {
+      "swipe": true,
+      "reason": "Boring construction detail kills countdown urgency."
+     },
+     {
+      "swipe": true,
+      "reason": "Too wordy for a fast-paced short format."
+     },
+     {
+      "swipe": true,
+      "reason": "Repetitive imagery without payoff."
+     },
+     {
+      "swipe": true,
+      "reason": "Lacks escalation or tension."
+     },
+     {
+      "swipe": true,
+      "reason": "Melodramatic filler slows pace."
+     },
+     {
+      "swipe": true,
+      "reason": "Slow character movement."
+     },
+     {
+      "swipe": true,
+      "reason": "Anticlimactic ending."
+     },
+     {
+      "swipe": true,
+      "reason": "Generic self-promotion plug."
+     }
+    ],
+    "loop_natural": null
+   },
+   "versions": [
+    {
+     "hook_line": "First he bought the eastern horizon.",
+     "script": "First he bought the eastern horizon. Then he built a stone wall across the mountain path. Next came the heavy iron gate and the bronze bell. Soon a tall stone tower rose above the village crags. The villagers dropped their coins in silence while his daughter wept. High on the parapet, he held the key to the dawn. He stepped into the dark tower, put his hand on the oak door, and pulled it shut.",
+     "title": "The parable of the high stone tower #Shorts",
+     "reasons": [
+      "names what the cold open withholds (gate, village)",
+      "the title must pass the title policy and be ≤ 50 characters",
+      "8 swipe blocks before the end: Repetitive listing structure gets boring fast.; Already swiped."
+     ]
+    }
+   ],
+   "render": {
+    "id": "short_04",
+    "video": "shorts\\short_04.mp4",
+    "srt": "shorts\\short_04.srt",
+    "seconds": 30.38,
+    "views": 17,
+    "longest_hold": 1.95,
+    "first_image": "s01_06",
+    "loudness": {
+     "input_integrated_lufs": -23.04,
+     "input_true_peak_dbtp": -1.56,
+     "output_integrated_lufs": -14.85,
+     "output_true_peak_dbtp": -2.0,
+     "target_lufs": -14.0,
+     "gain_trim_db": 1.87
+    },
+    "loop_difference": null,
+    "sound": {
+     "missing_sfx": [
+      "impact/whoosh"
+     ],
+     "music": [
+      "City of the Wolf - The Mini Vandals - Classical - Dramatic.mp3"
+     ]
+    }
+   }
+  },
+  {
+   "id": "short_05",
+   "format": "pov",
+   "status": "review",
+   "estimate_seconds": 28.9,
+   "hook_line": "You walk up the mountain path at dawn.",
+   "on_screen_hook": "POV: Dawn costs a copper",
+   "script": "You walk up the mountain path at dawn. A high stone barrier blocks the horizon. The merchant stands over an iron bowl, ringing his bronze bell. You drop your last copper coin into the basin just to see the sun rise. His daughter watches you with a troubled frown. You step past him, but the warmth of the morning is already gone.",
+   "cta_text": "The full story is on the channel.",
+   "title": "POV: Pay to see the sunrise #Shorts",
+   "description_line": "A parable about a merchant who charges for the morning sky.",
+   "question": "",
+   "source_scene_ids": [
+    "3",
+    "4"
+   ],
+   "evidence_quotes": [
+    "dropping copper coins into the metal basin",
+    "his daughter watched from the rear with a troubled frown",
+    "the familiar warmth of their laughter had vanished"
+   ],
+   "reasons": [
+    "the title must pass the title policy and be ≤ 50 characters",
+    "3 swipe blocks before the end: Focus shifts away from first-person action to a side character.; Payoff feels weak and anti-climactic."
+   ],
+   "swipe": {
+    "blocks": [
+     {
+      "swipe": false,
+      "reason": "Immersive second-person perspective draws me in."
+     },
+     {
+      "swipe": false,
+      "reason": "Good visual imagery sets the scene."
+     },
+     {
+      "swipe": false,
+      "reason": "Sensory sound details keep focus."
+     },
+     {
+      "swipe": false,
+      "reason": "Interactive narrative choice holds interest."
+     },
+     {
+      "swipe": false,
+      "reason": "Building toward the visual sunrise moment."
+     },
+     {
+      "swipe": true,
+      "reason": "Focus shifts away from first-person action to a side character."
+     },
+     {
+      "swipe": true,
+      "reason": "Payoff feels weak and anti-climactic."
+     },
+     {
+      "swipe": true,
+      "reason": "Tone shifts into flat summary."
+     },
+     {
+      "swipe": true,
+      "reason": "Channel plug breaks immersion completely."
+     }
+    ],
+    "loop_natural": null
+   },
+   "versions": [
+    {
+     "hook_line": "You walk up the mountain path at first light.",
+     "script": "You walk up the mountain path at first light. But a tall grey wall now blocks the horizon. The merchant stands beside an iron bowl, ringing a bronze bell. His daughter watches you with a troubled frown. You reach into your pocket for a copper coin just to see the sun. The cold gate opens, but the warmth of the morning is gone.",
+     "title": "A village forced to pay for dawn #Shorts",
+     "reasons": [
+      "names what the cold open withholds (gate, open, village)",
+      "6 swipe blocks before the end: Descriptive narration drags and loses tension.; Already swiped."
+     ]
+    }
+   ],
+   "render": {
+    "id": "short_05",
+    "video": "shorts\\short_05.mp4",
+    "srt": "shorts\\short_05.srt",
+    "seconds": 25.26,
+    "views": 13,
+    "longest_hold": 2.12,
+    "first_image": "s03_05",
+    "loudness": {
+     "input_integrated_lufs": -22.92,
+     "input_true_peak_dbtp": -2.43,
+     "output_integrated_lufs": -14.86,
+     "output_true_peak_dbtp": -1.93,
+     "target_lufs": -14.0,
+     "gain_trim_db": 1.48
+    },
+    "loop_difference": null,
+    "sound": {
+     "missing_sfx": [
+      "impact/whoosh"
+     ],
+     "music": [
+      "It's Coming - Josh Kirsch_Media Right Productions - Classical - Dramatic.mp3"
+     ]
+    }
+   }
+  }
+ ]
+}
