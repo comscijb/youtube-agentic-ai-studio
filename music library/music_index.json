@@ -1,0 +1,205 @@
+{
+  "tracks": [
+    {
+      "file": "Allemande - Wahneta Meixsell - Classico - Sombrio.mp3",
+      "mood": "dark",
+      "duration": 199.6,
+      "mtime": 1792620955,
+      "rms_db": -19.1,
+      "onsets_per_second": 1.84,
+      "energy": "mid"
+    },
+    {
+      "file": "Allégro - Emmit Fenn - Classical - Melancólico.mp3",
+      "mood": "melancholy",
+      "duration": 114.4,
+      "mtime": 1792620038,
+      "rms_db": -15.9,
+      "onsets_per_second": 2.12,
+      "energy": "high"
+    },
+    {
+      "file": "Anomalous Hedges - The Mini Vandals - Classical - Sombrio.mp3",
+      "mood": "dark",
+      "duration": 210.6,
+      "mtime": 1792620887,
+      "rms_db": -16.5,
+      "onsets_per_second": 1.74,
+      "energy": "high"
+    },
+    {
+      "file": "Assembling - Asher Fulero - Classical - Dramatic.mp3",
+      "mood": "dramatic",
+      "duration": 151.5,
+      "mtime": 1792621364,
+      "rms_db": -21.3,
+      "onsets_per_second": 1.06,
+      "energy": "low"
+    },
+    {
+      "file": "Cafe Regrette - Asher Fulero - Classical - Dramatic.mp3",
+      "mood": "dramatic",
+      "duration": 118.5,
+      "mtime": 1792621042,
+      "rms_db": -15.4,
+      "onsets_per_second": 1.78,
+      "energy": "high"
+    },
+    {
+      "file": "Carol of the Bells - Quincas Moreira - Classical - Dramatic.mp3",
+      "mood": "dramatic",
+      "duration": 118.3,
+      "mtime": 1792622198,
+      "rms_db": -20.3,
+      "onsets_per_second": 1.53,
+      "energy": "mid"
+    },
+    {
+      "file": "City of the Wolf - The Mini Vandals - Classical - Dramatic.mp3",
+      "mood": "dramatic",
+      "duration": 186.7,
+      "mtime": 1792619776,
+      "rms_db": -11.7,
+      "onsets_per_second": 2.16,
+      "energy": "high"
+    },
+    {
+      "file": "Dragón Rojo - The Mini Vandals - Classical - Dramatic.mp3",
+      "mood": "dramatic",
+      "duration": 115.0,
+      "mtime": 1792621064,
+      "rms_db": -18.8,
+      "onsets_per_second": 1.47,
+      "energy": "mid"
+    },
+    {
+      "file": "Dream Of The Ancestor - Asher Fulero - Classical - Dramatic.mp3",
+      "mood": "dramatic",
+      "duration": 112.5,
+      "mtime": 1792622091,
+      "rms_db": -21.1,
+      "onsets_per_second": 1.6,
+      "energy": "mid"
+    },
+    {
+      "file": "Forest Lullabye - Asher Fulero - Classical - Melancólico.mp3",
+      "mood": "melancholy",
+      "duration": 169.0,
+      "mtime": 1792619964,
+      "rms_db": -18.6,
+      "onsets_per_second": 1.31,
+      "energy": "mid"
+    },
+    {
+      "file": "From Russia With Love - Huma-Huma - Classical - Sombrio.mp3",
+      "mood": "dark",
+      "duration": 145.8,
+      "mtime": 1792620972,
+      "rms_db": -13.6,
+      "onsets_per_second": 1.13,
+      "energy": "high"
+    },
+    {
+      "file": "It's Coming - Josh Kirsch_Media Right Productions - Classical - Dramatic.mp3",
+      "mood": "dramatic",
+      "duration": 108.0,
+      "mtime": 1792622253,
+      "rms_db": -13.4,
+      "onsets_per_second": 0.99,
+      "energy": "high"
+    },
+    {
+      "file": "Kallimachou - Dan Bodan - Music Box - Dramatic.mp3",
+      "mood": "dramatic",
+      "duration": 108.2,
+      "mtime": 1792622156,
+      "rms_db": -21.5,
+      "onsets_per_second": 1.13,
+      "energy": "low"
+    },
+    {
+      "file": "Lobe - The Mini Vandals - Classical - Melancólico.mp3",
+      "mood": "melancholy",
+      "duration": 91.9,
+      "mtime": 1792620000,
+      "rms_db": -13.2,
+      "onsets_per_second": 2.29,
+      "energy": "high"
+    },
+    {
+      "file": "No.2 Remembering Her - Esther Abrami - Classical - Melancholy.mp3",
+      "mood": "melancholy",
+      "duration": 143.9,
+      "mtime": 1792620594,
+      "rms_db": -29.5,
+      "onsets_per_second": 1.23,
+      "energy": "low"
+    },
+    {
+      "file": "Orison - Dan Bodan - Classical - Sombrio.mp3",
+      "mood": "dark",
+      "duration": 331.6,
+      "mtime": 1792620921,
+      "rms_db": -20.9,
+      "onsets_per_second": 0.91,
+      "energy": "low"
+    },
+    {
+      "file": "Pink Flamenco - Doug Maxwell - Classical - Dramatic.mp3",
+      "mood": "dramatic",
+      "duration": 152.3,
+      "mtime": 1792622217,
+      "rms_db": -17.5,
+      "onsets_per_second": 1.21,
+      "energy": "mid"
+    },
+    {
+      "file": "Renaissance Castle - Doug Maxwell_Media Right Productions - Classical - Melancholy.mp3",
+      "mood": "melancholy",
+      "duration": 143.4,
+      "mtime": 1792620811,
+      "rms_db": -19.0,
+      "onsets_per_second": 1.17,
+      "energy": "low"
+    },
+    {
+      "file": "Sarabande - Joel Cummins - Classical - Dramatic.mp3",
+      "mood": "dramatic",
+      "duration": 120.1,
+      "mtime": 1792621115,
+      "rms_db": -21.0,
+      "onsets_per_second": 1.31,
+      "energy": "low"
+    },
+    {
+      "file": "Shadoma - The Mini Vandals - Classical - Dramatic.mp3",
+      "mood": "dramatic",
+      "duration": 163.1,
+      "mtime": 1792621091,
+      "rms_db": -22.5,
+      "onsets_per_second": 1.08,
+      "energy": "low"
+    },
+    {
+      "file": "Solo Cello Passion - Doug Maxwell_Media Right Productions - Classical - Dramatic.mp3",
+      "mood": "dramatic",
+      "duration": 130.0,
+      "mtime": 1792620825,
+      "rms_db": -19.9,
+      "onsets_per_second": 1.49,
+      "energy": "mid"
+    },
+    {
+      "file": "Vespers on the Shore - The Mini Vandals - Clássico - Melancólico.mp3",
+      "mood": "melancholy",
+      "duration": 125.7,
+      "mtime": 1792619983,
+      "rms_db": -19.0,
+      "onsets_per_second": 1.59,
+      "energy": "mid"
+    }
+  ],
+  "gaps": [
+    "dark: 4 faixa(s)"
+  ]
+}
