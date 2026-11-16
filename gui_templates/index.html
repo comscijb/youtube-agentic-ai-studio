@@ -764,6 +764,21 @@ a:hover{color:var(--text)}
     <div class="tab-content" id="tab-settings">
       <div class="settings-scroll">
 
+        <!-- ── Ritmo / Som / Música (Phase 4.2) ── -->
+        <div class="settings-section" id="cut-section">
+          <div class="settings-header" onclick="toggleSection(this)">🎞 Ritmo / Som / Música <span class="caret">▾</span></div>
+          <div class="settings-body">
+            <div id="cut-switches" style="display:flex;flex-direction:column;gap:3px;font-size:12px"></div>
+            <div class="field-label" style="margin-top:6px">Segundos por vista (mínimo–máximo)</div>
+            <div class="settings-cols" id="cut-rhythm"></div>
+            <div class="field-label" style="margin-top:6px">Máximo sem mudança visual (s)</div>
+            <input type="number" id="cut-max-hold" step="0.5" style="width:90px">
+            <button class="btn btn-ghost" style="margin-top:8px;font-size:12px" onclick="saveCutSettings()">Salvar ritmo e som</button>
+            <span id="cut-msg" class="help-text" style="margin-left:6px"></span>
+            <div class="help-text">Efeitos sonoros: só licenças CC0 ou da YouTube Audio Library, registradas em assets/sfx/LICENSES.json (python -m scripts.sfx_library lista o que falta).</div>
+          </div>
+        </div>
+
         <!-- ── Descoberta (Phase 4.0: translations, slots, playlists, swap rule) ── -->
         <div class="settings-section" id="discovery-section">
           <div class="settings-header" onclick="toggleSection(this)">🔎 Descoberta (traduções, horários, playlists) <span class="caret">▾</span></div>
@@ -4150,8 +4165,49 @@ function saveDiscovery() {
     .then(r => r.json()).then(d => { document.getElementById('d-msg').textContent = d.ok ? 'Salvo.' : 'Não salvo: ' + d.error; });
 }
 
+const CUT_LABELS = {RHYTHM_ENABLED: 'Ritmo: 2–3 vistas por imagem', UPSCALE_CROPS: 'Upscale dos recortes (ComfyUI)',
+  KEY_LINES_ENABLED: 'Frases-chave na tela', BEAT_GRADES_ENABLED: 'Cor e luz por momento', SOUND_DESIGN_ENABLED: 'Efeitos sonoros',
+  MUSIC_PLAN_ENABLED: 'Plano de música (2–3 faixas, queda antes da virada)', VIDEO_ATTENTION_GATE: 'Mapa de atenção do vídeo bloqueia achados graves'};
+const CUT_BEATS = {cold_open: 'Cold open', tension: 'Tensão / virada', development: 'Desenvolvimento', reflection: 'Reflexão'};
+
+function loadCutSettings() {
+  fetch('/api/cut-settings').then(r => r.json()).then(d => {
+    if (!d.ok) return;
+    const box = document.getElementById('cut-switches');
+    box.innerHTML = '';
+    Object.entries(CUT_LABELS).forEach(([key, label]) => {
+      const row = document.createElement('label');
+      row.innerHTML = `<input type="checkbox" data-switch="${key}" ${d.switches[key] ? 'checked' : ''}> ${label}`;
+      box.appendChild(row);
+    });
+    const rhythm = document.getElementById('cut-rhythm');
+    rhythm.innerHTML = '';
+    Object.entries(CUT_BEATS).forEach(([key, label]) => {
+      const value = d.rhythm[key] || [3, 5];
+      const field = document.createElement('div');
+      field.className = 'settings-field';
+      field.innerHTML = `<div class="help-text">${label}</div><input type="number" step="0.5" data-beat="${key}" data-end="0" value="${value[0]}" style="width:60px"> – ` +
+        `<input type="number" step="0.5" data-beat="${key}" data-end="1" value="${value[1]}" style="width:60px">`;
+      rhythm.appendChild(field);
+    });
+    document.getElementById('cut-max-hold').value = d.rhythm.max_hold || 7;
+  });
+}
+
+function saveCutSettings() {
+  const body = {switches: {}, rhythm: {max_hold: Number(document.getElementById('cut-max-hold').value)}};
+  document.querySelectorAll('#cut-switches [data-switch]').forEach(el => { body.switches[el.dataset.switch] = el.checked; });
+  document.querySelectorAll('#cut-rhythm [data-beat]').forEach(el => {
+    body.rhythm[el.dataset.beat] = body.rhythm[el.dataset.beat] || [0, 0];
+    body.rhythm[el.dataset.beat][Number(el.dataset.end)] = Number(el.value);
+  });
+  fetch('/api/cut-settings', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)})
+    .then(r => r.json()).then(d => { document.getElementById('cut-msg').textContent = d.ok ? 'Salvo.' : 'Não salvo: ' + d.error; });
+}
+
 function loadSettings() {
   loadDiscovery();
+  loadCutSettings();
   fetch('/api/settings').then(r=>r.json()).then(d => {
     document.getElementById('s-gemini').value       = '';
     document.getElementById('s-pixabay').value      = '';

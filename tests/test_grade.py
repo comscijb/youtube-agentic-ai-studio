@@ -74,5 +74,22 @@ class GuardTests(unittest.TestCase):
         self.assertLessEqual(grade.max_step(reversal), grade.MAX_LUMA_STEP)
 
 
+class SettingsTests(unittest.TestCase):
+    def test_switches_and_rhythm_are_saved_and_applied(self):
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
+        import config
+        from video import cut_settings
+        with tempfile.TemporaryDirectory() as temp, \
+                patch.object(config, "CUT_SETTINGS_FILE", Path(temp, "c.json"), create=True), \
+                patch.object(config, "KEY_LINES_ENABLED", True), patch.object(config, "RHYTHM", dict(config.RHYTHM)):
+            found = cut_settings.save({"switches": {"KEY_LINES_ENABLED": False}, "rhythm": {"development": [2.5, 4.5]}})
+            self.assertFalse(found["switches"]["KEY_LINES_ENABLED"])
+            self.assertEqual(config.RHYTHM["development"], [2.5, 4.5])
+            with self.assertRaises(ValueError):
+                cut_settings.save({"rhythm": {"tension": [5, 3]}})
+
+
 if __name__ == "__main__":
     unittest.main()

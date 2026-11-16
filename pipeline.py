@@ -17,6 +17,8 @@ from agents.researcher   import research_topic
 from agents.scriptwriter import write_script
 from video.narrator      import generate_narration
 from video.music         import prepare_final_audio
+from video import cut_settings as _cut_settings
+_cut_settings.apply()                                    # Phase 4.2: the GUI's Ritmo / Som / Música choices
 from video.stock         import download_images, enabled as stock_enabled
 from agents              import identity
 from video.creator       import create_video

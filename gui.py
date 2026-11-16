@@ -512,6 +512,11 @@ def _run_pipeline(steps: list, topic_override: str = "", video_type: str = "norm
 # ══════════════════════════════════════════════════════════════════════════════
 
 app = Flask(__name__, template_folder="gui_templates")
+try:                                                     # Phase 4.2: Settings → Ritmo / Som / Música
+    from video import cut_settings as _cut_settings
+    _cut_settings.apply()
+except Exception:                                        # noqa: BLE001 — the defaults in config.py stay
+    pass
 
 
 @app.route("/")
@@ -2532,6 +2537,18 @@ def attention_run():
             viewer_sim.run(config.OUTPUT_DIR, script)
             _imagegen_progress("Simulação de espectadores pronta")
     return _imagegen_run(work)
+
+
+@app.route("/api/cut-settings", methods=["GET", "POST"])
+def cut_settings_api():
+    """Phase 4.2 Settings → Ritmo / Som / Música: the switches and the seconds per view by beat."""
+    from video import cut_settings
+    if request.method == "POST":
+        try:
+            return jsonify({"ok": True, **cut_settings.save(request.get_json(force=True) or {})})
+        except (ValueError, TypeError) as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 400
+    return jsonify({"ok": True, **cut_settings.current()})
 
 
 @app.route("/api/video-attention", methods=["GET", "POST"])
