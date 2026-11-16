@@ -2484,6 +2484,48 @@ def _upload_metadata() -> dict:
     }
 
 
+def _attention_payload() -> dict:
+    """Phase 4.1-C: the saved attention map as a 15 s timeline, the live loops and the deterministic findings."""
+    from agents import attention, attention_map
+    script = load_json(Path(config.OUTPUT_DIR, "script.json")) or _state.get("script") or {}
+    sections = script.get("sections", [])
+    found = attention_map.load(config.OUTPUT_DIR)
+    current = bool(found) and found.get("key") and [item["text"] for item in found.get("sentences", [])] == \
+        [item["text"] for item in attention.timing(sections)]
+    checked = attention.check(sections, found if current else None) if sections else {"findings": [], "duration": 0}
+    payload = {"ok": True, "has_map": bool(found), "stale": bool(found) and not current, "duration": checked["duration"],
+               "findings": checked["findings"], "passes": checked.get("passes"), "source": checked.get("source")}
+    if found:
+        payload.update(blocks=attention_map.blocks(found), loops=attention_map.live_loops(found),
+                       sentences=[{key: item[key] for key in ("sentence", "text", "start", "end", "tags", "title")}
+                                  for item in found.get("sentences", [])])
+    return payload
+
+
+@app.route("/api/attention")
+def attention_status():
+    return jsonify(_attention_payload())
+
+
+@app.route("/api/attention/run", methods=["POST"])
+def attention_run():
+    """Build the attention map (one Gemini call); the simulation (4.1-D) runs after it when asked."""
+    from agents import attention_map
+    script = load_json(Path(config.OUTPUT_DIR, "script.json")) or _state.get("script") or {}
+    if not script.get("sections"):
+        return jsonify({"ok": False, "error": "Sem roteiro neste projeto"}), 400
+    body = request.get_json(force=True, silent=True) or {}
+
+    def work():
+        attention_map.build(config.OUTPUT_DIR, script["sections"], force=bool(body.get("force")))
+        _imagegen_progress("Mapa de atenção pronto")
+        if body.get("simulate"):
+            from agents import viewer_sim
+            viewer_sim.run(config.OUTPUT_DIR, script)
+            _imagegen_progress("Simulação de espectadores pronta")
+    return _imagegen_run(work)
+
+
 @app.route("/api/review-gate")
 def get_review_gate():
     """Checklist, narrative status, title and license findings, approval validity."""

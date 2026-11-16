@@ -641,6 +641,16 @@ a:hover{color:var(--text)}
               <div id="narrative-qa-summary" style="font-size:11px;color:var(--muted)">No review loaded.</div>
               <div id="narrative-qa-issues" style="display:flex;flex-direction:column;gap:5px;margin-top:8px"></div>
             </div>
+            <div id="attention-panel" style="padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);margin-top:8px">
+              <div style="display:flex;align-items:center;gap:6px">
+                <div style="font-size:12px;font-weight:600;color:var(--dim);flex:1">Mapa de atenção</div>
+                <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" onclick="attentionRun(false)" title="Uma chamada ao Gemini marca perguntas, revelações, escaladas e descrições">Gerar mapa</button>
+                <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" onclick="attentionRun(true)" title="Mapa + simulação de 3 espectadores (Gemini)">Mapa + simulação</button>
+              </div>
+              <div id="attention-summary" style="font-size:11px;color:var(--muted);margin:4px 0"></div>
+              <div id="attention-timeline" style="position:relative"></div>
+              <div id="attention-detail" style="font-size:11px;margin-top:6px"></div>
+            </div>
 
             <div id="sections-list">
               <div class="field-label" style="margin-bottom:6px">Script Sections</div>
@@ -4201,7 +4211,75 @@ function loadSettings() {
   });
 }
 
+function attentionRun(simulate) {
+  igPost('/api/attention/run', {simulate});
+  setTimeout(loadAttention, 4000);
+}
+
+function loadAttention() {
+  fetch('/api/attention').then(r => r.json()).then(renderAttention).catch(() => {});
+}
+
+function renderAttention(d) {
+  // Phase 4.1-C: 15 s blocks (green → red), live loops as bars, findings as markers; click a block → its sentences.
+  const summary = document.getElementById('attention-summary'), box = document.getElementById('attention-timeline');
+  if (!summary || !box || !d.ok) return;
+  const total = d.duration || 1;
+  const majors = (d.findings || []).filter(f => f.severity === 'major').length;
+  summary.textContent = `Duração estimada ${Math.floor(total / 60)}:${String(Math.round(total % 60)).padStart(2, '0')} · ` +
+    `${(d.findings || []).length} achado(s), ${majors} grave(s)` + (d.has_map ? (d.stale ? ' · mapa desatualizado: gere de novo' : '') :
+    ' · sem mapa semântico (checagem só lexical)') + (d.passes === false ? ' · não passa no contrato de atenção' : '');
+  box.innerHTML = '';
+  const colours = {green: 'var(--green,#4caf50)', yellow: '#c9b23a', orange: 'var(--amber,#e0b252)', red: 'var(--red,#e05252)'};
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;height:22px;border-radius:4px;overflow:hidden;cursor:pointer';
+  (d.blocks || []).forEach(b => {
+    const cell = document.createElement('div');
+    cell.style.cssText = `flex:${b.end - b.start};background:${colours[b.colour]};border-right:1px solid var(--surface2)`;
+    cell.title = `${Math.floor(b.start / 60)}:${String(b.start % 60).padStart(2, '0')} · ${b.events} evento(s)`;
+    cell.onclick = () => {
+      const detail = document.getElementById('attention-detail');
+      detail.innerHTML = '';
+      (d.sentences || []).filter(s => b.sentences.includes(s.sentence)).forEach(s => {
+        const line = document.createElement('div');
+        line.textContent = `${Math.floor(s.start / 60)}:${String(Math.round(s.start % 60)).padStart(2, '0')}  ${s.text}` +
+          (s.tags.length ? `  [${s.tags.map(t => t.tag).join(', ')}]` : '');
+        detail.appendChild(line);
+      });
+    };
+    row.appendChild(cell);
+  });
+  box.appendChild(row);
+  const marks = document.createElement('div');
+  marks.style.cssText = 'position:relative;height:14px';
+  (d.findings || []).forEach(f => {
+    const mark = document.createElement('div');
+    mark.style.cssText = `position:absolute;left:${f.start / total * 100}%;font-size:11px;color:${f.severity === 'major' ? 'var(--red,#e05252)' : 'var(--amber,#e0b252)'}`;
+    mark.textContent = '▲';
+    mark.title = `${f.at} ${f.claim}`;
+    marks.appendChild(mark);
+  });
+  box.appendChild(marks);
+  (d.loops || []).forEach(l => {
+    const bar = document.createElement('div');
+    bar.style.cssText = `height:5px;margin:2px 0;margin-left:${l.start / total * 100}%;width:${Math.max(0.5, (l.end - l.start) / total * 100)}%;` +
+      `background:${l.closed ? 'var(--accent,#4af)' : 'var(--muted)'};border-radius:3px`;
+    bar.title = `pergunta "${l.id}"` + (l.closed ? '' : ' (aberta até o fim)');
+    box.appendChild(bar);
+  });
+  const list = document.createElement('div');
+  list.style.cssText = 'margin-top:6px;display:flex;flex-direction:column;gap:3px';
+  (d.findings || []).slice(0, 14).forEach(f => {
+    const line = document.createElement('div');
+    line.style.cssText = `font-size:11px;border-left:2px solid ${f.severity === 'major' ? 'var(--red,#e05252)' : 'var(--amber)'};padding-left:6px`;
+    line.textContent = `${f.at} [${f.severity}] ${f.claim}`;
+    list.appendChild(line);
+  });
+  box.appendChild(list);
+}
+
 function renderNarrativeQA(review) {
+  loadAttention();
   const summary = document.getElementById('narrative-qa-summary');
   const issues = document.getElementById('narrative-qa-issues');
   if (!summary || !issues) return;
