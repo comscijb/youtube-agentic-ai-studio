@@ -345,7 +345,10 @@ def prepare_final_audio(narration_path: str, output_path: str, *, episode: dict 
             track = choose_track(library_tracks(library), episode) if enabled else None
             if enabled and track is None:
                 print(f"   ⚠ {NO_MUSIC_MESSAGE} (library: {library})")
-            if track:
+            designed = design_mix(narration_path, temp, track, volume, episode, output_dir, record) if enabled or track else None
+            if designed:
+                mixed = designed
+            elif track:
                 duration = media_duration(narration_path)
                 swells = stings(os.path.dirname(narration_path) or output_dir)
                 graph, loops = music_filter(duration, media_duration(track["path"]), volume, swells)
@@ -376,6 +379,64 @@ def prepare_final_audio(narration_path: str, output_path: str, *, episode: dict 
         record["error"] = str(exc)
     _update_manifest(output_dir, record)
     return output_path
+
+
+def design_mix(narration_path: str, temp: str, track: dict | None, volume: float, episode: dict | None,
+               output_dir: str, record: dict) -> str | None:
+    """Phase 4.2-D/E: SFX cues and the music plan under the voice, ducked like the music. None when there is
+    nothing new to add (no registered SFX for the cues and no music plan): the classic single-track mix runs."""
+    from video import sfx, sound
+    sections = (episode or {}).get("sections") or []
+    placed, missing, plan = [], [], None
+    if sfx.enabled() and sections:
+        try:
+            cues = sfx.build(output_dir, sections).get("cues", [])
+            placed, missing = sfx.assign_files(cues)
+        except Exception as exc:                         # noqa: BLE001 — no cue sheet: music only
+            print(f"   ⚠ SFX cue sheet skipped ({exc.__class__.__name__}: {str(exc)[:120]})")
+    try:
+        from video import music_plan
+        if music_plan.enabled() and sections:
+            plan = music_plan.build(output_dir, sections, volume=volume)
+    except Exception as exc:                             # noqa: BLE001 — the single track stays
+        print(f"   ⚠ music plan skipped ({exc.__class__.__name__}: {str(exc)[:120]})")
+        plan = None
+    if not placed and not (plan and plan.get("segments")):
+        if missing:
+            record["sfx_missing_tags"] = missing
+        return None
+    duration = media_duration(narration_path)
+    voice = sound.rms_db(narration_path)
+    levels = {}
+    cues = []
+    for cue in placed:
+        file_db = levels.setdefault(cue["file"], sound.rms_db(cue["file"], 10.0))
+        cues.append({"path": cue["file"], "start": cue["start"], "end": min(duration, cue["end"]), "kind": cue["kind"],
+                     "gain": sound.gain_for(voice, file_db, cue["under_voice_db"])})
+    if plan and plan.get("segments"):
+        music = plan["segments"]
+        drops, swells = plan.get("drops", []), plan.get("swells", []) + stings(os.path.dirname(narration_path) or output_dir)
+    elif track:
+        music = [{"path": track["path"], "start": 0.0, "end": duration, "offset": 0.0, "fade_in": min(3.0, duration * 0.05),
+                  "fade_out": min(4.0, duration * 0.08), "volume": volume}]
+        drops, swells = [], stings(os.path.dirname(narration_path) or output_dir)
+    else:
+        music, drops, swells = [], [], []
+    graph, inputs = sound.graph(duration, music, cues, drops=drops, swells=swells)
+    mixed = os.path.join(temp, "designed.wav")
+    result = _run(sound.command(narration_path, inputs, graph, mixed))
+    if result.returncode != 0:
+        print(f"   ⚠ sound design mix failed ({result.stderr[-200:]}); classic mix")
+        return None
+    record.update({"sfx_cues": len(cues), "sfx_missing_tags": missing, "music_plan": [
+        {key: item.get(key) for key in ("file", "start", "end", "mood")} for item in music] if plan else None,
+        "drops": drops, "swells": swells})
+    if track and not plan:
+        record.update({"track": track["file"], "moods": track["moods"], "license": track["license"],
+                       "source_url": track["source_url"], "attribution": track["attribution"], "volume": volume})
+    print(f"   → Som: {len(cues)} efeito(s)" + (f", faltam etiquetas: {', '.join(missing)}" if missing else "")
+          + (f"; música em {len(music)} trecho(s)" if music else ""))
+    return mixed
 
 
 def mix_music_with_narration(narration_path: str,

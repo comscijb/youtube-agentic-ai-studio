@@ -308,6 +308,8 @@ EXTERNAL_IMAGE_PROVIDER = os.getenv("EXTERNAL_IMAGE_PROVIDER", "")
 EXTERNAL_IMAGE_MODEL = os.getenv("EXTERNAL_IMAGE_MODEL", "gpt-image-1")
 EXTERNAL_IMAGE_PRICE = float(os.getenv("EXTERNAL_IMAGE_PRICE", "0"))           # USD per image
 EXTERNAL_IMAGE_BUDGET = float(os.getenv("EXTERNAL_IMAGE_BUDGET", "0"))         # default per-project cap, USD
+# Phase 4.2-D: sound design (assets/sfx with LICENSES.json; beds -26 dB, actions -18 dB, accents -14 dB under the voice).
+SOUND_DESIGN_ENABLED = os.getenv("SOUND_DESIGN_ENABLED", "true").lower() in ("1", "true", "yes", "on")
 # Phase 4.2-C: a grade per beat (calm / tension / reversal / ending / cold_open; see video/grade.py for the keys).
 BEAT_GRADES_ENABLED = os.getenv("BEAT_GRADES_ENABLED", "true").lower() in ("1", "true", "yes", "on")
 BEAT_GRADES = {}                                         # overrides of video.grade.DEFAULT_GRADES, per beat
