@@ -167,6 +167,12 @@ def checklist_for(run_dir) -> dict:
     return items
 
 
+def attention_status(run_dir) -> dict:
+    """Phase 4.1-E: the attention gate's verdict for the screenplay ({} before 4.1)."""
+    review = load_json(Path(run_dir) / "narrative_review.json") or {}
+    return review.get("attention") or {}
+
+
 def narrative_status(run_dir) -> str:
     review = load_json(Path(run_dir) / "narrative_review.json") or {}
     return str(review.get("status") or "missing")
@@ -236,6 +242,8 @@ def review_summary(run_dir, *, title: str, generator=None, **artifacts) -> dict:
     return {
         "narrative_status": status,
         "status_override_required": status in BLOCKED_STATUSES or status == "missing",
+        "attention": {key: attention_status(run_dir).get(key) for key in ("status", "label", "major", "duration_before", "duration_after")},
+        "attention_override_required": attention_status(run_dir).get("status") == "failed",
         "description_findings": description_findings,
         "shorts": [{key: item.get(key) for key in ("id", "title", "hook_text", "end_text", "description", "start", "end")}
                    | {"video": f"shorts/{item['id']}.mp4"} for item in _included_shorts(run_dir)],
@@ -261,7 +269,8 @@ def _included_shorts(run_dir) -> list[dict]:
 def approve(run_dir, *, checklist: dict, video_path, title, description, tags=None,
             thumbnail_path=None, notes: str = "", title_override_reason: str = "",
             status_override_reason: str = "", reviewer: str = "",
-            synthetic_disclosure: bool | None = None, disclosure_override_reason: str = "") -> dict:
+            synthetic_disclosure: bool | None = None, disclosure_override_reason: str = "",
+            attention_override_reason: str = "") -> dict:
     """Validate the checklist and write the approval bound to the current artifacts.
 
     ``synthetic_disclosure`` is YouTube's realistic altered/synthetic content flag. It defaults to
@@ -285,6 +294,12 @@ def approve(run_dir, *, checklist: dict, video_path, title, description, tags=No
     if (status in BLOCKED_STATUSES or status == "missing") and len(status_reason) < _MIN_REASON_CHARS:
         problems.append(f"narrative status is {status}; uploading requires a typed override "
                         f"reason (at least {_MIN_REASON_CHARS} characters)")
+    attention = attention_status(run_dir)
+    attention_reason = str(attention_override_reason or "").strip()
+    attention_failed = attention.get("status") == "failed"
+    if attention_failed and len(attention_reason) < _MIN_REASON_CHARS:
+        problems.append("o roteiro não passou no portão de atenção; para enviar mesmo assim, escreva o motivo "
+                        f"(pelo menos {_MIN_REASON_CHARS} caracteres)")
     decision = disclosure_decision(run_dir)
     disclosure = decision["value"] if synthetic_disclosure is None else bool(synthetic_disclosure)
     disclosure_reason = str(disclosure_override_reason or "").strip()
@@ -306,6 +321,8 @@ def approve(run_dir, *, checklist: dict, video_path, title, description, tags=No
         "notes": str(notes or "").strip(),
         "narrative_status": status,
         "status_override_reason": status_reason if status in BLOCKED_STATUSES | {"missing"} else "",
+        "attention_status": attention.get("status", ""),
+        "attention_override_reason": attention_reason if attention_failed else "",
         "title": title,
         "title_findings": findings,
         "title_override_reason": title_reason if not title_passes(findings) else "",

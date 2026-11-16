@@ -28,7 +28,10 @@ IDENTITY_EDITORIAL_DIMENSIONS = (
     "channel_identity_adherence", "hook_strength", "title_curiosity",
     "philosophical_integration", "ending_openness", "strategy_success_then_cost",
 )
-EDITORIAL_DIMENSIONS = LEGACY_EDITORIAL_DIMENSIONS + IDENTITY_EDITORIAL_DIMENSIONS
+# Phase 4.1-E: a viewer on a phone, not only a reader.
+ATTENTION_EDITORIAL_DIMENSIONS = ("opening_grip", "momentum", "curiosity_management", "ear_readability")
+PRE_ATTENTION_EDITORIAL_DIMENSIONS = LEGACY_EDITORIAL_DIMENSIONS + IDENTITY_EDITORIAL_DIMENSIONS
+EDITORIAL_DIMENSIONS = PRE_ATTENTION_EDITORIAL_DIMENSIONS + ATTENTION_EDITORIAL_DIMENSIONS
 # Dimensions that may be marked not applicable for non-Type-A stories.
 TYPE_A_ONLY_DIMENSIONS = ("strategy_success_then_cost",)
 TYPE_A = "realistic_psychological_fiction"
@@ -863,7 +866,9 @@ def deterministic_review(script: dict, target_duration_minutes: float,
     brief_scenes = brief_scene_ids(sections, outline if isinstance(outline, dict) else None, brief)
     attempted = {scene_id for attempt in repair_attempts or [] if "expansion" in str(attempt.get("kind", ""))
                  for scene_id in attempt.get("scene_ids") or []}
-    in_total_range = total_min <= total_ratio <= total_max
+    # Phase 4.1-E: scenes the attention revision cut on purpose have no minimum, nor has the total.
+    shortened = set(script.get("attention_shortened") or [])
+    in_total_range = total_min <= total_ratio <= total_max or (bool(shortened) and total_ratio < total_min)
     for index, scene in enumerate(sections):
         plan = plan_by_id.get(scene.get("outline_scene_id")) or plan_by_id.get(scene.get("id")) or {}
         target = plan.get("target_words") or (
@@ -878,6 +883,8 @@ def deterministic_review(script: dict, target_duration_minutes: float,
         status = "within_target"
         if on_brief_pace:                # no minimum ratio; only its own maximum
             status = "over_target" if actual > BRIEF_SCENE_WORDS[1] else "within_target"
+        elif scene.get("id") in shortened and ratio < scene_min:
+            status = "within_target"     # cut by the attention revision: shorter is the point
         elif ratio < scene_min:
             status = "under_target"
         elif ratio > scene_max:
@@ -930,7 +937,10 @@ def deterministic_review(script: dict, target_duration_minutes: float,
                 "word_delta": abs(deficit), "preserve": ["identity", "causality", "continuity"],
             })
 
-    if not total_min <= total_ratio <= total_max:
+    if shortened and total_ratio < total_min:
+        warnings.append(f"Narration is {total_ratio:.0%} of the target after the attention revision cut it "
+                        f"({words}/{expected} words): shorter is allowed when it holds attention better.")
+    elif not total_min <= total_ratio <= total_max:
         direction = "below" if total_ratio < total_min else "above"
         issue = {
             "severity": "blocking" if not blocking_min <= total_ratio <= blocking_max else "major",
@@ -1326,7 +1336,7 @@ def validate_editorial_assessment(value: dict, narrative_type: str | None = None
     _require_mapping(value, "editorial assessment")
     dimensions = value.get("dimensions")
     keys = set(dimensions) if isinstance(dimensions, dict) else set()
-    legacy = allow_legacy and keys == set(LEGACY_EDITORIAL_DIMENSIONS)
+    legacy = allow_legacy and keys in (set(LEGACY_EDITORIAL_DIMENSIONS), set(PRE_ATTENTION_EDITORIAL_DIMENSIONS))
     if keys != set(EDITORIAL_DIMENSIONS) and not legacy:
         missing = [name for name in EDITORIAL_DIMENSIONS if name not in keys]
         extra = sorted(keys - set(EDITORIAL_DIMENSIONS))
@@ -1454,7 +1464,9 @@ def screen_editorial_findings(findings: list[dict], deterministic: dict,
 # Phase 3.9.2-F: a dimension cannot score above this while a related confirmed major finding exists.
 CLAMP_SCORE = 6
 CLAMPED_DIMENSIONS = {"chronology": ("chronological_continuity",), "lecture": ("dialogue_and_subtext",),
-                      "brief_paste": ("literary_style",), "screen_direction": ("literary_style",)}
+                      "brief_paste": ("literary_style",), "screen_direction": ("literary_style",),
+                      # Phase 4.1-E: momentum is the pacing dimension
+                      "attention": ("dramatic_progression", "momentum")}
 
 
 def clamp_scores(assessment: dict, majors: list[dict]) -> tuple[dict, list[dict]]:
@@ -1483,7 +1495,8 @@ def merge_editorial_review(deterministic: dict, assessment: dict | None,
         merged["editorial_validation_complete"] = False
         return merged
     assessment = validate_editorial_assessment(assessment, merged.get("narrative_type"))
-    assessment, merged["score_clamps"] = clamp_scores(assessment, merged.get("major_issues", []))
+    attention_majors = [item for item in (merged.get("attention") or {}).get("findings", []) if item.get("severity") == "major"]
+    assessment, merged["score_clamps"] = clamp_scores(assessment, merged.get("major_issues", []) + attention_majors)
     merged["editorial_assessment"] = assessment
     merged["editorial_validation_complete"] = True
     findings, discarded = screen_editorial_findings(assessment["findings"], merged, bible)

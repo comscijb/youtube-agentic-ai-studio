@@ -207,6 +207,7 @@ class CheckpointTests(unittest.TestCase):
     def run_script(self, temp, responses, force=False):
         with patch.object(scriptwriter, "generate", side_effect=responses) as call, \
                 patch.object(config, "NARRATIVE_AUTO_REVISION_ENABLED", False), \
+                patch.object(config, "ATTENTION_GATE_ENABLED", False, create=True), \
                 redirect_stdout(io.StringIO()):
             try:
                 result = scriptwriter.write_script(validate_story_brief(story_brief()), output_dir=temp,

@@ -396,6 +396,11 @@ Return ONLY JSON with:
   ending_openness: a final choice or recognition, an uncomfortable open question, no moral.
   strategy_success_then_cost: the strategy succeeds first and its hidden cost emerges
   progressively. {strategy_rule}
+  Attention dimensions (a viewer on a phone who can leave at any second, not a patient reader):
+  opening_grip: the first seconds hold a concrete strangeness, conflict or threat, not setting.
+  momentum: something changes at least every 25 seconds of narration; no padding, no throat-clearing.
+  curiosity_management: questions open, stay alive and pay off; a partial reveal or new question per scene.
+  ear_readability: short spoken sentences with varied rhythm, easy to follow by ear.
 - findings: an array of objects with severity (blocking|major|minor|suggestion), issue_type,
 scene_ids (integer array), claim, evidence (string array), why_it_matters, recommendation,
 certainty (confirmed|probable|possible). Any lecture-like or explanatory passage is at least a
@@ -788,6 +793,40 @@ CHARACTER BIBLE: {compact_json(bible)}"""
     return revised, new_review
 
 
+def _attention_gate(script: dict, review: dict, brief: dict, bible: dict, outline: dict, output: Path,
+                    target: float, repair_attempts: list) -> tuple[dict, dict]:
+    """Phase 4.1-E: the attention contract, the map and the viewer simulation; up to 2 targeted rewrites. What still
+    fails is recorded for the human review ("não passou no portão de atenção"); never a crash."""
+    if not getattr(config, "ATTENTION_GATE_ENABLED", True):
+        return script, review
+    from agents import attention_revision
+    print("   -> Attention gate: map, viewer simulation, targeted revision...")
+    try:
+        revised, record = attention_revision.run(output, script, brief=brief, bible=bible, outline=outline, generator=generate,
+                                                 max_rounds=int(getattr(config, "ATTENTION_MAX_ROUNDS", 2)))
+    except Exception as exc:                             # noqa: BLE001 — quota, network: the human review decides
+        record = {"status": "not_run", "label": "portão de atenção não executado", "error": f"{exc.__class__.__name__}: {str(exc)[:300]}",
+                  "findings": [], "rounds": []}
+        revised = script
+    if revised is not script:
+        atomic_write_json(output / "script.pre_attention.json", script)
+        atomic_write_json(output / "script.json", revised)
+        fresh = deterministic_review(revised, target, outline, repair_attempts, brief)
+        fresh = premise_brief.add_findings(fresh, brief, bible=bible, outline=outline, script=revised)
+        fresh["attention"] = record
+        assessment = review.get("editorial_assessment")
+        review = merge_editorial_review(fresh, assessment, bible) if assessment else merge_editorial_review(fresh, None)
+        review["editorial_review_stale"] = bool(assessment)
+        return revised, review
+    review["attention"] = record
+    from agents.narrative import clamp_scores
+    if review.get("editorial_assessment"):
+        majors = [item for item in record.get("findings", []) if item.get("severity") == "major"]
+        review["editorial_assessment"], extra = clamp_scores(review["editorial_assessment"], majors)
+        review["score_clamps"] = list(review.get("score_clamps") or []) + extra
+    return script, review
+
+
 # Stage checkpoints of an unfinished write_script run (scene batches, expansion,
 # editorial review, semantic revision); removed once the stage completes.
 CHECKPOINT_FOLDER = ".checkpoints"
@@ -895,6 +934,7 @@ def _write_script(brief: dict, video_type: str, output: Path, target: float,
         if revised is not script:
             script = revised
             atomic_write_json(output / "script.json", script)
+        script, review = _attention_gate(script, review, brief, bible, outline, output, target, repair_attempts)
     else:
         review = merge_editorial_review(review, None)
     review["source_hash"] = stable_hash(script)

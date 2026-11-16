@@ -250,7 +250,7 @@ class IdentityPromptTests(unittest.TestCase):
 
 class EditorialDimensionTests(unittest.TestCase):
     def test_new_dimension_set_is_accepted(self):
-        self.assertEqual(len(EDITORIAL_DIMENSIONS), 21)
+        self.assertEqual(len(EDITORIAL_DIMENSIONS), 25)            # Phase 4.1-E: four attention dimensions
         validate_editorial_assessment(assessment(), "realistic_psychological_fiction",
                                       allow_legacy=False)
 

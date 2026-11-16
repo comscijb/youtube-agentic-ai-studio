@@ -306,6 +306,9 @@ EXTERNAL_IMAGE_PROVIDER = os.getenv("EXTERNAL_IMAGE_PROVIDER", "")
 EXTERNAL_IMAGE_MODEL = os.getenv("EXTERNAL_IMAGE_MODEL", "gpt-image-1")
 EXTERNAL_IMAGE_PRICE = float(os.getenv("EXTERNAL_IMAGE_PRICE", "0"))           # USD per image
 EXTERNAL_IMAGE_BUDGET = float(os.getenv("EXTERNAL_IMAGE_BUDGET", "0"))         # default per-project cap, USD
+# Phase 4.1-E: the attention gate after the editorial review (map + simulation + at most 2 targeted rewrites).
+ATTENTION_GATE_ENABLED = os.getenv("ATTENTION_GATE_ENABLED", "true").lower() in ("1", "true", "yes", "on")
+ATTENTION_MAX_ROUNDS = int(os.getenv("ATTENTION_MAX_ROUNDS", "2"))
 # Phase 4.1-D: the skeptical-viewer simulation ("single" = one call for the three personas, "per_persona" = three).
 VIEWER_SIM_MODE = os.getenv("VIEWER_SIM_MODE", "single")
 VIEWER_PERSONAS = [

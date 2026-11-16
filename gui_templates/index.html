@@ -670,6 +670,10 @@ a:hover{color:var(--text)}
               <div class="field-label" style="margin-bottom:2px">Narrative status override reason</div>
               <input type="text" id="gate-status-reason" placeholder="Why upload despite the narrative status?" oninput="updateGateButtons()">
             </div>
+            <div id="gate-attention-reason-wrap" style="display:none;margin-top:6px">
+              <div class="field-label" style="margin-bottom:2px">Não passou no portão de atenção: motivo para enviar mesmo assim</div>
+              <input type="text" id="gate-attention-reason" placeholder="Por que publicar este roteiro assim?" oninput="updateGateButtons()">
+            </div>
             <div id="gate-disclosure-box" style="font-size:12px;margin-top:6px">
               <div id="gate-disclosure-decision" style="color:var(--dim)"></div>
               <label id="gate-disclosure-wrap" style="display:flex;gap:6px;align-items:center;margin-top:2px">
@@ -3926,6 +3930,12 @@ function loadReviewGate() {
     _gate = d;
     const status = document.getElementById('gate-status');
     const lines = [];
+    if (d.attention && d.attention.status) {
+      const a = d.attention;
+      lines.push(`<span style="color:${a.status === 'passed' ? 'var(--green,#4caf50)' : 'var(--red,#e05252)'}">Portão de atenção: ${_esc(a.label || a.status)}` +
+        (a.duration_before ? ` · duração ${Math.round(a.duration_before / 60 * 10) / 10} → ${Math.round((a.duration_after || a.duration_before) / 60 * 10) / 10} min` : '') + '</span>');
+    }
+    document.getElementById('gate-attention-reason-wrap').style.display = d.attention_override_required ? '' : 'none';
     (d.description_findings || []).filter(f => ['no_topic', 'keyword_stuffing', 'too_many_tags'].includes(f.rule))
       .forEach(f => lines.push(`<span style="color:var(--amber,#e0b252)">⚠ Tópico/descrição: ${_esc(f.claim)}</span>`));
     lines.push(`Narrative status: <strong>${d.narrative_status}</strong>` +
@@ -3993,7 +4003,8 @@ function updateGateButtons() {
   const complete = _gate && checks.length && checks.every(Boolean)
     && (_gate.title_passes || document.getElementById('gate-title-reason').value.trim().length >= 10)
     && (!_gate.status_override_required || document.getElementById('gate-status-reason').value.trim().length >= 10)
-    && (!disclosureOverridden() || document.getElementById('gate-disclosure-reason').value.trim().length >= 10);
+    && (!disclosureOverridden() || document.getElementById('gate-disclosure-reason').value.trim().length >= 10)
+    && (!_gate.attention_override_required || document.getElementById('gate-attention-reason').value.trim().length >= 10);
   document.getElementById('gate-disclosure-reason-wrap').style.display = disclosureOverridden() ? '' : 'none';
   document.getElementById('gate-approve-btn').disabled = !complete;
   const approved = !!(_gate && _gate.approval_valid);
@@ -4012,6 +4023,7 @@ function approveUpload() {
       status_override_reason: document.getElementById('gate-status-reason').value,
       synthetic_disclosure: document.getElementById('gate-disclosure').checked,
       disclosure_override_reason: document.getElementById('gate-disclosure-reason').value,
+      attention_override_reason: document.getElementById('gate-attention-reason').value,
     })
   }).then(r=>r.json()).then(d => {
     msg.style.color = d.ok ? 'var(--green,#4caf50)' : 'var(--red,#e05252)';

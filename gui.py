@@ -2557,6 +2557,7 @@ def approve_upload():
             status_override_reason=body.get("status_override_reason", ""),
             synthetic_disclosure=body.get("synthetic_disclosure"),
             disclosure_override_reason=body.get("disclosure_override_reason", ""),
+            attention_override_reason=body.get("attention_override_reason", ""),
             **meta,
         )
     except UploadNotApproved as exc:
